@@ -31,6 +31,8 @@ Thumbs.db
 .vscode/
 *.swp
 
+cookies.txt
+
 # Build output (once frontend exists)
 frontend/dist/
 frontend/build/
