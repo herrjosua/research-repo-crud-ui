@@ -4,7 +4,6 @@ frontend/node_modules/
 backend/node_modules/
 
 # Environment / secrets
-.idea
 .env
 .env.local
 .env.*.local
@@ -31,11 +30,12 @@ Thumbs.db
 .vscode/
 *.swp
 
-cookies.txt
-
 # Build output (once frontend exists)
 frontend/dist/
 frontend/build/
 
 # Stray venv, in case IntelliJ created one despite this being a Node project
 .venv/
+
+# Local curl testing artifacts (contains live session cookies)
+cookies.txt
