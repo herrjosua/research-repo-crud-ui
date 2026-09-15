@@ -7,6 +7,7 @@ const SqliteStore = require('better-sqlite3-session-store')(session);
 
 const db = require('./db'); // ensures users table exists
 const authRoutes = require('./routes/auth');
+const recordRoutes = require('./routes/records');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -42,8 +43,7 @@ app.use(session({
 }));
 
 app.use('/api/auth', authRoutes);
-
-// No content endpoints yet — v0.6 scope is auth only.
+app.use('/api', recordRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
