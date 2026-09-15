@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from './client';
 
 export function useLogin() {
@@ -17,5 +17,13 @@ export function useSignup() {
     return useMutation({
         mutationFn: ({ username, password, gitName, gitEmail }) =>
             api.post('/auth/signup', { username, password, gitName, gitEmail }),
+    });
+}
+
+export function useMe() {
+    return useQuery({
+        queryKey: ['me'],
+        queryFn: () => api.get('/auth/me'),
+        retry: false,
     });
 }

@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useMe } from './api/auth';
 import LoginForm from './LoginForm';
 
 function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const me = useMe();
 
-  if (loggedIn) {
-    return <p>You're logged in!</p>;
+  if (me.isLoading) {
+    return <p>Loading…</p>;
   }
 
-  return <LoginForm onLoginSuccess={() => setLoggedIn(true)} />;
+  if (me.isError) {
+    return <LoginForm onLoginSuccess={() => me.refetch()} />;
+  }
+
+  return <p>Logged in as {me.data.username}!</p>;
 }
 
 export default App;
