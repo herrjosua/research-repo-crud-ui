@@ -103,9 +103,10 @@ router.post('/sessions', async (req, res) => {
 // the id back out of req.path ourselves.
 // ---------------------------------------------------------------------------
 router.get('/records', async (req, res) => {
-  const { kind } = req.query;
+  const { kind, summary } = req.query;
   const args = [path.join(SCRIPTS_DIR, 'export_records.py')];
   if (kind) args.push('--kind', kind);
+  if (summary === 'true') args.push('--summary');
 
   try {
     const { stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR });
