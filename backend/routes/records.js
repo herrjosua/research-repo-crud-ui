@@ -4,6 +4,7 @@ const { promisify } = require('util');
 const fs = require('fs/promises');
 const path = require('path');
 const matter = require('gray-matter');
+const db = require('../db');
 
 const execFileAsync = promisify(execFile);
 const router = express.Router();
@@ -137,11 +138,43 @@ async function fetchRecord(id) {
 }
 
 // ---------------------------------------------------------------------------
+// Shared helper: look up the logged-in user's git identity for attribution.
+// ---------------------------------------------------------------------------
+function getUser(req) {
+  return db.prepare('SELECT git_name, git_email FROM users WHERE id = ?')
+      .get(req.session.userId);
+}
+
+// ---------------------------------------------------------------------------
+// Shared helper: stage and commit whatever changed in AGENTIC_REPO_ROOT,
+// attributed to the given user. Bundles the record change and any
+// build_index.py-regenerated index files into one atomic commit ("git add -A"
+// stages everything touched by this request, not just one known file).
+// ---------------------------------------------------------------------------
+async function commitChange(message, user) {
+  try {
+    await execFileAsync('git', ['add', '-A'], { cwd: AGENTIC_REPO_ROOT });
+    await execFileAsync(
+        'git',
+        ['commit', '--author', `${user.git_name} <${user.git_email}>`, '-m', message],
+        { cwd: AGENTIC_REPO_ROOT },
+    );
+  } catch (err) {
+    // git commit exits non-zero when there's nothing staged (e.g. a PUT with
+    // no actual change) — that's a no-op, not a failure.
+    if (!/nothing to commit/i.test(err.stdout || err.message || '')) {
+      throw err;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // PUT /records/:id — no script exists for editing, so read/modify/write the
 // markdown file directly, then re-run build_index.py to refresh indexes.
 // ---------------------------------------------------------------------------
 router.put('/records/:id', async (req, res) => {
   const { id } = req.params;
+  const user = getUser(req);
   const { frontmatter, content } = req.body;
 
   if (!frontmatter && content === undefined) {
@@ -160,7 +193,11 @@ router.put('/records/:id', async (req, res) => {
     const existing = await fs.readFile(filePath, 'utf8');
     const parsed = matter(existing);
 
-    const updatedFrontmatter = frontmatter ? { ...parsed.data, ...frontmatter } : parsed.data;
+    const updatedFrontmatter = {
+      ...(frontmatter ? { ...parsed.data, ...frontmatter } : parsed.data),
+      last_edited_by: user.git_name,
+      last_edited_at: new Date().toISOString(),
+    };
     const updatedContent = content !== undefined ? content : parsed.content;
 
     const newFileText = matter.stringify(updatedContent, updatedFrontmatter);
@@ -180,7 +217,8 @@ router.put('/records/:id', async (req, res) => {
     });
   }
 
-  res.json({ message: `${filePath} updated and index refreshed` });
+  await commitChange(`Update ${path.relative(AGENTIC_REPO_ROOT, filePath)}`, user);
+  res.json({ message: `${filePath} updated, index refreshed, and change committed` });
 });
 
 // ---------------------------------------------------------------------------
@@ -194,6 +232,7 @@ router.put('/records/:id', async (req, res) => {
 // ---------------------------------------------------------------------------
 router.delete('/records/:id', async (req, res) => {
   const { id } = req.params;
+  const user = getUser(req);
 
   let record;
   try {
@@ -221,6 +260,7 @@ router.delete('/records/:id', async (req, res) => {
     });
   }
 
+  await commitChange(`Delete ${record.path}`, user);
   res.status(204).end();
 });
 
