@@ -1,29 +1,13 @@
-# Research Repo CRUD UI
+# Research Repo CRUD UI — Backend
 
-A multi-user web app that adds a full CRUD interface, login, and git-based edit
-attribution on top of the [Agentic UX Research Repo](../agentic-repo) (a
-separate repo — this app reads/writes its markdown content but is not stored
-inside it, to avoid risking that repo's working content).
+Node/Express API for the CRUD UI. Handles auth, session management, and all
+file CRUD against the [Agentic UX Research Repo](../../agentic-repo) by
+shelling out to its Python scripts (and, where no script exists, editing
+markdown files directly).
 
-**Stack:** React frontend, Node/Express backend, SQLite for user accounts and
-sessions only (markdown files remain the source of truth for research
-content).
-
-## Project structure
-
-```
-Research Repo CRUD UI/
-├── backend/          Node/Express API
-│   ├── server.js     Entry point — session middleware, route mounting
-│   ├── db.js         better-sqlite3 connection + users table schema
-│   ├── routes/
-│   │   ├── auth.js      Signup / login / logout / me
-│   │   └── records.js   Sessions + file CRUD (shells out to agentic-repo's Python scripts)
-│   ├── .env.example  Template for required environment variables
-│   └── app.db        SQLite file (git-ignored, created on first run)
-├── frontend/         React app (not yet built — starts in v0.9)
-└── .gitignore
-```
+**Stack:** Express, `better-sqlite3` (users + sessions only — markdown files
+remain the source of truth for research content), `express-session` +
+`bcrypt` for auth, `gray-matter` for frontmatter parsing.
 
 ## Setup
 
@@ -71,6 +55,19 @@ run.
 
 > **Note:** `server.js` lives in `backend/`, not the repo root. Running
 > `node server.js` from anywhere else will fail with `MODULE_NOT_FOUND`.
+
+## Project structure
+
+```
+backend/
+├── server.js     Entry point — session middleware, route mounting
+├── db.js         better-sqlite3 connection + users table schema
+├── routes/
+│   ├── auth.js      Signup / login / logout / me
+│   └── records.js   Sessions + file CRUD (shells out to agentic-repo's Python scripts)
+├── .env.example  Template for required environment variables
+└── app.db        SQLite file (git-ignored, created on first run)
+```
 
 ## API
 
@@ -154,16 +151,3 @@ cookies.txt` / `-b cookies.txt` to persist the cookie across requests.
   to avoid a vulnerable `sqlite3`/`node-gyp`/`tar` dependency chain
 - All `/api/sessions` and `/api/records` routes require an authenticated
   session
-
-## Roadmap
-
-Continues the version numbering from the original research repo (v0.1–v0.5
-shipped there). Full roadmap tracked in Notion: **Version Milestone Roadmap —
-Research Repo CRUD UI**.
-
-- [x] v0.6 — Backend Foundation (auth, sessions)
-- [x] v0.7 — File CRUD API (sessions, records)
-- [x] v0.8 — Git Attribution Layer
-- [ ] v0.9 — React Frontend: Auth + Browse
-- [ ] v1.0 — React Frontend: Create/Edit/Delete
-- [ ] v1.1 — Deploy + Polish
