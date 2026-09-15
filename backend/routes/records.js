@@ -115,6 +115,38 @@ router.get('/records', async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// GET /records/:id/history — shells out to `git log --follow` for the
+// record's full edit history.
+// ---------------------------------------------------------------------------
+router.get('/records/*splat/history', async (req, res) => {
+  const id = req.path.replace(/^\/records\//, '').replace(/\/history$/, '');
+
+  let record;
+  try {
+    record = await fetchRecord(id);
+  } catch (err) {
+    return res.status(404).json({ error: (err.stderr || err.message).trim() });
+  }
+
+  const relativePath = path.relative(AGENTIC_REPO_ROOT, record.filePath);
+
+  try {
+    const { stdout } = await execFileAsync(
+        'git',
+        ['log', '--follow', '--pretty=format:%H|%an|%ae|%aI|%s', '--', relativePath],
+        { cwd: AGENTIC_REPO_ROOT },
+    );
+    const history = stdout.split('\n').filter(Boolean).map(line => {
+      const [hash, authorName, authorEmail, date, message] = line.split('|');
+      return { hash, authorName, authorEmail, date, message };
+    });
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ error: (err.stderr || err.message).trim() });
+  }
+});
+
 router.get('/records/*splat', async (req, res) => {
   const id = req.path.replace(/^\/records\//, '');
   const args = [path.join(SCRIPTS_DIR, 'export_records.py'), '--id', id];
