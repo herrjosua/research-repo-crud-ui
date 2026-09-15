@@ -36,6 +36,7 @@ router.use(requireAuth);
 // ---------------------------------------------------------------------------
 router.post('/sessions', async (req, res) => {
   const { mode } = req.body;
+  const user = getUser(req);
 
   if (mode !== 'raw' && mode !== 'deliverable') {
     return res.status(400).json({ error: 'mode must be "raw" or "deliverable"' });
@@ -81,16 +82,25 @@ router.post('/sessions', async (req, res) => {
 
   try {
     const { stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR });
+
+    const createdMatch = stdout.match(/✅ Created (.+?)(?:\n|$)/);
+    if (createdMatch) {
+      const createdPath = path.relative(AGENTIC_REPO_ROOT, createdMatch[1].trim());
+      await commitChange(`Create ${createdPath}`, user);
+    }
+
     res.status(201).json({ message: stdout.trim() });
   } catch (err) {
-    // new_research_session.py exits 1 with a printed error on stderr for
-    // expected failures (overwrite guard, missing required args, etc).
     res.status(400).json({ error: (err.stderr || err.message).trim() });
   }
 });
 
 // ---------------------------------------------------------------------------
 // GET /records and GET /records/:id — shell out to export_records.py.
+// The :id segment can contain a slash (e.g. "deliverable:personas/foo"), so a
+// plain Express :id param won't match past the first "/". Using a named
+// wildcard ("*splat", required by Express 5's router) instead, and pulling
+// the id back out of req.path ourselves.
 // ---------------------------------------------------------------------------
 router.get('/records', async (req, res) => {
   const { kind } = req.query;
@@ -105,8 +115,9 @@ router.get('/records', async (req, res) => {
   }
 });
 
-router.get('/records/:id', async (req, res) => {
-  const args = [path.join(SCRIPTS_DIR, 'export_records.py'), '--id', req.params.id];
+router.get('/records/*splat', async (req, res) => {
+  const id = req.path.replace(/^\/records\//, '');
+  const args = [path.join(SCRIPTS_DIR, 'export_records.py'), '--id', id];
 
   try {
     const { stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR });
@@ -142,7 +153,7 @@ async function fetchRecord(id) {
 // ---------------------------------------------------------------------------
 function getUser(req) {
   return db.prepare('SELECT git_name, git_email FROM users WHERE id = ?')
-      .get(req.session.userId);
+    .get(req.session.userId);
 }
 
 // ---------------------------------------------------------------------------
@@ -155,9 +166,9 @@ async function commitChange(message, user) {
   try {
     await execFileAsync('git', ['add', '-A'], { cwd: AGENTIC_REPO_ROOT });
     await execFileAsync(
-        'git',
-        ['commit', '--author', `${user.git_name} <${user.git_email}>`, '-m', message],
-        { cwd: AGENTIC_REPO_ROOT },
+      'git',
+      ['commit', '--author', `${user.git_name} <${user.git_email}>`, '-m', message],
+      { cwd: AGENTIC_REPO_ROOT },
     );
   } catch (err) {
     // git commit exits non-zero when there's nothing staged (e.g. a PUT with
@@ -172,8 +183,8 @@ async function commitChange(message, user) {
 // PUT /records/:id — no script exists for editing, so read/modify/write the
 // markdown file directly, then re-run build_index.py to refresh indexes.
 // ---------------------------------------------------------------------------
-router.put('/records/:id', async (req, res) => {
-  const { id } = req.params;
+router.put('/records/*splat', async (req, res) => {
+  const id = req.path.replace(/^\/records\//, '');
   const user = getUser(req);
   const { frontmatter, content } = req.body;
 
@@ -230,8 +241,8 @@ router.put('/records/:id', async (req, res) => {
 // and just the single file for every other kind (finding/component/
 // analytics/deliverable, all of which are genuinely one file each).
 // ---------------------------------------------------------------------------
-router.delete('/records/:id', async (req, res) => {
-  const { id } = req.params;
+router.delete('/records/*splat', async (req, res) => {
+  const id = req.path.replace(/^\/records\//, '');
   const user = getUser(req);
 
   let record;
