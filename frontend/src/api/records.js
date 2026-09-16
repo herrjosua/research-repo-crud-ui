@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
 
 export function useRecords() {
@@ -19,5 +19,16 @@ export function useRecord(id) {
 export function useCreateSession() {
     return useMutation({
         mutationFn: (data) => api.post('/sessions', { mode: 'raw', ...data }),
+    });
+}
+
+export function useUpdateRecord(id) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data) => api.put(`/records/${id}`, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['record', id] });
+            queryClient.invalidateQueries({ queryKey: ['records'] });
+        },
     });
 }

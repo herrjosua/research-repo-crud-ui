@@ -1,5 +1,7 @@
-import { Modal, Tag, InlineNotification } from '@carbon/react';
+import { useState } from 'react';
+import { Modal, Tag, InlineNotification, Button } from '@carbon/react';
 import { useRecord } from './api/records';
+import EditRecordForm from './EditRecordForm';
 import './RecordDetail.module.scss';
 
 function cleanRecordHtml(html) {
@@ -122,6 +124,7 @@ function cleanRecordHtml(html) {
 
 export default function RecordDetail({ id, onClose }) {
   const record = useRecord(id);
+  const [isEditing, setIsEditing] = useState(false);
 
   return (
     <Modal
@@ -140,15 +143,25 @@ export default function RecordDetail({ id, onClose }) {
         />
       )}
 
-      {record.data && (
+      {record.data && !isEditing && (
         <>
           <p>{record.data.date}</p>
           <Tag type="gray">{record.data.type}</Tag>
           {record.data.tags.map((tag) => (
             <Tag key={tag} type="blue">{tag}</Tag>
           ))}
+          <Button kind="tertiary" onClick={() => setIsEditing(true)}>
+            Edit
+          </Button>
           <div dangerouslySetInnerHTML={{ __html: cleanRecordHtml(record.data.html) }} />
         </>
+      )}
+
+      {record.data && isEditing && (
+        <EditRecordForm
+          record={record.data}
+          onClose={() => setIsEditing(false)}
+        />
       )}
     </Modal>
   );
