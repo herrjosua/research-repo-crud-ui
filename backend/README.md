@@ -117,16 +117,29 @@ wildcard would otherwise swallow `/history` as part of the id.
 
 **`POST /api/sessions` fields:**
 
-- **`mode: "raw"`** — `title, type, topicSlug` required; optional `tags`, `relatedComponents`, `relatedFindings`, `researcher`, `methodLabel`, `date`
+- **`mode: "raw"`** — `title, type, topicSlug` required; optional `tags`, `relatedComponents`, `relatedFindings`, `researcher`, `methodLabel`, `date`, `content` (full markdown body — overrides the default TODO-scaffold template entirely if given)
 - **`mode: "deliverable"`** — `folder, title, slug` required; optional `tags`, `relatedFindings`, `date`, `status`, `sourceType`, `protoType`, `description`. Always runs with `--no-prompt` since the API can't answer interactive prompts.
 
 **PUT/DELETE behavior:** no Python script exists for editing or deleting
 records, so these two routes read/write/delete the markdown file directly in
 Node (using `gray-matter` for frontmatter), then shell out to
-`build_index.py` to refresh the generated indexes. If `build_index.py`
-reports an issue (e.g. an undocumented tag), the response is still `200`/`204`
-with a `warning` field — the file operation itself already succeeded, so a
-downstream index warning doesn't roll it back.
+`build_index.py` to refresh the generated indexes. **The git commit always
+happens once the file write itself succeeds, regardless of what
+`build_index.py` does afterward** — an earlier version only committed inside
+`build_index.py`'s success path, meaning any reindex failure (a warning *or*
+a crash) silently skipped the commit entirely, even though the real file
+change was already saved to disk. If `build_index.py` reports an issue, the
+response is still `200`/`204` with a `warning` field, but that's now purely
+informational — it never affects whether the change gets committed.
+
+**Frontmatter dates stay plain dates.** `gray-matter`'s underlying YAML
+library silently upgrades a plain `date: 2025-01-14` frontmatter value into
+a full JS `Date` object on parse, then re-serializes it as a full ISO
+timestamp (`2025-01-14T00:00:00.000Z`) on every `PUT` — even edits that never
+touch `date` at all. `PUT` now detects any `Date`-instance frontmatter field
+right before writing and coerces it back to a plain `YYYY-MM-DD` string, so
+an edit to, say, just `status` doesn't silently rewrite an unrelated field's
+format.
 
 **Raw sessions are two files, not one.** `new_research_session.py` creates
 `session-notes.md` and `participants.md` together in one dated folder.

@@ -15,7 +15,7 @@ files remain the source of truth for research content).
 ```
 Research Repo CRUD UI/
 ├── backend/    Node/Express API — see backend/README.md for setup, env vars, and the full API reference
-├── frontend/   React app — see frontend/README.md for setup (still being built out as of v0.9)
+├── frontend/   React app — see frontend/README.md for setup and stack decisions
 └── .gitignore
 ```
 
@@ -36,5 +36,5 @@ Research Repo CRUD UI**.
 - [x] v0.7 — File CRUD API (sessions, records)
 - [x] v0.8 — Git Attribution Layer
 - [x] v0.9 — React Frontend: Auth + Browse
-- [ ] v1.0 — React Frontend: Create/Edit/Delete
+- [x] v1.0 — React Frontend: Create/Edit/Delete
 - [ ] v1.1 — Deploy + Polish

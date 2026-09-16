@@ -1,12 +1,14 @@
 # Research Repo CRUD UI — Frontend
 
-React app for the CRUD UI. v0.9 (Auth + Browse) is complete: login, session
-persistence, logout, and a filterable/searchable dashboard with a read-only
-detail view. v1.0 (Create/Edit/Delete UI) is next.
+React app for the CRUD UI. v0.9 (Auth + Browse) and v1.0 (Create/Edit/Delete)
+are both complete: login, session persistence, logout, a filterable
+dashboard, and full create/edit/delete with a WYSIWYG content editor and
+edit history. v1.1 (Deploy + Polish) is next.
 
 **Stack:** Vite + React, [Carbon Design System](https://carbondesignsystem.com/)
 for components, [TanStack Query](https://tanstack.com/query) for data
-fetching/caching.
+fetching/caching, [CKEditor 5](https://ckeditor.com/) for WYSIWYG markdown
+editing.
 
 ## Setup
 
@@ -34,56 +36,79 @@ turned out to be completely invisible to keyboard users (Tab skipped over
 every result). Swapping to Carbon's `ClickableTile` — natively focusable and
 Enter-operable — fixed it immediately, no custom ARIA/keyboard code needed.
 Carbon's `Modal` similarly handles focus trapping, focus-on-open, and
-Escape-to-close automatically.
+Escape-to-close automatically — including the confirmation dialog and
+history panel added in v1.0 (both portal-rendered via `createPortal` into
+`document.body`, since nesting one Carbon `Modal` directly inside another
+breaks its positioning otherwise).
 
-## Accessibility tooling
+## WYSIWYG editing: CKEditor 5, chosen deliberately
 
-`eslint-plugin-jsx-a11y` doesn't yet declare support for this project's
-ESLint version (10.x, as of testing in Sept 2026) — rather than force an
-unverified peer-dependency resolution, this project relies on **IntelliJ's
-built-in HTML accessibility inspections** instead:
+v1.0 needed a way to edit a record's actual markdown body, not just its
+frontmatter fields. This is one of the few places "cleanest UX" and "best
+accessibility" genuinely pull in different directions, so it's worth
+explaining the reasoning rather than just naming the library:
 
-**Settings → Editor → Inspections → HTML → Accessibility**
+A true WYSIWYG editor (rendering **bold**/headings/lists inline as you type,
+no raw `**`/`#` symbols visible) is built on `contentEditable` — a browser
+feature with real, industry-wide known accessibility limitations for screen
+reader users. This isn't a library-specific flaw; it's an inherent property
+of how rich-text editing works in browsers today. A markdown-plus-live-preview
+approach (a real `<textarea>` with a rendered preview alongside it) avoids
+that tradeoff entirely, at the cost of a less polished editing feel.
 
-Confirmed working on `.jsx` files. If you're using a different editor,
-you'll need an equivalent — this project has no lint-time a11y check wired
-into `npm run lint` yet.
+**CKEditor 5** was chosen over both a lightweight React-native WYSIWYG
+library and the safer textarea approach because it's one of the few editors
+with genuine enterprise/government accessibility investment — published
+VPATs, real ARIA-compliant toolbars — the same class of tool that lets
+federal/government sites actually use WYSIWYG editing and still pass 508
+review. Most lightweight React-native rich-text libraries have no comparable
+track record, despite sometimes claiming to be "accessible."
 
-**Manual keyboard testing matters too, not just linting.** The `Tile` vs.
-`ClickableTile` issue above was caught by physically tabbing through the
-page, not by any inspection or linter — worth doing for any new interactive
-element.
-
-## CSS architecture
-
-Each component has its own co-located `.module.scss` file (e.g.
-`Dashboard.jsx` + `Dashboard.module.scss`, flat in `src/` — no
-per-component folders yet, since nothing has more than two files). One
-shared `src/styles/_variables.scss` partial holds design tokens (spacing,
-header height) that components pull in via `@use`. CSS Modules were chosen
-over a single global stylesheet specifically to avoid manual class-name
-collision management as the component count grows — each component's
-classes are automatically scoped by the build tool.
+Setup notes:
+- Single npm package, `ckeditor5` (their newer consolidated packaging — the
+  `Markdown` data-processor plugin is bundled in, not a separate install)
+  plus `@ckeditor/ckeditor5-react` for the React wrapper.
+- `licenseKey: 'GPL'` in the editor config enables free/open-source use.
+- The `Markdown` plugin makes `.getData()` return real markdown text (not
+  HTML), matching the backend's `content` field exactly — no format
+  conversion needed anywhere in this app.
+- Plugin list (`Essentials, Paragraph, Heading, Bold, Italic, Code, Link,
+  List, BlockQuote, Markdown`) is deliberately scoped to exactly what the
+  agentic-repo's `md_render.py` can render back out — no point exposing
+  formatting the renderer can't handle on the way back.
 
 ## Data fetching pattern: lazy loading
 
 `GET /api/records` returns every record's full content (including rendered
-HTML) by default — fine for a handful of records, but wasteful for a list
-view showing dozens. The backend's `export_records.py` got a `--summary`
-flag (strips `html`/`searchText`) threaded through as `?summary=true`; the
+HTML) by default — fine for a handful of records, wasteful for a list view
+showing dozens. The backend's `export_records.py` got a `--summary` flag
+(strips `html`/`searchText`) threaded through as `?summary=true`; the
 dashboard's list view uses that, and a separate `useRecord(id)` hook fetches
 one record's full content only when it's actually opened, via React Query's
 per-id caching (`queryKey: ['record', id]`) so re-opening the same record
-doesn't re-fetch it.
+doesn't re-fetch it. Editing needs one step further — `useUpdateRecord` and
+the Edit form use the record's `rawContent` field (real markdown source,
+added to the backend specifically for this), not the rendered `html`.
 
 ## Rendering record content safely
 
-`RecordDetail.jsx` renders each record's pre-rendered HTML body via
-`dangerouslySetInnerHTML`. This is safe specifically because that HTML is
-generated at build time by the agentic-repo's own Python pipeline
+`RecordDetail.jsx`'s read-only view renders each record's pre-rendered HTML
+body via `dangerouslySetInnerHTML`. This is safe specifically because that
+HTML is generated at build time by the agentic-repo's own Python pipeline
 (`build_search_ui.py`'s markdown renderer) from files this app itself
 writes — never from arbitrary or third-party input. The same trust boundary
-`research/search.html` already relies on.
+`research/search.html` already relies on. Before injecting it, the HTML runs
+through `cleanRecordHtml()`, which uses real DOM parsing (`DOMParser`,
+`TreeWalker`) rather than string/regex replacement — an early attempt used a
+naive regex swap of literal "TODO" placeholder text and ended up corrupting
+a real link's `href` attribute, since regex has no concept of "inside a tag"
+vs. "visible text." `cleanRecordHtml()` handles: removing the redundant
+duplicate `<h1>` title, shifting heading levels so content never outranks
+the modal's own heading, turning unfilled template placeholders into a
+consistent "Not yet filled in" style, collapsing unfilled scaffolding
+(Key Findings, Roles) to one clean line instead of showing raw template
+syntax, stripping broken/unfilled relation links, and removing any section
+whose heading ends up with nothing under it once its content is cleaned.
 
 ## Project structure
 
@@ -94,32 +119,38 @@ frontend/
 │   ├── api/
 │   │   ├── client.js       Shared fetch wrapper — credentials included, JSON in/out, error handling
 │   │   ├── auth.js         useLogin, useLogout, useSignup (hook, no screen yet), useMe
-│   │   └── records.js      useRecords (summary list), useRecord (full detail, on demand)
+│   │   └── records.js      useRecords, useRecord, useCreateSession, useUpdateRecord,
+│   │                       useDeleteRecord, useRecordHistory
 │   ├── styles/
 │   │   └── _variables.scss Shared Sass tokens (spacing, header height)
 │   ├── App.jsx              Top-level: session gate (login vs. dashboard), header
 │   ├── App.module.scss
 │   ├── Header.jsx           Carbon Header + logout action
 │   ├── LoginForm.jsx         Carbon Form, wired to useLogin
-│   ├── Dashboard.jsx         Kind + tag filtering, record list, opens RecordDetail
+│   ├── Dashboard.jsx         Kind + tag filtering, record list, "New session" button, opens RecordDetail
 │   ├── Dashboard.module.scss
-│   ├── RecordDetail.jsx      Carbon Modal, fetches full record content on open
+│   ├── CreateSessionForm.jsx  Structured fields + CKEditor content, posts to POST /sessions
+│   ├── EditRecordForm.jsx     Frontmatter fields + CKEditor content, posts to PUT
+│   ├── RecordDetail.jsx      Read view, Edit toggle, Delete confirmation, history panel
+│   ├── RecordDetail.module.scss
 │   ├── index.scss           `@use '@carbon/react';` — Carbon's base styles
 │   └── main.jsx             React Query's QueryClientProvider
 ```
 
 ## Still to build
 
-**v1.0 (Create/Edit/Delete):**
-- Form for new research session / finding (`POST /sessions`)
-- Edit form for existing records (`PUT`)
-- Delete with confirmation
-- Show `last_edited_by` + a "view history" link (`GET /records/:id/history`)
-
 **v1.1 (Deploy + Polish):**
 - Responsive layout (currently desktop-oriented — intentionally deferred)
-- A signup screen (`useSignup()` exists in `api/auth.js`, unused so far)
+- A signup screen (`useSignup()` exists in `api/auth.js`, unused so far) —
+  and per the current plan, likely stays unused: v1.1 calls for *closed*
+  signup + seeded demo accounts for the public/portfolio deploy, not open
+  self-registration
 - Deploy target: leaning AWS free tier or the existing webhost, both free
+- Security hardening (path validation on slugs, HTTPS, rate limiting beyond
+  `/login`, a demo-data-reset cron) — see the Notion roadmap for the full
+  checklist
 
 See the Version Milestone Roadmap in Notion for full detail and decision
-rationale.
+rationale, including three real bugs found and fixed during v1.0 (a silent
+git-commit-loss bug, a `build_index.py` crash, and its root cause in how
+`gray-matter` handles frontmatter dates).
