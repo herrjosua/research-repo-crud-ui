@@ -250,18 +250,21 @@ router.put('/records/*splat', async (req, res) => {
     return res.status(500).json({ error: `failed to write file: ${err.message}` });
   }
 
+  let indexWarning = null;
   try {
     await execFileAsync(PYTHON_BIN, [path.join(SCRIPTS_DIR, 'build_index.py')], { cwd: SCRIPTS_DIR });
   } catch (err) {
-    // File was written successfully even if reindex reports problems (e.g. a
-    // dangling tag reference) — that's a warning, not a failure of the edit.
-    return res.status(200).json({
-      message: 'record updated, but build_index.py reported issues',
-      warning: (err.stderr || err.message).trim(),
-    });
+    indexWarning = (err.stderr || err.message).trim();
   }
 
   await commitChange(`Update ${path.relative(AGENTIC_REPO_ROOT, filePath)}`, user);
+
+  if (indexWarning) {
+    return res.status(200).json({
+      message: 'record updated and committed, but build_index.py reported issues',
+      warning: indexWarning,
+    });
+  }
   res.json({ message: `${filePath} updated, index refreshed, and change committed` });
 });
 
@@ -295,16 +298,21 @@ router.delete('/records/*splat', async (req, res) => {
     return res.status(500).json({ error: `failed to delete: ${err.message}` });
   }
 
+  let indexWarning = null;
   try {
     await execFileAsync(PYTHON_BIN, [path.join(SCRIPTS_DIR, 'build_index.py')], { cwd: SCRIPTS_DIR });
   } catch (err) {
-    return res.status(200).json({
-      message: 'record deleted, but build_index.py reported issues',
-      warning: (err.stderr || err.message).trim(),
-    });
+    indexWarning = (err.stderr || err.message).trim();
   }
 
   await commitChange(`Delete ${record.path}`, user);
+
+  if (indexWarning) {
+    return res.status(200).json({
+      message: 'record deleted and committed, but build_index.py reported issues',
+      warning: indexWarning,
+    });
+  }
   res.status(204).end();
 });
 

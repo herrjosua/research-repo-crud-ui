@@ -27,7 +27,7 @@ export function useUpdateRecord(id) {
     return useMutation({
         mutationFn: (data) => api.put(`/records/${id}`, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['record', id] });
+            queryClient.invalidateQueries({ queryKey: ['record', id] });``
             queryClient.invalidateQueries({ queryKey: ['records'] });
         },
     });
@@ -40,5 +40,13 @@ export function useDeleteRecord() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['records'] });
         },
+    });
+}
+
+export function useRecordHistory(id, enabled) {
+    return useQuery({
+        queryKey: ['record', id, 'history'],
+        queryFn: () => api.get(`/records/${id}/history`),
+        enabled: enabled,
     });
 }

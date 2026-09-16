@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Modal, Tag, InlineNotification, Button } from '@carbon/react';
-import { useRecord, useDeleteRecord } from './api/records';
+import { useRecord, useDeleteRecord, useRecordHistory } from './api/records';
 import EditRecordForm from './EditRecordForm';
 import { createPortal } from 'react-dom';
 import './RecordDetail.module.scss';
@@ -128,6 +128,8 @@ export default function RecordDetail({ id, onClose }) {
   const [isEditing, setIsEditing] = useState(false);
   const deleteRecord = useDeleteRecord();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const history = useRecordHistory(id, showHistory);
 
   return (
     <Modal
@@ -159,6 +161,15 @@ export default function RecordDetail({ id, onClose }) {
           <Button kind="danger--tertiary" onClick={() => setShowDeleteConfirm(true)}>
             Delete
           </Button>
+          <Button kind="ghost" onClick={() => setShowHistory(true)}>
+            View history
+          </Button>
+          {record.data.last_edited_by && (
+              <p>
+                Last edited by {record.data.last_edited_by}
+                {record.data.last_edited_at && ` on ${new Date(record.data.last_edited_at).toLocaleString()}`}
+              </p>
+          )}
           <div dangerouslySetInnerHTML={{ __html: cleanRecordHtml(record.data.html) }} />
         </>
       )}
@@ -196,6 +207,36 @@ export default function RecordDetail({ id, onClose }) {
                     title="Failed to delete"
                     subtitle={deleteRecord.error.message}
                 />
+            )}
+          </Modal>,
+          document.body
+      )}
+
+      {showHistory && createPortal(
+          <Modal
+              open
+              modalHeading="Edit history"
+              passiveModal
+              onRequestClose={() => setShowHistory(false)}
+          >
+            {history.isLoading && <p>Loading history…</p>}
+            {history.isError && (
+                <InlineNotification
+                    kind="error"
+                    title="Failed to load history"
+                    subtitle={history.error.message}
+                />
+            )}
+            {history.data && (
+                <ul>
+                  {history.data.map((entry) => (
+                      <li key={entry.hash}>
+                        <strong>{entry.authorName}</strong> — {new Date(entry.date).toLocaleString()}
+                        <br />
+                        {entry.message}
+                      </li>
+                  ))}
+                </ul>
             )}
           </Modal>,
           document.body
