@@ -12,7 +12,9 @@
   "dependencies": {
     "@carbon/icons-react": "^11.88.0",
     "@carbon/react": "^1.116.0",
+    "@ckeditor/ckeditor5-react": "^11.2.0",
     "@tanstack/react-query": "^5.102.8",
+    "ckeditor5": "^48.5.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sass": "^1.104.1"

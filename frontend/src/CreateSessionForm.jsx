@@ -4,12 +4,54 @@ import {
     Form, Stack, TextInput, TextArea, Select, SelectItem,
     DatePicker, DatePickerInput, Button, InlineNotification,
 } from '@carbon/react';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import {
+    ClassicEditor,
+    Essentials,
+    Paragraph,
+    Heading,
+    Bold,
+    Italic,
+    Code,
+    Link,
+    List,
+    BlockQuote,
+    Markdown,
+} from 'ckeditor5';
+import 'ckeditor5/ckeditor5.css';
 import { useCreateSession } from './api/records';
 
 const RESEARCH_TYPES = [
     'usability-test', 'interview', 'survey',
     'contextual-inquiry', 'accessibility-audit', 'analytics',
 ];
+
+const STARTER_CONTENT = `## Objective
+
+
+## Method
+- **Method:** 
+- **Researcher:** 
+
+## Key Findings
+- **[SEVERITY]** *(theme)* 
+
+## Representative Quotes
+> ""
+> — Role, participant ID
+
+## Recommendations
+1. 
+
+## Follow-ups / Open Questions
+- 
+`;
+
+const EDITOR_CONFIG = {
+    licenseKey: 'GPL',
+    plugins: [Essentials, Paragraph, Heading, Bold, Italic, Code, Link, List, BlockQuote, Markdown],
+    toolbar: ['heading', '|', 'bold', 'italic', 'code', 'link', '|', 'bulletedList', 'numberedList', 'blockQuote'],
+};
 
 function slugify(text) {
     return text
@@ -32,11 +74,12 @@ export default function CreateSessionForm({ onClose }) {
     const [researcher, setResearcher] = useState('');
     const [methodLabel, setMethodLabel] = useState('');
     const [date, setDate] = useState('');
+    const [content, setContent] = useState(STARTER_CONTENT);
 
     function handleSubmit(event) {
         event.preventDefault();
         createSession.mutate(
-            { title, type, topicSlug, tags, relatedComponents, relatedFindings, researcher, methodLabel, date },
+            { title, type, topicSlug, tags, relatedComponents, relatedFindings, researcher, methodLabel, date, content },
             {
                 onSuccess: () => {
                     queryClient.invalidateQueries({ queryKey: ['records'] });
@@ -135,6 +178,17 @@ export default function CreateSessionForm({ onClose }) {
                         subtitle={createSession.error.message}
                     />
                 )}
+
+                <div>
+                    <label htmlFor="content-editor" className="cds--label">Content (optional)</label>
+                    <CKEditor
+                        id="content-editor"
+                        editor={ClassicEditor}
+                        config={EDITOR_CONFIG}
+                        data={content}
+                        onChange={(event, editor) => setContent(editor.getData())}
+                    />
+                </div>
 
                 <Button type="submit" disabled={createSession.isPending}>
                     {createSession.isPending ? 'Creating…' : 'Create session'}

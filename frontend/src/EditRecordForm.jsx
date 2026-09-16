@@ -1,8 +1,29 @@
 import { useState } from 'react';
-import { TextInput, TextArea, Dropdown, Button, InlineNotification, Stack, Form } from '@carbon/react';
+import { TextInput, Dropdown, Button, InlineNotification, Stack, Form } from '@carbon/react';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import {
+    ClassicEditor,
+    Essentials,
+    Paragraph,
+    Heading,
+    Bold,
+    Italic,
+    Code,
+    Link,
+    List,
+    BlockQuote,
+    Markdown,
+} from 'ckeditor5';
+import 'ckeditor5/ckeditor5.css';
 import { useUpdateRecord } from './api/records';
 
 const STATUS_OPTIONS = ['raw', 'in-review', 'synthesized', 'draft', 'final', 'superseded'];
+
+const EDITOR_CONFIG = {
+    licenseKey: 'GPL',
+    plugins: [Essentials, Paragraph, Heading, Bold, Italic, Code, Link, List, BlockQuote, Markdown],
+    toolbar: ['heading', '|', 'bold', 'italic', 'code', 'link', '|', 'bulletedList', 'numberedList', 'blockQuote'],
+};
 
 export default function EditRecordForm({ record, onClose }) {
     const updateRecord = useUpdateRecord(record.id);
@@ -54,14 +75,16 @@ export default function EditRecordForm({ record, onClose }) {
                     onChange={(e) => setTags(e.target.value)}
                 />
 
-                <TextArea
-                    id="edit-content"
-                    labelText="Content"
-                    helperText="Raw markdown"
-                    rows={20}
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                />
+                <div>
+                    <label htmlFor="edit-content-editor" className="cds--label">Content</label>
+                    <CKEditor
+                        id="edit-content-editor"
+                        editor={ClassicEditor}
+                        config={EDITOR_CONFIG}
+                        data={content}
+                        onChange={(event, editor) => setContent(editor.getData())}
+                    />
+                </div>
 
                 {updateRecord.isError && (
                     <InlineNotification
