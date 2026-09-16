@@ -244,6 +244,12 @@ router.put('/records/*splat', async (req, res) => {
     };
     const updatedContent = content !== undefined ? content : parsed.content;
 
+    for (const key of Object.keys(updatedFrontmatter)) {
+      if (updatedFrontmatter[key] instanceof Date) {
+        updatedFrontmatter[key] = updatedFrontmatter[key].toISOString().slice(0, 10);
+      }
+    }
+
     const newFileText = matter.stringify(updatedContent, updatedFrontmatter);
     await fs.writeFile(filePath, newFileText, 'utf8');
   } catch (err) {
