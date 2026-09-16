@@ -35,6 +35,6 @@ Research Repo CRUD UI**.
 - [x] v0.6 — Backend Foundation (auth, sessions)
 - [x] v0.7 — File CRUD API (sessions, records)
 - [x] v0.8 — Git Attribution Layer
-- [ ] v0.9 — React Frontend: Auth + Browse
+- [x] v0.9 — React Frontend: Auth + Browse
 - [ ] v1.0 — React Frontend: Create/Edit/Delete
 - [ ] v1.1 — Deploy + Polish
