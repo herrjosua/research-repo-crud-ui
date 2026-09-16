@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Grid, Column, Checkbox, Tag, ClickableTile, InlineNotification } from '@carbon/react';
+import { Grid, Column, Checkbox, Tag, ClickableTile, InlineNotification, Button, Modal } from '@carbon/react';
+import CreateSessionForm from './CreateSessionForm';
 import { useRecords } from './api/records';
 import RecordDetail from './RecordDetail';
 
@@ -12,6 +13,7 @@ export default function Dashboard() {
   const [activeKinds, setActiveKinds] = useState(new Set(ALL_KINDS));
   const [activeTags, setActiveTags] = useState(new Set());
   const [selectedId, setSelectedId] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const allTags = useMemo(() => {
     if (!records.data) return [];
@@ -90,6 +92,7 @@ export default function Dashboard() {
       </Column>
 
       <Column lg={12} md={6} sm={4}>
+        <Button onClick={() => setShowCreateForm(true)}>New session</Button>
         <p>{filtered.length} of {records.data.length} records</p>
         {filtered.length === 0 && (
           <InlineNotification
@@ -113,6 +116,17 @@ export default function Dashboard() {
           </ClickableTile>
         ))}
       </Column>
+
+      {showCreateForm && (
+          <Modal
+              open
+              modalHeading="New research session"
+              passiveModal
+              onRequestClose={() => setShowCreateForm(false)}
+          >
+            <CreateSessionForm onClose={() => setShowCreateForm(false)} />
+          </Modal>
+      )}
 
       {selectedId && (
         <RecordDetail id={selectedId} onClose={() => setSelectedId(null)} />

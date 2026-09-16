@@ -121,7 +121,7 @@ router.get('/records', async (req, res) => {
 // record's full edit history.
 // ---------------------------------------------------------------------------
 router.get('/records/*splat/history', async (req, res) => {
-  const id = req.path.replace(/^\/records\//, '').replace(/\/history$/, '');
+  const id = decodeURIComponent(req.path.replace(/^\/records\//, '').replace(/\/history$/, ''));
 
   let record;
   try {
@@ -149,7 +149,7 @@ router.get('/records/*splat/history', async (req, res) => {
 });
 
 router.get('/records/*splat', async (req, res) => {
-  const id = req.path.replace(/^\/records\//, '');
+  const id = decodeURIComponent(req.path.replace(/^\/records\//, ''));
   const args = [path.join(SCRIPTS_DIR, 'export_records.py'), '--id', id];
 
   try {
@@ -217,7 +217,7 @@ async function commitChange(message, user) {
 // markdown file directly, then re-run build_index.py to refresh indexes.
 // ---------------------------------------------------------------------------
 router.put('/records/*splat', async (req, res) => {
-  const id = req.path.replace(/^\/records\//, '');
+  const id = decodeURIComponent(req.path.replace(/^\/records\//, ''));
   const user = getUser(req);
   const { frontmatter, content } = req.body;
 
@@ -275,7 +275,7 @@ router.put('/records/*splat', async (req, res) => {
 // analytics/deliverable, all of which are genuinely one file each).
 // ---------------------------------------------------------------------------
 router.delete('/records/*splat', async (req, res) => {
-  const id = req.path.replace(/^\/records\//, '');
+  const id = decodeURIComponent(req.path.replace(/^\/records\//, ''));
   const user = getUser(req);
 
   let record;
