@@ -1,5 +1,6 @@
 import { useMe } from './api/auth';
 import LoginForm from './LoginForm';
+import Dashboard from './Dashboard';
 
 function App() {
   const me = useMe();
@@ -12,7 +13,7 @@ function App() {
     return <LoginForm onLoginSuccess={() => me.refetch()} />;
   }
 
-  return <p>Logged in as {me.data.username}!</p>;
+  return <Dashboard />;
 }
 
 export default App;
