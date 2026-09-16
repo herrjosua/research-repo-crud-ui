@@ -1,0 +1,5 @@
+@use './styles/variables' as vars;
+
+.tile {
+  margin-bottom: vars.$spacing-tile-gap;
+}
