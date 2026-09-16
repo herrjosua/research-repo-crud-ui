@@ -32,3 +32,13 @@ export function useUpdateRecord(id) {
         },
     });
 }
+
+export function useDeleteRecord() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id) => api.delete(`/records/${id}`),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['records'] });
+        },
+    });
+}

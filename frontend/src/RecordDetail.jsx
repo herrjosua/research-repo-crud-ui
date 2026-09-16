@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Modal, Tag, InlineNotification, Button } from '@carbon/react';
-import { useRecord } from './api/records';
+import { useRecord, useDeleteRecord } from './api/records';
 import EditRecordForm from './EditRecordForm';
+import { createPortal } from 'react-dom';
 import './RecordDetail.module.scss';
 
 function cleanRecordHtml(html) {
@@ -125,6 +126,8 @@ function cleanRecordHtml(html) {
 export default function RecordDetail({ id, onClose }) {
   const record = useRecord(id);
   const [isEditing, setIsEditing] = useState(false);
+  const deleteRecord = useDeleteRecord();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (
     <Modal
@@ -153,6 +156,9 @@ export default function RecordDetail({ id, onClose }) {
           <Button kind="tertiary" onClick={() => setIsEditing(true)}>
             Edit
           </Button>
+          <Button kind="danger--tertiary" onClick={() => setShowDeleteConfirm(true)}>
+            Delete
+          </Button>
           <div dangerouslySetInnerHTML={{ __html: cleanRecordHtml(record.data.html) }} />
         </>
       )}
@@ -162,6 +168,37 @@ export default function RecordDetail({ id, onClose }) {
           record={record.data}
           onClose={() => setIsEditing(false)}
         />
+      )}
+
+      {showDeleteConfirm && createPortal(
+          <Modal
+              open
+              danger
+              modalHeading="Delete this record?"
+              primaryButtonText="Delete"
+              secondaryButtonText="Cancel"
+              onRequestSubmit={() => {
+                deleteRecord.mutate(id, {
+                  onSuccess: () => {
+                    setShowDeleteConfirm(false);
+                    onClose();
+                  },
+                });
+              }}
+              onRequestClose={() => setShowDeleteConfirm(false)}
+          >
+            <p>
+              This will permanently delete "{record.data.title}". This cannot be undone.
+            </p>
+            {deleteRecord.isError && (
+                <InlineNotification
+                    kind="error"
+                    title="Failed to delete"
+                    subtitle={deleteRecord.error.message}
+                />
+            )}
+          </Modal>,
+          document.body
       )}
     </Modal>
   );
