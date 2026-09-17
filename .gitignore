@@ -14,7 +14,7 @@ backend/.env
 *.db-journal
 *.db-wal
 *.db-shm
-app.test.db
+app.test.*.db
 
 # Logs
 npm-debug.log*
