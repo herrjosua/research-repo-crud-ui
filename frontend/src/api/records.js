@@ -27,7 +27,7 @@ export function useUpdateRecord(id) {
     return useMutation({
         mutationFn: (data) => api.put(`/records/${id}`, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['record', id] });``
+            queryClient.invalidateQueries({ queryKey: ['record', id] });
             queryClient.invalidateQueries({ queryKey: ['records'] });
         },
     });
