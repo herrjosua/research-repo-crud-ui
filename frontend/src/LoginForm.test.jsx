@@ -66,4 +66,33 @@ describe('LoginForm', () => {
         expect(await screen.findByText('invalid username or password')).toBeInTheDocument();
         expect(onLoginSuccess).not.toHaveBeenCalled();
     });
+
+    it('disables the button and shows pending text while the login request is in flight', async () => {
+        // Instead of resolving immediately, capture the resolve function so we
+        // can control exactly when the "server" responds — this is what lets us
+        // catch the in-between (pending) state, rather than the mutation
+        // resolving before we ever get a chance to check it.
+        let resolveFetch;
+        global.fetch.mockImplementationOnce(
+            () => new Promise((resolve) => { resolveFetch = resolve; }),
+        );
+
+        const user = userEvent.setup();
+        renderWithQueryClient(<LoginForm onLoginSuccess={vi.fn()} />);
+
+        await user.type(screen.getByLabelText('Username'), 'alice');
+        await user.type(screen.getByLabelText('Password'), 'correct-horse-battery-staple');
+        await user.click(screen.getByRole('button', { name: /log in/i }));
+
+        // findByRole (not getByRole) waits/retries — needed since the button's
+        // text only changes to "Logging in…" once React Query flips isPending
+        // to true, which happens asynchronously right after the click.
+        const button = await screen.findByRole('button', { name: /logging in/i });
+        expect(button).toBeDisabled();
+
+        // Resolve the pending fetch now, so the mutation actually settles and
+        // this test doesn't leave a dangling unresolved promise behind.
+        resolveFetch({ ok: true, json: async () => ({ id: 1, username: 'alice' }) });
+        await waitFor(() => expect(button).not.toBeDisabled());
+    });
 });
