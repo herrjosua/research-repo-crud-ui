@@ -36,7 +36,7 @@ if (!process.env.SESSION_SECRET) {
 // Separate SQLite connection for sessions (same file is fine — better-sqlite3
 // handles concurrent connections to one file via WAL mode, set in db.js).
 const isTest = process.env.NODE_ENV === 'test';
-const sessionDb = new Database(isTest ? 'app.test.db' : 'app.db');
+const sessionDb = new Database(isTest ? `app.test.${process.env.JEST_WORKER_ID || 0}.db` : 'app.db');
 
 app.use(express.json());
 

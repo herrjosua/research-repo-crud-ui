@@ -2,7 +2,7 @@ const Database = require('better-sqlite3');
 const path = require('path');
 
 const isTest = process.env.NODE_ENV === 'test';
-const dbFile = isTest ? 'app.test.db' : 'app.db';
+const dbFile = isTest ? `app.test.${process.env.JEST_WORKER_ID || 0}.db` : 'app.db';
 
 const db = new Database(path.join(__dirname, dbFile));
 

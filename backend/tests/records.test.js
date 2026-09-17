@@ -95,3 +95,87 @@ describe('POST /api/sessions (raw mode)', () => {
         expect(res.status).toBe(401);
     });
 });
+
+const fs = require('fs/promises');
+const path = require('path');
+
+describe('GET /api/records/:id', () => {
+    const recordId = 'raw:2026-01-15-onboarding-flow-usability-test';
+
+    it('returns the full record including rawContent', async () => {
+        const res = await agent.get(`/api/records/${recordId}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toMatchObject({
+            id: recordId,
+            kind: 'raw',
+            title: 'Onboarding flow usability test',
+            status: 'raw',
+        });
+        expect(res.body.rawContent).toMatch(/## Objective/);
+    });
+
+    it('returns 404 for an id that does not exist', async () => {
+        const res = await agent.get('/api/records/raw:does-not-exist');
+        expect(res.status).toBe(404);
+    });
+
+    it('requires a logged-in session', async () => {
+        const res = await request(app).get(`/api/records/${recordId}`);
+        expect(res.status).toBe(401);
+    });
+});
+
+describe('PUT /api/records/:id', () => {
+    const recordId = 'raw:2026-01-15-onboarding-flow-usability-test';
+    const filePath = () =>
+        path.join(testRepoPath, 'research', 'raw', '2026-01-15-onboarding-flow-usability-test', 'session-notes.md');
+
+    it('updates a frontmatter field without disturbing unrelated fields, and keeps date a plain string', async () => {
+        const res = await agent.put(`/api/records/${recordId}`).send({
+            frontmatter: { status: 'in-review' },
+        });
+        expect(res.status).toBe(200);
+
+        const fetchRes = await agent.get(`/api/records/${recordId}`);
+        expect(fetchRes.body.status).toBe('in-review');
+        // This is the v1.0 gray-matter fix under test: an edit that never touches
+        // `date` should not silently upgrade it from a plain "2026-01-15" string
+        // into a full ISO timestamp.
+        expect(fetchRes.body.date).toBe('2026-01-15');
+    });
+
+    it('writes last_edited_by and last_edited_at to the actual file', async () => {
+        await agent.put(`/api/records/${recordId}`).send({ frontmatter: { status: 'final' } });
+
+        const fileText = await fs.readFile(filePath(), 'utf8');
+        expect(fileText).toMatch(/last_edited_by: Records Tester/);
+        expect(fileText).toMatch(/last_edited_at:/);
+    });
+
+    it('replaces the body content when content is provided', async () => {
+        const res = await agent.put(`/api/records/${recordId}`).send({
+            content: '# Updated\n\nThis body was replaced by a test.',
+        });
+        expect(res.status).toBe(200);
+
+        const fetchRes = await agent.get(`/api/records/${recordId}`);
+        expect(fetchRes.body.rawContent).toBe('# Updated\n\nThis body was replaced by a test.');
+    });
+
+    it('rejects a body with neither frontmatter nor content', async () => {
+        const res = await agent.put(`/api/records/${recordId}`).send({});
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/frontmatter and\/or content/);
+    });
+
+    it('returns 404 for an id that does not exist', async () => {
+        const res = await agent.put('/api/records/raw:does-not-exist').send({ frontmatter: { status: 'final' } });
+        expect(res.status).toBe(404);
+    });
+
+    it('requires a logged-in session', async () => {
+        const res = await request(app).put(`/api/records/${recordId}`).send({ frontmatter: { status: 'final' } });
+        expect(res.status).toBe(401);
+    });
+});
