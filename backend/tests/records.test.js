@@ -45,3 +45,53 @@ describe('fixture sanity check', () => {
         expect(res.body).toEqual([]);
     });
 });
+
+describe('POST /api/sessions (raw mode)', () => {
+    const validRawSession = {
+        mode: 'raw',
+        title: 'Onboarding flow usability test',
+        type: 'usability-test',
+        topicSlug: 'onboarding-flow-usability-test',
+        date: '2026-01-15',
+        tags: 'onboarding,usability',
+        researcher: 'Records Tester',
+    };
+
+    it('creates a raw session and commits it to git', async () => {
+        const res = await agent.post('/api/sessions').send(validRawSession);
+
+        expect(res.status).toBe(201);
+        expect(res.body.message).toMatch(/Created/);
+
+        // Confirm it actually shows up via the real export_records.py round-trip,
+        // not just that new_research_session.py claimed success.
+        const listRes = await agent.get('/api/records?kind=raw');
+        expect(listRes.status).toBe(200);
+        expect(listRes.body).toHaveLength(1);
+        expect(listRes.body[0]).toMatchObject({
+            id: 'raw:2026-01-15-onboarding-flow-usability-test',
+            kind: 'raw',
+            title: 'Onboarding flow usability test',
+        });
+    });
+
+    it('rejects a mode that is neither raw nor deliverable', async () => {
+        const res = await agent.post('/api/sessions').send({ mode: 'bogus' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/mode must be/);
+    });
+
+    it('rejects raw mode missing required fields', async () => {
+        const res = await agent.post('/api/sessions').send({ mode: 'raw', title: 'Missing stuff' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/requires title, type, and topicSlug/);
+    });
+
+    it('requires a logged-in session', async () => {
+        // A plain (non-agent) request has no session cookie at all.
+        const res = await request(app).post('/api/sessions').send(validRawSession);
+        expect(res.status).toBe(401);
+    });
+});
