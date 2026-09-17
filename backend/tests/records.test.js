@@ -20,13 +20,28 @@ beforeAll(async () => {
     // Records routes require a logged-in session — sign up and log in once
     // here, reusing the same agent (persistent cookie jar) for every test
     // below, the same pattern the auth tests used for the login/me/logout flow.
+    //
+    // The per-worker test db file (app.test.<N>.db, see db.js) persists on
+    // disk between separate `npm test` runs, unlike the fixture repo above
+    // which is recreated fresh every time. Delete any leftover row from a
+    // previous run first, so signup below always gets a clean 201 instead of
+    // a silently-ignored 409 that would leave `agent` unauthenticated.
+    db.prepare('DELETE FROM users WHERE username = ?').run('records-tester');
+
     agent = request.agent(app);
-    await agent.post('/api/auth/signup').send({
+    const signupRes = await agent.post('/api/auth/signup').send({
         username: 'records-tester',
         password: 'a-real-password-123',
         gitName: 'Records Tester',
         gitEmail: 'records-tester@example.com',
     });
+    // Fail loudly here if signup ever breaks, instead of leaving `agent`
+    // unauthenticated and letting every test below fail with a confusing 401.
+    if (signupRes.status !== 201) {
+        throw new Error(
+            `records.test.js beforeAll: signup failed with ${signupRes.status}: ${JSON.stringify(signupRes.body)}`,
+        );
+    }
 });
 
 afterAll(async () => {
@@ -176,6 +191,59 @@ describe('PUT /api/records/:id', () => {
 
     it('requires a logged-in session', async () => {
         const res = await request(app).put(`/api/records/${recordId}`).send({ frontmatter: { status: 'final' } });
+        expect(res.status).toBe(401);
+    });
+});
+
+describe('DELETE /api/records/:id', () => {
+    const deleteRecordId = 'raw:2026-02-01-delete-me-test';
+    const sessionFolder = () =>
+        path.join(testRepoPath, 'research', 'raw', '2026-02-01-delete-me-test');
+
+    beforeAll(async () => {
+        await agent.post('/api/sessions').send({
+            mode: 'raw',
+            title: 'Session created only to be deleted',
+            type: 'interview',
+            topicSlug: 'delete-me-test',
+            date: '2026-02-01',
+        });
+    });
+
+    it('removes both session-notes.md and participants.md, not just one', async () => {
+        // Confirm the folder genuinely has both files before deleting — this is
+        // what makes the test meaningful, rather than just asserting the folder
+        // is gone afterward.
+        const beforeFiles = await fs.readdir(sessionFolder());
+        expect(beforeFiles.sort()).toEqual(['participants.md', 'session-notes.md']);
+
+        const res = await agent.delete(`/api/records/${deleteRecordId}`);
+        expect(res.status).toBe(204);
+
+        // The whole folder should be gone — this is the exact bug the v0.7
+        // roadmap entry describes: an earlier version only removed
+        // session-notes.md, silently orphaning participants.md.
+        await expect(fs.readdir(sessionFolder())).rejects.toThrow();
+    });
+
+    it('is reflected in git history as a real commit', async () => {
+        const { execFileSync } = require('child_process');
+        const log = execFileSync('git', ['log', '--oneline'], { cwd: testRepoPath }).toString();
+        expect(log).toMatch(/Delete raw\/2026-02-01-delete-me-test/);
+    });
+
+    it('returns 404 for an id that no longer exists (double delete)', async () => {
+        const res = await agent.delete(`/api/records/${deleteRecordId}`);
+        expect(res.status).toBe(404);
+    });
+
+    it('returns 404 for an id that never existed', async () => {
+        const res = await agent.delete('/api/records/raw:never-existed');
+        expect(res.status).toBe(404);
+    });
+
+    it('requires a logged-in session', async () => {
+        const res = await request(app).delete(`/api/records/${deleteRecordId}`);
         expect(res.status).toBe(401);
     });
 });

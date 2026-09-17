@@ -40,6 +40,14 @@ function createTestRepo() {
     fs.mkdirSync(path.join(repoRoot, 'research', 'raw'), { recursive: true });
     fs.mkdirSync(path.join(repoRoot, 'research', 'findings'), { recursive: true });
 
+    // A minimal, valid tag glossary — otherwise every tag any test uses gets
+    // flagged as "not in glossary" by build_index.py's validate_tags(), which
+    // is correct behavior on its part, just noise for our purposes here.
+    fs.writeFileSync(
+        path.join(repoRoot, 'research', 'findings', 'tags.md'),
+        '# Tags\n\n- **`onboarding`**\n- **`usability`**\n',
+    );
+
     for (const file of SCRIPT_FILES) {
         fs.copyFileSync(path.join(REAL_SCRIPTS_DIR, file), path.join(scriptsDir, file));
     }
