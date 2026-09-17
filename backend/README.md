@@ -94,7 +94,12 @@ persistent synced GitHub repo.
 the current Jest worker (`app.test.<JEST_WORKER_ID>.db`) instead of the real
 `app.db` — this prevents two test files running in separate worker
 processes from racing on the same file (e.g. one file's per-test table wipe
-deleting another file's test user mid-run).
+deleting another file's test user mid-run). The separate end-to-end suite
+(see [`../e2e/README.md`](../e2e/README.md)) reuses this same `NODE_ENV=test`
+branching — Playwright starts its own backend instance with that flag set,
+rather than reusing a real dev-mode server, so E2E runs never write real
+signup/session data into `app.db` either. `JEST_WORKER_ID` is unset outside
+Jest, so the E2E suite's runs all land in `app.test.0.db`.
 
 ## Project structure
 
