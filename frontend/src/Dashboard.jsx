@@ -92,6 +92,7 @@ export default function Dashboard() {
       </Column>
 
       <Column lg={12} md={6} sm={4}>
+        <h1>Research Records</h1>
         <Button onClick={() => setShowCreateForm(true)}>New session</Button>
         <p>{filtered.length} of {records.data.length} records</p>
         {filtered.length === 0 && (
@@ -108,7 +109,7 @@ export default function Dashboard() {
                 onClick={() => setSelectedId(record.id)}
                 className={styles.tile}
             >
-            <h3>{record.title}</h3>
+            <h2>{record.title}</h2>
             <p>{record.date} · {record.type}</p>
             {record.tags.map((tag) => (
               <Tag key={tag} type="blue">{tag}</Tag>
