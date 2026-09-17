@@ -27,3 +27,16 @@ export function useMe() {
         retry: false,
     });
 }
+
+export function useDemoUsers() {
+    return useQuery({
+        queryKey: ['demoUsers'],
+        queryFn: () => api.get('/auth/demo-users'),
+    });
+}
+
+export function useDemoLogin() {
+    return useMutation({
+        mutationFn: (username) => api.post('/auth/demo-login', { username }),
+    });
+}
