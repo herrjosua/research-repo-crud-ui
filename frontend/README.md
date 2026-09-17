@@ -54,6 +54,11 @@ mocked out as simple stand-ins to keep those tests scoped to filtering only.
 `toBeInTheDocument()`); the `test` block in `vite.config.js` configures the
 `jsdom` environment Vitest needs to render real DOM output in tests.
 
+Real browser end-to-end tests and automated WCAG 2 AA accessibility scans
+(Playwright + `@axe-core/playwright`) live in the separate top-level
+[`../e2e/`](../e2e/README.md) folder, since they drive this app and the
+backend together rather than testing either in isolation.
+
 ## Why Carbon, not Tailwind
 
 The project started with Tailwind, then switched to Carbon mid-setup.
@@ -68,6 +73,16 @@ Escape-to-close automatically — including the confirmation dialog and
 history panel added in v1.0 (both portal-rendered via `createPortal` into
 `document.body`, since nesting one Carbon `Modal` directly inside another
 breaks its positioning otherwise).
+
+Carbon's WCAG compliance isn't a substitute for actually testing the app's
+specific composition of its components, though — an automated accessibility
+scan (see [`../e2e/README.md`](../e2e/README.md)) found three real issues:
+two in this app's own markup (a missing page-level `<h1>`, and a skipped
+heading level), and one in Carbon's `Modal` itself (its focus-trap "sentinel"
+elements failing a landmark-region check), which Carbon has already
+addressed via an opt-in feature flag,
+`enable-experimental-focus-wrap-without-sentinels`, enabled globally in
+`main.jsx`.
 
 ## WYSIWYG editing: CKEditor 5, chosen deliberately
 
@@ -157,7 +172,7 @@ frontend/
 │   ├── Header.jsx           Carbon Header + logout action
 │   ├── LoginForm.jsx         Carbon Form, wired to useLogin
 │   ├── LoginForm.test.jsx    Success, error, and pending-state tests
-│   ├── Dashboard.jsx         Kind + tag filtering, record list, "New session" button, opens RecordDetail
+│   ├── Dashboard.jsx         Kind + tag filtering, record list (h1 page title, h2 per record), "New session" button, opens RecordDetail
 │   ├── Dashboard.module.scss
 │   ├── Dashboard.test.jsx    Kind/tag filtering, empty state, loading/error state tests
 │   ├── CreateSessionForm.jsx  Structured fields + CKEditor content, posts to POST /sessions
@@ -165,7 +180,7 @@ frontend/
 │   ├── RecordDetail.jsx      Read view, Edit toggle, Delete confirmation, history panel
 │   ├── RecordDetail.module.scss
 │   ├── index.scss           `@use '@carbon/react';` — Carbon's base styles
-│   └── main.jsx             React Query's QueryClientProvider
+│   └── main.jsx             React Query's QueryClientProvider, wrapped in Carbon's FeatureFlags (enable-experimental-focus-wrap-without-sentinels)
 ```
 
 ## Still to build

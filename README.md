@@ -16,6 +16,7 @@ files remain the source of truth for research content).
 Research Repo CRUD UI/
 ├── backend/    Node/Express API — see backend/README.md for setup, env vars, and the full API reference
 ├── frontend/   React app — see frontend/README.md for setup and stack decisions
+├── e2e/        Playwright + axe-core end-to-end and accessibility tests — see e2e/README.md
 └── .gitignore
 ```
 
@@ -39,6 +40,14 @@ Both halves of the app have automated test suites:
 - **Frontend**: Vitest + React Testing Library (`cd frontend && npm test`) —
   covers `LoginForm`'s success/error/pending states and `Dashboard`'s
   kind/tag filtering logic.
+- **End-to-end + accessibility**: Playwright + axe-core (`cd e2e && npm
+  test`) — drives a real browser against both running apps for a full
+  login → browse → logout flow and a keyboard-only walkthrough of the
+  dashboard, record detail, and delete-confirmation dialogs, with an
+  automated WCAG 2 AA scan (via `@axe-core/playwright`) run against every
+  major screen and modal state. See
+  [`e2e/README.md`](./e2e/README.md) for setup and the real accessibility
+  issues this found and fixed.
 
 ## Roadmap
 
