@@ -7,7 +7,12 @@ markdown files directly).
 
 **Stack:** Express, `better-sqlite3` (users + sessions only — markdown files
 remain the source of truth for research content), `express-session` +
-`bcrypt` for auth, `gray-matter` for frontmatter parsing.
+`bcrypt` for auth, `gray-matter` for frontmatter parsing, Jest + supertest
+for testing.
+
+v0.6–v1.1 are complete (backend foundation through testing); v1.2 (Deploy +
+Polish) is next. See the Version Milestone Roadmap in Notion for full detail
+and decision rationale.
 
 ## Setup
 
@@ -56,17 +61,58 @@ run.
 > **Note:** `server.js` lives in `backend/`, not the repo root. Running
 > `node server.js` from anywhere else will fail with `MODULE_NOT_FOUND`.
 
+## Testing
+
+```bash
+npm test
+```
+
+Runs the full Jest + supertest suite. Coverage:
+
+- **`tests/auth.test.js`** — signup, login, logout, `/me`, and the rate
+  limiter (including the 6th attempt still being blocked even with the
+  correct password).
+- **`tests/records.test.js`** — `POST /sessions` (raw mode), `GET
+  /records`/`GET /records/:id`, `PUT /records/:id` (including the
+  gray-matter date-coercion fix), `DELETE /records/:id` (including the
+  raw-session-is-two-files case), and `GET /records/:id/history` (including
+  `--follow` lineage across a delete-then-recreate under the same slug).
+
+**Records tests never touch the real agentic-repo.** They run against a
+disposable, git-initialized fixture repo created fresh per test run (see
+`tests/helpers/setupTestRepo.js`), seeded by copying the actual Python
+scripts (`new_research_session.py`, `export_records.py`, `build_index.py`,
+`build_search_ui.py`, `md_render.py`) from the real agentic-repo — so tests
+always exercise the current real script logic, never a stale duplicate, with
+zero risk to real research content or git history. This mirrors the same
+isolation principle as the public demo's separate-repo strategy (see the
+Decision Log), just scoped down to a local, throwaway fixture instead of a
+persistent synced GitHub repo.
+
+**Test/dev database separation.** `db.js` and `app.js` both branch on
+`NODE_ENV=test` (set automatically by Jest) to use a SQLite file scoped to
+the current Jest worker (`app.test.<JEST_WORKER_ID>.db`) instead of the real
+`app.db` — this prevents two test files running in separate worker
+processes from racing on the same file (e.g. one file's per-test table wipe
+deleting another file's test user mid-run).
+
 ## Project structure
 
 ```
 backend/
-├── server.js     Entry point — session middleware, route mounting
-├── db.js         better-sqlite3 connection + users table schema
+├── server.js     Entry point — imports app.js, starts listening
+├── app.js        Express app definition (middleware, routes) — exported separately from server.js so tests can import it directly via supertest, without a real port
+├── db.js         better-sqlite3 connection + users table schema (test/prod db split via NODE_ENV)
 ├── routes/
 │   ├── auth.js      Signup / login / logout / me
 │   └── records.js   Sessions + file CRUD (shells out to agentic-repo's Python scripts)
+├── tests/
+│   ├── auth.test.js      Auth flow + rate limiting tests
+│   ├── records.test.js   Records CRUD + history tests
+│   └── helpers/
+│       └── setupTestRepo.js   Creates/destroys the disposable fixture repo used by records.test.js
 ├── .env.example  Template for required environment variables
-└── app.db        SQLite file (git-ignored, created on first run)
+└── app.db        SQLite file (git-ignored, created on first run; app.test.*.db files are the test-only equivalent)
 ```
 
 ## API
@@ -105,7 +151,11 @@ server. A record's edit + any `build_index.py`-regenerated index files land
 in **one atomic commit**, not two.
 
 `PUT` additionally stamps `last_edited_by` / `last_edited_at` directly into
-the record's frontmatter, for fast display without a git call.
+the record's frontmatter, for fast display without a git call. **Known gap
+(see Decision Log):** this is written correctly to the file but not
+currently returned by `GET /records`/`GET /records/:id`, since the record
+shape those endpoints return (defined in `build_search_ui.py`'s loader
+functions) doesn't include those two fields.
 
 **Route pattern note:** because a record id can contain a slash (any
 deliverable id, e.g. `deliverable:personas/foo`), `GET`/`PUT`/`DELETE

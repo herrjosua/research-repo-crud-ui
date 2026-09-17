@@ -26,6 +26,20 @@ do anything useful (it proxies all `/api` calls to it in dev). Start with
 [`backend/README.md`](./backend/README.md) for setup, then
 [`frontend/README.md`](./frontend/README.md).
 
+## Testing
+
+Both halves of the app have automated test suites:
+
+- **Backend**: Jest + supertest (`cd backend && npm test`) — covers the auth
+  flow (signup/login/logout/rate-limiting) and the records CRUD paths
+  (create/read/update/delete, the raw-session-is-two-files edge case, git
+  attribution, and edit history), run against a disposable, git-initialized
+  fixture repo rather than the real agentic-repo — see
+  [`backend/tests/helpers/setupTestRepo.js`](./backend/tests/helpers/setupTestRepo.js).
+- **Frontend**: Vitest + React Testing Library (`cd frontend && npm test`) —
+  covers `LoginForm`'s success/error/pending states and `Dashboard`'s
+  kind/tag filtering logic.
+
 ## Roadmap
 
 Continues the version numbering from the original research repo (v0.1–v0.5
@@ -37,4 +51,7 @@ Research Repo CRUD UI**.
 - [x] v0.8 — Git Attribution Layer
 - [x] v0.9 — React Frontend: Auth + Browse
 - [x] v1.0 — React Frontend: Create/Edit/Delete
-- [ ] v1.1 — Deploy + Polish
+- [x] v1.1 — Testing (Unit + QA)
+- [ ] v1.2 — Deploy + Polish
+- [ ] v1.3 — Agentic LLM Layer (local, Ollama)
+- [ ] v1.4 — Enterprise Integration Design (Copilot / SharePoint) — design doc only

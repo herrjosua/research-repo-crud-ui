@@ -3,12 +3,14 @@
 React app for the CRUD UI. v0.9 (Auth + Browse) and v1.0 (Create/Edit/Delete)
 are both complete: login, session persistence, logout, a filterable
 dashboard, and full create/edit/delete with a WYSIWYG content editor and
-edit history. v1.1 (Deploy + Polish) is next.
+edit history. v1.1 (Testing) is also complete. v1.2 (Deploy + Polish) is next.
 
 **Stack:** Vite + React, [Carbon Design System](https://carbondesignsystem.com/)
 for components, [TanStack Query](https://tanstack.com/query) for data
 fetching/caching, [CKEditor 5](https://ckeditor.com/) for WYSIWYG markdown
-editing.
+editing, [Vitest](https://vitest.dev/) + [React Testing
+Library](https://testing-library.com/docs/react-testing-library/intro/) for
+component tests.
 
 ## Setup
 
@@ -25,6 +27,32 @@ Opens at `http://localhost:5173` by default. The Vite dev server proxies
 `/api` to `http://localhost:3001` (configured in `vite.config.js`), so
 session cookies work correctly across the frontend/backend origin split in
 dev without needing CORS config on the Express side.
+
+## Testing
+
+```bash
+npm test
+```
+
+Runs Vitest in watch mode. Current coverage:
+
+- **`LoginForm`**: successful login (calls `onLoginSuccess`), a failed login
+  showing the server's actual error message, and the pending state (button
+  disabled and reads "Logging in…" while the request is in flight).
+- **`Dashboard`**: kind/tag filtering logic (including combined filters and
+  the "no matching records" empty state), plus loading and error states.
+
+Tests mock `fetch` directly (via `client.js`'s use of the global `fetch`)
+rather than mocking the API hooks themselves for `LoginForm`, since that
+exercises the real React Query mutation lifecycle (`isPending`/`isError`)
+end to end. `Dashboard`'s tests mock `useRecords` directly instead, since its
+filtering logic is synchronous client-side `useMemo` work with no async
+round-trip worth simulating; `CreateSessionForm` and `RecordDetail` are
+mocked out as simple stand-ins to keep those tests scoped to filtering only.
+
+`vitest.setup.js` loads `@testing-library/jest-dom`'s matchers (e.g.
+`toBeInTheDocument()`); the `test` block in `vite.config.js` configures the
+`jsdom` environment Vitest needs to render real DOM output in tests.
 
 ## Why Carbon, not Tailwind
 
@@ -114,7 +142,8 @@ whose heading ends up with nothing under it once its content is cleaned.
 
 ```
 frontend/
-├── vite.config.js         Dev server + /api proxy to the backend
+├── vite.config.js         Dev server + /api proxy to the backend; also configures the Vitest test environment
+├── vitest.setup.js         Loads @testing-library/jest-dom matchers for all test files
 ├── src/
 │   ├── api/
 │   │   ├── client.js       Shared fetch wrapper — credentials included, JSON in/out, error handling
@@ -127,8 +156,10 @@ frontend/
 │   ├── App.module.scss
 │   ├── Header.jsx           Carbon Header + logout action
 │   ├── LoginForm.jsx         Carbon Form, wired to useLogin
+│   ├── LoginForm.test.jsx    Success, error, and pending-state tests
 │   ├── Dashboard.jsx         Kind + tag filtering, record list, "New session" button, opens RecordDetail
 │   ├── Dashboard.module.scss
+│   ├── Dashboard.test.jsx    Kind/tag filtering, empty state, loading/error state tests
 │   ├── CreateSessionForm.jsx  Structured fields + CKEditor content, posts to POST /sessions
 │   ├── EditRecordForm.jsx     Frontmatter fields + CKEditor content, posts to PUT
 │   ├── RecordDetail.jsx      Read view, Edit toggle, Delete confirmation, history panel
@@ -139,10 +170,10 @@ frontend/
 
 ## Still to build
 
-**v1.1 (Deploy + Polish):**
+**v1.2 (Deploy + Polish):**
 - Responsive layout (currently desktop-oriented — intentionally deferred)
 - A signup screen (`useSignup()` exists in `api/auth.js`, unused so far) —
-  and per the current plan, likely stays unused: v1.1 calls for *closed*
+  and per the current plan, likely stays unused: v1.2 calls for *closed*
   signup + seeded demo accounts for the public/portfolio deploy, not open
   self-registration
 - Deploy target: leaning AWS free tier or the existing webhost, both free
