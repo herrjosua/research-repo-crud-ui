@@ -247,3 +247,77 @@ describe('DELETE /api/records/:id', () => {
         expect(res.status).toBe(401);
     });
 });
+
+describe('GET /api/records/:id/history', () => {
+    const historyRecordId = 'raw:2026-01-15-onboarding-flow-usability-test';
+
+    it('returns commit history, newest first, with the expected shape', async () => {
+        const res = await agent.get(`/api/records/${historyRecordId}/history`);
+
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+        // This record has been through: create (POST) + three PUTs from the
+        // earlier test round = at least 4 commits touching it.
+        expect(res.body.length).toBeGreaterThanOrEqual(4);
+
+        for (const entry of res.body) {
+            expect(entry).toMatchObject({
+                hash: expect.any(String),
+                authorName: 'Records Tester',
+                authorEmail: 'records-tester@example.com',
+                date: expect.any(String),
+                message: expect.any(String),
+            });
+        }
+
+        // git log's default order is newest-first — confirm the dates are
+        // actually sorted that way, not just present.
+        const dates = res.body.map(e => new Date(e.date).getTime());
+        const sortedDescending = [...dates].sort((a, b) => b - a);
+        expect(dates).toEqual(sortedDescending);
+    });
+
+    it('returns 404 for an id that does not exist', async () => {
+        const res = await agent.get('/api/records/raw:does-not-exist/history');
+        expect(res.status).toBe(404);
+    });
+
+    it('requires a logged-in session', async () => {
+        const res = await request(app).get(`/api/records/${historyRecordId}/history`);
+        expect(res.status).toBe(401);
+    });
+});
+
+describe('GET /api/records/:id/history — --follow across delete + recreate', () => {
+    const recreatedId = 'raw:2026-03-01-recreate-me-test';
+
+    it('preserves full history when a record is deleted and a new one is created under the same slug', async () => {
+        // Create, then immediately delete — this alone should produce 2 commits
+        // (a create and a delete) for this exact id.
+        await agent.post('/api/sessions').send({
+            mode: 'raw',
+            title: 'First incarnation',
+            type: 'interview',
+            topicSlug: 'recreate-me-test',
+            date: '2026-03-01',
+        });
+        await agent.delete(`/api/records/${recreatedId}`);
+
+        // Recreate under the exact same date + topicSlug, so it resolves to the
+        // exact same id and file path as before.
+        await agent.post('/api/sessions').send({
+            mode: 'raw',
+            title: 'Second incarnation',
+            type: 'interview',
+            topicSlug: 'recreate-me-test',
+            date: '2026-03-01',
+        });
+
+        const res = await agent.get(`/api/records/${recreatedId}/history`);
+        expect(res.status).toBe(200);
+        // create -> delete -> create again = 3 commits total, all under the
+        // same id. If --follow (or the AGENTIC_REPO_ROOT-relative path fix from
+        // v0.8) weren't working, this would come back truncated or empty instead.
+        expect(res.body.length).toBeGreaterThanOrEqual(3);
+    });
+});
