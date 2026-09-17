@@ -1,6 +1,9 @@
 const request = require('supertest');
 const { app, sessionDb, clearSessionInterval } = require('../app');
 const db = require('../db');
+const { seedDemoUsers } = require('../seedDemoUsers');
+
+delete process.env.DEMO_MODE; // reset to the "off" baseline every test in this file assumes, regardless of what backend/.env currently has
 
 // Runs before every single test in this file, in every describe block below.
 // Wipes the users table so no test can collide with data another test left
@@ -184,5 +187,87 @@ describe('POST /api/auth/logout and GET /api/auth/me', () => {
 
         const meAfterLogout = await agent.get('/api/auth/me');
         expect(meAfterLogout.status).toBe(401);
+    });
+
+    describe('demo mode', () => {
+        afterEach(() => {
+            delete process.env.DEMO_MODE;
+        });
+
+        describe('GET /api/auth/demo-users', () => {
+            it('returns an empty array when DEMO_MODE is not set', async () => {
+                const res = await request(app).get('/api/auth/demo-users');
+                expect(res.status).toBe(200);
+                expect(res.body).toEqual([]);
+            });
+
+            it('returns the three demo identities when DEMO_MODE is true', async () => {
+                process.env.DEMO_MODE = 'true';
+                const res = await request(app).get('/api/auth/demo-users');
+
+                expect(res.status).toBe(200);
+                expect(res.body).toHaveLength(3);
+                expect(res.body.map((u) => u.username).sort()).toEqual(['jordan', 'priya', 'sam']);
+                expect(res.body[0]).toMatchObject({
+                    username: expect.any(String),
+                    displayName: expect.any(String),
+                    role: expect.any(String),
+                });
+            });
+        });
+
+        describe('POST /api/auth/demo-login', () => {
+            beforeEach(async () => {
+                process.env.DEMO_MODE = 'true';
+                await seedDemoUsers();
+            });
+
+            it('logs in as each of the three demo users', async () => {
+                for (const username of ['priya', 'sam', 'jordan']) {
+                    const agent = request.agent(app);
+                    const res = await agent.post('/api/auth/demo-login').send({ username });
+
+                    expect(res.status).toBe(200);
+                    expect(res.body.username).toBe(username);
+
+                    const meRes = await agent.get('/api/auth/me');
+                    expect(meRes.status).toBe(200);
+                    expect(meRes.body.username).toBe(username);
+                }
+            });
+
+            it('rejects a username not on the demo allowlist', async () => {
+                const res = await request(app).post('/api/auth/demo-login').send({ username: 'alice' });
+                expect(res.status).toBe(400);
+                expect(res.body.error).toMatch(/unknown demo user/);
+            });
+
+            it('returns 404 when DEMO_MODE is not set', async () => {
+                delete process.env.DEMO_MODE;
+                const res = await request(app).post('/api/auth/demo-login').send({ username: 'priya' });
+                expect(res.status).toBe(404);
+            });
+        });
+
+        describe('DEMO_MODE interaction with existing routes', () => {
+            it('rejects signup with 403 when DEMO_MODE is true', async () => {
+                process.env.DEMO_MODE = 'true';
+                const res = await request(app).post('/api/auth/signup').send({
+                    username: 'newuser',
+                    password: 'a-real-password-123',
+                    gitName: 'New User',
+                    gitEmail: 'newuser@example.com',
+                });
+                expect(res.status).toBe(403);
+            });
+
+            it('rejects a demo username via regular /login when DEMO_MODE is true', async () => {
+                process.env.DEMO_MODE = 'true';
+                await seedDemoUsers();
+                const res = await request(app).post('/api/auth/login').send({ username: 'priya', password: 'whatever' });
+                expect(res.status).toBe(403);
+                expect(res.body.error).toMatch(/demo login/);
+            });
+        });
     });
 });

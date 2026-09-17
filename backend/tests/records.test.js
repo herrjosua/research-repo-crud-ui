@@ -16,6 +16,7 @@ beforeAll(async () => {
     request = require('supertest');
     ({ app, sessionDb, clearSessionInterval } = require('../app'));
     db = require('../db');
+    delete process.env.DEMO_MODE; // reset to the "off" baseline every test in this file assumes, regardless of what backend/.env currently has
 
     // Records routes require a logged-in session — sign up and log in once
     // here, reusing the same agent (persistent cookie jar) for every test

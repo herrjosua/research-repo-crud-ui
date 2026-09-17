@@ -16,8 +16,8 @@ export default defineConfig({
             command: 'node server.js',
             cwd: '../backend',
             url: 'http://localhost:3001/api/auth/me',
-            env: { NODE_ENV: 'test' }, // routes signup/session writes to app.test.0.db, not your real app.db
-            reuseExistingServer: false, // deliberately NOT true — if a real dev-mode backend is already on :3001, we want Playwright to fail loudly, not silently reuse it and write real signup data
+            env: { NODE_ENV: 'test', DEMO_MODE: 'false' }, // explicit, independent of whatever's in backend/.env
+            reuseExistingServer: false,
         },
     ],
 });

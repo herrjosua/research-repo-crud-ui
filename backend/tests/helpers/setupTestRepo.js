@@ -69,7 +69,12 @@ function createTestRepo() {
 
 /** Deletes the fixture repo entirely. */
 async function destroyTestRepo(repoRoot) {
-    await fsp.rm(repoRoot, { recursive: true, force: true });
+    // maxRetries/retryDelay handle a known class of transient ENOTEMPTY/EBUSY
+    // errors when recursively deleting a .git folder on macOS — a brief race
+    // with the filesystem (Spotlight, fsevents, or git's own short-lived lock
+    // files) can make a single deletion pass fail even though the directory
+    // is genuinely safe to remove a moment later.
+    await fsp.rm(repoRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 }
 
 module.exports = { createTestRepo, destroyTestRepo };
