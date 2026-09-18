@@ -169,6 +169,39 @@ describe('PUT /api/records/:id', () => {
         expect(fileText).toMatch(/last_edited_at:/);
     });
 
+    // The test above reads the file on disk because the API used to drop these two fields
+    // (export_records.py's loaders never copied them into each record's JSON). These two
+    // tests are the real regression check: the fields written by PUT must come back out of
+    // both GET routes, with the right values.
+    it('returns last_edited_by and last_edited_at from GET /api/records/:id after a PUT', async () => {
+        const before = Date.now();
+        const putRes = await agent.put(`/api/records/${recordId}`).send({ frontmatter: { status: 'final' } });
+        expect(putRes.status).toBe(200);
+        const after = Date.now();
+
+        const res = await agent.get(`/api/records/${recordId}`);
+        expect(res.status).toBe(200);
+        expect(res.body.last_edited_by).toBe('Records Tester');
+
+        // A real ISO timestamp from THIS edit, not merely "some string".
+        expect(res.body.last_edited_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        const editedAtMs = new Date(res.body.last_edited_at).getTime();
+        expect(editedAtMs).toBeGreaterThanOrEqual(before);
+        expect(editedAtMs).toBeLessThanOrEqual(after);
+    });
+
+    it('returns last_edited_by and last_edited_at for the edited record in GET /api/records (list)', async () => {
+        await agent.put(`/api/records/${recordId}`).send({ frontmatter: { status: 'final' } });
+
+        const res = await agent.get('/api/records');
+        expect(res.status).toBe(200);
+
+        const record = res.body.find(r => r.id === recordId);
+        expect(record).toBeDefined();
+        expect(record.last_edited_by).toBe('Records Tester');
+        expect(new Date(record.last_edited_at).toISOString()).toBe(record.last_edited_at);
+    });
+
     it('replaces the body content when content is provided', async () => {
         const res = await agent.put(`/api/records/${recordId}`).send({
             content: '# Updated\n\nThis body was replaced by a test.',
