@@ -32,22 +32,28 @@ do anything useful (it proxies all `/api` calls to it in dev). Start with
 Both halves of the app have automated test suites:
 
 - **Backend**: Jest + supertest (`cd backend && npm test`) — covers the auth
-  flow (signup/login/logout/rate-limiting) and the records CRUD paths
-  (create/read/update/delete, the raw-session-is-two-files edge case, git
-  attribution, and edit history), run against a disposable, git-initialized
-  fixture repo rather than the real agentic-repo — see
+  flow (signup/login/logout/rate-limiting, plus demo-mode auth), the records
+  CRUD paths (create/read/update/delete, the raw-session-is-two-files edge
+  case, git attribution, and edit history), and a dedicated adversarial
+  security suite (`tests/security.test.js` — path traversal, SQL injection,
+  oversized request bodies, tampered session cookies, and XSS via markdown
+  links; found and fixed two real vulnerabilities and one information-leak
+  bug along the way). All run against a disposable, git-initialized fixture
+  repo rather than the real agentic-repo — see
   [`backend/tests/helpers/setupTestRepo.js`](./backend/tests/helpers/setupTestRepo.js).
 - **Frontend**: Vitest + React Testing Library (`cd frontend && npm test`) —
-  covers `LoginForm`'s success/error/pending states and `Dashboard`'s
-  kind/tag filtering logic.
-- **End-to-end + accessibility**: Playwright + axe-core (`cd e2e && npm
-  test`) — drives a real browser against both running apps for a full
-  login → browse → logout flow and a keyboard-only walkthrough of the
-  dashboard, record detail, and delete-confirmation dialogs, with an
-  automated WCAG 2 AA scan (via `@axe-core/playwright`) run against every
-  major screen and modal state. See
-  [`e2e/README.md`](./e2e/README.md) for setup and the real accessibility
-  issues this found and fixed.
+  covers `LoginForm`'s success/error/pending states, `Dashboard`'s kind/tag
+  filtering logic, and `DemoUserPicker`'s profile selection and login states.
+- **End-to-end + accessibility**: Playwright + axe-core, in two separate
+  configs — the regular suite (`cd e2e && npm test`) drives a real browser
+  through login → browse → logout and a keyboard-only walkthrough of the
+  dashboard/record detail/delete-confirmation dialogs; a second config
+  (`npm run test:demo`) exercises the demo user picker specifically, with its
+  own backend instance running in demo mode. Both run an automated WCAG 2 AA
+  scan (via `@axe-core/playwright`) against every major screen and modal
+  state — found and fixed three real accessibility issues along the way,
+  including a genuine bug in Carbon's own nested-modal focus handling. See
+  [`e2e/README.md`](./e2e/README.md) for setup and the full list of findings.
 
 ## Roadmap
 

@@ -11,8 +11,8 @@ remain the source of truth for research content), `express-session` +
 for testing.
 
 v0.6–v1.1 are complete (backend foundation through testing); v1.2 (Deploy +
-Polish) is next. See the Version Milestone Roadmap in Notion for full detail
-and decision rationale.
+Polish) is in progress. See the Version Milestone Roadmap in Notion for full
+detail and decision rationale.
 
 ## Setup
 
@@ -46,6 +46,7 @@ NODE_ENV=development
 SESSION_SECRET=<paste the generated value here>
 AGENTIC_REPO_ROOT=/Users/joshuacbock/IdeaProjects/agentic-repo
 PYTHON_BIN=/Users/joshuacbock/IdeaProjects/agentic-repo/.venv/bin/python3
+DEMO_MODE=false
 ```
 **Never commit `.env`** — it's already covered by `.gitignore`.
 
@@ -56,7 +57,8 @@ node server.js
 ```
 You should see `Server listening on http://localhost:3001`. The SQLite
 database file (`app.db`) and its tables are created automatically on first
-run.
+run. If `DEMO_MODE=true`, the three demo users (see below) are also seeded
+automatically at startup.
 
 > **Note:** `server.js` lives in `backend/`, not the repo root. Running
 > `node server.js` from anywhere else will fail with `MODULE_NOT_FOUND`.
@@ -67,27 +69,37 @@ run.
 npm test
 ```
 
-Runs the full Jest + supertest suite. Coverage:
+Runs the full Jest + supertest suite (68 tests across three files):
 
-- **`tests/auth.test.js`** — signup, login, logout, `/me`, and the rate
-  limiter (including the 6th attempt still being blocked even with the
-  correct password).
+- **`tests/auth.test.js`** — signup, login, logout, `/me`, the rate limiter
+  (including the 6th attempt still being blocked even with the correct
+  password), and demo mode (`GET /demo-users`, `POST /demo-login` for all
+  three identities, and confirming `/signup`/`/login` correctly refuse
+  under `DEMO_MODE`).
 - **`tests/records.test.js`** — `POST /sessions` (raw mode), `GET
   /records`/`GET /records/:id`, `PUT /records/:id` (including the
   gray-matter date-coercion fix), `DELETE /records/:id` (including the
   raw-session-is-two-files case), and `GET /records/:id/history` (including
   `--follow` lineage across a delete-then-recreate under the same slug).
+- **`tests/security.test.js`** — a dedicated adversarial suite: path
+  traversal via `topicSlug`/`slug`, SQL injection on login/signup, oversized
+  request bodies, tampered/malformed session cookies, and XSS via markdown
+  links. Found and fixed two real vulnerabilities (path traversal; an XSS
+  gap in the agentic-repo's markdown renderer) and one information-leak bug
+  found along the way (a generic Express error handler was missing, so any
+  error — not just an oversized body — leaked a full stack trace including
+  server file paths). See the Decision Log for the full writeup.
 
-**Records tests never touch the real agentic-repo.** They run against a
-disposable, git-initialized fixture repo created fresh per test run (see
-`tests/helpers/setupTestRepo.js`), seeded by copying the actual Python
-scripts (`new_research_session.py`, `export_records.py`, `build_index.py`,
-`build_search_ui.py`, `md_render.py`) from the real agentic-repo — so tests
-always exercise the current real script logic, never a stale duplicate, with
-zero risk to real research content or git history. This mirrors the same
-isolation principle as the public demo's separate-repo strategy (see the
-Decision Log), just scoped down to a local, throwaway fixture instead of a
-persistent synced GitHub repo.
+**Records and security tests never touch the real agentic-repo.** They run
+against a disposable, git-initialized fixture repo created fresh per test
+run (see `tests/helpers/setupTestRepo.js`), seeded by copying the actual
+Python scripts (`new_research_session.py`, `export_records.py`,
+`build_index.py`, `build_search_ui.py`, `md_render.py`) from the real
+agentic-repo — so tests always exercise the current real script logic,
+never a stale duplicate, with zero risk to real research content or git
+history. This mirrors the same isolation principle as the public demo's
+separate-repo strategy (see the Decision Log), just scoped down to a local,
+throwaway fixture instead of a persistent synced GitHub repo.
 
 **Test/dev database separation.** `db.js` and `app.js` both branch on
 `NODE_ENV=test` (set automatically by Jest) to use a SQLite file scoped to
@@ -105,33 +117,39 @@ Jest, so the E2E suite's runs all land in `app.test.0.db`.
 
 ```
 backend/
-├── server.js     Entry point — imports app.js, starts listening
-├── app.js        Express app definition (middleware, routes) — exported separately from server.js so tests can import it directly via supertest, without a real port
-├── db.js         better-sqlite3 connection + users table schema (test/prod db split via NODE_ENV)
+├── server.js         Entry point — imports app.js, seeds demo users if DEMO_MODE=true, starts listening
+├── app.js            Express app definition (middleware, routes, generic error handler) — exported separately from server.js so tests can import it directly via supertest, without a real port
+├── db.js             better-sqlite3 connection + users table schema (test/prod db split via NODE_ENV)
+├── demoUsers.js       The three demo identities (Priya/Sam/Jordan) — single source of truth for seeding, the demo-login allowlist, and what the picker UI receives
+├── seedDemoUsers.js   Idempotently creates the demo users on startup, only when DEMO_MODE=true
 ├── routes/
-│   ├── auth.js      Signup / login / logout / me
-│   └── records.js   Sessions + file CRUD (shells out to agentic-repo's Python scripts)
+│   ├── auth.js      Signup / login / logout / me / demo-users / demo-login
+│   └── records.js   Sessions + file CRUD (shells out to agentic-repo's Python scripts); validates topicSlug/slug against a safe pattern before either reaches the Python scripts
 ├── tests/
-│   ├── auth.test.js      Auth flow + rate limiting tests
-│   ├── records.test.js   Records CRUD + history tests
+│   ├── auth.test.js       Auth flow, rate limiting, and demo mode tests
+│   ├── records.test.js    Records CRUD + history tests
+│   ├── security.test.js  Adversarial security tests (path traversal, SQL injection, oversized bodies, tampered cookies, XSS)
 │   └── helpers/
-│       └── setupTestRepo.js   Creates/destroys the disposable fixture repo used by records.test.js
+│       └── setupTestRepo.js   Creates/destroys the disposable fixture repo used by records.test.js and security.test.js
 ├── .env.example  Template for required environment variables
 └── app.db        SQLite file (git-ignored, created on first run; app.test.*.db files are the test-only equivalent)
 ```
 
 ## API
 
-All routes below require a logged-in session (`401` otherwise).
+All routes below (except where noted) require a logged-in session (`401`
+otherwise).
 
-### Auth (v0.6)
+### Auth (v0.6, extended in v1.2 for demo mode)
 
-| Method | Path                | Body                                      | Notes                              |
-|--------|---------------------|--------------------------------------------|--------------------------------------|
-| POST   | `/api/auth/signup`  | `username, password, gitName, gitEmail`   | Creates user, starts a session       |
-| POST   | `/api/auth/login`   | `username, password`                       | Rate-limited: 5 attempts / 15 min    |
-| POST   | `/api/auth/logout`  | —                                            | Destroys the session                 |
-| GET    | `/api/auth/me`      | —                                            | Returns current user or 401          |
+| Method | Path                     | Body                                    | Notes                                                                 |
+|--------|--------------------------|-------------------------------------------|----------------------------------------------------------------------|
+| POST   | `/api/auth/signup`       | `username, password, gitName, gitEmail` | Creates user, starts a session. Returns `403` when `DEMO_MODE=true`.  |
+| POST   | `/api/auth/login`        | `username, password`                      | Rate-limited: 5 attempts / 15 min. Refuses the three demo usernames with `403` when `DEMO_MODE=true`. |
+| POST   | `/api/auth/logout`       | —                                           | Destroys the session                                                  |
+| GET    | `/api/auth/me`           | —                                           | Returns current user or `401`                                        |
+| GET    | `/api/auth/demo-users`   | —                                           | Public, unauthenticated. Returns the three demo identities (`username`, `displayName`, `role`) when `DEMO_MODE=true`, else `[]`. |
+| POST   | `/api/auth/demo-login`   | `username`                                | Public, unauthenticated. Passwordless login for one of the three seeded demo usernames only (validated server-side against a fixed allowlist). `404` when `DEMO_MODE` isn't set; its own IP-based rate limiter (20 requests / 15 min). |
 
 ### Records / File CRUD (v0.7)
 
@@ -156,11 +174,15 @@ server. A record's edit + any `build_index.py`-regenerated index files land
 in **one atomic commit**, not two.
 
 `PUT` additionally stamps `last_edited_by` / `last_edited_at` directly into
-the record's frontmatter, for fast display without a git call. **Known gap
-(see Decision Log):** this is written correctly to the file but not
-currently returned by `GET /records`/`GET /records/:id`, since the record
-shape those endpoints return (defined in `build_search_ui.py`'s loader
-functions) doesn't include those two fields.
+the record's frontmatter, for fast display without a git call, and both
+fields are returned by `GET /records`/`GET /records/:id` as well (via a
+shared `_edit_fields()` helper in `build_search_ui.py`, applied across all
+five record-loader functions — raw, findings, components, analytics, and
+deliverables). Both fields default to `null` for a record that's never been
+edited via `PUT`, keeping every record's JSON shape identical either way.
+One caveat: component records are regenerated from `tokens.tokens.json`, so
+a `PUT` edit's attribution there would be lost the next time that
+regeneration runs.
 
 **Route pattern note:** because a record id can contain a slash (any
 deliverable id, e.g. `deliverable:personas/foo`), `GET`/`PUT`/`DELETE
@@ -174,6 +196,7 @@ wildcard would otherwise swallow `/history` as part of the id.
 
 - **`mode: "raw"`** — `title, type, topicSlug` required; optional `tags`, `relatedComponents`, `relatedFindings`, `researcher`, `methodLabel`, `date`, `content` (full markdown body — overrides the default TODO-scaffold template entirely if given)
 - **`mode: "deliverable"`** — `folder, title, slug` required; optional `tags`, `relatedFindings`, `date`, `status`, `sourceType`, `protoType`, `description`. Always runs with `--no-prompt` since the API can't answer interactive prompts.
+- **`topicSlug` (raw mode) and `slug` (deliverable mode) must match ****`^[a-z0-9-]+$`**** — rejected with ****`400`**** otherwise.** Both values end up building a filesystem path inside `new_research_session.py`, which does no sanitization of its own; adversarial testing confirmed a `../`-chain payload could write real files outside the intended folder entirely, and an absolute path could discard the base path completely. This validation happens in `records.js`, before either value ever reaches the Python script.
 
 **PUT/DELETE behavior:** no Python script exists for editing or deleting
 records, so these two routes read/write/delete the markdown file directly in
@@ -219,3 +242,16 @@ cookies.txt` / `-b cookies.txt` to persist the cookie across requests.
   to avoid a vulnerable `sqlite3`/`node-gyp`/`tar` dependency chain
 - All `/api/sessions` and `/api/records` routes require an authenticated
   session
+- `topicSlug`/`slug` are validated against `^[a-z0-9-]+$` before ever
+  reaching `new_research_session.py`, preventing path traversal (see above)
+- `app.js` includes a generic JSON error-handling middleware — any error
+  (a `413` from an oversized body, a malformed-JSON `SyntaxError`, or
+  anything else) responds with a plain `{ error: ... }` message and never a
+  stack trace, regardless of `NODE_ENV`
+- Demo mode (`DEMO_MODE=true`) closes `/signup` and password-based login for
+  the three demo identities entirely; the only way in is
+  `POST /demo-login`, validated against a fixed, hardcoded username
+  allowlist server-side and covered by its own IP-based rate limiter
+- A dedicated adversarial test suite (`tests/security.test.js`) exercises
+  path traversal, SQL injection, oversized bodies, tampered cookies, and
+  XSS directly against the running app — see the Testing section above
