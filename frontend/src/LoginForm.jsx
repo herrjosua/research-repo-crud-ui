@@ -16,35 +16,38 @@ export default function LoginForm({ onLoginSuccess }) {
     }
 
     return (
-        <Form onSubmit={handleSubmit} aria-label="Log in">
-            <Stack gap={6}>
-                <TextInput
-                    id="username"
-                    labelText="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                />
-                <PasswordInput
-                    id="password"
-                    labelText="Password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-                {login.isError && (
-                    <InlineNotification
-                        kind="error"
-                        title="Login failed"
-                        subtitle={login.error.message}
-                        lowContrast
+        <>
+            <h1>Log in</h1>
+            <Form onSubmit={handleSubmit} aria-label="Log in">
+                <Stack gap={6}>
+                    <TextInput
+                        id="username"
+                        labelText="Username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
                     />
-                )}
-                <Button type="submit" disabled={login.isPending}>
-                    {login.isPending ? 'Logging in…' : 'Log in'}
-                </Button>
-            </Stack>
-        </Form>
+                    <PasswordInput
+                        id="password"
+                        labelText="Password"
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                    {login.isError && (
+                        <InlineNotification
+                            kind="error"
+                            title="Login failed"
+                            subtitle={login.error.message}
+                            lowContrast
+                        />
+                    )}
+                    <Button type="submit" disabled={login.isPending}>
+                        {login.isPending ? 'Logging in…' : 'Log in'}
+                    </Button>
+                </Stack>
+            </Form>
+        </>
     );
 }

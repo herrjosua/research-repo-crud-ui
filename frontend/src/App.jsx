@@ -16,9 +16,9 @@ function App() {
 
     if (me.isError) {
         if (demoUsers.data && demoUsers.data.length > 0) {
-            return <DemoUserPicker onLoginSuccess={() => me.refetch()} />;
+            return <main className={styles.main}><DemoUserPicker onLoginSuccess={() => me.refetch()} /></main>;
         }
-        return <LoginForm onLoginSuccess={() => me.refetch()} />;
+        return <main className={styles.main}><LoginForm onLoginSuccess={() => me.refetch()} /></main>;
     }
 
     return (

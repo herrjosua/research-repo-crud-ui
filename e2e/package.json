@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "test:demo": "playwright test --config=playwright.demo.config.js"
   },
   "keywords": [],
   "author": "",

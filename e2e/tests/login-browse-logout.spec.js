@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { randomUUID } from 'node:crypto';
 
 test('a real user can log in, browse, and log out — with an accessibility scan of the dashboard', async ({ page, request }) => {
-    const username = `e2e-tester-${Date.now()}`;
+    // randomUUID, not Date.now(): parallel workers can call this in the same
+    // millisecond and collide on the username's UNIQUE constraint otherwise.
+    const username = `e2e-tester-${randomUUID()}`;
     const password = 'a-real-password-123';
 
     // Seed a real user directly via the API — there's no signup screen yet
@@ -17,6 +20,12 @@ test('a real user can log in, browse, and log out — with an accessibility scan
 
     await page.goto('/');
 
+    // --- Accessibility scan of the login screen itself, before logging in ---
+    // This screen was never actually scanned before — the only prior scan in
+    // this test ran after login, against the dashboard.
+    let results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations).toEqual([]);
+
     // --- Log in through the real LoginForm UI ---
     await page.getByLabel('Username').fill(username);
     await page.getByLabel('Password', { exact: true }).fill(password);
@@ -27,7 +36,7 @@ test('a real user can log in, browse, and log out — with an accessibility scan
     await expect(page.getByText(/of \d+ records/)).toBeVisible();
 
     // --- Accessibility scan of the real, logged-in dashboard ---
-    const results = await new AxeBuilder({ page }).analyze();
+    results = await new AxeBuilder({ page }).analyze();
     expect(results.violations).toEqual([]);
 
     // --- Log out ---

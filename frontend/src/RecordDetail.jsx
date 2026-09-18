@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Modal, Tag, InlineNotification, Button } from '@carbon/react';
 import { useRecord, useDeleteRecord, useRecordHistory } from './api/records';
 import EditRecordForm from './EditRecordForm';
@@ -130,6 +130,33 @@ export default function RecordDetail({ id, onClose }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const history = useRecordHistory(id, showHistory);
+  const confirmModalRef = useRef(null);
+
+  useEffect(() => {
+    // The confirm dialog is stacked on top of this component's own <Modal>
+    // via createPortal, so it lives outside that outer modal's DOM subtree.
+    // Carbon's outer Modal has a blur handler that treats ANY focus move
+    // out of its own subtree as focus having escaped (it has no notion of
+    // a legitimately-stacked portaled modal) and forces focus straight back
+    // to its own close button — every single time, not just on a race, so
+    // simply re-asserting focus afterward just retriggers the same handler.
+    // Intercept the one focusout that fires when focus moves from inside
+    // this modal into the confirm dialog, in the capture phase, before
+    // Carbon's own (bubble-phase) blur handler ever sees it — letting the
+    // confirm dialog's own initial-focus effect land and stick. Registered
+    // unconditionally on mount (not keyed on showDeleteConfirm) so it's
+    // already active before the confirm dialog's own mount-time focus
+    // effect ever runs — React runs a newly-mounted child's effects before
+    // its parent's, so a listener registered only once showDeleteConfirm
+    // flips true would always attach one render too late to catch it.
+    const suppressOuterBlurIntoConfirmDialog = (event) => {
+      if (confirmModalRef.current?.contains(event.relatedTarget)) {
+        event.stopPropagation();
+      }
+    };
+    document.addEventListener('focusout', suppressOuterBlurIntoConfirmDialog, true);
+    return () => document.removeEventListener('focusout', suppressOuterBlurIntoConfirmDialog, true);
+  }, []);
 
   return (
     <Modal
@@ -183,6 +210,7 @@ export default function RecordDetail({ id, onClose }) {
 
       {showDeleteConfirm && createPortal(
           <Modal
+              ref={confirmModalRef}
               open
               danger
               modalHeading="Delete this record?"

@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { randomUUID } from 'node:crypto';
 
 test('dashboard, record detail, and delete confirmation are all keyboard-operable and pass an accessibility scan', async ({ page, request }) => {
-    const username = `e2e-tester-${Date.now()}`;
+    // randomUUID, not Date.now(): parallel workers can call this in the same
+    // millisecond and collide on the username's UNIQUE constraint otherwise.
+    const username = `e2e-tester-${randomUUID()}`;
     const password = 'a-real-password-123';
 
     await request.post('/api/auth/signup', {
@@ -45,6 +48,15 @@ test('dashboard, record detail, and delete confirmation are all keyboard-operabl
     // Accessibility scan of the nested delete-confirmation dialog.
     results = await new AxeBuilder({ page }).analyze();
     expect(results.violations).toEqual([]);
+
+    // Carbon's outer <Modal> treats focus landing in this nested, portaled
+    // confirm dialog as focus having escaped its own DOM subtree (its blur
+    // handler has no notion of legitimately-stacked portaled modals) and
+    // races its own confirm-dialog auto-focus effect to yank focus back onto
+    // itself. RecordDetail explicitly re-asserts focus into the confirm
+    // dialog's Cancel button to win that race deterministically — wait for
+    // that real, meaningful precondition before testing Escape below.
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeFocused();
 
     // --- Escape closes the confirmation dialog first, not both at once ---
     await page.keyboard.press('Escape');
