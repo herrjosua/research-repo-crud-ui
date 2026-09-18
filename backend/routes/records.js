@@ -21,6 +21,14 @@ const RESEARCH_ROOT = path.join(AGENTIC_REPO_ROOT, 'research');
 // doesn't have this project's dependencies. Set PYTHON_BIN in .env to override.
 const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
 
+// topicSlug (raw mode) and slug (deliverable mode) both end up building a
+// filesystem path inside new_research_session.py (folder_name/file_path via
+// pathlib's `/` operator) with no sanitization on that script's side — a
+// value containing "../" or an absolute path escapes the intended folder
+// entirely. Reject anything that isn't a plain kebab-case slug here, before
+// it ever reaches the script, rather than trying to sanitize/escape it.
+const SAFE_SLUG_RE = /^[a-z0-9-]+$/;
+
 function requireAuth(req, res, next) {
   if (!req.session.userId) {
     return res.status(401).json({ error: 'not logged in' });
@@ -50,6 +58,9 @@ router.post('/sessions', async (req, res) => {
     if (!title || !type || !topicSlug) {
       return res.status(400).json({ error: 'raw mode requires title, type, and topicSlug' });
     }
+    if (!SAFE_SLUG_RE.test(topicSlug)) {
+      return res.status(400).json({ error: 'topicSlug must match ^[a-z0-9-]+$' });
+    }
 
     args.push('--title', title, '--type', type, '--topic-slug', topicSlug);
     if (tags) args.push('--tags', Array.isArray(tags) ? tags.join(',') : tags);
@@ -66,6 +77,9 @@ router.post('/sessions', async (req, res) => {
 
     if (!folder || !title || !slug) {
       return res.status(400).json({ error: 'deliverable mode requires folder, title, and slug' });
+    }
+    if (!SAFE_SLUG_RE.test(slug)) {
+      return res.status(400).json({ error: 'slug must match ^[a-z0-9-]+$' });
     }
 
     // --no-prompt always passed: the API is a non-interactive caller, so

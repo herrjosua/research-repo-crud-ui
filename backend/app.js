@@ -62,6 +62,23 @@ app.use(session({
 app.use('/api/auth', authRoutes);
 app.use('/api', recordRoutes);
 
+// Without this, any error passed to next() (e.g. body-parser's
+// PayloadTooLargeError on an oversized request, or a SyntaxError on
+// malformed JSON) falls through to Express's built-in finalhandler, which
+// renders a full stack trace — including absolute filesystem paths and
+// node_modules internals — in the response body whenever NODE_ENV isn't
+// exactly "production". That's a real information leak in dev/test and on
+// any deploy that forgets to set NODE_ENV, so respond generically here
+// instead of relying on that env check.
+app.use((err, req, res, next) => {
+    if (res.headersSent) return next(err);
+    const status = err.status || err.statusCode || 500;
+    const message = status === 413 ? 'request entity too large'
+        : status < 500 ? 'malformed request'
+        : 'internal server error';
+    res.status(status).json({ error: message });
+});
+
 function clearSessionInterval() {
     if (capturedIntervalId) clearInterval(capturedIntervalId);
 }
