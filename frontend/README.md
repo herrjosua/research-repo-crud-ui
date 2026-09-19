@@ -191,7 +191,10 @@ frontend/
   and per the current plan, likely stays unused: v1.2 calls for *closed*
   signup + seeded demo accounts for the public/portfolio deploy, not open
   self-registration
-- Deploy target: leaning AWS free tier or the existing webhost, both free
+- Deploy target: decided — the existing webhost, not AWS (see the Notion
+  Decision Log for rationale). Still open before it can go live: confirming
+  the host's control panel can run a persistent Node.js process (not yet
+  checked), setting up a subdomain, and provisioning HTTPS/SSL for it
 - Security hardening: path validation on slugs, `helmet` headers,
   `robots.txt`, and rate limiting on `/sessions`/`/records/*` writes are all
   done (see `../backend/README.md`'s Security notes section). HTTPS is
