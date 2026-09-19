@@ -436,3 +436,58 @@ describe('VECTOR 6: security headers, robots.txt, and write-route rate limiting'
         require('../middleware/rateLimiter')._resetForTests();
     });
 });
+
+// ---------------------------------------------------------------------------
+// VECTOR 7 — HTTPS redirect middleware
+//
+// Tested directly against the middleware function with mock req/res/next,
+// not through the running `app` — app.js bakes isProduction into a
+// module-level constant at require() time (from NODE_ENV, which Jest fixes
+// to "test" for the whole run), and reloading app.js under
+// NODE_ENV=production to exercise this would also flip its isTest flag and
+// point sessionDb at the real dev app.db file instead of a scoped test
+// database. Manually confirmed end-to-end against a real NODE_ENV=production
+// server via curl before writing this (301 with no X-Forwarded-Proto, 401
+// pass-through with X-Forwarded-Proto: https) — this test guards that same
+// behavior at the unit level.
+// ---------------------------------------------------------------------------
+describe('VECTOR 7: HTTPS redirect middleware', () => {
+    const httpsRedirect = require('../middleware/httpsRedirect');
+
+    function mockReqRes(headers) {
+        const req = { headers, url: '/api/auth/me' };
+        const res = { redirect: jest.fn() };
+        const next = jest.fn();
+        return { req, res, next };
+    }
+
+    it('redirects to https when in production and the request was not already https', () => {
+        const middleware = httpsRedirect(true);
+        const { req, res, next } = mockReqRes({ host: 'localhost:3001' });
+
+        middleware(req, res, next);
+
+        expect(res.redirect).toHaveBeenCalledWith(301, 'https://localhost:3001/api/auth/me');
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    it('passes through without redirecting when X-Forwarded-Proto is already https', () => {
+        const middleware = httpsRedirect(true);
+        const { req, res, next } = mockReqRes({ host: 'localhost:3001', 'x-forwarded-proto': 'https' });
+
+        middleware(req, res, next);
+
+        expect(res.redirect).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalled();
+    });
+
+    it('never redirects when not in production, regardless of headers', () => {
+        const middleware = httpsRedirect(false);
+        const { req, res, next } = mockReqRes({ host: 'localhost:3001' });
+
+        middleware(req, res, next);
+
+        expect(res.redirect).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalled();
+    });
+});

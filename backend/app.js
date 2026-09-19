@@ -26,11 +26,29 @@ SqliteStore.prototype.startInterval = function patchedStartInterval() {
 const db = require('./db'); // ensures users table exists
 const authRoutes = require('./routes/auth');
 const recordRoutes = require('./routes/records');
+const httpsRedirect = require('./middleware/httpsRedirect');
 
 const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(helmet());
+
+// Trust the first proxy hop (e.g. an AWS ALB or nginx terminating TLS) so
+// Express reads the real original protocol from X-Forwarded-Proto instead
+// of seeing the proxy's own internal plain-HTTP connection to this app.
+// Needed both for the redirect below and for the `secure` cookie flag
+// further down to evaluate correctly once TLS is terminated in front of
+// this app rather than inside Express itself. Only meaningful once a real
+// proxy is in place, so scoped to production.
+if (isProduction) {
+    app.set('trust proxy', 1);
+}
+
+// Redirect any HTTP request to HTTPS. Only fires in production, and only
+// once X-Forwarded-Proto (set by the proxy) says the original request
+// wasn't already HTTPS — a no-op in dev/test since isProduction is false
+// there.
+app.use(httpsRedirect(isProduction));
 
 if (!process.env.SESSION_SECRET) {
     throw new Error('SESSION_SECRET is not set. Add it to your .env file.');
