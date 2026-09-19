@@ -10,23 +10,29 @@ function App() {
     const me = useMe();
     const demoUsers = useDemoUsers();
 
-    if (me.isLoading || demoUsers.isLoading) {
-        return <p>Loading…</p>;
-    }
+    let content;
 
-    if (me.isError) {
-        if (demoUsers.data && demoUsers.data.length > 0) {
-            return <main className={styles.main}><DemoUserPicker onLoginSuccess={() => me.refetch()} /></main>;
-        }
-        return <main className={styles.main}><LoginForm onLoginSuccess={() => me.refetch()} /></main>;
+    if (me.isLoading || demoUsers.isLoading) {
+        content = <p>Loading…</p>;
+    } else if (me.isError) {
+        content = demoUsers.data && demoUsers.data.length > 0
+            ? <DemoUserPicker onLoginSuccess={() => me.refetch()} />
+            : <LoginForm onLoginSuccess={() => me.refetch()} />;
+    } else {
+        content = (
+            <>
+                <AppHeader />
+                <Dashboard />
+            </>
+        );
     }
 
     return (
         <>
-            <AppHeader />
             <main className={styles.main}>
-                <Dashboard />
+                {content}
             </main>
+            <footer className={styles.footer}>v{__APP_VERSION__}</footer>
         </>
     );
 }

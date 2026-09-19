@@ -32,9 +32,19 @@ export default function EditRecordForm({ record, onClose }) {
     const [status, setStatus] = useState(record.status || '');
     const [tags, setTags] = useState(record.tags.join(', '));
     const [content, setContent] = useState(record.rawContent);
+    const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+
+    const titleInvalid = attemptedSubmit && title.trim() === '';
+    const statusInvalid = attemptedSubmit && status === '';
 
     function handleSubmit(event) {
         event.preventDefault();
+        setAttemptedSubmit(true);
+
+        if (title.trim() === '' || status === '') {
+            return;
+        }
+
         updateRecord.mutate(
             {
                 frontmatter: {
@@ -56,27 +66,37 @@ export default function EditRecordForm({ record, onClose }) {
                     labelText="Title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                    invalid={titleInvalid}
+                    invalidText="Title can't be blank."
+                    required
                 />
 
                 <Dropdown
                     id="edit-status"
                     titleText="Status"
                     label="Choose a status"
+                    helperText="Where this record is in its lifecycle"
                     items={STATUS_OPTIONS}
                     selectedItem={status || null}
                     onChange={({ selectedItem }) => setStatus(selectedItem)}
+                    invalid={statusInvalid}
+                    invalidText="Choose a status — leaving this blank would overwrite the record's current status."
                 />
 
                 <TextInput
                     id="edit-tags"
                     labelText="Tags"
-                    helperText="Comma-separated"
+                    placeholder="onboarding, usability, mobile"
+                    helperText="Comma-separated, e.g. onboarding, usability, mobile"
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
                 />
 
                 <div>
                     <label htmlFor="edit-content-editor" className="cds--label">Content</label>
+                    <p className="cds--form__helper-text">
+                        Markdown source — this is what the search UI and other tools render directly.
+                    </p>
                     <CKEditor
                         id="edit-content-editor"
                         editor={ClassicEditor}
@@ -91,6 +111,15 @@ export default function EditRecordForm({ record, onClose }) {
                         kind="error"
                         title="Failed to save changes"
                         subtitle={updateRecord.error.message}
+                    />
+                )}
+
+                {attemptedSubmit && !updateRecord.isError && (title.trim() === '' || status === '') && (
+                    <InlineNotification
+                        kind="error"
+                        title="Please fix the highlighted fields"
+                        subtitle="Title and status are both required before changes can be saved."
+                        hideCloseButton
                     />
                 )}
 

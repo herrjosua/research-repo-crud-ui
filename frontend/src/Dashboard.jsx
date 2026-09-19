@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Grid, Column, Checkbox, Tag, ClickableTile, InlineNotification, Button, Modal } from '@carbon/react';
+import { Grid, Column, Checkbox, Tag, ClickableTile, InlineNotification, Button, Modal, Search } from '@carbon/react';
 import CreateSessionForm from './CreateSessionForm';
 import { useRecords } from './api/records';
 import RecordDetail from './RecordDetail';
@@ -11,7 +11,20 @@ const ALL_KINDS = ['raw', 'finding', 'component', 'analytics', 'deliverable'];
 export default function Dashboard() {
   const records = useRecords();
   const [activeKinds, setActiveKinds] = useState(new Set(ALL_KINDS));
+
+  function highlightMatch(text, query) {
+    const trimmed = query.trim();
+    if (!trimmed) return text;
+    const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+    return parts.map((part, i) =>
+        part.toLowerCase() === trimmed.toLowerCase() ? <mark key={i} className={styles.highlight}>{part}</mark> : part
+    );
+  }
+
   const [activeTags, setActiveTags] = useState(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [tagQuery, setTagQuery] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
@@ -22,14 +35,22 @@ export default function Dashboard() {
     return [...set].sort();
   }, [records.data]);
 
+  const visibleTags = useMemo(() => {
+    const query = tagQuery.trim().toLowerCase();
+    if (!query) return allTags;
+    return allTags.filter((t) => t.toLowerCase().includes(query));
+  }, [allTags, tagQuery]);
+
   const filtered = useMemo(() => {
     if (!records.data) return [];
+    const query = searchQuery.trim().toLowerCase();
     return records.data.filter((r) => {
       if (!activeKinds.has(r.kind)) return false;
       if (activeTags.size > 0 && ![...activeTags].every((t) => r.tags.includes(t))) return false;
+      if (query && !r.title.toLowerCase().includes(query) && !r.type.toLowerCase().includes(query)) return false;
       return true;
     });
-  }, [records.data, activeKinds, activeTags]);
+  }, [records.data, activeKinds, activeTags, searchQuery]);
 
   function toggleKind(kind) {
     setActiveKinds((prev) => {
@@ -65,6 +86,13 @@ export default function Dashboard() {
   return (
     <Grid>
       <Column lg={4} md={2} sm={4}>
+        <Search
+            labelText="Search records"
+            placeholder="Search by title or type"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onClear={() => setSearchQuery('')}
+        />
         <fieldset>
           <legend>Kind</legend>
           {ALL_KINDS.map((kind) => (
@@ -78,16 +106,26 @@ export default function Dashboard() {
           ))}
         </fieldset>
         <fieldset>
-          <legend>Tags</legend>
-          {allTags.map((tag) => (
-            <Checkbox
-              key={tag}
-              id={`tag-${tag}`}
-              labelText={tag}
-              checked={activeTags.has(tag)}
-              onChange={() => toggleTag(tag)}
-            />
-          ))}
+          <legend>Tags{activeTags.size > 0 && ` (${activeTags.size} selected)`}</legend>
+          <Search
+              size="sm"
+              labelText="Filter tags"
+              placeholder="Filter tags"
+              value={tagQuery}
+              onChange={(e) => setTagQuery(e.target.value)}
+              onClear={() => setTagQuery('')}
+          />
+          <div className={styles.tagList}>
+            {visibleTags.map((tag) => (
+                <Checkbox
+                    key={tag}
+                    id={`tag-${tag}`}
+                    labelText={tag}
+                    checked={activeTags.has(tag)}
+                    onChange={() => toggleTag(tag)}
+                />
+            ))}
+          </div>
         </fieldset>
       </Column>
 
@@ -96,12 +134,12 @@ export default function Dashboard() {
         <Button onClick={() => setShowCreateForm(true)}>New session</Button>
         <p>{filtered.length} of {records.data.length} records</p>
         {filtered.length === 0 && (
-          <InlineNotification
-            kind="info"
-            title="No matching records"
-            subtitle="Try unchecking a filter in the sidebar."
-            lowContrast
-          />
+            <InlineNotification
+                kind="info"
+                title="No matching records"
+                subtitle="Try unchecking a filter or clearing your search."
+                lowContrast
+            />
         )}
         {filtered.map((record) => (
             <ClickableTile
@@ -109,8 +147,8 @@ export default function Dashboard() {
                 onClick={() => setSelectedId(record.id)}
                 className={styles.tile}
             >
-            <h2>{record.title}</h2>
-            <p>{record.date} · {record.type}</p>
+              <h2>{highlightMatch(record.title, searchQuery)}</h2>
+              <p>{record.date} · {highlightMatch(record.type, searchQuery)}</p>
             {record.tags.map((tag) => (
               <Tag key={tag} type="blue">{tag}</Tag>
             ))}

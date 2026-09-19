@@ -2,4 +2,21 @@
 
 .main {
     padding-top: vars.$header-height;
+    padding-bottom: vars.$footer-height;
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: vars.$footer-height;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: vars.$footer-background;
+    border-top: 1px solid vars.$footer-border;
+    font-size: 0.75rem;
+    color: vars.$footer-text;
+    z-index: vars.$z-index-footer;
 }

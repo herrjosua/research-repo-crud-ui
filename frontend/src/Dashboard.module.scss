@@ -3,3 +3,14 @@
 .tile {
   margin-bottom: vars.$spacing-tile-gap;
 }
+
+.highlight {
+  background-color: vars.$highlight-background;
+  color: vars.$highlight-text;
+  font-weight: 600;
+}
+
+.tagList {
+  max-height: vars.$tag-list-max-height;
+  overflow-y: auto;
+}

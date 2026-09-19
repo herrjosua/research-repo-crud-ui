@@ -1,2 +1,22 @@
+@use '@carbon/react/scss/theme';
+
+// Layout magnitudes — not covered by Carbon's own token set, specific to
+// this app's structure.
 $spacing-tile-gap: 1rem;
 $header-height: 4rem;
+$footer-height: 2rem;
+$tag-list-max-height: 240px;
+$z-index-footer: 100;
+
+// Carbon design tokens, re-exported under semantic names specific to how
+// this app uses them. Centralizing the re-export here (rather than having
+// each component file `@use '@carbon/react/scss/theme'` directly) means
+// every color in the app traces back to exactly one place, matching how
+// $header-height/$spacing-tile-gap already worked before this file grew
+// to also cover color.
+$footer-background: theme.$background;
+$footer-border: theme.$border-subtle-01;
+$footer-text: theme.$text-secondary;
+
+$highlight-background: theme.$support-warning;
+$highlight-text: theme.$text-primary;
