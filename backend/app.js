@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const session = require('express-session');
+const helmet = require('helmet');
 const Database = require('better-sqlite3');
 const SqliteStore = require('better-sqlite3-session-store')(session);
 
@@ -29,6 +30,8 @@ const recordRoutes = require('./routes/records');
 const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
 
+app.use(helmet());
+
 if (!process.env.SESSION_SECRET) {
     throw new Error('SESSION_SECRET is not set. Add it to your .env file.');
 }
@@ -39,6 +42,10 @@ const isTest = process.env.NODE_ENV === 'test';
 const sessionDb = new Database(isTest ? `app.test.${process.env.JEST_WORKER_ID || 0}.db` : 'app.db');
 
 app.use(express.json());
+
+app.get('/robots.txt', (req, res) => {
+    res.type('text/plain').send('User-agent: *\nDisallow: /');
+});
 
 app.use(session({
     store: new SqliteStore({

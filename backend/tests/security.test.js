@@ -393,3 +393,46 @@ describe('VECTOR 5: HTML/script injection into PUT /records/:id content', () => 
         expect(res.body.html).toContain('<a href="https://example.com/path?a=1&amp;b=2">docs</a>');
     });
 });
+
+// ---------------------------------------------------------------------------
+// VECTOR 6 — Missing security headers, crawlable public deploy, and
+// unbounded write-endpoint requests
+//
+// Three checklist items from the v1.2 security hardening pass, grouped
+// together since none needed an attack payload to confirm — each is a
+// missing-control check (a header, a route, a request count) rather than an
+// injection/traversal vector like 1-5 above.
+// ---------------------------------------------------------------------------
+describe('VECTOR 6: security headers, robots.txt, and write-route rate limiting', () => {
+    it('sets helmet security headers on every response', async () => {
+        const res = await agent.get('/api/auth/me');
+        expect(res.headers['x-content-type-options']).toBe('nosniff');
+        expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
+        expect(res.headers['content-security-policy']).toBeDefined();
+    });
+
+    it('serves a robots.txt disallowing all crawling', async () => {
+        const res = await request(app).get('/robots.txt');
+        expect(res.status).toBe(200);
+        expect(res.text).toMatch(/User-agent: \*/);
+        expect(res.text).toMatch(/Disallow: \//);
+    });
+
+    it('rate-limits POST /api/sessions after repeated requests from the same client', async () => {
+        require('../middleware/rateLimiter')._resetForTests();
+
+        let lastStatus;
+        for (let i = 0; i < 31; i++) {
+            // Deliberately invalid body — the limiter must fire before the
+            // route's own validation ever runs, same ordering confirmed
+            // manually via curl.
+            const res = await agent.post('/api/sessions').send({ mode: 'raw' });
+            lastStatus = res.status;
+        }
+        expect(lastStatus).toBe(429);
+
+        // Don't leak this test's spent budget into any test that runs after
+        // this file, or into a future new vector added below it.
+        require('../middleware/rateLimiter')._resetForTests();
+    });
+});

@@ -5,9 +5,16 @@ const fs = require('fs/promises');
 const path = require('path');
 const matter = require('gray-matter');
 const db = require('../db');
+const rateLimiter = require('../middleware/rateLimiter');
 
 const execFileAsync = promisify(execFile);
 const router = express.Router();
+
+const writeLimiter = rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  keyFn: (req) => req.ip,
+});
 
 // Path to the agentic-repo checkout. Configurable via env so this isn't hardcoded
 // to one machine's layout.
@@ -42,7 +49,7 @@ router.use(requireAuth);
 // ---------------------------------------------------------------------------
 // POST /sessions — wraps new_research_session.py, both modes.
 // ---------------------------------------------------------------------------
-router.post('/sessions', async (req, res) => {
+router.post('/sessions', writeLimiter, async (req, res) => {
   const { mode } = req.body;
   const user = getUser(req);
 
@@ -230,7 +237,7 @@ async function commitChange(message, user) {
 // PUT /records/:id — no script exists for editing, so read/modify/write the
 // markdown file directly, then re-run build_index.py to refresh indexes.
 // ---------------------------------------------------------------------------
-router.put('/records/*splat', async (req, res) => {
+router.put('/records/*splat', writeLimiter, async (req, res) => {
   const id = decodeURIComponent(req.path.replace(/^\/records\//, ''));
   const user = getUser(req);
   const { frontmatter, content } = req.body;
@@ -297,7 +304,7 @@ router.put('/records/*splat', async (req, res) => {
 // and just the single file for every other kind (finding/component/
 // analytics/deliverable, all of which are genuinely one file each).
 // ---------------------------------------------------------------------------
-router.delete('/records/*splat', async (req, res) => {
+router.delete('/records/*splat', writeLimiter, async (req, res) => {
   const id = decodeURIComponent(req.path.replace(/^\/records\//, ''));
   const user = getUser(req);
 
