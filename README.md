@@ -36,10 +36,11 @@ Both halves of the app have automated test suites:
   CRUD paths (create/read/update/delete, the raw-session-is-two-files edge
   case, git attribution, and edit history), and a dedicated adversarial
   security suite (`tests/security.test.js` — path traversal, SQL injection,
-  oversized request bodies, tampered session cookies, and XSS via markdown
-  links; found and fixed two real vulnerabilities and one information-leak
-  bug along the way). All run against a disposable, git-initialized fixture
-  repo rather than the real agentic-repo — see
+  oversized request bodies, tampered session cookies, XSS via markdown
+  links, security headers/`robots.txt`/write-route rate limiting, and the
+  HTTPS redirect middleware; found and fixed two real vulnerabilities and
+  one information-leak bug along the way). All run against a disposable,
+  git-initialized fixture repo rather than the real agentic-repo — see
   [`backend/tests/helpers/setupTestRepo.js`](./backend/tests/helpers/setupTestRepo.js).
 - **Frontend**: Vitest + React Testing Library (`cd frontend && npm test`) —
   covers `LoginForm`'s success/error/pending states, `Dashboard`'s kind/tag

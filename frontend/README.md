@@ -192,8 +192,12 @@ frontend/
   signup + seeded demo accounts for the public/portfolio deploy, not open
   self-registration
 - Deploy target: leaning AWS free tier or the existing webhost, both free
-- Security hardening (path validation on slugs, HTTPS, rate limiting beyond
-  `/login`, a demo-data-reset cron) — see the Notion roadmap for the full
+- Security hardening: path validation on slugs, `helmet` headers,
+  `robots.txt`, and rate limiting on `/sessions`/`/records/*` writes are all
+  done (see `../backend/README.md`'s Security notes section). HTTPS is
+  prepped (`trust proxy` + redirect, gated on `NODE_ENV=production`) but
+  actual certs are still pending the deploy target decision below. A
+  demo-data-reset cron is still open — see the Notion roadmap for the full
   checklist
 
 See the Version Milestone Roadmap in Notion for full detail and decision

@@ -1,67 +1,32 @@
-# Research Repo CRUD UI — Backend
+# Research Repo CRUD UI — Frontend
 
-Node/Express API for the CRUD UI. Handles auth, session management, and all
-file CRUD against the [Agentic UX Research Repo](../../agentic-repo) by
-shelling out to its Python scripts (and, where no script exists, editing
-markdown files directly).
+React app for the CRUD UI. v0.9 (Auth + Browse) and v1.0 (Create/Edit/Delete)
+are both complete: login, session persistence, logout, a filterable
+dashboard, and full create/edit/delete with a WYSIWYG content editor and
+edit history. v1.1 (Testing) is also complete. v1.2 (Deploy + Polish) is next.
 
-**Stack:** Express, `better-sqlite3` (users + sessions only — markdown files
-remain the source of truth for research content), `express-session` +
-`bcrypt` for auth, `gray-matter` for frontmatter parsing, Jest + supertest
-for testing.
-
-v0.6–v1.1 are complete (backend foundation through testing); v1.2 (Deploy +
-Polish) is in progress. See the Version Milestone Roadmap in Notion for full
-detail and decision rationale.
+**Stack:** Vite + React, [Carbon Design System](https://carbondesignsystem.com/)
+for components, [TanStack Query](https://tanstack.com/query) for data
+fetching/caching, [CKEditor 5](https://ckeditor.com/) for WYSIWYG markdown
+editing, [Vitest](https://vitest.dev/) + [React Testing
+Library](https://testing-library.com/docs/react-testing-library/intro/) for
+component tests.
 
 ## Setup
 
-### 1. Install dependencies
+Requires the backend running first (see [`../backend/README.md`](../backend/README.md))
+— this app proxies all `/api/*` requests to it.
+
 ```bash
-cd backend
+cd frontend
 npm install
+npm run dev
 ```
 
-### 2. Configure environment variables
-```bash
-cp .env.example .env
-```
-Generate a session secret and paste it into `.env`:
-```bash
-openssl rand -base64 32
-```
-Find your agentic-repo venv's Python path (needed so the server calls the
-right interpreter — one that has `python-frontmatter` installed — rather than
-whatever bare `python3` resolves to on `PATH`, which ServBay shadows with a
-broken shim on this machine):
-```bash
-cd /Users/joshuacbock/IdeaProjects/agentic-repo
-source .venv/bin/activate
-which python3
-```
-`.env` should end up looking like:
-```
-PORT=3001
-NODE_ENV=development
-SESSION_SECRET=<paste the generated value here>
-AGENTIC_REPO_ROOT=/Users/joshuacbock/IdeaProjects/agentic-repo
-PYTHON_BIN=/Users/joshuacbock/IdeaProjects/agentic-repo/.venv/bin/python3
-DEMO_MODE=false
-```
-**Never commit `.env`** — it's already covered by `.gitignore`.
-
-### 3. Run the server
-```bash
-cd backend
-node server.js
-```
-You should see `Server listening on http://localhost:3001`. The SQLite
-database file (`app.db`) and its tables are created automatically on first
-run. If `DEMO_MODE=true`, the three demo users (see below) are also seeded
-automatically at startup.
-
-> **Note:** `server.js` lives in `backend/`, not the repo root. Running
-> `node server.js` from anywhere else will fail with `MODULE_NOT_FOUND`.
+Opens at `http://localhost:5173` by default. The Vite dev server proxies
+`/api` to `http://localhost:3001` (configured in `vite.config.js`), so
+session cookies work correctly across the frontend/backend origin split in
+dev without needing CORS config on the Express side.
 
 ## Testing
 
@@ -69,189 +34,173 @@ automatically at startup.
 npm test
 ```
 
-Runs the full Jest + supertest suite (68 tests across three files):
+Runs Vitest in watch mode. Current coverage:
 
-- **`tests/auth.test.js`** — signup, login, logout, `/me`, the rate limiter
-  (including the 6th attempt still being blocked even with the correct
-  password), and demo mode (`GET /demo-users`, `POST /demo-login` for all
-  three identities, and confirming `/signup`/`/login` correctly refuse
-  under `DEMO_MODE`).
-- **`tests/records.test.js`** — `POST /sessions` (raw mode), `GET
-  /records`/`GET /records/:id`, `PUT /records/:id` (including the
-  gray-matter date-coercion fix), `DELETE /records/:id` (including the
-  raw-session-is-two-files case), and `GET /records/:id/history` (including
-  `--follow` lineage across a delete-then-recreate under the same slug).
-- **`tests/security.test.js`** — a dedicated adversarial suite: path
-  traversal via `topicSlug`/`slug`, SQL injection on login/signup, oversized
-  request bodies, tampered/malformed session cookies, and XSS via markdown
-  links. Found and fixed two real vulnerabilities (path traversal; an XSS
-  gap in the agentic-repo's markdown renderer) and one information-leak bug
-  found along the way (a generic Express error handler was missing, so any
-  error — not just an oversized body — leaked a full stack trace including
-  server file paths). See the Decision Log for the full writeup.
+- **`LoginForm`**: successful login (calls `onLoginSuccess`), a failed login
+  showing the server's actual error message, and the pending state (button
+  disabled and reads "Logging in…" while the request is in flight).
+- **`Dashboard`**: kind/tag filtering logic (including combined filters and
+  the "no matching records" empty state), plus loading and error states.
 
-**Records and security tests never touch the real agentic-repo.** They run
-against a disposable, git-initialized fixture repo created fresh per test
-run (see `tests/helpers/setupTestRepo.js`), seeded by copying the actual
-Python scripts (`new_research_session.py`, `export_records.py`,
-`build_index.py`, `build_search_ui.py`, `md_render.py`) from the real
-agentic-repo — so tests always exercise the current real script logic,
-never a stale duplicate, with zero risk to real research content or git
-history. This mirrors the same isolation principle as the public demo's
-separate-repo strategy (see the Decision Log), just scoped down to a local,
-throwaway fixture instead of a persistent synced GitHub repo.
+Tests mock `fetch` directly (via `client.js`'s use of the global `fetch`)
+rather than mocking the API hooks themselves for `LoginForm`, since that
+exercises the real React Query mutation lifecycle (`isPending`/`isError`)
+end to end. `Dashboard`'s tests mock `useRecords` directly instead, since its
+filtering logic is synchronous client-side `useMemo` work with no async
+round-trip worth simulating; `CreateSessionForm` and `RecordDetail` are
+mocked out as simple stand-ins to keep those tests scoped to filtering only.
 
-**Test/dev database separation.** `db.js` and `app.js` both branch on
-`NODE_ENV=test` (set automatically by Jest) to use a SQLite file scoped to
-the current Jest worker (`app.test.<JEST_WORKER_ID>.db`) instead of the real
-`app.db` — this prevents two test files running in separate worker
-processes from racing on the same file (e.g. one file's per-test table wipe
-deleting another file's test user mid-run). The separate end-to-end suite
-(see [`../e2e/README.md`](../e2e/README.md)) reuses this same `NODE_ENV=test`
-branching — Playwright starts its own backend instance with that flag set,
-rather than reusing a real dev-mode server, so E2E runs never write real
-signup/session data into `app.db` either. `JEST_WORKER_ID` is unset outside
-Jest, so the E2E suite's runs all land in `app.test.0.db`.
+`vitest.setup.js` loads `@testing-library/jest-dom`'s matchers (e.g.
+`toBeInTheDocument()`); the `test` block in `vite.config.js` configures the
+`jsdom` environment Vitest needs to render real DOM output in tests.
+
+Real browser end-to-end tests and automated WCAG 2 AA accessibility scans
+(Playwright + `@axe-core/playwright`) live in the separate top-level
+[`../e2e/`](../e2e/README.md) folder, since they drive this app and the
+backend together rather than testing either in isolation.
+
+## Why Carbon, not Tailwind
+
+The project started with Tailwind, then switched to Carbon mid-setup.
+Accessibility is one of Carbon's core design principles — its components
+ship already meeting WCAG 2.1 AA out of the box. This paid off directly: the
+initial record list used a plain `Tile` with an `onClick` handler, which
+turned out to be completely invisible to keyboard users (Tab skipped over
+every result). Swapping to Carbon's `ClickableTile` — natively focusable and
+Enter-operable — fixed it immediately, no custom ARIA/keyboard code needed.
+Carbon's `Modal` similarly handles focus trapping, focus-on-open, and
+Escape-to-close automatically — including the confirmation dialog and
+history panel added in v1.0 (both portal-rendered via `createPortal` into
+`document.body`, since nesting one Carbon `Modal` directly inside another
+breaks its positioning otherwise).
+
+Carbon's WCAG compliance isn't a substitute for actually testing the app's
+specific composition of its components, though — an automated accessibility
+scan (see [`../e2e/README.md`](../e2e/README.md)) found three real issues:
+two in this app's own markup (a missing page-level `<h1>`, and a skipped
+heading level), and one in Carbon's `Modal` itself (its focus-trap "sentinel"
+elements failing a landmark-region check), which Carbon has already
+addressed via an opt-in feature flag,
+`enable-experimental-focus-wrap-without-sentinels`, enabled globally in
+`main.jsx`.
+
+## WYSIWYG editing: CKEditor 5, chosen deliberately
+
+v1.0 needed a way to edit a record's actual markdown body, not just its
+frontmatter fields. This is one of the few places "cleanest UX" and "best
+accessibility" genuinely pull in different directions, so it's worth
+explaining the reasoning rather than just naming the library:
+
+A true WYSIWYG editor (rendering **bold**/headings/lists inline as you type,
+no raw `**`/`#` symbols visible) is built on `contentEditable` — a browser
+feature with real, industry-wide known accessibility limitations for screen
+reader users. This isn't a library-specific flaw; it's an inherent property
+of how rich-text editing works in browsers today. A markdown-plus-live-preview
+approach (a real `<textarea>` with a rendered preview alongside it) avoids
+that tradeoff entirely, at the cost of a less polished editing feel.
+
+**CKEditor 5** was chosen over both a lightweight React-native WYSIWYG
+library and the safer textarea approach because it's one of the few editors
+with genuine enterprise/government accessibility investment — published
+VPATs, real ARIA-compliant toolbars — the same class of tool that lets
+federal/government sites actually use WYSIWYG editing and still pass 508
+review. Most lightweight React-native rich-text libraries have no comparable
+track record, despite sometimes claiming to be "accessible."
+
+Setup notes:
+- Single npm package, `ckeditor5` (their newer consolidated packaging — the
+  `Markdown` data-processor plugin is bundled in, not a separate install)
+  plus `@ckeditor/ckeditor5-react` for the React wrapper.
+- `licenseKey: 'GPL'` in the editor config enables free/open-source use.
+- The `Markdown` plugin makes `.getData()` return real markdown text (not
+  HTML), matching the backend's `content` field exactly — no format
+  conversion needed anywhere in this app.
+- Plugin list (`Essentials, Paragraph, Heading, Bold, Italic, Code, Link,
+  List, BlockQuote, Markdown`) is deliberately scoped to exactly what the
+  agentic-repo's `md_render.py` can render back out — no point exposing
+  formatting the renderer can't handle on the way back.
+
+## Data fetching pattern: lazy loading
+
+`GET /api/records` returns every record's full content (including rendered
+HTML) by default — fine for a handful of records, wasteful for a list view
+showing dozens. The backend's `export_records.py` got a `--summary` flag
+(strips `html`/`searchText`) threaded through as `?summary=true`; the
+dashboard's list view uses that, and a separate `useRecord(id)` hook fetches
+one record's full content only when it's actually opened, via React Query's
+per-id caching (`queryKey: ['record', id]`) so re-opening the same record
+doesn't re-fetch it. Editing needs one step further — `useUpdateRecord` and
+the Edit form use the record's `rawContent` field (real markdown source,
+added to the backend specifically for this), not the rendered `html`.
+
+## Rendering record content safely
+
+`RecordDetail.jsx`'s read-only view renders each record's pre-rendered HTML
+body via `dangerouslySetInnerHTML`. This is safe specifically because that
+HTML is generated at build time by the agentic-repo's own Python pipeline
+(`build_search_ui.py`'s markdown renderer) from files this app itself
+writes — never from arbitrary or third-party input. The same trust boundary
+`research/search.html` already relies on. Before injecting it, the HTML runs
+through `cleanRecordHtml()`, which uses real DOM parsing (`DOMParser`,
+`TreeWalker`) rather than string/regex replacement — an early attempt used a
+naive regex swap of literal "TODO" placeholder text and ended up corrupting
+a real link's `href` attribute, since regex has no concept of "inside a tag"
+vs. "visible text." `cleanRecordHtml()` handles: removing the redundant
+duplicate `<h1>` title, shifting heading levels so content never outranks
+the modal's own heading, turning unfilled template placeholders into a
+consistent "Not yet filled in" style, collapsing unfilled scaffolding
+(Key Findings, Roles) to one clean line instead of showing raw template
+syntax, stripping broken/unfilled relation links, and removing any section
+whose heading ends up with nothing under it once its content is cleaned.
 
 ## Project structure
 
 ```
-backend/
-├── server.js         Entry point — imports app.js, seeds demo users if DEMO_MODE=true, starts listening
-├── app.js            Express app definition (middleware, routes, generic error handler) — exported separately from server.js so tests can import it directly via supertest, without a real port
-├── db.js             better-sqlite3 connection + users table schema (test/prod db split via NODE_ENV)
-├── demoUsers.js       The three demo identities (Priya/Sam/Jordan) — single source of truth for seeding, the demo-login allowlist, and what the picker UI receives
-├── seedDemoUsers.js   Idempotently creates the demo users on startup, only when DEMO_MODE=true
-├── routes/
-│   ├── auth.js      Signup / login / logout / me / demo-users / demo-login
-│   └── records.js   Sessions + file CRUD (shells out to agentic-repo's Python scripts); validates topicSlug/slug against a safe pattern before either reaches the Python scripts
-├── tests/
-│   ├── auth.test.js       Auth flow, rate limiting, and demo mode tests
-│   ├── records.test.js    Records CRUD + history tests
-│   ├── security.test.js  Adversarial security tests (path traversal, SQL injection, oversized bodies, tampered cookies, XSS)
-│   └── helpers/
-│       └── setupTestRepo.js   Creates/destroys the disposable fixture repo used by records.test.js and security.test.js
-├── .env.example  Template for required environment variables
-└── app.db        SQLite file (git-ignored, created on first run; app.test.*.db files are the test-only equivalent)
+frontend/
+├── vite.config.js         Dev server + /api proxy to the backend; also configures the Vitest test environment
+├── vitest.setup.js         Loads @testing-library/jest-dom matchers for all test files
+├── src/
+│   ├── api/
+│   │   ├── client.js       Shared fetch wrapper — credentials included, JSON in/out, error handling
+│   │   ├── auth.js         useLogin, useLogout, useSignup (hook, no screen yet), useMe
+│   │   └── records.js      useRecords, useRecord, useCreateSession, useUpdateRecord,
+│   │                       useDeleteRecord, useRecordHistory
+│   ├── styles/
+│   │   └── _variables.scss Shared Sass tokens (spacing, header height)
+│   ├── App.jsx              Top-level: session gate (login vs. dashboard), header
+│   ├── App.module.scss
+│   ├── Header.jsx           Carbon Header + logout action
+│   ├── LoginForm.jsx         Carbon Form, wired to useLogin
+│   ├── LoginForm.test.jsx    Success, error, and pending-state tests
+│   ├── Dashboard.jsx         Kind + tag filtering, record list (h1 page title, h2 per record), "New session" button, opens RecordDetail
+│   ├── Dashboard.module.scss
+│   ├── Dashboard.test.jsx    Kind/tag filtering, empty state, loading/error state tests
+│   ├── CreateSessionForm.jsx  Structured fields + CKEditor content, posts to POST /sessions
+│   ├── EditRecordForm.jsx     Frontmatter fields + CKEditor content, posts to PUT
+│   ├── RecordDetail.jsx      Read view, Edit toggle, Delete confirmation, history panel
+│   ├── RecordDetail.module.scss
+│   ├── index.scss           `@use '@carbon/react';` — Carbon's base styles
+│   └── main.jsx             React Query's QueryClientProvider, wrapped in Carbon's FeatureFlags (enable-experimental-focus-wrap-without-sentinels)
 ```
 
-## API
+## Still to build
 
-All routes below (except where noted) require a logged-in session (`401`
-otherwise).
+**v1.2 (Deploy + Polish):**
+- Responsive layout (currently desktop-oriented — intentionally deferred)
+- A signup screen (`useSignup()` exists in `api/auth.js`, unused so far) —
+  and per the current plan, likely stays unused: v1.2 calls for *closed*
+  signup + seeded demo accounts for the public/portfolio deploy, not open
+  self-registration
+- Deploy target: leaning AWS free tier or the existing webhost, both free
+- Security hardening: path validation on slugs, `helmet` headers,
+  `robots.txt`, and rate limiting on `/sessions`/`/records/*` writes are all
+  done (see `../backend/README.md`'s Security notes section). HTTPS is
+  prepped (`trust proxy` + redirect, gated on `NODE_ENV=production`) but
+  actual certs are still pending the deploy target decision below. A
+  demo-data-reset cron is still open — see the Notion roadmap for the full
+  checklist
 
-### Auth (v0.6, extended in v1.2 for demo mode)
-
-| Method | Path                     | Body                                    | Notes                                                                 |
-|--------|--------------------------|-------------------------------------------|----------------------------------------------------------------------|
-| POST   | `/api/auth/signup`       | `username, password, gitName, gitEmail` | Creates user, starts a session. Returns `403` when `DEMO_MODE=true`.  |
-| POST   | `/api/auth/login`        | `username, password`                      | Rate-limited: 5 attempts / 15 min. Refuses the three demo usernames with `403` when `DEMO_MODE=true`. |
-| POST   | `/api/auth/logout`       | —                                           | Destroys the session                                                  |
-| GET    | `/api/auth/me`           | —                                           | Returns current user or `401`                                        |
-| GET    | `/api/auth/demo-users`   | —                                           | Public, unauthenticated. Returns the three demo identities (`username`, `displayName`, `role`) when `DEMO_MODE=true`, else `[]`. |
-| POST   | `/api/auth/demo-login`   | `username`                                | Public, unauthenticated. Passwordless login for one of the three seeded demo usernames only (validated server-side against a fixed allowlist). `404` when `DEMO_MODE` isn't set; its own IP-based rate limiter (20 requests / 15 min). |
-
-### Records / File CRUD (v0.7)
-
-| Method | Path                    | Body / Query                                          | Notes                                                       |
-|--------|-------------------------|---------------------------------------------------------|-----------------------------------------------------------------|
-| POST   | `/api/sessions`         | `{ mode: "raw" \| "deliverable", ... }`                | Wraps `new_research_session.py`. See field reference below.     |
-| GET    | `/api/records`          | `?kind=raw\|finding\|component\|analytics\|deliverable` | Shells out to `export_records.py`. `kind` filter optional.       |
-| GET    | `/api/records/:id`      | —                                                        | Single record by id (e.g. `raw:2026-09-15-foo`). 404 if not found. |
-| PUT    | `/api/records/:id`      | `{ frontmatter?: {...}, content?: "..." }`             | Merges frontmatter, replaces content if given. Reruns `build_index.py`. |
-| DELETE | `/api/records/:id`      | —                                                        | Deletes the file (whole session folder for `kind: raw`). Reruns `build_index.py`. 204 on success. |
-| GET    | `/api/records/:id/history` | —                                                     | Full edit history via `git log --follow`. Array of `{ hash, authorName, authorEmail, date, message }`, newest first. |
-
-### Git attribution (v0.8)
-
-`POST /sessions`, `PUT /records/:id`, and `DELETE /records/:id` each commit
-their change to the agentic-repo, attributed to the logged-in user (not the
-machine's own git identity). `--author "<git_name> <git_email>"` is set from
-the user's row in the `users` table; the **committer** stays whatever this
-machine's local `git config` already is — that split is intentional, so
-individual users never need git configured on the machine running the
-server. A record's edit + any `build_index.py`-regenerated index files land
-in **one atomic commit**, not two.
-
-`PUT` additionally stamps `last_edited_by` / `last_edited_at` directly into
-the record's frontmatter, for fast display without a git call, and both
-fields are returned by `GET /records`/`GET /records/:id` as well (via a
-shared `_edit_fields()` helper in `build_search_ui.py`, applied across all
-five record-loader functions — raw, findings, components, analytics, and
-deliverables). Both fields default to `null` for a record that's never been
-edited via `PUT`, keeping every record's JSON shape identical either way.
-One caveat: component records are regenerated from `tokens.tokens.json`, so
-a `PUT` edit's attribution there would be lost the next time that
-regeneration runs.
-
-**Route pattern note:** because a record id can contain a slash (any
-deliverable id, e.g. `deliverable:personas/foo`), `GET`/`PUT`/`DELETE
-/records/:id` and `GET /records/:id/history` use Express 5's named wildcard
-(`*splat`) rather than a plain `:id` param, and parse the id out of
-`req.path` directly. The `/history` route must stay registered *before* the
-generic `/records/*splat` route — Express matches top-down, and the
-wildcard would otherwise swallow `/history` as part of the id.
-
-**`POST /api/sessions` fields:**
-
-- **`mode: "raw"`** — `title, type, topicSlug` required; optional `tags`, `relatedComponents`, `relatedFindings`, `researcher`, `methodLabel`, `date`, `content` (full markdown body — overrides the default TODO-scaffold template entirely if given)
-- **`mode: "deliverable"`** — `folder, title, slug` required; optional `tags`, `relatedFindings`, `date`, `status`, `sourceType`, `protoType`, `description`. Always runs with `--no-prompt` since the API can't answer interactive prompts.
-- **`topicSlug` (raw mode) and `slug` (deliverable mode) must match ****`^[a-z0-9-]+$`**** — rejected with ****`400`**** otherwise.** Both values end up building a filesystem path inside `new_research_session.py`, which does no sanitization of its own; adversarial testing confirmed a `../`-chain payload could write real files outside the intended folder entirely, and an absolute path could discard the base path completely. This validation happens in `records.js`, before either value ever reaches the Python script.
-
-**PUT/DELETE behavior:** no Python script exists for editing or deleting
-records, so these two routes read/write/delete the markdown file directly in
-Node (using `gray-matter` for frontmatter), then shell out to
-`build_index.py` to refresh the generated indexes. **The git commit always
-happens once the file write itself succeeds, regardless of what
-`build_index.py` does afterward** — an earlier version only committed inside
-`build_index.py`'s success path, meaning any reindex failure (a warning *or*
-a crash) silently skipped the commit entirely, even though the real file
-change was already saved to disk. If `build_index.py` reports an issue, the
-response is still `200`/`204` with a `warning` field, but that's now purely
-informational — it never affects whether the change gets committed.
-
-**Frontmatter dates stay plain dates.** `gray-matter`'s underlying YAML
-library silently upgrades a plain `date: 2025-01-14` frontmatter value into
-a full JS `Date` object on parse, then re-serializes it as a full ISO
-timestamp (`2025-01-14T00:00:00.000Z`) on every `PUT` — even edits that never
-touch `date` at all. `PUT` now detects any `Date`-instance frontmatter field
-right before writing and coerces it back to a plain `YYYY-MM-DD` string, so
-an edit to, say, just `status` doesn't silently rewrite an unrelated field's
-format.
-
-**Raw sessions are two files, not one.** `new_research_session.py` creates
-`session-notes.md` and `participants.md` together in one dated folder.
-`DELETE` is folder-aware: for a `kind: raw` record it removes the whole
-session folder (`fs.rm(..., { recursive: true })`), not just
-`session-notes.md` — an earlier version only deleted the one file and
-silently orphaned `participants.md`; this is now fixed and covered by
-testing.
-
-Auth uses signed, httpOnly session cookies (via `express-session` +
-`better-sqlite3-session-store`) — not JWT. Test with `curl` using `-c
-cookies.txt` / `-b cookies.txt` to persist the cookie across requests.
-
-## Security notes
-
-- Passwords hashed with `bcrypt` (cost factor 12)
-- Session ID regenerated on login/signup (prevents session fixation)
-- Cookies: `httpOnly`, `sameSite: lax`, `secure` in production
-- Auth is hand-rolled (`express-session` + `bcrypt`), not a library — Lucia
-  Auth was originally considered but is deprecated as of March 2025
-- Session store uses `better-sqlite3-session-store`, not `connect-sqlite3`,
-  to avoid a vulnerable `sqlite3`/`node-gyp`/`tar` dependency chain
-- All `/api/sessions` and `/api/records` routes require an authenticated
-  session
-- `topicSlug`/`slug` are validated against `^[a-z0-9-]+$` before ever
-  reaching `new_research_session.py`, preventing path traversal (see above)
-- `app.js` includes a generic JSON error-handling middleware — any error
-  (a `413` from an oversized body, a malformed-JSON `SyntaxError`, or
-  anything else) responds with a plain `{ error: ... }` message and never a
-  stack trace, regardless of `NODE_ENV`
-- Demo mode (`DEMO_MODE=true`) closes `/signup` and password-based login for
-  the three demo identities entirely; the only way in is
-  `POST /demo-login`, validated against a fixed, hardcoded username
-  allowlist server-side and covered by its own IP-based rate limiter
-- A dedicated adversarial test suite (`tests/security.test.js`) exercises
-  path traversal, SQL injection, oversized bodies, tampered cookies, and
-  XSS directly against the running app — see the Testing section above
+See the Version Milestone Roadmap in Notion for full detail and decision
+rationale, including three real bugs found and fixed during v1.0 (a silent
+git-commit-loss bug, a `build_index.py` crash, and its root cause in how
+`gray-matter` handles frontmatter dates).
