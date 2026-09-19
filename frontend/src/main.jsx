@@ -9,7 +9,10 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
-        <FeatureFlags flags={{ 'enable-experimental-focus-wrap-without-sentinels': true }}>
+        <FeatureFlags flags={{
+            'enable-experimental-focus-wrap-without-sentinels': true,
+            'enable-focus-wrap-without-sentinels': true,
+        }}>
             <QueryClientProvider client={queryClient}>
                 <App />
             </QueryClientProvider>
