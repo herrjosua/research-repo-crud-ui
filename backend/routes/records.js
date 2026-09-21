@@ -28,6 +28,22 @@ const RESEARCH_ROOT = path.join(AGENTIC_REPO_ROOT, 'research');
 // doesn't have this project's dependencies. Set PYTHON_BIN in .env to override.
 const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
 
+// Passed as the `env` option on every PYTHON_BIN invocation below.
+// PYTHONDONTWRITEBYTECODE=1 stops Python from writing .pyc bytecode cache
+// files into __pycache__/ inside the venv's shared site-packages. Without
+// this, the very first import of a given module (e.g. `frontmatter`) after
+// a fresh venv install triggers a compile-and-write to that cache — and
+// since Jest runs different test files as separate parallel worker
+// processes by default, two workers' fixture repos can each spawn a Python
+// process that hits that first-time compile at nearly the same moment,
+// racing on the same cache file. Confirmed as the cause here: the identical
+// setupTestRepo.js fixture-creation code succeeded in one test file's
+// worker and failed with a transient ModuleNotFoundError in another's,
+// in the same `npm test` run — a manual, single-process reproduction of
+// the exact same fixture never reproduced it. This is a small, permanent
+// fix rather than forcing the whole suite to run single-threaded.
+const PYTHON_ENV = { ...process.env, PYTHONDONTWRITEBYTECODE: '1' };
+
 // topicSlug (raw mode) and slug (deliverable mode) both end up building a
 // filesystem path inside new_research_session.py (folder_name/file_path via
 // pathlib's `/` operator) with no sanitization on that script's side — a
@@ -35,6 +51,46 @@ const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
 // entirely. Reject anything that isn't a plain kebab-case slug here, before
 // it ever reaches the script, rather than trying to sanitize/escape it.
 const SAFE_SLUG_RE = /^[a-z0-9-]+$/;
+
+// Mirrors EditRecordForm.jsx's STATUS_OPTIONS on the frontend. Enforced here
+// too — not just client-side — since a direct API call bypassing the UI
+// entirely could otherwise set a record's status to an arbitrary or empty
+// string, silently overwriting whatever it actually was.
+const STATUS_OPTIONS = ['raw', 'in-review', 'synthesized', 'draft', 'final', 'superseded'];
+
+// Every Python script invoked below (new_research_session.py, export_records.py,
+// build_index.py) prints a clean, single-line message to stderr on an expected
+// failure (a validation error, "No record found", etc.) — but on a genuine
+// unhandled exception, Python's default behavior is to print a full traceback,
+// including absolute file paths and internals, to stderr instead. Forwarding
+// that verbatim to whoever's logged in would be the same category of
+// information leak as the Express-level stack-trace bug already fixed
+// elsewhere in this file's error-handling middleware, just one layer deeper —
+// at the subprocess boundary instead of the HTTP layer. This detects that
+// specific signature, logs the real detail server-side, and returns a generic
+// message to the client instead.
+const TRACEBACK_MARKER = 'Traceback (most recent call last):';
+
+function scriptErrorMessage(err, context) {
+  const raw = (err.stderr || err.message || '').trim();
+  if (raw.includes(TRACEBACK_MARKER)) {
+    console.error(`[${context}] unexpected script error:\n${raw}`);
+    return { message: 'internal server error', isCrash: true };
+  }
+  return { message: raw, isCrash: false };
+}
+
+// Used for tags/relatedComponents/relatedFindings (POST /sessions) and
+// frontmatter.tags (PUT /records/:id): each must be a plain string (comma-
+// separated, matching the frontend's own convention) or an array of strings.
+// Anything else — a number, an object, a mixed array — would otherwise reach
+// execFile's argument list or gray-matter's YAML writer as-is, either
+// throwing an opaque low-level error or silently writing malformed
+// frontmatter, instead of a clear, actionable 400.
+function isStringOrStringArray(value) {
+  return typeof value === 'string'
+    || (Array.isArray(value) && value.every((v) => typeof v === 'string'));
+}
 
 function requireAuth(req, res, next) {
   if (!req.session.userId) {
@@ -62,11 +118,23 @@ router.post('/sessions', writeLimiter, async (req, res) => {
   if (mode === 'raw') {
     const { title, type, topicSlug, tags, relatedComponents, relatedFindings, researcher, methodLabel, date } = req.body;
 
-    if (!title || !type || !topicSlug) {
+    // .trim() checks, not just truthiness — a whitespace-only string like
+    // "   " is truthy in JS, so a plain `!title` check would let it through
+    // and create a session with a blank-looking title.
+    if (!title || !title.trim() || !type || !type.trim() || !topicSlug || !topicSlug.trim()) {
       return res.status(400).json({ error: 'raw mode requires title, type, and topicSlug' });
     }
     if (!SAFE_SLUG_RE.test(topicSlug)) {
       return res.status(400).json({ error: 'topicSlug must match ^[a-z0-9-]+$' });
+    }
+    if (tags !== undefined && !isStringOrStringArray(tags)) {
+      return res.status(400).json({ error: 'tags must be a string or an array of strings' });
+    }
+    if (relatedComponents !== undefined && !isStringOrStringArray(relatedComponents)) {
+      return res.status(400).json({ error: 'relatedComponents must be a string or an array of strings' });
+    }
+    if (relatedFindings !== undefined && !isStringOrStringArray(relatedFindings)) {
+      return res.status(400).json({ error: 'relatedFindings must be a string or an array of strings' });
     }
 
     args.push('--title', title, '--type', type, '--topic-slug', topicSlug);
@@ -82,11 +150,17 @@ router.post('/sessions', writeLimiter, async (req, res) => {
       sourceType, protoType, description,
     } = req.body;
 
-    if (!folder || !title || !slug) {
+    if (!folder || !folder.trim() || !title || !title.trim() || !slug || !slug.trim()) {
       return res.status(400).json({ error: 'deliverable mode requires folder, title, and slug' });
     }
     if (!SAFE_SLUG_RE.test(slug)) {
       return res.status(400).json({ error: 'slug must match ^[a-z0-9-]+$' });
+    }
+    if (tags !== undefined && !isStringOrStringArray(tags)) {
+      return res.status(400).json({ error: 'tags must be a string or an array of strings' });
+    }
+    if (relatedFindings !== undefined && !isStringOrStringArray(relatedFindings)) {
+      return res.status(400).json({ error: 'relatedFindings must be a string or an array of strings' });
     }
 
     // --no-prompt always passed: the API is a non-interactive caller, so
@@ -102,7 +176,7 @@ router.post('/sessions', writeLimiter, async (req, res) => {
   }
 
   try {
-    const { stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR });
+    const { stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
 
     const createdMatch = stdout.match(/✅ Created (.+?)(?:\n|$)/);
     if (createdMatch) {
@@ -112,7 +186,8 @@ router.post('/sessions', writeLimiter, async (req, res) => {
 
     res.status(201).json({ message: stdout.trim() });
   } catch (err) {
-    res.status(400).json({ error: (err.stderr || err.message).trim() });
+    const { message, isCrash } = scriptErrorMessage(err, 'POST /sessions');
+    res.status(isCrash ? 500 : 400).json({ error: message });
   }
 });
 
@@ -130,10 +205,11 @@ router.get('/records', async (req, res) => {
   if (summary === 'true') args.push('--summary');
 
   try {
-    const { stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR });
+    const { stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
     res.json(JSON.parse(stdout));
   } catch (err) {
-    res.status(500).json({ error: (err.stderr || err.message).trim() });
+    const { message } = scriptErrorMessage(err, 'GET /records');
+    res.status(500).json({ error: message });
   }
 });
 
@@ -148,7 +224,8 @@ router.get('/records/*splat/history', async (req, res) => {
   try {
     record = await fetchRecord(id);
   } catch (err) {
-    return res.status(404).json({ error: (err.stderr || err.message).trim() });
+    const { message, isCrash } = scriptErrorMessage(err, 'GET /records/:id/history (fetchRecord)');
+    return res.status(isCrash ? 500 : 404).json({ error: message });
   }
 
   const relativePath = path.relative(AGENTIC_REPO_ROOT, record.filePath);
@@ -165,7 +242,8 @@ router.get('/records/*splat/history', async (req, res) => {
     });
     res.json(history);
   } catch (err) {
-    res.status(500).json({ error: (err.stderr || err.message).trim() });
+    const { message } = scriptErrorMessage(err, 'GET /records/:id/history (git log)');
+    res.status(500).json({ error: message });
   }
 });
 
@@ -174,11 +252,12 @@ router.get('/records/*splat', async (req, res) => {
   const args = [path.join(SCRIPTS_DIR, 'export_records.py'), '--id', id];
 
   try {
-    const { stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR });
+    const { stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
     res.json(JSON.parse(stdout));
   } catch (err) {
     // export_records.py exits 1 with "No record found" on stderr when the id doesn't match.
-    res.status(404).json({ error: (err.stderr || err.message).trim() });
+    const { message, isCrash } = scriptErrorMessage(err, 'GET /records/:id');
+    res.status(isCrash ? 500 : 404).json({ error: message });
   }
 });
 
@@ -191,7 +270,7 @@ async function fetchRecord(id) {
   const { stdout } = await execFileAsync(
     PYTHON_BIN,
     [path.join(SCRIPTS_DIR, 'export_records.py'), '--id', id],
-    { cwd: SCRIPTS_DIR },
+    { cwd: SCRIPTS_DIR, env: PYTHON_ENV },
   );
   const record = JSON.parse(stdout);
   // record.path is always relative to research/ (either directly, e.g.
@@ -226,7 +305,12 @@ async function commitChange(message, user) {
     );
   } catch (err) {
     // git commit exits non-zero when there's nothing staged (e.g. a PUT with
-    // no actual change) — that's a no-op, not a failure.
+    // no actual change) — that's a no-op, not a failure. Any other failure
+    // here is re-thrown and, since this is an async Express route handler,
+    // Express 5 forwards the rejection to app.js's generic error-handling
+    // middleware automatically — which already returns a safe, generic
+    // message rather than a raw stack trace, so no additional handling is
+    // needed at the call sites below.
     if (!/nothing to commit/i.test(err.stdout || err.message || '')) {
       throw err;
     }
@@ -246,12 +330,28 @@ router.put('/records/*splat', writeLimiter, async (req, res) => {
     return res.status(400).json({ error: 'request body must include frontmatter and/or content' });
   }
 
+  // Server-side guards, not just the frontend's — a direct API call
+  // bypasses EditRecordForm.jsx entirely, so its client-side checks (added
+  // last session) offer zero real protection on their own.
+  if (frontmatter) {
+    if (Object.prototype.hasOwnProperty.call(frontmatter, 'title') && !frontmatter.title.trim()) {
+      return res.status(400).json({ error: 'frontmatter.title cannot be blank' });
+    }
+    if (Object.prototype.hasOwnProperty.call(frontmatter, 'status') && !STATUS_OPTIONS.includes(frontmatter.status)) {
+      return res.status(400).json({ error: `frontmatter.status must be one of: ${STATUS_OPTIONS.join(', ')}` });
+    }
+    if (Object.prototype.hasOwnProperty.call(frontmatter, 'tags') && !isStringOrStringArray(frontmatter.tags)) {
+      return res.status(400).json({ error: 'frontmatter.tags must be a string or an array of strings' });
+    }
+  }
+
   let filePath;
   try {
     const record = await fetchRecord(id);
     filePath = record.filePath;
   } catch (err) {
-    return res.status(404).json({ error: (err.stderr || err.message).trim() });
+    const { message, isCrash } = scriptErrorMessage(err, 'PUT /records/:id (fetchRecord)');
+    return res.status(isCrash ? 500 : 404).json({ error: message });
   }
 
   try {
@@ -279,9 +379,10 @@ router.put('/records/*splat', writeLimiter, async (req, res) => {
 
   let indexWarning = null;
   try {
-    await execFileAsync(PYTHON_BIN, [path.join(SCRIPTS_DIR, 'build_index.py')], { cwd: SCRIPTS_DIR });
+    await execFileAsync(PYTHON_BIN, [path.join(SCRIPTS_DIR, 'build_index.py')], { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
   } catch (err) {
-    indexWarning = (err.stderr || err.message).trim();
+    const { message } = scriptErrorMessage(err, 'PUT /records/:id (build_index.py)');
+    indexWarning = message;
   }
 
   await commitChange(`Update ${path.relative(AGENTIC_REPO_ROOT, filePath)}`, user);
@@ -312,7 +413,8 @@ router.delete('/records/*splat', writeLimiter, async (req, res) => {
   try {
     record = await fetchRecord(id);
   } catch (err) {
-    return res.status(404).json({ error: (err.stderr || err.message).trim() });
+    const { message, isCrash } = scriptErrorMessage(err, 'DELETE /records/:id (fetchRecord)');
+    return res.status(isCrash ? 500 : 404).json({ error: message });
   }
 
   try {
@@ -327,9 +429,10 @@ router.delete('/records/*splat', writeLimiter, async (req, res) => {
 
   let indexWarning = null;
   try {
-    await execFileAsync(PYTHON_BIN, [path.join(SCRIPTS_DIR, 'build_index.py')], { cwd: SCRIPTS_DIR });
+    await execFileAsync(PYTHON_BIN, [path.join(SCRIPTS_DIR, 'build_index.py')], { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
   } catch (err) {
-    indexWarning = (err.stderr || err.message).trim();
+    const { message } = scriptErrorMessage(err, 'DELETE /records/:id (build_index.py)');
+    indexWarning = message;
   }
 
   await commitChange(`Delete ${record.path}`, user);
@@ -344,3 +447,4 @@ router.delete('/records/*splat', writeLimiter, async (req, res) => {
 });
 
 module.exports = router;
+module.exports._scriptErrorMessage = scriptErrorMessage;

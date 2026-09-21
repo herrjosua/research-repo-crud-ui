@@ -2,7 +2,7 @@ const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
 
 let testRepoPath;
 let app, sessionDb, clearSessionInterval;
-let request, db, agent;
+let request, db, agent, server;
 
 beforeAll(async () => {
     testRepoPath = createTestRepo();
@@ -16,6 +16,13 @@ beforeAll(async () => {
     request = require('supertest');
     ({ app, sessionDb, clearSessionInterval } = require('../app'));
     db = require('../db');
+
+    // One persistent server for the whole file — see auth.test.js's beforeAll
+    // for why: passing the bare `app` to request()/request.agent() makes
+    // supertest bind and tear down a brand-new ephemeral TCP listener for
+    // every single assertion, which raced intermittently under this suite's
+    // concurrent git/python3 subprocess and bcrypt load.
+    server = app.listen(0);
     delete process.env.DEMO_MODE; // reset to the "off" baseline every test in this file assumes, regardless of what backend/.env currently has
 
     // Records routes require a logged-in session — sign up and log in once
@@ -29,7 +36,7 @@ beforeAll(async () => {
     // a silently-ignored 409 that would leave `agent` unauthenticated.
     db.prepare('DELETE FROM users WHERE username = ?').run('records-tester');
 
-    agent = request.agent(app);
+    agent = request.agent(server);
     const signupRes = await agent.post('/api/auth/signup').send({
         username: 'records-tester',
         password: 'a-real-password-123',
@@ -49,6 +56,7 @@ afterAll(async () => {
     db.close();
     sessionDb.close();
     clearSessionInterval();
+    server.close();
     delete process.env.AGENTIC_REPO_ROOT;
     await destroyTestRepo(testRepoPath);
 });
@@ -105,15 +113,66 @@ describe('POST /api/sessions (raw mode)', () => {
         expect(res.body.error).toMatch(/requires title, type, and topicSlug/);
     });
 
+    // A plain `!title` check would let this through — a whitespace-only
+    // string is truthy in JS — and create a session with a blank-looking
+    // title. This is the regression guard for that fix.
+    it('rejects a whitespace-only title', async () => {
+        const res = await agent.post('/api/sessions').send({
+            mode: 'raw',
+            title: '   ',
+            type: 'interview',
+            topicSlug: 'whitespace-title-test',
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/requires title, type, and topicSlug/);
+    });
+
+    it('rejects tags of the wrong type instead of passing them through to execFile', async () => {
+        const res = await agent.post('/api/sessions').send({
+            mode: 'raw',
+            title: 'Bad tags type',
+            type: 'interview',
+            topicSlug: 'bad-tags-type-test',
+            tags: { not: 'a string or array' },
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/tags must be a string or an array of strings/);
+    });
+
     it('requires a logged-in session', async () => {
         // A plain (non-agent) request has no session cookie at all.
-        const res = await request(app).post('/api/sessions').send(validRawSession);
+        const res = await request(server).post('/api/sessions').send(validRawSession);
         expect(res.status).toBe(401);
     });
 });
 
 const fs = require('fs/promises');
 const path = require('path');
+
+describe('POST /api/sessions (deliverable mode)', () => {
+    it('rejects a whitespace-only folder, title, or slug', async () => {
+        const res = await agent.post('/api/sessions').send({
+            mode: 'deliverable',
+            folder: '   ',
+            title: 'Whitespace folder test',
+            slug: 'whitespace-folder-test',
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/requires folder, title, and slug/);
+    });
+
+    it('rejects relatedFindings of the wrong type', async () => {
+        const res = await agent.post('/api/sessions').send({
+            mode: 'deliverable',
+            folder: 'personas',
+            title: 'Bad relatedFindings type',
+            slug: 'bad-related-findings-type-test',
+            relatedFindings: 42,
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/relatedFindings must be a string or an array of strings/);
+    });
+});
 
 describe('GET /api/records/:id', () => {
     const recordId = 'raw:2026-01-15-onboarding-flow-usability-test';
@@ -137,7 +196,7 @@ describe('GET /api/records/:id', () => {
     });
 
     it('requires a logged-in session', async () => {
-        const res = await request(app).get(`/api/records/${recordId}`);
+        const res = await request(server).get(`/api/records/${recordId}`);
         expect(res.status).toBe(401);
     });
 });
@@ -218,13 +277,49 @@ describe('PUT /api/records/:id', () => {
         expect(res.body.error).toMatch(/frontmatter and\/or content/);
     });
 
+    // These three are the server-side counterpart to EditRecordForm.jsx's
+    // client-side validation from last session — a direct API call bypasses
+    // the form entirely, so those client-side checks offer no real
+    // protection on their own without this.
+    it('rejects an explicit blank title instead of silently overwriting the real one', async () => {
+        const res = await agent.put(`/api/records/${recordId}`).send({
+            frontmatter: { title: '   ' },
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/title cannot be blank/);
+    });
+
+    it('rejects a status value outside the known set', async () => {
+        const res = await agent.put(`/api/records/${recordId}`).send({
+            frontmatter: { status: 'not-a-real-status' },
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/status must be one of/);
+    });
+
+    it('rejects an explicit empty-string status instead of silently overwriting the real one', async () => {
+        const res = await agent.put(`/api/records/${recordId}`).send({
+            frontmatter: { status: '' },
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/status must be one of/);
+    });
+
+    it('rejects tags of the wrong type in frontmatter', async () => {
+        const res = await agent.put(`/api/records/${recordId}`).send({
+            frontmatter: { tags: { not: 'a string or array' } },
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/tags must be a string or an array of strings/);
+    });
+
     it('returns 404 for an id that does not exist', async () => {
         const res = await agent.put('/api/records/raw:does-not-exist').send({ frontmatter: { status: 'final' } });
         expect(res.status).toBe(404);
     });
 
     it('requires a logged-in session', async () => {
-        const res = await request(app).put(`/api/records/${recordId}`).send({ frontmatter: { status: 'final' } });
+        const res = await request(server).put(`/api/records/${recordId}`).send({ frontmatter: { status: 'final' } });
         expect(res.status).toBe(401);
     });
 });
@@ -277,7 +372,7 @@ describe('DELETE /api/records/:id', () => {
     });
 
     it('requires a logged-in session', async () => {
-        const res = await request(app).delete(`/api/records/${deleteRecordId}`);
+        const res = await request(server).delete(`/api/records/${deleteRecordId}`);
         expect(res.status).toBe(401);
     });
 });
@@ -317,7 +412,7 @@ describe('GET /api/records/:id/history', () => {
     });
 
     it('requires a logged-in session', async () => {
-        const res = await request(app).get(`/api/records/${historyRecordId}/history`);
+        const res = await request(server).get(`/api/records/${historyRecordId}/history`);
         expect(res.status).toBe(401);
     });
 });

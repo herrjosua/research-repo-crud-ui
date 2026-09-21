@@ -5,6 +5,23 @@ const { seedDemoUsers } = require('../seedDemoUsers');
 
 delete process.env.DEMO_MODE; // reset to the "off" baseline every test in this file assumes, regardless of what backend/.env currently has
 
+// A single persistent server for the whole file, instead of passing the bare
+// Express `app` to request()/request.agent() at every call site. supertest's
+// Test constructor calls app.listen(0) itself whenever it's handed something
+// that isn't already listening — so passing `app` directly spins up (and
+// tears down) a brand-new ephemeral TCP listener for every single assertion
+// in this file. Under the concurrent subprocess load the other test files
+// generate (real git/python3 execFile calls, synchronous bcrypt hashing),
+// that per-request bind/listen/close churn intermittently produced
+// nondeterministic failures here — wrong status codes, wrong bodies, even raw
+// HTTP parse errors — never the same one twice and never reproducible
+// running a file alone. Listening once up front removes the churn entirely.
+let server;
+
+beforeAll(() => {
+    server = app.listen(0);
+});
+
 // Runs before every single test in this file, in every describe block below.
 // Wipes the users table so no test can collide with data another test left
 // behind. Safe to do here because NODE_ENV=test (set automatically by Jest)
@@ -17,6 +34,7 @@ afterAll(() => {
     db.close();
     sessionDb.close();
     clearSessionInterval();
+    server.close();
 });
 
 describe('POST /api/auth/signup', () => {
@@ -28,7 +46,7 @@ describe('POST /api/auth/signup', () => {
     };
 
     it('creates a user and starts a session', async () => {
-        const res = await request(app).post('/api/auth/signup').send(validUser);
+        const res = await request(server).post('/api/auth/signup').send(validUser);
 
         expect(res.status).toBe(201);
         expect(res.body).toMatchObject({ username: 'alice' });
@@ -37,14 +55,14 @@ describe('POST /api/auth/signup', () => {
     });
 
     it('rejects a signup missing required fields', async () => {
-        const res = await request(app).post('/api/auth/signup').send({ username: 'bob' });
+        const res = await request(server).post('/api/auth/signup').send({ username: 'bob' });
 
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/required/);
     });
 
     it('rejects a password under 8 characters', async () => {
-        const res = await request(app)
+        const res = await request(server)
             .post('/api/auth/signup')
             .send({ ...validUser, password: 'short' });
 
@@ -53,8 +71,8 @@ describe('POST /api/auth/signup', () => {
     });
 
     it('rejects a duplicate username', async () => {
-        await request(app).post('/api/auth/signup').send(validUser);
-        const res = await request(app).post('/api/auth/signup').send(validUser);
+        await request(server).post('/api/auth/signup').send(validUser);
+        const res = await request(server).post('/api/auth/signup').send(validUser);
 
         expect(res.status).toBe(409);
         expect(res.body.error).toMatch(/already taken/);
@@ -70,11 +88,11 @@ describe('POST /api/auth/login', () => {
     };
 
     beforeEach(async () => {
-        await request(app).post('/api/auth/signup').send(credentials);
+        await request(server).post('/api/auth/signup').send(credentials);
     });
 
     it('logs in with correct credentials', async () => {
-        const res = await request(app)
+        const res = await request(server)
             .post('/api/auth/login')
             .send({ username: credentials.username, password: credentials.password });
 
@@ -84,7 +102,7 @@ describe('POST /api/auth/login', () => {
     });
 
     it('rejects an unknown username', async () => {
-        const res = await request(app)
+        const res = await request(server)
             .post('/api/auth/login')
             .send({ username: 'nobody', password: 'whatever123' });
 
@@ -93,7 +111,7 @@ describe('POST /api/auth/login', () => {
     });
 
     it('rejects an incorrect password', async () => {
-        const res = await request(app)
+        const res = await request(server)
             .post('/api/auth/login')
             .send({ username: credentials.username, password: 'wrong-password' });
 
@@ -102,7 +120,7 @@ describe('POST /api/auth/login', () => {
     });
 
     it('rejects a login missing required fields', async () => {
-        const res = await request(app).post('/api/auth/login').send({ username: credentials.username });
+        const res = await request(server).post('/api/auth/login').send({ username: credentials.username });
 
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/required/);
@@ -111,7 +129,7 @@ describe('POST /api/auth/login', () => {
 
 describe('POST /api/auth/login rate limiting', () => {
     async function signUpUser(username) {
-        await request(app).post('/api/auth/signup').send({
+        await request(server).post('/api/auth/signup').send({
             username,
             password: 'a-real-password-123',
             gitName: 'Dave Example',
@@ -124,13 +142,13 @@ describe('POST /api/auth/login rate limiting', () => {
         await signUpUser(username);
 
         for (let i = 0; i < 5; i += 1) {
-            const res = await request(app)
+            const res = await request(server)
                 .post('/api/auth/login')
                 .send({ username, password: 'wrong-password' });
             expect(res.status).toBe(401);
         }
 
-        const sixth = await request(app)
+        const sixth = await request(server)
             .post('/api/auth/login')
             .send({ username, password: 'wrong-password' });
 
@@ -143,12 +161,12 @@ describe('POST /api/auth/login rate limiting', () => {
         await signUpUser(username);
 
         for (let i = 0; i < 5; i += 1) {
-            await request(app)
+            await request(server)
                 .post('/api/auth/login')
                 .send({ username, password: 'wrong-password' });
         }
 
-        const sixth = await request(app)
+        const sixth = await request(server)
             .post('/api/auth/login')
             .send({ username, password: 'a-real-password-123' });
 
@@ -165,12 +183,12 @@ describe('POST /api/auth/logout and GET /api/auth/me', () => {
     };
 
     it('returns 401 from /me when not logged in', async () => {
-        const res = await request(app).get('/api/auth/me');
+        const res = await request(server).get('/api/auth/me');
         expect(res.status).toBe(401);
     });
 
     it('returns the current user from /me after login, then 401 after logout', async () => {
-        const agent = request.agent(app);
+        const agent = request.agent(server);
 
         await agent.post('/api/auth/signup').send(credentials);
 
@@ -196,14 +214,14 @@ describe('POST /api/auth/logout and GET /api/auth/me', () => {
 
         describe('GET /api/auth/demo-users', () => {
             it('returns an empty array when DEMO_MODE is not set', async () => {
-                const res = await request(app).get('/api/auth/demo-users');
+                const res = await request(server).get('/api/auth/demo-users');
                 expect(res.status).toBe(200);
                 expect(res.body).toEqual([]);
             });
 
             it('returns the three demo identities when DEMO_MODE is true', async () => {
                 process.env.DEMO_MODE = 'true';
-                const res = await request(app).get('/api/auth/demo-users');
+                const res = await request(server).get('/api/auth/demo-users');
 
                 expect(res.status).toBe(200);
                 expect(res.body).toHaveLength(3);
@@ -224,7 +242,7 @@ describe('POST /api/auth/logout and GET /api/auth/me', () => {
 
             it('logs in as each of the three demo users', async () => {
                 for (const username of ['priya', 'sam', 'jordan']) {
-                    const agent = request.agent(app);
+                    const agent = request.agent(server);
                     const res = await agent.post('/api/auth/demo-login').send({ username });
 
                     expect(res.status).toBe(200);
@@ -237,14 +255,14 @@ describe('POST /api/auth/logout and GET /api/auth/me', () => {
             });
 
             it('rejects a username not on the demo allowlist', async () => {
-                const res = await request(app).post('/api/auth/demo-login').send({ username: 'alice' });
+                const res = await request(server).post('/api/auth/demo-login').send({ username: 'alice' });
                 expect(res.status).toBe(400);
                 expect(res.body.error).toMatch(/unknown demo user/);
             });
 
             it('returns 404 when DEMO_MODE is not set', async () => {
                 delete process.env.DEMO_MODE;
-                const res = await request(app).post('/api/auth/demo-login').send({ username: 'priya' });
+                const res = await request(server).post('/api/auth/demo-login').send({ username: 'priya' });
                 expect(res.status).toBe(404);
             });
         });
@@ -252,7 +270,7 @@ describe('POST /api/auth/logout and GET /api/auth/me', () => {
         describe('DEMO_MODE interaction with existing routes', () => {
             it('rejects signup with 403 when DEMO_MODE is true', async () => {
                 process.env.DEMO_MODE = 'true';
-                const res = await request(app).post('/api/auth/signup').send({
+                const res = await request(server).post('/api/auth/signup').send({
                     username: 'newuser',
                     password: 'a-real-password-123',
                     gitName: 'New User',
@@ -264,7 +282,7 @@ describe('POST /api/auth/logout and GET /api/auth/me', () => {
             it('rejects a demo username via regular /login when DEMO_MODE is true', async () => {
                 process.env.DEMO_MODE = 'true';
                 await seedDemoUsers();
-                const res = await request(app).post('/api/auth/login').send({ username: 'priya', password: 'whatever' });
+                const res = await request(server).post('/api/auth/login').send({ username: 'priya', password: 'whatever' });
                 expect(res.status).toBe(403);
                 expect(res.body.error).toMatch(/demo login/);
             });

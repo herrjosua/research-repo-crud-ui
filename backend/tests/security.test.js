@@ -9,7 +9,7 @@ const os = require('os');
 
 let testRepoPath;
 let app, sessionDb, clearSessionInterval;
-let request, db, agent;
+let request, db, agent, server;
 
 beforeAll(async () => {
     testRepoPath = createTestRepo();
@@ -18,11 +18,18 @@ beforeAll(async () => {
     request = require('supertest');
     ({ app, sessionDb, clearSessionInterval } = require('../app'));
     db = require('../db');
+
+    // One persistent server for the whole file — see auth.test.js's beforeAll
+    // for why: passing the bare `app` to request()/request.agent() makes
+    // supertest bind and tear down a brand-new ephemeral TCP listener for
+    // every single assertion, which raced intermittently under this suite's
+    // concurrent git/python3 subprocess and bcrypt load.
+    server = app.listen(0);
     delete process.env.DEMO_MODE;
 
     db.prepare('DELETE FROM users WHERE username = ?').run('security-tester');
 
-    agent = request.agent(app);
+    agent = request.agent(server);
     const signupRes = await agent.post('/api/auth/signup').send({
         username: 'security-tester',
         password: 'a-real-password-123',
@@ -40,6 +47,7 @@ afterAll(async () => {
     db.close();
     sessionDb.close();
     clearSessionInterval();
+    server.close();
     delete process.env.AGENTIC_REPO_ROOT;
     await destroyTestRepo(testRepoPath);
 });
@@ -176,7 +184,7 @@ describe('VECTOR 2: SQL injection via username/password', () => {
     ];
 
     it.each(injectionPayloads)('rejects login injection payload %p as an invalid username/password, not a bypass', async (payload) => {
-        const res = await request(app).post('/api/auth/login').send({
+        const res = await request(server).post('/api/auth/login').send({
             username: payload,
             password: payload,
         });
@@ -192,7 +200,7 @@ describe('VECTOR 2: SQL injection via username/password', () => {
         // previous run so this always gets a clean 201, not a stale 409.
         db.prepare("DELETE FROM users WHERE username = ?").run("' OR '1'='1");
 
-        const res = await request(app).post('/api/auth/signup').send({
+        const res = await request(server).post('/api/auth/signup').send({
             username: "' OR '1'='1",
             password: 'a-real-password-123',
             gitName: 'Injector',
@@ -204,7 +212,7 @@ describe('VECTOR 2: SQL injection via username/password', () => {
     });
 
     it("survives a DROP TABLE payload without actually dropping the users table", async () => {
-        await request(app).post('/api/auth/login').send({
+        await request(server).post('/api/auth/login').send({
             username: "x'; DROP TABLE users; --",
             password: 'whatever',
         });
@@ -233,13 +241,13 @@ describe('VECTOR 2: SQL injection via username/password', () => {
 describe('VECTOR 3: oversized request bodies', () => {
     it('rejects a body over the 100kb default limit with 413', async () => {
         const oversized = 'a'.repeat(200 * 1024);
-        const res = await request(app).post('/api/auth/login').send({ username: 'x', password: oversized });
+        const res = await request(server).post('/api/auth/login').send({ username: 'x', password: oversized });
         expect(res.status).toBe(413);
     });
 
     it('does not leak a stack trace or filesystem paths for an oversized body', async () => {
         const oversized = 'a'.repeat(200 * 1024);
-        const res = await request(app).post('/api/auth/login').send({ username: 'x', password: oversized });
+        const res = await request(server).post('/api/auth/login').send({ username: 'x', password: oversized });
 
         expect(res.headers['content-type']).toMatch(/application\/json/);
         expect(res.text).not.toMatch(/node_modules/);
@@ -248,7 +256,7 @@ describe('VECTOR 3: oversized request bodies', () => {
     });
 
     it('does not leak a stack trace for a malformed (truncated) JSON body either', async () => {
-        const res = await request(app)
+        const res = await request(server)
             .post('/api/auth/login')
             .set('Content-Type', 'application/json')
             .send('{"username": "x", "password": ');
@@ -259,7 +267,7 @@ describe('VECTOR 3: oversized request bodies', () => {
     });
 
     it('accepts a normal-sized body as before', async () => {
-        const res = await request(app).post('/api/auth/login').send({ username: 'nobody', password: 'whatever' });
+        const res = await request(server).post('/api/auth/login').send({ username: 'nobody', password: 'whatever' });
         expect(res.status).toBe(401); // wrong creds, but proves the request itself was processed normally
     });
 });
@@ -283,7 +291,7 @@ describe('VECTOR 4: malformed/tampered session cookies', () => {
     ];
 
     it.each(badCookies)('degrades a tampered cookie (%s) to a clean 401 with no leak', async (cookie) => {
-        const res = await request(app).get('/api/records').set('Cookie', cookie);
+        const res = await request(server).get('/api/records').set('Cookie', cookie);
 
         expect(res.status).toBe(401);
         expect(res.headers['content-type']).toMatch(/application\/json/);
@@ -292,7 +300,7 @@ describe('VECTOR 4: malformed/tampered session cookies', () => {
     });
 
     it('rejects a request with no cookie at all the same way', async () => {
-        const res = await request(app).get('/api/records');
+        const res = await request(server).get('/api/records');
         expect(res.status).toBe(401);
         expect(res.body).toEqual({ error: 'not logged in' });
     });
@@ -412,7 +420,7 @@ describe('VECTOR 6: security headers, robots.txt, and write-route rate limiting'
     });
 
     it('serves a robots.txt disallowing all crawling', async () => {
-        const res = await request(app).get('/robots.txt');
+        const res = await request(server).get('/robots.txt');
         expect(res.status).toBe(200);
         expect(res.text).toMatch(/User-agent: \*/);
         expect(res.text).toMatch(/Disallow: \//);
@@ -489,5 +497,69 @@ describe('VECTOR 7: HTTPS redirect middleware', () => {
 
         expect(res.redirect).not.toHaveBeenCalled();
         expect(next).toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// VECTOR 8 — Python-traceback masking on subprocess errors
+//
+// Tested directly against the exported scriptErrorMessage() helper, not
+// through a real subprocess crash — deliberately breaking a Python script
+// (or PYTHON_BIN) to force a genuine unhandled exception in the fixture repo
+// would be fragile and invasive to the test setup shared by every other test
+// in this file and in records.test.js. Same reasoning as VECTOR 7: unit-test
+// the pure function directly with realistic mock error objects, having
+// already manually confirmed the real behavior once (see records.js's own
+// comment on scriptErrorMessage for the mechanism).
+// ---------------------------------------------------------------------------
+describe('VECTOR 8: Python-traceback masking on subprocess errors', () => {
+    let scriptErrorMessage;
+
+    beforeAll(() => {
+        // Deliberately required here, not at describe-body scope: a
+        // describe() callback runs synchronously during Jest's collection
+        // pass, before this file's own top-level beforeAll (which sets
+        // AGENTIC_REPO_ROOT and requires ../app, triggering dotenv) has run.
+        // Requiring ../routes/records that early froze its module-level
+        // PYTHON_BIN/AGENTIC_REPO_ROOT consts against an unloaded .env, and
+        // then poisoned the module cache for every later require in this
+        // file, including the one inside ../app.
+        ({ _scriptErrorMessage: scriptErrorMessage } = require('../routes/records'));
+    });
+
+    it('masks a genuine Python traceback and logs it server-side instead of forwarding it', () => {
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+        const fakeTraceback = [
+            'Traceback (most recent call last):',
+            '  File "/Users/joshuacbock/IdeaProjects/agentic-repo/research/scripts/export_records.py", line 42, in <module>',
+            "    raise ValueError('something broke')",
+            'ValueError: something broke',
+        ].join('\n');
+
+        const result = scriptErrorMessage({ stderr: fakeTraceback }, 'TEST CONTEXT');
+
+        expect(result.isCrash).toBe(true);
+        expect(result.message).toBe('internal server error');
+        // The real detail must still be logged server-side — masking it from
+        // the client is not the same as losing it entirely.
+        expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('TEST CONTEXT'));
+        expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining(fakeTraceback));
+
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('passes a clean, expected script error message straight through unchanged', () => {
+        const result = scriptErrorMessage({ stderr: 'No record found for id: raw:does-not-exist' }, 'TEST CONTEXT');
+
+        expect(result.isCrash).toBe(false);
+        expect(result.message).toBe('No record found for id: raw:does-not-exist');
+    });
+
+    it('falls back to err.message when stderr is absent, without misidentifying it as a crash', () => {
+        const result = scriptErrorMessage({ message: 'ENOENT: no such file or directory' }, 'TEST CONTEXT');
+
+        expect(result.isCrash).toBe(false);
+        expect(result.message).toBe('ENOENT: no such file or directory');
     });
 });
