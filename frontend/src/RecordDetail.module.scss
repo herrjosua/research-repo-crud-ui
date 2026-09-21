@@ -1,4 +1,12 @@
+@use './styles/variables' as vars;
+
 :global(.placeholder) {
   color: #6f6f6f;
   font-style: italic;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: vars.$spacing-action-gap;
 }

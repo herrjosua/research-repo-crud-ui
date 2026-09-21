@@ -88,12 +88,12 @@ export default function Dashboard() {
       <Column lg={4} md={2} sm={4}>
         <Search
             labelText="Search records"
-            placeholder="Search by title or type"
+            placeholder="Search records"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onClear={() => setSearchQuery('')}
         />
-        <fieldset>
+        <fieldset className={styles.fieldset}>
           <legend>Kind</legend>
           {ALL_KINDS.map((kind) => (
             <Checkbox
@@ -105,7 +105,7 @@ export default function Dashboard() {
             />
           ))}
         </fieldset>
-        <fieldset>
+        <fieldset className={styles.fieldset}>
           <legend>Tags{activeTags.size > 0 && ` (${activeTags.size} selected)`}</legend>
           <Search
               size="sm"

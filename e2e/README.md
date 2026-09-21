@@ -51,6 +51,20 @@ already running, waits for them to be ready, then runs the test files in
   both at once. Includes accessibility scans of both modal states, which the
   first test never reaches.
 
+- **`responsive.spec.js`** — the same real-login flow at Carbon's md
+  breakpoint range (`setViewportSize` to 672px, the floor, and 1055px, the last
+  pixel before lg; phone-size is deliberately out of scope). Asserts the
+  dashboard has no horizontal overflow, the tag sidebar stays inside its column
+  and clear of the main column and the fixed footer, and that the record
+  detail, delete-confirmation, and create-session modals (plus both CKEditor
+  toolbars) stay inside the viewport with every action button genuinely
+  clickable — via Playwright trial clicks, which fail if another element would
+  intercept the click. Includes accessibility scans of the dashboard, detail
+  modal, and delete confirmation at md width. Scans run before each step's
+  trial clicks because a hovering pointer makes axe read Carbon's
+  mid-transition button colors and report a bogus, run-to-run-varying contrast
+  failure.
+
 Each test uses a unique, timestamped test username (`e2e-tester-<timestamp>`)
 rather than a fixed one, since the test-mode database persists across
 separate `npm test` runs (there's no per-run isolation the way Jest's

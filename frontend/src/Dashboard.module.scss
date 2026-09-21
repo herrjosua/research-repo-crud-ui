@@ -14,3 +14,10 @@
   max-height: vars.$tag-list-max-height;
   overflow-y: auto;
 }
+
+// A <fieldset> defaults to min-inline-size: min-content, so it refuses to
+// shrink with its Grid column and can poke past it (a few px at the 672px
+// md floor). Letting it shrink keeps it aligned with the Search box above.
+.fieldset {
+  min-inline-size: 0;
+}

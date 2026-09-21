@@ -3,7 +3,7 @@ import { Modal, Tag, InlineNotification, Button } from '@carbon/react';
 import { useRecord, useDeleteRecord, useRecordHistory } from './api/records';
 import EditRecordForm from './EditRecordForm';
 import { createPortal } from 'react-dom';
-import './RecordDetail.module.scss';
+import styles from './RecordDetail.module.scss';
 
 function cleanRecordHtml(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -182,15 +182,17 @@ export default function RecordDetail({ id, onClose }) {
           {record.data.tags.map((tag) => (
             <Tag key={tag} type="blue">{tag}</Tag>
           ))}
-          <Button kind="tertiary" onClick={() => setIsEditing(true)}>
-            Edit
-          </Button>
-          <Button kind="danger--tertiary" onClick={() => setShowDeleteConfirm(true)}>
-            Delete
-          </Button>
-          <Button kind="ghost" onClick={() => setShowHistory(true)}>
-            View history
-          </Button>
+          <div className={styles.actions}>
+            <Button kind="tertiary" onClick={() => setIsEditing(true)}>
+              Edit
+            </Button>
+            <Button kind="danger--tertiary" onClick={() => setShowDeleteConfirm(true)}>
+              Delete
+            </Button>
+            <Button kind="ghost" onClick={() => setShowHistory(true)}>
+              View history
+            </Button>
+          </div>
           {record.data.last_edited_by && (
               <p>
                 Last edited by {record.data.last_edited_by}
