@@ -218,6 +218,32 @@ export default function RecordDetail({ id, onClose }) {
               modalHeading="Delete this record?"
               primaryButtonText="Delete"
               secondaryButtonText="Cancel"
+              // Same underlying class of bug as the focusout workaround
+              // above: this dialog is portaled to document.body, so in real
+              // DOM terms it's a SIBLING of the outer modal, not a
+              // descendant — but createPortal keeps it a normal child in the
+              // REACT tree, and Carbon's Modal implements click-outside-to-
+              // close with a plain React `onClick` prop on its own outermost
+              // element (`handleOnClick` in Modal.tsx, composed with
+              // whatever `onClick` we pass here). React bubbles synthetic
+              // events along the REACT tree, not the DOM tree, so any click
+              // inside this dialog — including its own Cancel button — would
+              // otherwise still reach the outer modal's onClick handler,
+              // which does a DOM `.contains()` check against its own
+              // container, finds the real click target physically sitting in
+              // document.body instead of inside it, concludes the click
+              // landed "outside" itself, and closes too.
+              // Stop the click from propagating past this dialog's own
+              // boundary. This fires after the event has already reached its
+              // real target (the Cancel/Delete button's own onClick, or this
+              // dialog's own click-outside handler) — Carbon composes our
+              // onClick with its own via `composeEventHandlers`, which only
+              // short-circuits later handlers in that same composed list on
+              // `event.preventDefault()`, not on `stopPropagation()` — so
+              // this dialog's own button handlers and its own click-outside-
+              // to-close behavior are unaffected; only propagation to the
+              // OUTER modal's separate onClick handler is stopped.
+              onClick={(event) => event.stopPropagation()}
               onRequestSubmit={() => {
                 deleteRecord.mutate(id, {
                   onSuccess: () => {
