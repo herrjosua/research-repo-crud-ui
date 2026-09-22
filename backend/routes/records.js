@@ -92,6 +92,28 @@ function isStringOrStringArray(value) {
     || (Array.isArray(value) && value.every((v) => typeof v === 'string'));
 }
 
+// Maps a record's kind (and, for deliverables, its `type`, which
+// export_records.py sets to the folder name — see build_deliverable_records
+// in agentic-repo's build_search_ui.py) to the attribution frontmatter field
+// that applies to it, or null if no attribution field exists for that kind.
+function attributionField(kind, type) {
+  if (kind === 'raw' || kind === 'finding' || kind === 'analytics') return 'researcher';
+  if (kind === 'deliverable') return type === 'heuristic-evaluations' ? 'evaluator' : 'designer';
+  return null; // component, and anything else
+}
+
+// Create-time attribution rule: default to the creator when the field is
+// omitted; allow setting it to yourself; reject setting it to anyone else
+// unless the requester is a lead. Returns the resolved value to write, or
+// throws (caller turns that into a 400) when a non-lead tries to reassign.
+function resolveAttributionOnCreate(fieldValue, user) {
+  const trimmed = (fieldValue || '').toString().trim();
+  if (!trimmed) return user.git_name;
+  if (trimmed === user.git_name) return trimmed;
+  if (user.is_lead) return trimmed;
+  throw new Error('only a lead can set this to someone other than yourself');
+}
+
 function requireAuth(req, res, next) {
   if (!req.session.userId) {
     return res.status(401).json({ error: 'not logged in' });
@@ -137,11 +159,18 @@ router.post('/sessions', writeLimiter, async (req, res) => {
       return res.status(400).json({ error: 'relatedFindings must be a string or an array of strings' });
     }
 
+    let resolvedResearcher;
+    try {
+      resolvedResearcher = resolveAttributionOnCreate(researcher, user);
+    } catch (err) {
+      return res.status(400).json({ error: `researcher: ${err.message}` });
+    }
+
     args.push('--title', title, '--type', type, '--topic-slug', topicSlug);
     if (tags) args.push('--tags', Array.isArray(tags) ? tags.join(',') : tags);
     if (relatedComponents) args.push('--related-components', Array.isArray(relatedComponents) ? relatedComponents.join(',') : relatedComponents);
     if (relatedFindings) args.push('--related-findings', Array.isArray(relatedFindings) ? relatedFindings.join(',') : relatedFindings);
-    if (researcher) args.push('--researcher', researcher);
+    args.push('--researcher', resolvedResearcher);
     if (methodLabel) args.push('--method-label', methodLabel);
     if (date) args.push('--date', date);
   } else {
@@ -161,6 +190,23 @@ router.post('/sessions', writeLimiter, async (req, res) => {
     }
     if (relatedFindings !== undefined && !isStringOrStringArray(relatedFindings)) {
       return res.status(400).json({ error: 'relatedFindings must be a string or an array of strings' });
+    }
+
+    // new_research_session.py only exposes a --designer CLI flag — the
+    // evaluator field (heuristic-evaluations/) has no CLI equivalent, only
+    // an interactive prompt, which --no-prompt (always passed below since
+    // this is a non-interactive caller) bypasses. So attribution can only be
+    // enforced/set for designer at creation time; a heuristic-evaluations
+    // record's evaluator field is written blank here and can only be set
+    // afterward via PUT, where the same enforcement applies.
+    if (folder !== 'heuristic-evaluations') {
+      let resolvedDesigner;
+      try {
+        resolvedDesigner = resolveAttributionOnCreate(req.body.designer, user);
+      } catch (err) {
+        return res.status(400).json({ error: `designer: ${err.message}` });
+      }
+      args.push('--designer', resolvedDesigner);
     }
 
     // --no-prompt always passed: the API is a non-interactive caller, so
@@ -285,7 +331,7 @@ async function fetchRecord(id) {
 // Shared helper: look up the logged-in user's git identity for attribution.
 // ---------------------------------------------------------------------------
 function getUser(req) {
-  return db.prepare('SELECT git_name, git_email FROM users WHERE id = ?')
+  return db.prepare('SELECT git_name, git_email, is_lead FROM users WHERE id = ?')
     .get(req.session.userId);
 }
 
@@ -346,12 +392,29 @@ router.put('/records/*splat', writeLimiter, async (req, res) => {
   }
 
   let filePath;
+  let record;
   try {
-    const record = await fetchRecord(id);
+    record = await fetchRecord(id);
     filePath = record.filePath;
   } catch (err) {
     const { message, isCrash } = scriptErrorMessage(err, 'PUT /records/:id (fetchRecord)');
     return res.status(isCrash ? 500 : 404).json({ error: message });
+  }
+
+  // Attribution enforcement — only when the field is actually being changed.
+  // EditRecordForm.jsx pre-fills a non-lead's disabled attribution field
+  // with the record's current value, so a plain re-save (nothing reassigned)
+  // must not be rejected; only an attempt to change it to someone other than
+  // yourself requires being a lead.
+  if (frontmatter) {
+    const field = attributionField(record.kind, record.type);
+    if (field && Object.prototype.hasOwnProperty.call(frontmatter, field)) {
+      const newValue = (frontmatter[field] || '').toString().trim();
+      const oldValue = (record[field] || '').toString().trim();
+      if (newValue !== oldValue && newValue !== user.git_name && !user.is_lead) {
+        return res.status(400).json({ error: `only a lead can set ${field} to someone other than yourself` });
+      }
+    }
   }
 
   try {

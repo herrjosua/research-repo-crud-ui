@@ -148,12 +148,24 @@ router.get('/me', (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ error: 'not logged in' });
   }
-  const user = db.prepare('SELECT id, username, git_name, git_email FROM users WHERE id = ?')
+  const user = db.prepare('SELECT id, username, git_name, git_email, is_lead FROM users WHERE id = ?')
       .get(req.session.userId);
   if (!user) {
     return res.status(401).json({ error: 'not logged in' });
   }
   res.json(user);
+});
+
+// GET /users — every user's username + git_name, for the lead-reassignment
+// dropdown in the create/edit forms. Just names, not sensitive, so any
+// logged-in user can call it (no lead-only gate) — reused as-is by both demo
+// mode and real signup mode rather than building two separate lookups.
+router.get('/users', (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'not logged in' });
+  }
+  const users = db.prepare('SELECT username, git_name FROM users ORDER BY username').all();
+  res.json(users);
 });
 
 // GET /demo-users — public, unauthenticated. Returns the picker's data when

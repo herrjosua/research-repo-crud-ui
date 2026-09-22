@@ -40,3 +40,10 @@ export function useDemoLogin() {
         mutationFn: (username) => api.post('/auth/demo-login', { username }),
     });
 }
+
+export function useUsers() {
+    return useQuery({
+        queryKey: ['users'],
+        queryFn: () => api.get('/auth/users'),
+    });
+}

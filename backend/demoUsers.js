@@ -10,6 +10,7 @@ const DEMO_USERS = [
         role: 'UX Researcher',
         gitName: 'Priya Patel',
         gitEmail: 'priya.demo@example.com',
+        isLead: false,
     },
     {
         username: 'sam',
@@ -17,6 +18,7 @@ const DEMO_USERS = [
         role: 'Product/UX Designer',
         gitName: 'Sam Okafor',
         gitEmail: 'sam.demo@example.com',
+        isLead: false,
     },
     {
         username: 'jordan',
@@ -24,6 +26,7 @@ const DEMO_USERS = [
         role: 'Research Ops Lead',
         gitName: 'Jordan Lee',
         gitEmail: 'jordan.demo@example.com',
+        isLead: true,
     },
 ];
 

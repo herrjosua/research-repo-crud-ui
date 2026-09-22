@@ -450,3 +450,131 @@ describe('GET /api/records/:id/history — --follow across delete + recreate', (
         expect(res.body.length).toBeGreaterThanOrEqual(3);
     });
 });
+
+describe('Attribution enforcement (researcher on raw sessions)', () => {
+    // `agent` (records-tester, signed up in the file-level beforeAll) is a
+    // non-lead by default (is_lead defaults to 0) — no API sets is_lead, so
+    // this test's lead user is promoted directly via the db, same as demo
+    // mode's Jordan Lee seed.
+    let leadAgent;
+
+    beforeAll(async () => {
+        // This file's earlier describe blocks already burn most of writeLimiter's
+        // 30-requests-per-IP budget (many POST/PUT/DELETE calls, all from the same
+        // supertest IP) — reset it so this block's own several write requests
+        // don't spuriously 429 partway through. See rateLimiter.js's _resetForTests.
+        require('../middleware/rateLimiter')._resetForTests();
+
+        db.prepare('DELETE FROM users WHERE username = ?').run('lead-tester');
+        leadAgent = request.agent(server);
+        const signupRes = await leadAgent.post('/api/auth/signup').send({
+            username: 'lead-tester',
+            password: 'a-real-password-123',
+            gitName: 'Lead Tester',
+            gitEmail: 'lead-tester@example.com',
+        });
+        if (signupRes.status !== 201) {
+            throw new Error(`lead-tester signup failed with ${signupRes.status}: ${JSON.stringify(signupRes.body)}`);
+        }
+        db.prepare('UPDATE users SET is_lead = 1 WHERE username = ?').run('lead-tester');
+    });
+
+    async function findRawByTitle(title) {
+        const listRes = await agent.get('/api/records?kind=raw');
+        return listRes.body.find((r) => r.title === title);
+    }
+
+    it('auto-sets researcher to the creator when omitted (non-lead)', async () => {
+        const res = await agent.post('/api/sessions').send({
+            mode: 'raw',
+            title: 'Auto-attributed session',
+            type: 'interview',
+            topicSlug: 'auto-attributed-session',
+        });
+        expect(res.status).toBe(201);
+
+        const record = await findRawByTitle('Auto-attributed session');
+        expect(record.researcher).toBe('Records Tester');
+    });
+
+    it('rejects a non-lead trying to set researcher to someone else on create', async () => {
+        const res = await agent.post('/api/sessions').send({
+            mode: 'raw',
+            title: 'Reassignment attempt on create',
+            type: 'interview',
+            topicSlug: 'reassignment-attempt-on-create',
+            researcher: 'Someone Else',
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/only a lead/);
+    });
+
+    it('allows a lead to set researcher to someone else on create', async () => {
+        const res = await leadAgent.post('/api/sessions').send({
+            mode: 'raw',
+            title: 'Lead reassigns on create',
+            type: 'interview',
+            topicSlug: 'lead-reassigns-on-create',
+            researcher: 'Someone Else',
+        });
+        expect(res.status).toBe(201);
+
+        const record = await findRawByTitle('Lead reassigns on create');
+        expect(record.researcher).toBe('Someone Else');
+    });
+
+    it('allows a lead to reassign researcher via PUT', async () => {
+        await leadAgent.post('/api/sessions').send({
+            mode: 'raw',
+            title: 'PUT reassignment target',
+            type: 'interview',
+            topicSlug: 'put-reassignment-target',
+        });
+        const record = await findRawByTitle('PUT reassignment target');
+
+        const putRes = await leadAgent.put(`/api/records/${record.id}`).send({
+            frontmatter: { researcher: 'Reassigned Person' },
+        });
+        expect(putRes.status).toBe(200);
+
+        const fetchRes = await agent.get(`/api/records/${record.id}`);
+        expect(fetchRes.body.researcher).toBe('Reassigned Person');
+    });
+
+    it('rejects a non-lead trying to reassign researcher via PUT', async () => {
+        await leadAgent.post('/api/sessions').send({
+            mode: 'raw',
+            title: 'Non-lead PUT reassignment attempt',
+            type: 'interview',
+            topicSlug: 'non-lead-put-reassignment-attempt',
+        });
+        const record = await findRawByTitle('Non-lead PUT reassignment attempt');
+
+        const putRes = await agent.put(`/api/records/${record.id}`).send({
+            frontmatter: { researcher: 'Someone New' },
+        });
+        expect(putRes.status).toBe(400);
+        expect(putRes.body.error).toMatch(/only a lead/);
+    });
+
+    it('allows a non-lead to re-save a record without disturbing an existing researcher value', async () => {
+        await leadAgent.post('/api/sessions').send({
+            mode: 'raw',
+            title: 'Unchanged researcher resave',
+            type: 'interview',
+            topicSlug: 'unchanged-researcher-resave',
+            researcher: 'Original Author',
+        });
+        const record = await findRawByTitle('Unchanged researcher resave');
+
+        // Simulates EditRecordForm.jsx pre-filling a non-lead's disabled
+        // field with the record's current value and resubmitting it as-is.
+        const putRes = await agent.put(`/api/records/${record.id}`).send({
+            frontmatter: { status: 'in-review', researcher: 'Original Author' },
+        });
+        expect(putRes.status).toBe(200);
+
+        const fetchRes = await agent.get(`/api/records/${record.id}`);
+        expect(fetchRes.body.researcher).toBe('Original Author');
+    });
+});

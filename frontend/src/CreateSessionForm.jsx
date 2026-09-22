@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-    Form, Stack, TextInput, TextArea, Select, SelectItem,
+    Form, Stack, TextInput, TextArea, Select, SelectItem, Dropdown,
     DatePicker, DatePickerInput, Button, InlineNotification,
 } from '@carbon/react';
+import { useMe, useUsers } from './api/auth';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import {
     ClassicEditor,
@@ -71,6 +72,9 @@ function slugify(text) {
 export default function CreateSessionForm({ onClose }) {
     const queryClient = useQueryClient();
     const createSession = useCreateSession();
+    const me = useMe();
+    const isLead = !!me.data?.is_lead;
+    const users = useUsers();
 
     const [title, setTitle] = useState('');
     const [type, setType] = useState('');
@@ -87,6 +91,14 @@ export default function CreateSessionForm({ onClose }) {
     const titleInvalid = attemptedSubmit && title.trim() === '';
     const typeInvalid = attemptedSubmit && type === '';
     const topicSlugInvalid = attemptedSubmit && !SLUG_PATTERN.test(topicSlug);
+
+    // Researcher is auto-derived from the logged-in user — default it once
+    // their identity loads, rather than leaving it blank until they touch it.
+    useEffect(() => {
+        if (me.data && !researcher) {
+            setResearcher(me.data.git_name);
+        }
+    }, [me.data]);
 
     function handleSubmit(event) {
         event.preventDefault();
@@ -178,14 +190,26 @@ export default function CreateSessionForm({ onClose }) {
                     onChange={(e) => setRelatedFindings(e.target.value)}
                 />
 
-                <TextInput
-                    id="researcher"
-                    labelText="Researcher"
-                    placeholder="Who's running this session"
-                    helperText="Optional — leave blank if unsure"
-                    value={researcher}
-                    onChange={(e) => setResearcher(e.target.value)}
-                />
+                {isLead ? (
+                    <Dropdown
+                        id="researcher"
+                        titleText="Researcher"
+                        label="Choose who ran this session"
+                        helperText="As a lead, you can attribute this to someone else"
+                        items={users.data ?? []}
+                        itemToString={(item) => item?.git_name ?? ''}
+                        selectedItem={(users.data ?? []).find((u) => u.git_name === researcher) ?? null}
+                        onChange={({ selectedItem }) => setResearcher(selectedItem?.git_name ?? '')}
+                    />
+                ) : (
+                    <TextInput
+                        id="researcher"
+                        labelText="Researcher"
+                        helperText="Automatically attributed to you"
+                        value={researcher}
+                        disabled
+                    />
+                )}
 
                 <TextArea
                     id="methodLabel"

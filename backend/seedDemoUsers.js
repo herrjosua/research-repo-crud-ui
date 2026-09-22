@@ -20,9 +20,9 @@ async function seedDemoUsers() {
         const passwordHash = await bcrypt.hash(randomPassword, SALT_ROUNDS);
 
         db.prepare(`
-      INSERT INTO users (username, password_hash, git_name, git_email)
-      VALUES (?, ?, ?, ?)
-    `).run(user.username, passwordHash, user.gitName, user.gitEmail);
+      INSERT INTO users (username, password_hash, git_name, git_email, is_lead)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(user.username, passwordHash, user.gitName, user.gitEmail, user.isLead ? 1 : 0);
 
         console.log(`Seeded demo user: ${user.username}`);
     }

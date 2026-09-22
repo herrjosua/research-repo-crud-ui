@@ -254,6 +254,18 @@ describe('POST /api/auth/logout and GET /api/auth/me', () => {
                 }
             });
 
+            it('reports is_lead correctly for a lead and a non-lead demo user', async () => {
+                const leadAgent = request.agent(server);
+                await leadAgent.post('/api/auth/demo-login').send({ username: 'jordan' });
+                const leadMe = await leadAgent.get('/api/auth/me');
+                expect(leadMe.body.is_lead).toBe(1);
+
+                const nonLeadAgent = request.agent(server);
+                await nonLeadAgent.post('/api/auth/demo-login').send({ username: 'priya' });
+                const nonLeadMe = await nonLeadAgent.get('/api/auth/me');
+                expect(nonLeadMe.body.is_lead).toBe(0);
+            });
+
             it('rejects a username not on the demo allowlist', async () => {
                 const res = await request(server).post('/api/auth/demo-login').send({ username: 'alice' });
                 expect(res.status).toBe(400);
@@ -286,6 +298,30 @@ describe('POST /api/auth/logout and GET /api/auth/me', () => {
                 expect(res.status).toBe(403);
                 expect(res.body.error).toMatch(/demo login/);
             });
+        });
+    });
+});
+
+describe('GET /api/auth/users', () => {
+    it('returns 401 when not logged in', async () => {
+        const res = await request(server).get('/api/auth/users');
+        expect(res.status).toBe(401);
+    });
+
+    it('returns username and git_name for every user when logged in', async () => {
+        const agent = request.agent(server);
+        await agent.post('/api/auth/signup').send({
+            username: 'frank',
+            password: 'a-real-password-123',
+            gitName: 'Frank Example',
+            gitEmail: 'frank@example.com',
+        });
+
+        const res = await agent.get('/api/auth/users');
+        expect(res.status).toBe(200);
+        expect(res.body.find((u) => u.username === 'frank')).toMatchObject({
+            username: 'frank',
+            git_name: 'Frank Example',
         });
     });
 });

@@ -19,4 +19,12 @@ db.exec(`
     )
 `);
 
+// Lead-permission flag, added after the table above already shipped — check
+// for the column first so re-running this on an already-migrated db (every
+// startup) doesn't error on a duplicate ALTER TABLE.
+const userColumns = db.prepare('PRAGMA table_info(users)').all();
+if (!userColumns.some((col) => col.name === 'is_lead')) {
+  db.exec('ALTER TABLE users ADD COLUMN is_lead INTEGER NOT NULL DEFAULT 0');
+}
+
 module.exports = db;
