@@ -71,3 +71,11 @@ Research Repo CRUD UI**.
 - [ ] v1.2 — Deploy + Polish
 - [ ] v1.3 — Agentic LLM Layer (local, Ollama)
 - [ ] v1.4 — Enterprise Integration Design (Copilot / SharePoint) — design doc only
+
+## AI-Assisted Development
+
+This project was built by Joshua Bock with AI assistance from Claude — used both as the AI agent this tooling is designed to work with, and as a development collaborator throughout the build (planning, implementation, testing, and code review), under direct human review and direction at every step.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
