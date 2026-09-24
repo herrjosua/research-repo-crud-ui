@@ -74,3 +74,30 @@ describe('RecordDetail — save warning', () => {
         expect(screen.getByRole('button', { name: 'Edit' })).toHaveFocus();
     });
 });
+
+describe('RecordDetail — generated (read-only) records', () => {
+    it('hides Edit and Delete, explains where to make changes, and keeps View history', () => {
+        useRecord.mockReturnValue({
+            isLoading: false,
+            isError: false,
+            data: { ...record, id: 'component:button', kind: 'component', type: 'component', read_only: true },
+        });
+        render(<RecordDetail id="component:button" onClose={vi.fn()} onDeleted={vi.fn()} />);
+
+        expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+        const note = screen.getByRole('status');
+        expect(within(note).getByText('Generated from Figma')).toBeInTheDocument();
+        expect(within(note).getByText(/edit it in Figma and re-run the token sync/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'View history' })).toBeInTheDocument();
+    });
+
+    it('shows Edit and Delete for a normal record', () => {
+        useRecord.mockReturnValue({ isLoading: false, isError: false, data: { ...record, read_only: false } });
+        render(<RecordDetail id={record.id} onClose={vi.fn()} onDeleted={vi.fn()} />);
+
+        expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+        expect(screen.queryByText('Generated from Figma')).not.toBeInTheDocument();
+    });
+});

@@ -203,20 +203,33 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
           {record.data.tags.map((tag) => (
             <Tag key={tag} type="blue">{tag}</Tag>
           ))}
+          {record.data.read_only && (
+            <InlineNotification
+              kind="info"
+              title="Generated from Figma"
+              subtitle="To change this component, edit it in Figma and re-run the token sync."
+              lowContrast
+              hideCloseButton
+            />
+          )}
           <div className={styles.actions}>
-            <Button
-              ref={editButtonRef}
-              kind="tertiary"
-              onClick={() => {
-                setSaveWarning(null);
-                setIsEditing(true);
-              }}
-            >
-              Edit
-            </Button>
-            <Button kind="danger--tertiary" onClick={() => setShowDeleteConfirm(true)}>
-              Delete
-            </Button>
+            {!record.data.read_only && (
+              <>
+                <Button
+                  ref={editButtonRef}
+                  kind="tertiary"
+                  onClick={() => {
+                    setSaveWarning(null);
+                    setIsEditing(true);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button kind="danger--tertiary" onClick={() => setShowDeleteConfirm(true)}>
+                  Delete
+                </Button>
+              </>
+            )}
             <Button kind="ghost" onClick={() => setShowHistory(true)}>
               View history
             </Button>

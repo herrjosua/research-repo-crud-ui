@@ -95,6 +95,18 @@ function resolveAttributionOnCreate(fieldValue, user) {
   throw new Error('only a lead can set this to someone other than yourself');
 }
 
+// Records under design-tokens/ are written by agentic-repo's
+// sync_figma_tokens.py straight from Figma, which is their source of truth,
+// so PUT and DELETE refuse them. Keyed on path (set by export_records.py, not
+// editable through this API) rather than status, which a PUT or a hand edit
+// could change.
+const GENERATED_PATH_PREFIX = '../design-tokens/';
+const GENERATED_READ_ONLY_ERROR = 'Generated from Figma: edit the source in Figma and re-run the token sync';
+
+function isGeneratedRecord(record) {
+  return typeof record.path === 'string' && record.path.startsWith(GENERATED_PATH_PREFIX);
+}
+
 function requireAuth(req, res, next) {
   if (!req.session.userId) {
     return res.status(401).json({ error: 'not logged in' });
@@ -271,7 +283,8 @@ router.get('/records/*splat', async (req, res) => {
 
   try {
     const { stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
-    res.json(JSON.parse(stdout));
+    const record = JSON.parse(stdout);
+    res.json({ ...record, read_only: isGeneratedRecord(record) });
   } catch (err) {
     // export_records.py exits 1 with "No record found" on stderr when the id doesn't match.
     const { message, isCrash } = scriptErrorMessage(err, 'GET /records/:id');
@@ -368,6 +381,10 @@ router.put('/records/*splat', writeLimiter, async (req, res) => {
     return res.status(isCrash ? 500 : 404).json({ error: message });
   }
 
+  if (isGeneratedRecord(record)) {
+    return res.status(403).json({ error: GENERATED_READ_ONLY_ERROR });
+  }
+
   // Attribution enforcement — only when the field is actually being changed.
   // EditRecordForm.jsx pre-fills a non-lead's disabled attribution field
   // with the record's current value, so a plain re-save (nothing reassigned)
@@ -443,6 +460,10 @@ router.delete('/records/*splat', writeLimiter, async (req, res) => {
   } catch (err) {
     const { message, isCrash } = scriptErrorMessage(err, 'DELETE /records/:id (fetchRecord)');
     return res.status(isCrash ? 500 : 404).json({ error: message });
+  }
+
+  if (isGeneratedRecord(record)) {
+    return res.status(403).json({ error: GENERATED_READ_ONLY_ERROR });
   }
 
   try {
