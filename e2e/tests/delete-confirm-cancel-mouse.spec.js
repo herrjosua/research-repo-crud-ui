@@ -45,9 +45,20 @@ for (const width of [672, 1400]) {
         await page.getByRole('button', { name: 'Log in' }).click();
         await expect(page.getByRole('button', { name: 'New session' })).toBeVisible();
 
-        // Targeted by Carbon's stable class rather than the tile's title text,
-        // since that text is real research content that could change later.
-        await page.locator('.cds--tile--clickable').first().click();
+        // This spec deletes a record, so it creates its own (unique per width
+        // and run) instead of touching the fixture records other specs open
+        // in parallel. page.request shares the logged-in browser's cookie.
+        const id = randomUUID();
+        const title = `E2E delete target ${id}`;
+        const createRes = await page.request.post('/api/sessions', {
+            data: { mode: 'raw', title, type: 'interview', topicSlug: `e2e-delete-${id}` },
+        });
+        expect(createRes.status()).toBe(201);
+        await page.reload();
+        await page.getByRole('searchbox', { name: 'Search records' }).fill(title);
+        const tile = page.locator('.cds--tile--clickable', { hasText: title });
+
+        await tile.click();
         const detailModal = page.getByRole('dialog');
         await expect(detailModal).toBeVisible();
 
@@ -73,11 +84,13 @@ for (const width of [672, 1400]) {
         // The confirm dialog's own Delete (primary) button still closes both
         // modals correctly on an actual successful deletion — the one case where
         // closing both IS correct behavior.
-        await page.locator('.cds--tile--clickable').first().click();
+        await tile.click();
         await expect(detailModal).toBeVisible();
         await detailModal.getByRole('button', { name: 'Delete' }).click();
         await expect(dialogs).toHaveCount(2);
         await dialogs.last().getByRole('button', { name: 'Delete' }).click();
         await expect(dialogs).toHaveCount(0);
+        // ...and the record really is gone.
+        await expect(tile).toHaveCount(0);
     });
 }

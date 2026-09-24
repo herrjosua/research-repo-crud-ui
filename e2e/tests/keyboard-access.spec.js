@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { randomUUID } from 'node:crypto';
+import { STABLE_RAW_SESSION_TITLE } from '../support/fixtureRecords';
 
 test('dashboard, record detail, and delete confirmation are all keyboard-operable and pass an accessibility scan', async ({ page, request }) => {
     // randomUUID, not Date.now(): parallel workers can call this in the same
@@ -22,12 +23,12 @@ test('dashboard, record detail, and delete confirmation are all keyboard-operabl
     await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: 'New session' })).toBeVisible();
 
-    // --- Open the first record's detail view via Enter, not a click ---
-    // Targeted by Carbon's stable class rather than the tile's title text,
-    // since that text is real research content that could change later.
-    const firstTile = page.locator('.cds--tile--clickable').first();
-    await firstTile.focus();
-    await expect(firstTile).toBeFocused(); // confirms it's genuinely in the tab order at all
+    // --- Open a fixture record's detail view via Enter, not a click ---
+    // A specific record by title, not "the first tile", so list order and
+    // records other specs create or delete in parallel don't matter.
+    const tile = page.locator('.cds--tile--clickable', { hasText: STABLE_RAW_SESSION_TITLE });
+    await tile.focus();
+    await expect(tile).toBeFocused(); // confirms it's genuinely in the tab order at all
     await page.keyboard.press('Enter');
 
     const detailModal = page.getByRole('dialog');
