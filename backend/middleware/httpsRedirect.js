@@ -1,18 +1,22 @@
-// Redirects any HTTP request to HTTPS when running in production and the
-// proxy's X-Forwarded-Proto header confirms the original request wasn't
-// already HTTPS. Pulled out of app.js into its own module, taking
-// isProduction as a parameter, so it can be unit-tested directly with plain
-// mock req/res/next objects — reloading app.js itself under
-// NODE_ENV=production to test this would also flip its isTest flag and
-// point sessionDb at the real dev app.db file instead of a scoped test
-// database.
-function httpsRedirect(isProduction) {
+// Redirects plain-HTTP requests to HTTPS. Uses req.secure, which Express
+// derives from X-Forwarded-Proto only when the proxy it came from is trusted
+// (see proxyTrust.js). Runs after hostCheck, so the Host it redirects to is
+// one this app owns. Takes `enabled` as a parameter so it can be unit-tested
+// with plain mock objects, without reloading app.js under NODE_ENV=production.
+function httpsRedirect(enabled) {
     return (req, res, next) => {
-        if (isProduction && req.headers['x-forwarded-proto'] !== 'https') {
+        if (enabled && !req.secure) {
             return res.redirect(301, `https://${req.headers.host}${req.url}`);
         }
         next();
     };
 }
 
+// On in production unless HTTPS_REDIRECT=false (e.g. while Cloudflare's edge
+// enforces HTTPS and its SSL mode isn't yet Full (strict)); never outside it.
+function isHttpsRedirectEnabled(env) {
+    return env.NODE_ENV === 'production' && env.HTTPS_REDIRECT !== 'false';
+}
+
 module.exports = httpsRedirect;
+module.exports.isHttpsRedirectEnabled = isHttpsRedirectEnabled;

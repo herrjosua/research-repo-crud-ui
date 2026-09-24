@@ -462,8 +462,10 @@ describe('VECTOR 6: security headers, robots.txt, and write-route rate limiting'
 describe('VECTOR 7: HTTPS redirect middleware', () => {
     const httpsRedirect = require('../middleware/httpsRedirect');
 
-    function mockReqRes(headers) {
-        const req = { headers, url: '/api/auth/me' };
+    // req.secure is what Express derives from X-Forwarded-Proto when the
+    // proxy is trusted; the middleware reads that, not the raw header.
+    function mockReqRes(headers, secure = false) {
+        const req = { headers, secure, url: '/api/auth/me' };
         const res = { redirect: jest.fn() };
         const next = jest.fn();
         return { req, res, next };
@@ -479,9 +481,9 @@ describe('VECTOR 7: HTTPS redirect middleware', () => {
         expect(next).not.toHaveBeenCalled();
     });
 
-    it('passes through without redirecting when X-Forwarded-Proto is already https', () => {
+    it('passes through without redirecting when the request was already https', () => {
         const middleware = httpsRedirect(true);
-        const { req, res, next } = mockReqRes({ host: 'localhost:3001', 'x-forwarded-proto': 'https' });
+        const { req, res, next } = mockReqRes({ host: 'localhost:3001' }, true);
 
         middleware(req, res, next);
 
