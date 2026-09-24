@@ -2,6 +2,7 @@ const express = require('express');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
 const fs = require('fs/promises');
+const fsSync = require('fs');
 const path = require('path');
 const matter = require('gray-matter');
 const db = require('../db');
@@ -46,6 +47,7 @@ const PYTHON_ENV = { ...process.env, PYTHONDONTWRITEBYTECODE: '1' };
 
 const {
   SAFE_SLUG_RE,
+  DELIVERABLE_FOLDERS,
   validateCreate,
   validateFrontmatterPatch,
   normalizeFrontmatterDates,
@@ -205,20 +207,27 @@ router.post('/sessions', writeLimiter, async (req, res) => {
     if (description) args.push('--description', description);
   }
 
-  try {
-    const { stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
+  await withRepoLock(async () => {
+    let stdout;
+    try {
+      ({ stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR, env: PYTHON_ENV }));
+    } catch (err) {
+      const { message, isCrash } = scriptErrorMessage(err, 'POST /sessions');
+      return res.status(isCrash ? 500 : 400).json({ error: message });
+    }
 
+    // The created file (deliverable) or session folder (raw: session-notes.md
+    // plus participants.md). POST doesn't run build_index.py.
     const createdMatch = stdout.match(/✅ Created (.+?)(?:\n|$)/);
     if (createdMatch) {
-      const createdPath = path.relative(AGENTIC_REPO_ROOT, createdMatch[1].trim());
-      await commitChange(`Create ${createdPath}`, user);
+      // The script prints a fully resolved path, so resolve the root too
+      // (e.g. macOS /var -> /private/var), or the relative path escapes it.
+      const createdPath = path.relative(await fs.realpath(AGENTIC_REPO_ROOT), createdMatch[1].trim());
+      await commitChange(`Create ${createdPath}`, user, [createdPath]);
     }
 
     res.status(201).json({ message: stdout.trim() });
-  } catch (err) {
-    const { message, isCrash } = scriptErrorMessage(err, 'POST /sessions');
-    res.status(isCrash ? 500 : 400).json({ error: message });
-  }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -321,31 +330,73 @@ function getUser(req) {
 }
 
 // ---------------------------------------------------------------------------
-// Shared helper: stage and commit whatever changed in AGENTIC_REPO_ROOT,
-// attributed to the given user. Bundles the record change and any
-// build_index.py-regenerated index files into one atomic commit ("git add -A"
-// stages everything touched by this request, not just one known file).
+// Shared helper: serialize every write to AGENTIC_REPO_ROOT. Each write route
+// awaits between touching files, running build_index.py, and committing, so
+// without this two requests interleave: one's files land in the other's
+// commit, concurrent git commands collide on .git/index.lock, and two PUTs to
+// the same record each merge into a stale read and drop the other's change.
+// One Node process serves every request, so an in-memory queue is enough.
+// Released in `finally`, so a request that throws can't jam the ones behind it.
 // ---------------------------------------------------------------------------
-async function commitChange(message, user) {
+let repoLockTail = Promise.resolve();
+
+async function withRepoLock(fn) {
+  const previous = repoLockTail;
+  let release;
+  repoLockTail = new Promise((resolve) => { release = resolve; });
+  await previous;
   try {
-    await execFileAsync('git', ['add', '-A'], { cwd: AGENTIC_REPO_ROOT });
-    await execFileAsync(
-      'git',
-      ['commit', '--author', `${user.git_name} <${user.git_email}>`, '-m', message],
-      { cwd: AGENTIC_REPO_ROOT },
-    );
-  } catch (err) {
-    // git commit exits non-zero when there's nothing staged (e.g. a PUT with
-    // no actual change) — that's a no-op, not a failure. Any other failure
-    // here is re-thrown and, since this is an async Express route handler,
-    // Express 5 forwards the rejection to app.js's generic error-handling
-    // middleware automatically — which already returns a safe, generic
-    // message rather than a raw stack trace, so no additional handling is
-    // needed at the call sites below.
-    if (!/nothing to commit/i.test(err.stdout || err.message || '')) {
-      throw err;
-    }
+    return await fn();
+  } finally {
+    release();
   }
+}
+
+// Every file build_index.py can rewrite (see its main()): the research and
+// analytics indexes, plus one _index.md per deliverable folder.
+const INDEX_PATHS = [
+  'research/_index.md',
+  'analytics/_index.md',
+  ...DELIVERABLE_FOLDERS.map((folder) => `${folder}/_index.md`),
+];
+
+// ---------------------------------------------------------------------------
+// Shared helper: stage and commit exactly `paths` (relative to
+// AGENTIC_REPO_ROOT; a directory covers everything under it, deletions
+// included), attributed to the given user. Anything else in the working tree
+// (token sync output, hand edits, files someone already staged) is left
+// exactly as it was, uncommitted.
+// ---------------------------------------------------------------------------
+async function commitChange(message, user, paths) {
+  // Literal pathspecs: these are file paths, never globs.
+  const git = (args) => execFileAsync('git', ['--literal-pathspecs', ...args], { cwd: AGENTIC_REPO_ROOT });
+
+  // git rejects a pathspec that matches nothing, so keep paths that exist on
+  // disk, plus the tracked files under any that don't (a deleted record).
+  const onDisk = paths.filter((p) => fsSync.existsSync(path.join(AGENTIC_REPO_ROOT, p)));
+  const gone = paths.filter((p) => !onDisk.includes(p));
+  let deletedTracked = [];
+  if (gone.length) {
+    const { stdout } = await git(['ls-files', '-z', '--', ...gone]);
+    deletedTracked = stdout.split('\0').filter(Boolean);
+  }
+  const pathspecs = [...onDisk, ...deletedTracked];
+  if (pathspecs.length === 0) return;
+
+  await git(['add', '-A', '--', ...pathspecs]);
+
+  // Exit 0 means nothing staged under these paths: a no-op, not a failure.
+  try {
+    await git(['diff', '--cached', '--quiet', '--', ...pathspecs]);
+    return;
+  } catch (err) {
+    if (err.code !== 1) throw err;
+  }
+
+  // The pathspec limits the commit to these paths even if other changes are
+  // already staged. Any failure is re-thrown to app.js's generic error
+  // handler, which returns a safe message rather than a stack trace.
+  await git(['commit', '--author', `${user.git_name} <${user.git_email}>`, '-m', message, '--', ...pathspecs]);
 }
 
 // ---------------------------------------------------------------------------
@@ -371,74 +422,79 @@ router.put('/records/*splat', writeLimiter, async (req, res) => {
     return res.status(400).json({ error: patchError });
   }
 
-  let filePath;
-  let record;
-  try {
-    record = await fetchRecord(id);
-    filePath = record.filePath;
-  } catch (err) {
-    const { message, isCrash } = scriptErrorMessage(err, 'PUT /records/:id (fetchRecord)');
-    return res.status(isCrash ? 500 : 404).json({ error: message });
-  }
+  // Locked from the fetch onward, so the read-merge-write below always starts
+  // from the latest committed version of the file.
+  await withRepoLock(async () => {
+    let filePath;
+    let record;
+    try {
+      record = await fetchRecord(id);
+      filePath = record.filePath;
+    } catch (err) {
+      const { message, isCrash } = scriptErrorMessage(err, 'PUT /records/:id (fetchRecord)');
+      return res.status(isCrash ? 500 : 404).json({ error: message });
+    }
 
-  if (isGeneratedRecord(record)) {
-    return res.status(403).json({ error: GENERATED_READ_ONLY_ERROR });
-  }
+    if (isGeneratedRecord(record)) {
+      return res.status(403).json({ error: GENERATED_READ_ONLY_ERROR });
+    }
 
-  // Attribution enforcement — only when the field is actually being changed.
-  // EditRecordForm.jsx pre-fills a non-lead's disabled attribution field
-  // with the record's current value, so a plain re-save (nothing reassigned)
-  // must not be rejected; only an attempt to change it to someone other than
-  // yourself requires being a lead.
-  if (frontmatter) {
-    const field = attributionField(record.kind, record.type);
-    if (field && Object.prototype.hasOwnProperty.call(frontmatter, field)) {
-      const newValue = (frontmatter[field] || '').toString().trim();
-      const oldValue = (record[field] || '').toString().trim();
-      if (newValue !== oldValue && newValue !== user.git_name && !user.is_lead) {
-        return res.status(400).json({ error: `only a lead can set ${field} to someone other than yourself` });
+    // Attribution enforcement — only when the field is actually being changed.
+    // EditRecordForm.jsx pre-fills a non-lead's disabled attribution field
+    // with the record's current value, so a plain re-save (nothing reassigned)
+    // must not be rejected; only an attempt to change it to someone other than
+    // yourself requires being a lead.
+    if (frontmatter) {
+      const field = attributionField(record.kind, record.type);
+      if (field && Object.prototype.hasOwnProperty.call(frontmatter, field)) {
+        const newValue = (frontmatter[field] || '').toString().trim();
+        const oldValue = (record[field] || '').toString().trim();
+        if (newValue !== oldValue && newValue !== user.git_name && !user.is_lead) {
+          return res.status(400).json({ error: `only a lead can set ${field} to someone other than yourself` });
+        }
       }
     }
-  }
 
-  try {
-    const existing = await fs.readFile(filePath, 'utf8');
-    const parsed = matter(existing);
+    try {
+      const existing = await fs.readFile(filePath, 'utf8');
+      const parsed = matter(existing);
 
-    const updatedFrontmatter = {
-      ...(frontmatter ? { ...parsed.data, ...frontmatter } : parsed.data),
-      last_edited_by: user.git_name,
-      last_edited_at: new Date().toISOString(),
-    };
-    const updatedContent = content !== undefined ? content : parsed.content;
+      const updatedFrontmatter = {
+        ...(frontmatter ? { ...parsed.data, ...frontmatter } : parsed.data),
+        last_edited_by: user.git_name,
+        last_edited_at: new Date().toISOString(),
+      };
+      const updatedContent = content !== undefined ? content : parsed.content;
 
-    // Dates (gray-matter's parsed Dates, and ISO timestamps sent back by a
-    // client) are written as plain YYYY-MM-DD.
-    normalizeFrontmatterDates(updatedFrontmatter);
+      // Dates (gray-matter's parsed Dates, and ISO timestamps sent back by a
+      // client) are written as plain YYYY-MM-DD.
+      normalizeFrontmatterDates(updatedFrontmatter);
 
-    const newFileText = matter.stringify(updatedContent, updatedFrontmatter);
-    await fs.writeFile(filePath, newFileText, 'utf8');
-  } catch (err) {
-    return res.status(500).json({ error: `failed to write file: ${err.message}` });
-  }
+      const newFileText = matter.stringify(updatedContent, updatedFrontmatter);
+      await fs.writeFile(filePath, newFileText, 'utf8');
+    } catch (err) {
+      return res.status(500).json({ error: `failed to write file: ${err.message}` });
+    }
 
-  let indexWarning = null;
-  try {
-    await execFileAsync(PYTHON_BIN, [path.join(SCRIPTS_DIR, 'build_index.py')], { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
-  } catch (err) {
-    const { message } = scriptErrorMessage(err, 'PUT /records/:id (build_index.py)');
-    indexWarning = message;
-  }
+    let indexWarning = null;
+    try {
+      await execFileAsync(PYTHON_BIN, [path.join(SCRIPTS_DIR, 'build_index.py')], { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
+    } catch (err) {
+      const { message } = scriptErrorMessage(err, 'PUT /records/:id (build_index.py)');
+      indexWarning = message;
+    }
 
-  await commitChange(`Update ${path.relative(AGENTIC_REPO_ROOT, filePath)}`, user);
+    const relPath = path.relative(AGENTIC_REPO_ROOT, filePath);
+    await commitChange(`Update ${relPath}`, user, [relPath, ...INDEX_PATHS]);
 
-  if (indexWarning) {
-    return res.status(200).json({
-      message: 'record updated and committed, but build_index.py reported issues',
-      warning: indexWarning,
-    });
-  }
-  res.json({ message: `${filePath} updated, index refreshed, and change committed` });
+    if (indexWarning) {
+      return res.status(200).json({
+        message: 'record updated and committed, but build_index.py reported issues',
+        warning: indexWarning,
+      });
+    }
+    res.json({ message: `${filePath} updated, index refreshed, and change committed` });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -454,45 +510,49 @@ router.delete('/records/*splat', writeLimiter, async (req, res) => {
   const id = decodeURIComponent(req.path.replace(/^\/records\//, ''));
   const user = getUser(req);
 
-  let record;
-  try {
-    record = await fetchRecord(id);
-  } catch (err) {
-    const { message, isCrash } = scriptErrorMessage(err, 'DELETE /records/:id (fetchRecord)');
-    return res.status(isCrash ? 500 : 404).json({ error: message });
-  }
-
-  if (isGeneratedRecord(record)) {
-    return res.status(403).json({ error: GENERATED_READ_ONLY_ERROR });
-  }
-
-  try {
-    if (record.kind === 'raw') {
-      await fs.rm(path.dirname(record.filePath), { recursive: true, force: true });
-    } else {
-      await fs.unlink(record.filePath);
+  await withRepoLock(async () => {
+    let record;
+    try {
+      record = await fetchRecord(id);
+    } catch (err) {
+      const { message, isCrash } = scriptErrorMessage(err, 'DELETE /records/:id (fetchRecord)');
+      return res.status(isCrash ? 500 : 404).json({ error: message });
     }
-  } catch (err) {
-    return res.status(500).json({ error: `failed to delete: ${err.message}` });
-  }
 
-  let indexWarning = null;
-  try {
-    await execFileAsync(PYTHON_BIN, [path.join(SCRIPTS_DIR, 'build_index.py')], { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
-  } catch (err) {
-    const { message } = scriptErrorMessage(err, 'DELETE /records/:id (build_index.py)');
-    indexWarning = message;
-  }
+    if (isGeneratedRecord(record)) {
+      return res.status(403).json({ error: GENERATED_READ_ONLY_ERROR });
+    }
 
-  await commitChange(`Delete ${record.path}`, user);
+    try {
+      if (record.kind === 'raw') {
+        await fs.rm(path.dirname(record.filePath), { recursive: true, force: true });
+      } else {
+        await fs.unlink(record.filePath);
+      }
+    } catch (err) {
+      return res.status(500).json({ error: `failed to delete: ${err.message}` });
+    }
 
-  if (indexWarning) {
-    return res.status(200).json({
-      message: 'record deleted and committed, but build_index.py reported issues',
-      warning: indexWarning,
-    });
-  }
-  res.status(204).end();
+    let indexWarning = null;
+    try {
+      await execFileAsync(PYTHON_BIN, [path.join(SCRIPTS_DIR, 'build_index.py')], { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
+    } catch (err) {
+      const { message } = scriptErrorMessage(err, 'DELETE /records/:id (build_index.py)');
+      indexWarning = message;
+    }
+
+    // A raw record is its whole session folder (see the fs.rm above).
+    const removed = record.kind === 'raw' ? path.dirname(record.filePath) : record.filePath;
+    await commitChange(`Delete ${record.path}`, user, [path.relative(AGENTIC_REPO_ROOT, removed), ...INDEX_PATHS]);
+
+    if (indexWarning) {
+      return res.status(200).json({
+        message: 'record deleted and committed, but build_index.py reported issues',
+        warning: indexWarning,
+      });
+    }
+    res.status(204).end();
+  });
 });
 
 module.exports = router;
