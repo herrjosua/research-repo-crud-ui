@@ -14,8 +14,27 @@ export default defineConfig([
       reactRefresh.configs.vite,
     ],
     languageOptions: {
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        // Injected by vite.config.js's `define`.
+        __APP_VERSION__: 'readonly',
+      },
       parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+  {
+    // vite.config.js sets test.globals: true, so test files use describe,
+    // it, expect, vi, etc. without importing them.
+    files: ['**/*.test.{js,jsx}'],
+    languageOptions: {
+      globals: globals.vitest,
+    },
+  },
+  {
+    // Runs in Node, not the browser.
+    files: ['vite.config.js'],
+    languageOptions: {
+      globals: globals.node,
     },
   },
 ])
