@@ -267,6 +267,7 @@ function normalizeFrontmatterDates(data) {
 
 module.exports = {
   SAFE_SLUG_RE,
+  DELIVERABLE_FOLDERS,
   STATUS_OPTIONS,
   validateCreate,
   validateFrontmatterPatch,
