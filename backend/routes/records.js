@@ -44,19 +44,12 @@ const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
 // fix rather than forcing the whole suite to run single-threaded.
 const PYTHON_ENV = { ...process.env, PYTHONDONTWRITEBYTECODE: '1' };
 
-// topicSlug (raw mode) and slug (deliverable mode) both end up building a
-// filesystem path inside new_research_session.py (folder_name/file_path via
-// pathlib's `/` operator) with no sanitization on that script's side — a
-// value containing "../" or an absolute path escapes the intended folder
-// entirely. Reject anything that isn't a plain kebab-case slug here, before
-// it ever reaches the script, rather than trying to sanitize/escape it.
-const SAFE_SLUG_RE = /^[a-z0-9-]+$/;
-
-// Mirrors EditRecordForm.jsx's STATUS_OPTIONS on the frontend. Enforced here
-// too — not just client-side — since a direct API call bypassing the UI
-// entirely could otherwise set a record's status to an arbitrary or empty
-// string, silently overwriting whatever it actually was.
-const STATUS_OPTIONS = ['raw', 'in-review', 'synthesized', 'draft', 'final', 'superseded'];
+const {
+  SAFE_SLUG_RE,
+  validateCreate,
+  validateFrontmatterPatch,
+  normalizeFrontmatterDates,
+} = require('../validation');
 
 // Every Python script invoked below (new_research_session.py, export_records.py,
 // build_index.py) prints a clean, single-line message to stderr on an expected
@@ -78,18 +71,6 @@ function scriptErrorMessage(err, context) {
     return { message: 'internal server error', isCrash: true };
   }
   return { message: raw, isCrash: false };
-}
-
-// Used for tags/relatedComponents/relatedFindings (POST /sessions) and
-// frontmatter.tags (PUT /records/:id): each must be a plain string (comma-
-// separated, matching the frontend's own convention) or an array of strings.
-// Anything else — a number, an object, a mixed array — would otherwise reach
-// execFile's argument list or gray-matter's YAML writer as-is, either
-// throwing an opaque low-level error or silently writing malformed
-// frontmatter, instead of a clear, actionable 400.
-function isStringOrStringArray(value) {
-  return typeof value === 'string'
-    || (Array.isArray(value) && value.every((v) => typeof v === 'string'));
 }
 
 // Maps a record's kind (and, for deliverables, its `type`, which
@@ -135,6 +116,14 @@ router.post('/sessions', writeLimiter, async (req, res) => {
     return res.status(400).json({ error: 'mode must be "raw" or "deliverable"' });
   }
 
+  // Types, allowlists, line breaks, dates, and lengths. Runs before the
+  // required-field checks below, which call .trim() and would throw (500) on
+  // a non-string.
+  const createError = validateCreate(mode, req.body);
+  if (createError) {
+    return res.status(400).json({ error: createError });
+  }
+
   const args = [path.join(SCRIPTS_DIR, 'new_research_session.py')];
 
   if (mode === 'raw') {
@@ -148,15 +137,6 @@ router.post('/sessions', writeLimiter, async (req, res) => {
     }
     if (!SAFE_SLUG_RE.test(topicSlug)) {
       return res.status(400).json({ error: 'topicSlug must match ^[a-z0-9-]+$' });
-    }
-    if (tags !== undefined && !isStringOrStringArray(tags)) {
-      return res.status(400).json({ error: 'tags must be a string or an array of strings' });
-    }
-    if (relatedComponents !== undefined && !isStringOrStringArray(relatedComponents)) {
-      return res.status(400).json({ error: 'relatedComponents must be a string or an array of strings' });
-    }
-    if (relatedFindings !== undefined && !isStringOrStringArray(relatedFindings)) {
-      return res.status(400).json({ error: 'relatedFindings must be a string or an array of strings' });
     }
 
     let resolvedResearcher;
@@ -185,20 +165,12 @@ router.post('/sessions', writeLimiter, async (req, res) => {
     if (!SAFE_SLUG_RE.test(slug)) {
       return res.status(400).json({ error: 'slug must match ^[a-z0-9-]+$' });
     }
-    if (tags !== undefined && !isStringOrStringArray(tags)) {
-      return res.status(400).json({ error: 'tags must be a string or an array of strings' });
-    }
-    if (relatedFindings !== undefined && !isStringOrStringArray(relatedFindings)) {
-      return res.status(400).json({ error: 'relatedFindings must be a string or an array of strings' });
-    }
 
-    // new_research_session.py only exposes a --designer CLI flag — the
-    // evaluator field (heuristic-evaluations/) has no CLI equivalent, only
-    // an interactive prompt, which --no-prompt (always passed below since
-    // this is a non-interactive caller) bypasses. So attribution can only be
-    // enforced/set for designer at creation time; a heuristic-evaluations
-    // record's evaluator field is written blank here and can only be set
-    // afterward via PUT, where the same enforcement applies.
+    // Only designer is passed at creation time. new_research_session.py also
+    // has an --evaluator flag now (heuristic-evaluations/ only), but this
+    // route doesn't pass it yet, so a heuristic-evaluations record's
+    // evaluator field is written blank here and can only be set afterward via
+    // PUT, where the same attribution enforcement applies.
     if (folder !== 'heuristic-evaluations') {
       let resolvedDesigner;
       try {
@@ -377,18 +349,13 @@ router.put('/records/*splat', writeLimiter, async (req, res) => {
   }
 
   // Server-side guards, not just the frontend's — a direct API call
-  // bypasses EditRecordForm.jsx entirely, so its client-side checks (added
-  // last session) offer zero real protection on their own.
-  if (frontmatter) {
-    if (Object.prototype.hasOwnProperty.call(frontmatter, 'title') && !frontmatter.title.trim()) {
-      return res.status(400).json({ error: 'frontmatter.title cannot be blank' });
-    }
-    if (Object.prototype.hasOwnProperty.call(frontmatter, 'status') && !STATUS_OPTIONS.includes(frontmatter.status)) {
-      return res.status(400).json({ error: `frontmatter.status must be one of: ${STATUS_OPTIONS.join(', ')}` });
-    }
-    if (Object.prototype.hasOwnProperty.call(frontmatter, 'tags') && !isStringOrStringArray(frontmatter.tags)) {
-      return res.status(400).json({ error: 'frontmatter.tags must be a string or an array of strings' });
-    }
+  // bypasses EditRecordForm.jsx entirely, so its client-side checks offer
+  // zero real protection on their own. Everything in frontmatter is merged
+  // into the file as-is below, so every key is checked, not just the ones
+  // the form sends — see validation.js for the rules.
+  const patchError = validateFrontmatterPatch(frontmatter || undefined, content);
+  if (patchError) {
+    return res.status(400).json({ error: patchError });
   }
 
   let filePath;
@@ -428,11 +395,9 @@ router.put('/records/*splat', writeLimiter, async (req, res) => {
     };
     const updatedContent = content !== undefined ? content : parsed.content;
 
-    for (const key of Object.keys(updatedFrontmatter)) {
-      if (updatedFrontmatter[key] instanceof Date) {
-        updatedFrontmatter[key] = updatedFrontmatter[key].toISOString().slice(0, 10);
-      }
-    }
+    // Dates (gray-matter's parsed Dates, and ISO timestamps sent back by a
+    // client) are written as plain YYYY-MM-DD.
+    normalizeFrontmatterDates(updatedFrontmatter);
 
     const newFileText = matter.stringify(updatedContent, updatedFrontmatter);
     await fs.writeFile(filePath, newFileText, 'utf8');

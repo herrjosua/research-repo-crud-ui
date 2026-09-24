@@ -310,7 +310,7 @@ describe('PUT /api/records/:id', () => {
             frontmatter: { tags: { not: 'a string or array' } },
         });
         expect(res.status).toBe(400);
-        expect(res.body.error).toMatch(/tags must be a string or an array of strings/);
+        expect(res.body.error).toMatch(/tags must be an array of strings or null/);
     });
 
     it('returns 404 for an id that does not exist', async () => {
@@ -576,5 +576,254 @@ describe('Attribution enforcement (researcher on raw sessions)', () => {
 
         const fetchRes = await agent.get(`/api/records/${record.id}`);
         expect(fetchRes.body.researcher).toBe('Original Author');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Input validation (validation.js). The write rate limiter runs before
+// validation and allows 30 writes per 15 minutes per IP, which this file
+// would otherwise blow through — reset it before each test.
+// ---------------------------------------------------------------------------
+const matter = require('gray-matter');
+
+describe('POST /api/sessions — input validation', () => {
+    beforeEach(() => require('../middleware/rateLimiter')._resetForTests());
+
+    const raw = (overrides) => ({
+        mode: 'raw',
+        title: 'Validation test',
+        type: 'interview',
+        topicSlug: 'validation-test',
+        ...overrides,
+    });
+    const deliverable = (overrides) => ({
+        mode: 'deliverable',
+        folder: 'personas',
+        title: 'Validation test',
+        slug: 'validation-test',
+        ...overrides,
+    });
+
+    it.each([
+        ['banana'],
+        ['2026-02-30'],
+    ])('rejects date %p', async (date) => {
+        const res = await agent.post('/api/sessions').send(raw({ date }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/date must be a real calendar date/);
+    });
+
+    it('rejects a raw type outside the allowlist', async () => {
+        const res = await agent.post('/api/sessions').send(raw({ type: 'synthesis' }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/type must be one of/);
+    });
+
+    it('rejects a deliverable folder outside the allowlist', async () => {
+        const res = await agent.post('/api/sessions').send(deliverable({ folder: 'not-a-folder' }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/folder must be one of/);
+    });
+
+    it('rejects a deliverable status outside the allowlist', async () => {
+        const res = await agent.post('/api/sessions').send(deliverable({ status: 'raw' }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/status must be one of/);
+    });
+
+    it('rejects a sourceType outside the allowlist', async () => {
+        const res = await agent.post('/api/sessions').send(deliverable({ sourceType: 'dropbox-link' }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/sourceType must be one of/);
+    });
+
+    it('rejects a protoType outside the allowlist', async () => {
+        const res = await agent.post('/api/sessions').send(deliverable({ folder: 'prototypes', protoType: 'paper' }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/protoType must be one of/);
+    });
+
+    it('requires protoType for prototypes', async () => {
+        const res = await agent.post('/api/sessions').send(deliverable({ folder: 'prototypes' }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/protoType is required/);
+    });
+
+    it('rejects a title over 200 characters', async () => {
+        const res = await agent.post('/api/sessions').send(raw({ title: 'x'.repeat(201) }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/title must be at most 200/);
+    });
+
+    it('rejects a non-string title with a 400, not a 500', async () => {
+        const res = await agent.post('/api/sessions').send(raw({ title: 5 }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/title must be a string/);
+    });
+
+    it('rejects a tag item over 200 characters', async () => {
+        const res = await agent.post('/api/sessions').send(raw({ tags: ['ok', 'x'.repeat(201)] }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/tags items must be at most 200/);
+    });
+});
+
+describe('PUT /api/records/:id — input validation', () => {
+    beforeEach(() => require('../middleware/rateLimiter')._resetForTests());
+
+    const recordId = 'raw:2026-01-15-onboarding-flow-usability-test';
+    const filePath = () =>
+        path.join(testRepoPath, 'research', 'raw', '2026-01-15-onboarding-flow-usability-test', 'session-notes.md');
+    const put = (frontmatter) => agent.put(`/api/records/${recordId}`).send({ frontmatter });
+
+    it('rejects related_components: 5 and leaves the file untouched', async () => {
+        const before = await fs.readFile(filePath(), 'utf8');
+        const res = await put({ related_components: 5 });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/related_components must be an array of strings or null/);
+        expect(await fs.readFile(filePath(), 'utf8')).toBe(before);
+    });
+
+    // Used to return 200 with a build_index.py warning, having already
+    // written a record every loader then skipped.
+    it('rejects related_findings containing an object', async () => {
+        const res = await put({ related_findings: [{ a: 1 }] });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/related_findings must be an array of strings or null/);
+    });
+
+    it.each([
+        ['banana'],
+        ['2026-02-30'],
+        ['2026-02-30T00:00:00.000Z'],
+    ])('rejects date %p', async (date) => {
+        const res = await put({ date });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/date must be a real calendar date/);
+    });
+
+    it('accepts an ISO timestamp date and writes it as YYYY-MM-DD', async () => {
+        const res = await put({ date: '2026-01-15T00:00:00.000Z' });
+        expect(res.status).toBe(200);
+        expect(await fs.readFile(filePath(), 'utf8')).toMatch(/^date: '2026-01-15'$/m);
+        expect((await agent.get(`/api/records/${recordId}`)).body.date).toBe('2026-01-15');
+    });
+
+    it('rejects tags as a bare string (it would get the record skipped)', async () => {
+        const res = await put({ tags: 'onboarding,usability' });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/tags must be an array of strings or null/);
+    });
+
+    it('accepts tags: null', async () => {
+        const res = await put({ tags: null });
+        expect(res.status).toBe(200);
+        expect((await agent.get(`/api/records/${recordId}`)).body.tags).toEqual([]);
+    });
+
+    it('rejects a source_type outside the allowlist', async () => {
+        const res = await put({ source_type: 'dropbox-link' });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/source_type must be one of/);
+    });
+
+    it('rejects nested objects in an unknown key', async () => {
+        const res = await put({ scope: { a: { b: 'c' } } });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/scope\.a must be a string or null/);
+    });
+
+    it('rejects an array of objects in an unknown key', async () => {
+        const res = await put({ based_on: [{ a: 1 }] });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/based_on must be an array of strings/);
+    });
+
+    it('rejects a non-string title with a 400, not a 500', async () => {
+        const res = await put({ title: 5 });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/title must be a string/);
+    });
+
+    it('rejects frontmatter sent as an array', async () => {
+        const res = await put([{ title: 'x' }]);
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/frontmatter must be an object/);
+    });
+});
+
+describe('PUT /api/records/:id — deliverable type-specific fields and round-trips', () => {
+    beforeEach(() => require('../middleware/rateLimiter')._resetForTests());
+
+    const planId = 'deliverable:research-plans/validation-plan';
+    const planPath = () => path.join(testRepoPath, 'research-plans', 'validation-plan.md');
+
+    beforeAll(async () => {
+        require('../middleware/rateLimiter')._resetForTests();
+        const res = await agent.post('/api/sessions').send({
+            mode: 'deliverable',
+            folder: 'research-plans',
+            title: 'Validation plan',
+            slug: 'validation-plan',
+            date: '2026-02-01',
+        });
+        if (res.status !== 201) throw new Error(`deliverable setup failed: ${JSON.stringify(res.body)}`);
+    });
+
+    it('accepts legitimate type-specific fields (string, flat object, number, string list)', async () => {
+        const res = await agent.put(`/api/records/${planId}`).send({
+            frontmatter: {
+                scope: 'Onboarding flow',
+                study_dates: { start: '2026-02-01T00:00:00.000Z', end: '2026-02-14' },
+                issues_found: 3,
+                based_on: ['onboarding.md'],
+            },
+        });
+        expect(res.status).toBe(200);
+
+        const data = matter(await fs.readFile(planPath(), 'utf8')).data;
+        expect(data).toMatchObject({
+            scope: 'Onboarding flow',
+            study_dates: { start: '2026-02-01', end: '2026-02-14' },
+            issues_found: 3,
+            based_on: ['onboarding.md'],
+        });
+        expect((await agent.get(`/api/records/${planId}`)).status).toBe(200);
+    });
+
+    // A client that reads the file itself and PUTs its frontmatter back: the
+    // parsed YAML dates arrive as ISO timestamps once JSON-serialized.
+    async function roundTrip(id, file) {
+        const getRes = await agent.get(`/api/records/${id}`);
+        expect(getRes.status).toBe(200);
+
+        const frontmatter = JSON.parse(JSON.stringify(matter(await fs.readFile(file, 'utf8')).data));
+        const putRes = await agent.put(`/api/records/${id}`).send({ frontmatter });
+        expect(putRes.status).toBe(200);
+
+        const after = await agent.get(`/api/records/${id}`);
+        expect(after.status).toBe(200);
+        expect(after.body).toMatchObject({ title: getRes.body.title, date: getRes.body.date, tags: getRes.body.tags });
+    }
+
+    it('round-trips a raw record\'s exact frontmatter unchanged', async () => {
+        await roundTrip(
+            'raw:2026-01-15-onboarding-flow-usability-test',
+            path.join(testRepoPath, 'research', 'raw', '2026-01-15-onboarding-flow-usability-test', 'session-notes.md'),
+        );
+    });
+
+    it('round-trips a deliverable\'s exact frontmatter, including unquoted YAML dates in study_dates', async () => {
+        // Match the real agentic-repo research-plans file, which has bare
+        // (unquoted) dates here that gray-matter parses into Date objects.
+        const text = await fs.readFile(planPath(), 'utf8');
+        await fs.writeFile(planPath(), text
+            .replace(/^( {2}start:).*$/m, '$1 2026-02-01')
+            .replace(/^( {2}end:).*$/m, '$1 2026-02-14'));
+
+        await roundTrip(planId, planPath());
+
+        const data = matter(await fs.readFile(planPath(), 'utf8')).data;
+        expect(data.study_dates).toEqual({ start: '2026-02-01', end: '2026-02-14' });
     });
 });

@@ -563,3 +563,96 @@ describe('VECTOR 8: Python-traceback masking on subprocess errors', () => {
         expect(result.message).toBe('ENOENT: no such file or directory');
     });
 });
+
+// ---------------------------------------------------------------------------
+// VECTOR 9 — Line breaks in single-line frontmatter fields
+//
+// A \n or \r in a frontmatter value could split it across YAML lines and
+// inject extra keys. agentic-repo's scripts now quote every value (v0.5.21),
+// and PUT writes through gray-matter, but both routes now also reject line
+// breaks in frontmatter strings up front (validation.js) — while still
+// allowing them in the Markdown body fields (methodLabel, description, PUT
+// content).
+// ---------------------------------------------------------------------------
+describe('VECTOR 9: line breaks in frontmatter fields', () => {
+    beforeEach(() => require('../middleware/rateLimiter')._resetForTests());
+
+    const recordId = 'raw:2026-01-02-a-perfectly-normal-slug';
+    const raw = (overrides) => ({
+        mode: 'raw',
+        title: 'Line break test',
+        type: 'interview',
+        topicSlug: 'line-break-test',
+        ...overrides,
+    });
+
+    it('rejects a newline in a raw session title', async () => {
+        const res = await agent.post('/api/sessions').send(raw({ title: 'Legit\nstatus: final' }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/title cannot contain line breaks/);
+    });
+
+    it('rejects a carriage return in researcher', async () => {
+        const res = await agent.post('/api/sessions').send(raw({ researcher: 'Security Tester\rx' }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/researcher cannot contain line breaks/);
+    });
+
+    it('rejects a newline inside a tag item', async () => {
+        const res = await agent.post('/api/sessions').send(raw({ tags: ['ok', 'bad\ntag'] }));
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/tags items cannot contain line breaks/);
+    });
+
+    it('rejects a carriage return in a deliverable sourceType', async () => {
+        const res = await agent.post('/api/sessions').send({
+            mode: 'deliverable', folder: 'personas', title: 'CR test', slug: 'cr-test', sourceType: 'native\r',
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/sourceType must be one of/);
+    });
+
+    it('still allows newlines in methodLabel and description', async () => {
+        const rawRes = await agent.post('/api/sessions').send(raw({
+            topicSlug: 'multiline-method-label', methodLabel: 'Line one\nLine two',
+        }));
+        expect(rawRes.status).toBe(201);
+
+        const delRes = await agent.post('/api/sessions').send({
+            mode: 'deliverable', folder: 'personas', title: 'Multiline description',
+            slug: 'multiline-description', description: 'First line.\nSecond line.',
+        });
+        expect(delRes.status).toBe(201);
+    });
+
+    it('rejects a newline in a PUT title', async () => {
+        const res = await agent.put(`/api/records/${recordId}`).send({ frontmatter: { title: 'x\nstatus: final' } });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/frontmatter.title cannot contain line breaks/);
+    });
+
+    it('rejects a newline in an unknown PUT key', async () => {
+        const res = await agent.put(`/api/records/${recordId}`).send({ frontmatter: { scope: 'a\nb' } });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/frontmatter.scope cannot contain line breaks/);
+    });
+
+    it('rejects frontmatter keys that are not snake_case, including __proto__', async () => {
+        // Raw JSON, since a JS object literal's __proto__ sets the prototype
+        // instead of creating a key.
+        const protoRes = await agent.put(`/api/records/${recordId}`)
+            .set('Content-Type', 'application/json')
+            .send('{"frontmatter": {"__proto__": {"x": "y"}}}');
+        expect(protoRes.status).toBe(400);
+        expect(protoRes.body.error).toMatch(/must be snake_case/);
+
+        const spaceRes = await agent.put(`/api/records/${recordId}`).send({ frontmatter: { 'bad key': 'x' } });
+        expect(spaceRes.status).toBe(400);
+        expect(spaceRes.body.error).toMatch(/must be snake_case/);
+    });
+
+    it('still allows newlines in PUT content', async () => {
+        const res = await agent.put(`/api/records/${recordId}`).send({ content: '# Heading\n\nParagraph.\n' });
+        expect(res.status).toBe(200);
+    });
+});
