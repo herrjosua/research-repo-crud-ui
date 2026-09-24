@@ -19,7 +19,7 @@ beforeEach(() => {
     // client.js calls the real global fetch — replacing it with a mock means
     // no actual network request ever leaves these tests, and we control
     // exactly what "the server" says back.
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
 });
 
 afterEach(() => {
@@ -28,7 +28,7 @@ afterEach(() => {
 
 describe('LoginForm', () => {
     it('calls onLoginSuccess after a successful login', async () => {
-        global.fetch.mockResolvedValueOnce({
+        globalThis.fetch.mockResolvedValueOnce({
             ok: true,
             json: async () => ({ id: 1, username: 'alice' }),
         });
@@ -46,7 +46,7 @@ describe('LoginForm', () => {
     });
 
     it('shows the server error message and does not call onLoginSuccess on failure', async () => {
-        global.fetch.mockResolvedValueOnce({
+        globalThis.fetch.mockResolvedValueOnce({
             ok: false,
             status: 401,
             json: async () => ({ error: 'invalid username or password' }),
@@ -73,7 +73,7 @@ describe('LoginForm', () => {
         // catch the in-between (pending) state, rather than the mutation
         // resolving before we ever get a chance to check it.
         let resolveFetch;
-        global.fetch.mockImplementationOnce(
+        globalThis.fetch.mockImplementationOnce(
             () => new Promise((resolve) => { resolveFetch = resolve; }),
         );
 

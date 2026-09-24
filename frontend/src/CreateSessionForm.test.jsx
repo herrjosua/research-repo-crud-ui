@@ -26,7 +26,7 @@ vi.mock('@ckeditor/ckeditor5-react', () => ({
 // in jsdom, so stub both to keep mounting/interacting with the form from
 // throwing on APIs that have nothing to do with what's under test here.
 beforeAll(() => {
-    global.ResizeObserver = class {
+    globalThis.ResizeObserver = class {
         observe() {}
         unobserve() {}
         disconnect() {}
