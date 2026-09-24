@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Dashboard from './Dashboard';
 import { useRecords } from './api/records';
@@ -12,7 +12,13 @@ vi.mock('./CreateSessionForm', () => ({
 }));
 
 vi.mock('./RecordDetail', () => ({
-    default: ({ id }) => <div>Mock RecordDetail for {id}</div>,
+    default: ({ id, onDeleted }) => (
+        <div>
+            Mock RecordDetail for {id}
+            <button onClick={() => onDeleted('dangling related_findings link')}>Delete with warning</button>
+            <button onClick={() => onDeleted(undefined)}>Delete cleanly</button>
+        </div>
+    ),
 }));
 
 const sampleRecords = [
@@ -93,5 +99,34 @@ describe('Dashboard', () => {
 
         expect(screen.getByText('Failed to load records')).toBeInTheDocument();
         expect(screen.getByText('Failed to fetch records')).toBeInTheDocument();
+    });
+});
+describe('Dashboard — delete warning', () => {
+    it('shows the backend warning above the list and focuses the heading after a delete with a warning', async () => {
+        useRecords.mockReturnValue({ isLoading: false, isError: false, data: sampleRecords });
+        const user = userEvent.setup();
+        render(<Dashboard />);
+
+        await user.click(screen.getByText('Raw One'));
+        await user.click(screen.getByRole('button', { name: 'Delete with warning' }));
+
+        expect(screen.queryByText(/Mock RecordDetail/)).not.toBeInTheDocument();
+        const status = screen.getByRole('status');
+        expect(within(status).getByText('Deleted, but the index reported issues')).toBeInTheDocument();
+        expect(within(status).getByText('dangling related_findings link')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Research Records' })).toHaveFocus();
+    });
+
+    it('shows no warning after a clean delete', async () => {
+        useRecords.mockReturnValue({ isLoading: false, isError: false, data: sampleRecords });
+        const user = userEvent.setup();
+        render(<Dashboard />);
+
+        await user.click(screen.getByText('Raw One'));
+        await user.click(screen.getByRole('button', { name: 'Delete cleanly' }));
+
+        expect(screen.queryByText(/Mock RecordDetail/)).not.toBeInTheDocument();
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Research Records' })).toHaveFocus();
     });
 });

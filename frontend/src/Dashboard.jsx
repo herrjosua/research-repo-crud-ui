@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Grid, Column, Checkbox, Tag, ClickableTile, InlineNotification, Button, Modal, Search } from '@carbon/react';
 import CreateSessionForm from './CreateSessionForm';
 import { useRecords } from './api/records';
@@ -27,6 +27,18 @@ export default function Dashboard() {
   const [tagQuery, setTagQuery] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [deleteWarning, setDeleteWarning] = useState(null);
+  const headingRef = useRef(null);
+  const focusHeadingAfterDelete = useRef(false);
+
+  // The deleted record's tile is gone, so there's no launcher to return focus
+  // to. Focus the list heading once the detail modal has unmounted.
+  useEffect(() => {
+    if (!selectedId && focusHeadingAfterDelete.current) {
+      focusHeadingAfterDelete.current = false;
+      headingRef.current?.focus();
+    }
+  }, [selectedId]);
 
   const allTags = useMemo(() => {
     if (!records.data) return [];
@@ -130,7 +142,16 @@ export default function Dashboard() {
       </Column>
 
       <Column lg={12} md={6} sm={4}>
-        <h1>Research Records</h1>
+        <h1 ref={headingRef} tabIndex={-1}>Research Records</h1>
+        {deleteWarning && (
+            <InlineNotification
+                kind="warning"
+                title="Deleted, but the index reported issues"
+                subtitle={deleteWarning}
+                lowContrast
+                onClose={() => setDeleteWarning(null)}
+            />
+        )}
         <Button onClick={() => setShowCreateForm(true)}>New session</Button>
         <p>{filtered.length} of {records.data.length} records</p>
         {filtered.length === 0 && (
@@ -168,7 +189,15 @@ export default function Dashboard() {
       )}
 
       {selectedId && (
-        <RecordDetail id={selectedId} onClose={() => setSelectedId(null)} />
+        <RecordDetail
+          id={selectedId}
+          onClose={() => setSelectedId(null)}
+          onDeleted={(warning) => {
+            setDeleteWarning(warning ?? null);
+            focusHeadingAfterDelete.current = true;
+            setSelectedId(null);
+          }}
+        />
       )}
     </Grid>
   );
