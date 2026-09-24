@@ -3,6 +3,7 @@ const fsp = require('fs/promises');
 const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
+const { THROWAWAY_MARKER } = require('../../throwawayRepo');
 
 // The Python scripts records.js shells out to, copied fresh into each fixture
 // repo. export_records.py imports from build_search_ui.py, which in turn
@@ -17,11 +18,11 @@ const SCRIPT_FILES = [
     'md_render.py',
 ];
 
-// Where the REAL scripts live, so we know where to copy them FROM. Same
-// default records.js itself falls back to — override via env if your
-// checkout ever lives somewhere else.
+// Where the REAL scripts live, so we know where to copy them FROM (read-only).
+// REAL_AGENTIC_REPO_ROOT if set (CI sets it), else an agentic-repo checkout
+// sitting next to this repo.
 const REAL_AGENTIC_REPO_ROOT =
-    process.env.REAL_AGENTIC_REPO_ROOT || '/Users/joshuacbock/IdeaProjects/agentic-repo';
+    process.env.REAL_AGENTIC_REPO_ROOT || path.resolve(__dirname, '../../../../agentic-repo');
 const REAL_SCRIPTS_DIR = path.join(REAL_AGENTIC_REPO_ROOT, 'research', 'scripts');
 
 /**
@@ -31,8 +32,18 @@ const REAL_SCRIPTS_DIR = path.join(REAL_AGENTIC_REPO_ROOT, 'research', 'scripts'
  * an empty research/findings/ folder (findings/tags.md is optional — an
  * empty glossary is valid, per load_tag_glossary()). Returns the fixture's
  * absolute path.
+ *
+ * corpusDir, if given, is copied into the repo root before the initial commit
+ * (E2E uses a fixed corpus; Jest tests start empty).
  */
-function createTestRepo() {
+function createTestRepo({ corpusDir } = {}) {
+    if (!fs.existsSync(REAL_SCRIPTS_DIR)) {
+        throw new Error(
+            `No agentic-repo scripts at ${REAL_SCRIPTS_DIR}. Set REAL_AGENTIC_REPO_ROOT to an `
+            + 'agentic-repo checkout (only read from; scripts are copied out of it).',
+        );
+    }
+
     const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'agentic-repo-test-'));
 
     const scriptsDir = path.join(repoRoot, 'research', 'scripts');
@@ -52,7 +63,12 @@ function createTestRepo() {
         fs.copyFileSync(path.join(REAL_SCRIPTS_DIR, file), path.join(scriptsDir, file));
     }
 
+    if (corpusDir) {
+        fs.cpSync(corpusDir, repoRoot, { recursive: true });
+    }
+
     execFileSync('git', ['init'], { cwd: repoRoot });
+    fs.writeFileSync(path.join(repoRoot, THROWAWAY_MARKER), 'Throwaway test repo created by setupTestRepo.js\n');
     // A fresh temp dir isn't guaranteed to inherit a usable git identity from
     // global config in every environment — set one locally so `git commit`
     // never fails on "please tell me who you are", independent of whatever
@@ -77,4 +93,4 @@ async function destroyTestRepo(repoRoot) {
     await fsp.rm(repoRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 }
 
-module.exports = { createTestRepo, destroyTestRepo };
+module.exports = { createTestRepo, destroyTestRepo, THROWAWAY_MARKER };
