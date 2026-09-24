@@ -827,3 +827,87 @@ describe('PUT /api/records/:id — deliverable type-specific fields and round-tr
         expect(data.study_dates).toEqual({ start: '2026-02-01', end: '2026-02-14' });
     });
 });
+
+describe('Generated design-token components are read-only', () => {
+    beforeEach(() => require('../middleware/rateLimiter')._resetForTests());
+
+    const componentId = 'component:button';
+    const componentPath = () => path.join(testRepoPath, 'design-tokens', 'components', 'button.md');
+    const contrastId = 'deliverable:research-plans/read-only-contrast';
+
+    beforeAll(async () => {
+        // Shaped like sync_figma_tokens.py's output, written straight to disk
+        // the way the sync script does it.
+        await fs.mkdir(path.dirname(componentPath()), { recursive: true });
+        await fs.writeFile(componentPath(), [
+            '---',
+            'title: Button',
+            'status: generated',
+            'generated_from: Figma (via sync_figma_tokens.py)',
+            '---',
+            '',
+            '# Button',
+            '',
+        ].join('\n'));
+
+        require('../middleware/rateLimiter')._resetForTests();
+        const res = await agent.post('/api/sessions').send({
+            mode: 'deliverable',
+            folder: 'research-plans',
+            title: 'Read-only contrast',
+            slug: 'read-only-contrast',
+            date: '2026-02-01',
+        });
+        if (res.status !== 201) throw new Error(`deliverable setup failed: ${JSON.stringify(res.body)}`);
+    });
+
+    it('rejects PUT with 403 and leaves the file untouched', async () => {
+        const before = await fs.readFile(componentPath(), 'utf8');
+        const res = await agent.put(`/api/records/${componentId}`).send({ content: '# Changed' });
+        expect(res.status).toBe(403);
+        expect(res.body.error).toBe('Generated from Figma: edit the source in Figma and re-run the token sync');
+        expect(await fs.readFile(componentPath(), 'utf8')).toBe(before);
+    });
+
+    it('rejects a PUT that tries to change status away from generated', async () => {
+        const res = await agent.put(`/api/records/${componentId}`).send({ frontmatter: { status: 'final' } });
+        expect(res.status).toBe(403);
+        expect(matter(await fs.readFile(componentPath(), 'utf8')).data.status).toBe('generated');
+    });
+
+    it('rejects DELETE with 403 and leaves the file in place', async () => {
+        const res = await agent.delete(`/api/records/${componentId}`);
+        expect(res.status).toBe(403);
+        expect(res.body.error).toMatch(/^Generated from Figma/);
+        await expect(fs.access(componentPath())).resolves.toBeUndefined();
+    });
+
+    it('GET /records/:id flags the generated record read_only and a normal record not', async () => {
+        const generated = await agent.get(`/api/records/${componentId}`);
+        expect(generated.status).toBe(200);
+        expect(generated.body).toMatchObject({ id: componentId, status: 'generated', read_only: true });
+
+        const normal = await agent.get(`/api/records/${contrastId}`);
+        expect(normal.status).toBe(200);
+        expect(normal.body.read_only).toBe(false);
+    });
+
+    it('GET /records still lists the generated component', async () => {
+        const res = await agent.get('/api/records');
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual(expect.arrayContaining([
+            expect.objectContaining({ id: componentId, kind: 'component', status: 'generated' }),
+        ]));
+    });
+
+    it('POST /sessions cannot create a deliverable under design-tokens', async () => {
+        const res = await agent.post('/api/sessions').send({
+            mode: 'deliverable',
+            folder: 'design-tokens',
+            title: 'Sneaky token',
+            slug: 'sneaky-token',
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/folder/);
+    });
+});
