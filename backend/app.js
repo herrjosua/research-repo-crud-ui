@@ -1,4 +1,8 @@
-require('dotenv').config();
+const path = require('path');
+
+// Resolved against this file, not the working directory, which the host's
+// process manager may set to somewhere else.
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const express = require('express');
 const session = require('express-session');
@@ -27,28 +31,30 @@ const db = require('./db'); // ensures users table exists
 const authRoutes = require('./routes/auth');
 const recordRoutes = require('./routes/records');
 const httpsRedirect = require('./middleware/httpsRedirect');
+const hostCheck = require('./middleware/hostCheck');
+const { trustProxySetting } = require('./proxyTrust');
+const { mountFrontend } = require('./frontend');
 
 const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(helmet());
 
-// Trust the first proxy hop (e.g. an AWS ALB or nginx terminating TLS) so
-// Express reads the real original protocol from X-Forwarded-Proto instead
-// of seeing the proxy's own internal plain-HTTP connection to this app.
-// Needed both for the redirect below and for the `secure` cookie flag
-// further down to evaluate correctly once TLS is terminated in front of
-// this app rather than inside Express itself. Only meaningful once a real
-// proxy is in place, so scoped to production.
+// Only answer for the configured hostname(s) (ALLOWED_HOSTS; off when unset).
+// First, so nothing below acts on a Host this app doesn't own.
+app.use(hostCheck(hostCheck.parseAllowedHosts(process.env.ALLOWED_HOSTS)));
+
+// In production the app sits behind Cloudflare and the host's proxy. Trust
+// exactly those hops (see proxyTrust.js) so req.ip is the visitor and
+// req.secure reflects the visitor's original HTTPS connection, which the
+// `secure` session cookie below depends on.
 if (isProduction) {
-    app.set('trust proxy', 1);
+    app.set('trust proxy', trustProxySetting(process.env.TRUST_PROXY));
 }
 
-// Redirect any HTTP request to HTTPS. Only fires in production, and only
-// once X-Forwarded-Proto (set by the proxy) says the original request
-// wasn't already HTTPS — a no-op in dev/test since isProduction is false
-// there.
-app.use(httpsRedirect(isProduction));
+// Redirect plain HTTP to HTTPS: production only, and switchable off with
+// HTTPS_REDIRECT=false (see .env.production.example for when).
+app.use(httpsRedirect(httpsRedirect.isHttpsRedirectEnabled(process.env)));
 
 if (!process.env.SESSION_SECRET) {
     throw new Error('SESSION_SECRET is not set. Add it to your .env file.');
@@ -57,7 +63,7 @@ if (!process.env.SESSION_SECRET) {
 // Separate SQLite connection for sessions (same file is fine — better-sqlite3
 // handles concurrent connections to one file via WAL mode, set in db.js).
 const isTest = process.env.NODE_ENV === 'test';
-const sessionDb = new Database(isTest ? `app.test.${process.env.JEST_WORKER_ID || 0}.db` : 'app.db');
+const sessionDb = new Database(path.join(__dirname, isTest ? `app.test.${process.env.JEST_WORKER_ID || 0}.db` : 'app.db'));
 
 app.use(express.json());
 
@@ -86,6 +92,20 @@ app.use(session({
 
 app.use('/api/auth', authRoutes);
 app.use('/api', recordRoutes);
+
+// Unmatched /api paths get a JSON 404, never the frontend's index.html below.
+app.use('/api', (req, res) => {
+    res.status(404).json({ error: 'not found' });
+});
+
+// The built frontend, served by this same process. FRONTEND_DIST overrides
+// where it is; production defaults to frontend/dist and refuses to start
+// without it. Dev and test don't serve it (Vite serves the frontend in dev).
+const frontendDist = process.env.FRONTEND_DIST
+    || (isProduction ? path.join(__dirname, '..', 'frontend', 'dist') : null);
+if (frontendDist) {
+    mountFrontend(app, frontendDist);
+}
 
 // Without this, any error passed to next() (e.g. body-parser's
 // PayloadTooLargeError on an oversized request, or a SyntaxError on
