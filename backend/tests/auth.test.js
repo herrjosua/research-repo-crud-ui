@@ -1,4 +1,12 @@
 const request = require('supertest');
+const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
+
+// Auth routes don't touch records, but loading app.js loads routes/records.js,
+// which refuses to start under test against anything but a throwaway repo.
+// Set before app.js is required: records.js reads it at load time.
+const testRepoPath = createTestRepo();
+process.env.AGENTIC_REPO_ROOT = testRepoPath;
+
 const { app, sessionDb, clearSessionInterval } = require('../app');
 const db = require('../db');
 const { seedDemoUsers } = require('../seedDemoUsers');
@@ -30,11 +38,13 @@ beforeEach(() => {
     db.prepare('DELETE FROM users').run();
 });
 
-afterAll(() => {
+afterAll(async () => {
     db.close();
     sessionDb.close();
     clearSessionInterval();
     server.close();
+    delete process.env.AGENTIC_REPO_ROOT;
+    await destroyTestRepo(testRepoPath);
 });
 
 describe('POST /api/auth/signup', () => {

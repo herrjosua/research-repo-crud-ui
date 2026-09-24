@@ -7,6 +7,7 @@ const path = require('path');
 const matter = require('gray-matter');
 const db = require('../db');
 const rateLimiter = require('../middleware/rateLimiter');
+const { isThrowawayRepo } = require('../throwawayRepo');
 
 const execFileAsync = promisify(execFile);
 const router = express.Router();
@@ -17,9 +18,23 @@ const writeLimiter = rateLimiter({
   keyFn: (req) => req.ip,
 });
 
-// Path to the agentic-repo checkout. Configurable via env so this isn't hardcoded
-// to one machine's layout.
-const AGENTIC_REPO_ROOT = process.env.AGENTIC_REPO_ROOT || '/Users/joshuacbock/IdeaProjects/agentic-repo';
+// Path to the agentic-repo checkout every route reads and writes. Required:
+// no default, so a missing setting can't silently land on someone's real repo.
+const AGENTIC_REPO_ROOT = process.env.AGENTIC_REPO_ROOT;
+if (!AGENTIC_REPO_ROOT) {
+  throw new Error('AGENTIC_REPO_ROOT is not set. Add it to backend/.env.');
+}
+
+// Automated runs (Jest, and Playwright's backend, both NODE_ENV=test) delete,
+// edit and commit records, so they may only ever touch a throwaway repo made
+// by tests/helpers/setupTestRepo.js. Refuse to start against anything else,
+// such as the real checkout that backend/.env points at.
+if (process.env.NODE_ENV === 'test' && !isThrowawayRepo(AGENTIC_REPO_ROOT)) {
+  throw new Error(
+    `Refusing to start under NODE_ENV=test: AGENTIC_REPO_ROOT (${AGENTIC_REPO_ROOT}) is not a `
+    + 'throwaway test repo. Tests must use createTestRepo() from tests/helpers/setupTestRepo.js.',
+  );
+}
 const SCRIPTS_DIR = path.join(AGENTIC_REPO_ROOT, 'research', 'scripts');
 const RESEARCH_ROOT = path.join(AGENTIC_REPO_ROOT, 'research');
 

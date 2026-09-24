@@ -2,6 +2,8 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
     testDir: './tests',
+    // Interim fix for the delete race (the delete spec removes a record other specs have open) until the delete spec creates its own record.
+    workers: 1,
     use: {
         baseURL: 'http://localhost:5173',
     },
@@ -13,11 +15,14 @@ export default defineConfig({
             reuseExistingServer: true, // safe — the frontend dev server touches no data
         },
         {
-            command: 'node server.js',
-            cwd: '../backend',
+            // Runs server.js against a throwaway repo built from
+            // fixtures/corpus, never the real agentic-repo in backend/.env.
+            command: 'node support/start-backend.js',
             url: 'http://localhost:3001/api/auth/me',
             env: { NODE_ENV: 'test', DEMO_MODE: 'false' }, // explicit, independent of whatever's in backend/.env
             reuseExistingServer: false,
+            // Lets start-backend.js delete the throwaway repo on the way out.
+            gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 },
         },
     ],
 });
