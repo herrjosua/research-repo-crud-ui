@@ -2,8 +2,6 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
     testDir: './tests',
-    // Interim fix for the delete race (the delete spec removes a record other specs have open) until the delete spec creates its own record.
-    workers: 1,
     use: {
         baseURL: 'http://localhost:5173',
     },

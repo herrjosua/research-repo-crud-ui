@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { randomUUID } from 'node:crypto';
+import { STABLE_RAW_SESSION_TITLE } from '../support/fixtureRecords';
 
 // Carbon's md breakpoint spans 672px–1055px. Phone-size (sm, below 672px) is
 // deliberately out of scope for this app — it's a tool used on laptops and
@@ -107,9 +108,9 @@ for (const width of MD_WIDTHS) {
         await expectClickable(page.getByRole('button', { name: 'Log out' }));
 
         // --- Record detail modal ---
-        // Targeted by Carbon's stable class rather than the tile's title text,
-        // since that text is real research content that could change later.
-        await page.locator('.cds--tile--clickable').first().click();
+        // A specific fixture record by title, not "the first tile", so list
+        // order and records other specs create or delete don't matter.
+        await page.locator('.cds--tile--clickable', { hasText: STABLE_RAW_SESSION_TITLE }).click();
         const detailModal = page.getByRole('dialog');
         await expect(detailModal).toBeVisible();
         await expectWithinViewport(detailModal, width);
