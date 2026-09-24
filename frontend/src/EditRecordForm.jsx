@@ -75,7 +75,9 @@ export default function EditRecordForm({ record, onClose }) {
                 },
                 content,
             },
-            { onSuccess: onClose },
+            // PUT can succeed with a build_index.py warning; hand it up so
+            // RecordDetail can show it once the form closes.
+            { onSuccess: (data) => onClose(data?.warning) },
         );
     }
 

@@ -123,9 +123,12 @@ function cleanRecordHtml(html) {
   return body.innerHTML;
 }
 
-export default function RecordDetail({ id, onClose }) {
+export default function RecordDetail({ id, onClose, onDeleted }) {
   const record = useRecord(id);
   const [isEditing, setIsEditing] = useState(false);
+  const [saveWarning, setSaveWarning] = useState(null);
+  const editButtonRef = useRef(null);
+  const returnFocusToEdit = useRef(false);
   const deleteRecord = useDeleteRecord();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -158,6 +161,15 @@ export default function RecordDetail({ id, onClose }) {
     return () => document.removeEventListener('focusout', suppressOuterBlurIntoConfirmDialog, true);
   }, []);
 
+  // The edit form unmounts on save, taking focus with it. Put focus back on
+  // the Edit button that opened it, now remounted in the record view.
+  useEffect(() => {
+    if (!isEditing && returnFocusToEdit.current) {
+      returnFocusToEdit.current = false;
+      editButtonRef.current?.focus();
+    }
+  }, [isEditing]);
+
   return (
     <Modal
       open
@@ -177,13 +189,29 @@ export default function RecordDetail({ id, onClose }) {
 
       {record.data && !isEditing && (
         <>
+          {saveWarning && (
+            <InlineNotification
+              kind="warning"
+              title="Saved, but the index reported issues"
+              subtitle={saveWarning}
+              lowContrast
+              onClose={() => setSaveWarning(null)}
+            />
+          )}
           <p>{record.data.date}</p>
           <Tag type="gray">{record.data.type}</Tag>
           {record.data.tags.map((tag) => (
             <Tag key={tag} type="blue">{tag}</Tag>
           ))}
           <div className={styles.actions}>
-            <Button kind="tertiary" onClick={() => setIsEditing(true)}>
+            <Button
+              ref={editButtonRef}
+              kind="tertiary"
+              onClick={() => {
+                setSaveWarning(null);
+                setIsEditing(true);
+              }}
+            >
               Edit
             </Button>
             <Button kind="danger--tertiary" onClick={() => setShowDeleteConfirm(true)}>
@@ -206,7 +234,11 @@ export default function RecordDetail({ id, onClose }) {
       {record.data && isEditing && (
         <EditRecordForm
           record={record.data}
-          onClose={() => setIsEditing(false)}
+          onClose={(warning) => {
+            setSaveWarning(warning ?? null);
+            returnFocusToEdit.current = true;
+            setIsEditing(false);
+          }}
         />
       )}
 
@@ -246,9 +278,12 @@ export default function RecordDetail({ id, onClose }) {
               onClick={(event) => event.stopPropagation()}
               onRequestSubmit={() => {
                 deleteRecord.mutate(id, {
-                  onSuccess: () => {
+                  // DELETE is 204 on a clean delete, 200 with a warning when
+                  // build_index.py reported issues. Separate from onClose,
+                  // which Carbon calls with an event.
+                  onSuccess: (data) => {
                     setShowDeleteConfirm(false);
-                    onClose();
+                    onDeleted(data?.warning);
                   },
                 });
               }}

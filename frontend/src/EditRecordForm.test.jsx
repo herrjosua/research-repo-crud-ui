@@ -122,3 +122,43 @@ describe('EditRecordForm — attribution field', () => {
         expect(screen.queryByLabelText('Evaluator')).not.toBeInTheDocument();
     });
 });
+
+describe('EditRecordForm — save warning', () => {
+    // Stand-in for useMutation's mutate: resolves straight to onSuccess with
+    // the given PUT response body.
+    const mutateResolvingTo = (data) => vi.fn((_vars, options) => options.onSuccess(data));
+
+    it('passes the backend warning to onClose when PUT succeeds with one', async () => {
+        useMe.mockReturnValue({ data: { git_name: 'Priya Patel', is_lead: 0 } });
+        useUsers.mockReturnValue({ data: [] });
+        useUpdateRecord.mockReturnValue({
+            mutate: mutateResolvingTo({ message: 'record updated…', warning: 'unknown tag "onbaording"' }),
+            isPending: false,
+            isError: false,
+        });
+        const onClose = vi.fn();
+
+        const user = userEvent.setup();
+        renderWithQueryClient(<EditRecordForm record={componentRecord} onClose={onClose} />);
+        await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+        expect(onClose).toHaveBeenCalledWith('unknown tag "onbaording"');
+    });
+
+    it('passes no warning to onClose on a clean save', async () => {
+        useMe.mockReturnValue({ data: { git_name: 'Priya Patel', is_lead: 0 } });
+        useUsers.mockReturnValue({ data: [] });
+        useUpdateRecord.mockReturnValue({
+            mutate: mutateResolvingTo({ message: 'updated, index refreshed, and change committed' }),
+            isPending: false,
+            isError: false,
+        });
+        const onClose = vi.fn();
+
+        const user = userEvent.setup();
+        renderWithQueryClient(<EditRecordForm record={componentRecord} onClose={onClose} />);
+        await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+        expect(onClose).toHaveBeenCalledWith(undefined);
+    });
+});
