@@ -96,4 +96,45 @@ describe('CreateSessionForm — researcher attribution', () => {
             expect.anything(),
         );
     });
+
+    it('defaults a lead to themselves and submits that when they don\'t pick anyone', async () => {
+        useMe.mockReturnValue({ data: { git_name: 'Jordan Lee', is_lead: 1 } });
+        useUsers.mockReturnValue({
+            data: [
+                { username: 'jordan', git_name: 'Jordan Lee' },
+                { username: 'priya', git_name: 'Priya Patel' },
+            ],
+        });
+        const mutate = vi.fn();
+        useCreateSession.mockReturnValue({ mutate, isPending: false, isError: false });
+
+        const user = userEvent.setup();
+        renderWithQueryClient(<CreateSessionForm onClose={vi.fn()} />);
+
+        expect(await screen.findByRole('combobox', { name: 'Researcher' })).toHaveTextContent('Jordan Lee');
+
+        await user.type(screen.getByLabelText(/Title/), 'Some session');
+        await user.selectOptions(screen.getByLabelText(/Type/), 'interview');
+        await user.click(screen.getByRole('button', { name: /create session/i }));
+
+        expect(mutate).toHaveBeenCalledWith(
+            expect.objectContaining({ researcher: 'Jordan Lee' }),
+            expect.anything(),
+        );
+    });
+
+    it('fills in the researcher once the logged-in user finishes loading', () => {
+        useMe.mockReturnValue({ data: undefined });
+        useUsers.mockReturnValue({ data: [] });
+        useCreateSession.mockReturnValue({ mutate: vi.fn(), isPending: false, isError: false });
+
+        const queryClient = new QueryClient();
+        const wrapper = ({ children }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+        const { rerender } = render(<CreateSessionForm onClose={vi.fn()} />, { wrapper });
+        expect(screen.getByLabelText('Researcher')).toHaveValue('');
+
+        useMe.mockReturnValue({ data: { git_name: 'Priya Patel', is_lead: 0 } });
+        rerender(<CreateSessionForm onClose={vi.fn()} />);
+        expect(screen.getByLabelText('Researcher')).toHaveValue('Priya Patel');
+    });
 });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
     Form, Stack, TextInput, TextArea, Select, SelectItem, Dropdown,
@@ -82,7 +82,10 @@ export default function CreateSessionForm({ onClose }) {
     const [tags, setTags] = useState('');
     const [relatedComponents, setRelatedComponents] = useState('');
     const [relatedFindings, setRelatedFindings] = useState('');
-    const [researcher, setResearcher] = useState('');
+    // Researcher defaults to the logged-in user (derived, so it fills in as
+    // soon as their identity loads); only a lead's explicit pick is stored.
+    const [researcherChoice, setResearcherChoice] = useState(null);
+    const researcher = researcherChoice ?? me.data?.git_name ?? '';
     const [methodLabel, setMethodLabel] = useState('');
     const [date, setDate] = useState('');
     const [content, setContent] = useState(STARTER_CONTENT);
@@ -91,14 +94,6 @@ export default function CreateSessionForm({ onClose }) {
     const titleInvalid = attemptedSubmit && title.trim() === '';
     const typeInvalid = attemptedSubmit && type === '';
     const topicSlugInvalid = attemptedSubmit && !SLUG_PATTERN.test(topicSlug);
-
-    // Researcher is auto-derived from the logged-in user — default it once
-    // their identity loads, rather than leaving it blank until they touch it.
-    useEffect(() => {
-        if (me.data && !researcher) {
-            setResearcher(me.data.git_name);
-        }
-    }, [me.data]);
 
     function handleSubmit(event) {
         event.preventDefault();
@@ -199,7 +194,7 @@ export default function CreateSessionForm({ onClose }) {
                         items={users.data ?? []}
                         itemToString={(item) => item?.git_name ?? ''}
                         selectedItem={(users.data ?? []).find((u) => u.git_name === researcher) ?? null}
-                        onChange={({ selectedItem }) => setResearcher(selectedItem?.git_name ?? '')}
+                        onChange={({ selectedItem }) => setResearcherChoice(selectedItem?.git_name ?? '')}
                     />
                 ) : (
                     <TextInput
