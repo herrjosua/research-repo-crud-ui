@@ -360,7 +360,7 @@ The log isn't rotated. It grows by a few hundred lines per deploy.
 ## Testing the script
 
 ```bash
-shellcheck scripts/deploy.sh scripts/tests/deploy.test.sh
+shellcheck scripts/deploy.sh scripts/tests/deploy.test.sh scripts/ssh-deploy-wrapper.sh
 scripts/tests/deploy.test.sh
 ```
 
@@ -404,13 +404,125 @@ the unreadable-exe phase (reported as `SKIP`), are only exercised in CI.
 Neither place can test the real `npm ci`, the gcc-toolset compile, or
 Cloudflare. The first real deploy covers those.
 
-## Later: deploying from GitHub Actions
+## Deploying from GitHub Actions
 
-The plan is a GitHub Actions workflow that SSHes in with a key restricted in
-`~/.ssh/authorized_keys` to a forced command. That command is a small wrapper
-outside the checkout. It accepts only `deploy vX.Y.Z`, taken from
-`SSH_ORIGINAL_COMMAND`, and runs `scripts/deploy.sh` with that tag. The
-wrapper and workflow aren't part of this repo yet. The script is ready for
-them: it doesn't prompt, it ignores SIGHUP so a dropped connection can't stop
-it halfway, it validates the tag itself, and its exit code says what
-happened.
+Pushing a `vX.Y.Z` tag triggers
+[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml), which SSHes
+into the server with a key restricted to one forced command and runs
+[`scripts/ssh-deploy-wrapper.sh`](../scripts/ssh-deploy-wrapper.sh) there. No
+shell is ever reachable through that key.
+
+### How it works
+
+1. **`verify` job.** Checks the tag matches `vMAJOR.MINOR.PATCH`, then checks
+   out the tag's commit and confirms it's an ancestor of `origin/main`. That
+   second check matters: branch protection only ever examined commits that
+   reached `main` through a PR, so a tag pushed at some other commit could
+   otherwise skip the 5 required CI checks entirely. `deploy` only runs if
+   this passes.
+2. **`deploy` job.** Re-checks the tag format (belt and suspenders — the
+   value flows into an SSH command), writes the SSH private key and pinned
+   host key from GitHub secrets to temp files, then runs
+   `ssh ... "$SSH_USER@$SSH_HOST" "deploy $TAG"`.
+3. **The forced command.** `~/.ssh/authorized_keys` on the server pins the
+   deploy key to `command="<path to ssh-deploy-wrapper.sh>"`, so SSH runs the
+   wrapper regardless of what the client asked for; the client's request
+   lands only in `$SSH_ORIGINAL_COMMAND`. The wrapper accepts exactly
+   `deploy vMAJOR.MINOR.PATCH` (same regex as `deploy.sh`'s own tag check)
+   and refuses everything else, logging every attempt (accepted or refused)
+   to `~/logs/deploy/ssh-wrapper.log`. On a match it `exec`s
+   `scripts/deploy.sh <tag>` from the live checkout — the same script and
+   same rules as a manual deploy, including the lock, so a workflow run and
+   a person running `deploy.sh` by hand can never race each other.
+4. **Exit codes propagate.** `deploy.sh`'s 0/1/2/3 (see
+   [Exit codes](#exit-codes)) become the SSH session's exit status, and the
+   workflow step maps each one to a clear `::notice::`/`::error::` and the
+   job's pass/fail.
+
+### The connection-refusal retry
+
+The shared host occasionally refuses new SSH connections before
+authentication — either a `kex_exchange_identification` banner refusal (host
+support confirmed this is the server being out of connection slots, not
+anything IP- or account-specific) or a plain TCP-level `Connection refused`
+during a transient outage. Both happen **before** `deploy.sh` ever starts, so
+both are safe to retry the same way: the workflow retries an SSH exit 255
+matching that pre-auth transport failure text, up to 3 times (10s/30s/60s
+backoff), and nothing else. A real auth failure or host-key mismatch is also
+exit 255 but won't match the retried text, so it fails loud on the first
+attempt instead of retrying something that retrying can't fix. Once a
+connection succeeds and `deploy.sh` actually runs (exit 0-3), that result is
+never retried — stacking a second deploy attempt on top of a live rollback
+would be worse than a failed workflow run.
+
+`SSH_ORIGINAL_COMMAND` populating correctly under a `bash <path>` forced
+command (rather than the wrapper's own path directly) was confirmed against a
+local test `sshd`: it reflects exactly what the client sent, is unset when no
+command is given, and is passed through as a raw string rather than evaluated
+— the wrapper's regex match against it is the actual security boundary, not
+how the forced command happens to invoke it.
+
+### Setting up the deploy key (one-time, by hand)
+
+None of this is automated; it's server and GitHub configuration, done once.
+
+1. **Generate a dedicated keypair** (not reused for anything else):
+   ```bash
+   ssh-keygen -t ed25519 -f github-actions-deploy -N "" -C github-actions-deploy
+   ```
+2. **Install the wrapper on the server, outside the app checkout** (it must
+   keep working no matter what `~/apps/research-repo-crud-ui` has checked
+   out, or is mid-deploying):
+   ```bash
+   scp scripts/ssh-deploy-wrapper.sh user@host:~/scripts/ssh-deploy-wrapper.sh
+   ssh user@host chmod +x ~/scripts/ssh-deploy-wrapper.sh
+   ```
+   Re-run this `scp` whenever the wrapper changes in the repo — it is not
+   picked up automatically like `deploy.sh` is.
+3. **Add the forced-command entry to `~/.ssh/authorized_keys`** on the
+   server (one line, no line breaks):
+   ```
+   command="/home/scripts/ssh-deploy-wrapper.sh",no-pty,no-agent-forwarding,no-X11-forwarding,no-port-forwarding,no-user-rc ssh-ed25519 AAAA... github-actions-deploy
+   ```
+   Use the *public* key (`github-actions-deploy.pub`) here.
+4. **Pin the host key**, so the workflow can set `StrictHostKeyChecking=yes`
+   against a known value instead of trusting whatever the server presents on
+   first connect:
+   ```bash
+   ssh-keyscan -t ed25519 -p <port> <host> > host-key.pub
+   ```
+   Verify this against the host's actual fingerprint out of band (e.g. the
+   hosting control panel) before trusting it — `ssh-keyscan`'s own output is
+   not itself a verification.
+5. **Add GitHub repo secrets** (Settings → Environments → `production`, or
+   Settings → Secrets and variables → Actions if not gating by environment):
+   | Secret | Value |
+   |---|---|
+   | `DEPLOY_SSH_HOST` | the server's hostname |
+   | `DEPLOY_SSH_PORT` | its SSH port |
+   | `DEPLOY_SSH_USER` | the deploy user |
+   | `DEPLOY_SSH_PRIVATE_KEY` | contents of `github-actions-deploy` (the private key) |
+   | `DEPLOY_SSH_HOST_KEY` | contents of `host-key.pub` from step 4 |
+6. **Delete the local keypair files** once the private key is in GitHub
+   secrets and the public key is in `authorized_keys` — don't leave copies
+   lying around.
+
+### Testing the setup
+
+Before relying on it for a real release:
+
+- From your own machine, confirm the forced command works and nothing else
+  does:
+  ```bash
+  ssh -i github-actions-deploy -p <port> user@host "deploy v1.2.9"    # should run deploy.sh
+  ssh -i github-actions-deploy -p <port> user@host "bash"             # should be refused
+  ssh -i github-actions-deploy -p <port> user@host                    # should be refused (no command)
+  ```
+- Check `~/logs/deploy/ssh-wrapper.log` shows the attempts above, accepted
+  and refused.
+- Push a real tag and watch the Actions run end to end, including that the
+  `verify` job actually blocks a tag pushed at a commit not on `main`.
+- Confirm a deploy triggered by the workflow and one run by hand from the
+  server can't run concurrently: `deploy.sh`'s own lock (see
+  [Configuration](#configuration)) covers this, but it's worth seeing the
+  second one refuse with exit 3 rather than assuming.
