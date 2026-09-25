@@ -28,6 +28,7 @@ SqliteStore.prototype.startInterval = function patchedStartInterval() {
 };
 
 const db = require('./db'); // ensures users table exists
+const healthRoutes = require('./routes/health');
 const authRoutes = require('./routes/auth');
 const recordRoutes = require('./routes/records');
 const httpsRedirect = require('./middleware/httpsRedirect');
@@ -90,6 +91,7 @@ app.use(session({
     },
 }));
 
+app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api', recordRoutes);
 

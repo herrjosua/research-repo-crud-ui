@@ -17,6 +17,8 @@ Research Repo CRUD UI/
 ├── backend/    Node/Express API — see backend/README.md for setup, env vars, and the full API reference
 ├── frontend/   React app — see frontend/README.md for setup and stack decisions
 ├── e2e/        Playwright + axe-core end-to-end and accessibility tests — see e2e/README.md
+├── scripts/    deploy.sh (runs on the webhost) and its test harness — see docs/deploy.md
+├── docs/       deploy.md, the deploy runbook
 ├── .github/workflows/ci.yml   GitHub Actions CI (see below)
 ├── LICENSE
 └── .gitignore
@@ -92,13 +94,16 @@ which copies the real Python scripts into a fresh, git-initialized temp folder.
 ## CI
 
 [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) runs on every push
-and pull request to `main`, as two jobs:
+and pull request to `main`, as three jobs:
 
 - **frontend**: `npm ci`, `npm run lint`, and the Vitest suite on Node 24.
 - **backend**: checks out
   [`herrjosua/agentic-repo`](https://github.com/herrjosua/agentic-repo)
   (`main`) for the Python scripts the tests copy, installs its
   `requirements.txt` on Python 3.13, and runs the Jest suite.
+- **deploy-script**: shellcheck on the deploy scripts, then
+  `scripts/tests/deploy.test.sh`, which runs `deploy.sh` against a throwaway
+  checkout and a fake Node.js Selector.
 
 The Playwright suites run locally only.
 
@@ -119,6 +124,19 @@ including:
 - **`ALLOWED_HOSTS`**: requests for any other hostname get `421`.
 - **`HTTPS_REDIRECT`**: the app's own HTTP→HTTPS redirect, off in the example
   because Cloudflare's edge already enforces HTTPS.
+
+`GET /api/health` returns `{ status, version, startedAt }` with
+`Cache-Control: no-store`, after checking the database answers.
+
+### Deploy
+
+On the webhost, `scripts/deploy.sh <tag>` deploys a release tag in one step.
+It checks the tag out, rebuilds only what changed (compiling better-sqlite3
+from source for the host's older glibc), and restarts the app through the
+Node.js Selector. It confirms through `/api/health` that the new version is
+live, and rolls back automatically if anything fails. See
+[`docs/deploy.md`](./docs/deploy.md) for the runbook, including the one-time
+manual deploy of v1.2.7.
 
 ## Roadmap
 
