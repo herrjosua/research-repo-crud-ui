@@ -126,6 +126,18 @@ test.describe('the record detail modal only shows a focus ring on its close butt
         await expect(closeButton).toBeFocused();
         expect(await closeButton.evaluate((el) => el.matches(':focus-visible'))).toBe(false);
 
+        // The close button focuses immediately on open, before the record's
+        // own content (fetched separately from the list) has loaded — at
+        // that instant it's the modal's ONLY tabbable element, so it's both
+        // the trap's first and last. Carbon recomputes the tabbable set live
+        // on every Tab press, so if that content finishes loading between
+        // this test's own two Tab presses below, "last tabbable" changes
+        // mid-sequence and the second Tab no longer matches the wrap
+        // condition, landing off the close button instead of back on it.
+        // Wait for the content to settle first so the trap's tabbable set is
+        // stable for both presses.
+        await expect(page.getByRole('dialog').getByRole('button', { name: 'View history' })).toBeVisible();
+
         // Shift+Tab from the close button (the trap's first tabbable
         // element) wraps to the last one; Tab from there wraps forward
         // again, landing back on the close button.
