@@ -136,7 +136,7 @@ from source for the host's older glibc), and restarts the app through the
 Node.js Selector. It confirms through `/api/health` that the new version is
 live, and rolls back automatically if anything fails. See
 [`docs/deploy.md`](./docs/deploy.md) for the runbook, including the one-time
-manual deploy of v1.2.7.
+manual deploy of v1.2.7 and the one-time run of v1.2.8's own script.
 
 ## Roadmap
 

@@ -31,11 +31,9 @@ PUBLIC_HEALTH_URL=${DEPLOY_HEALTH_URL-https://ux-research.joshuabock.com/api/hea
 STATE_DIR=${DEPLOY_STATE_DIR:-$HOME/apps/.research-repo-crud-ui-deploy}
 LOG_FILE=${DEPLOY_LOG_FILE:-$HOME/logs/deploy/research-repo-crud-ui.log}
 LOCK_FILE=${DEPLOY_LOCK_FILE:-$STATE_DIR/deploy.lock}
-# Directory holding the node and npm to use. Empty means the one the running
-# app uses (/proc/<pid>/exe), falling back to nvm, then PATH.
+# Directory holding the node and npm to use. Empty means the ones next to
+# the running app's own node (see app_node_path).
 NODE_BIN=${DEPLOY_NODE_BIN:-}
-NVM_SH=${DEPLOY_NVM_SH-$HOME/.nvm/nvm.sh}
-NODE_VERSION=${DEPLOY_NODE_VERSION:-24}
 # Prefix for the better-sqlite3 compile: the system gcc is too old for its
 # C++20 source. Split on spaces; empty means no prefix.
 read -r -a SCL <<<"${DEPLOY_SCL-scl enable gcc-toolset-14 --}"
@@ -71,6 +69,15 @@ FAILED_AT=""
 FAILED_CMD=""
 TEE=(tee -a)
 TIMEOUT_BIN=""
+
+# Whether this system has a Linux /proc. Decided once, from this script's own
+# process: on Linux, a process whose /proc entry can't be read (or is gone)
+# must count as "not the app", never send the lookup down the ps path that
+# exists only for macOS (the local test harness).
+HAVE_PROC=0
+if [[ -r /proc/$$/cmdline ]]; then
+    HAVE_PROC=1
+fi
 
 usage() {
     cat <<'EOF'
@@ -121,7 +128,7 @@ now_ms() {
 # boundaries); elsewhere (only the local test harness) ps splits on spaces,
 # which is fine for paths without them.
 proc_args() {
-    if [[ -r /proc/$1/cmdline ]]; then
+    if ((HAVE_PROC)); then
         tr '\0' '\n' <"/proc/$1/cmdline"
     else
         ps -p "$1" -o args= | tr ' ' '\n'
@@ -130,7 +137,7 @@ proc_args() {
 
 # Something that changes if the PID is reused by a different process.
 proc_start() {
-    if [[ -r /proc/$1/stat ]]; then
+    if ((HAVE_PROC)); then
         # Field 22 is the start time; strip "pid (comm) " first, since comm
         # can contain spaces.
         sed -E 's/^.*\) //' "/proc/$1/stat" | cut -d' ' -f20
@@ -139,31 +146,44 @@ proc_start() {
     fi
 }
 
-# The executable a process runs, symlinks resolved. /proc/<pid>/exe on
-# Linux; elsewhere (only the local test harness) ps's comm, which there is
-# the path the process was started with.
-proc_exe() {
-    if [[ -e /proc/$1/exe ]]; then
-        readlink -f "/proc/$1/exe"
+# The node binary a process runs: prints its path, then a line saying how it
+# was found. Fails if the process isn't node. Both "is this the app" and
+# "which node to deploy with" go through here, so they can't disagree.
+#
+# On Linux: /proc/<pid>/exe, symlinks resolved. Some hosts (this one
+# included) refuse to read that link even for the user's own processes; then
+# argv[0] from /proc/<pid>/cmdline stands in, but only if it's an absolute
+# path to an executable named node. Never ps, and never the process name
+# (comm): Node 24 on Linux renames its main thread to "MainThread".
+#
+# Without /proc (only the local test harness on macOS): ps's comm, which
+# there is the path the process was started with, then argv[0] from ps.
+app_node_path() {
+    local path="" how=""
+    if ((HAVE_PROC)); then
+        # The only place this script reads the exe link, as one plain
+        # readlink: scripts/tests/deploy.test.sh stubs readlink to simulate
+        # a host that refuses it, and checks this stays the only place.
+        if path=$(readlink -f "/proc/$1/exe" 2>/dev/null) && [[ -n $path ]]; then
+            how="exe link of process $1"
+        else
+            path=$(proc_args "$1" 2>/dev/null | sed -n 1p) || path=""
+            [[ $path == /* && -x $path ]] || return 1
+            how="argv[0] of process $1; its exe link can't be read"
+        fi
     else
-        readlink -f "$(ps -p "$1" -o comm=)"
-    fi
-}
-
-# Whether a process's executable is node. Never goes by the process name
-# (comm): Node 24 on Linux renames its main thread to "MainThread", so
-# `pgrep -x node` finds nothing. Falls back to argv[0] if the executable
-# can't be read.
-is_node_process() {
-    local exe=""
-    exe=$(proc_exe "$1" 2>/dev/null) || exe=""
-    if [[ -z $exe ]]; then
-        exe=$(proc_args "$1" 2>/dev/null | sed -n 1p) || exe=""
+        path=$(readlink -f "$(ps -p "$1" -o comm=)" 2>/dev/null) || path=""
+        how="ps comm of process $1"
+        if [[ -z $path ]]; then
+            path=$(proc_args "$1" 2>/dev/null | sed -n 1p) || path=""
+            how="ps argv[0] of process $1"
+        fi
     fi
     # Linux appends this when the binary was replaced after the process
-    # started (e.g. nvm reinstalled it); it's still the same node.
-    exe=${exe% (deleted)}
-    [[ ${exe##*/} == node ]]
+    # started (e.g. a Node reinstall); it's still the same node.
+    path=${path% (deleted)}
+    [[ ${path##*/} == node ]] || return 1
+    printf '%s\n%s\n' "$path" "$how"
 }
 
 # Every node process owned by this user with an argument exactly equal to
@@ -178,7 +198,7 @@ find_app_pids() {
     # shellcheck disable=SC2001
     pattern=$(sed 's/[][\.*^$+?(){}|]/\\&/g' <<<"$LAUNCHER")
     for pid in $(pgrep -u "$(id -u)" -f -- "$pattern" || true); do
-        if proc_args "$pid" 2>/dev/null | grep -Fqx -- "$LAUNCHER" && is_node_process "$pid"; then
+        if proc_args "$pid" 2>/dev/null | grep -Fqx -- "$LAUNCHER" && app_node_path "$pid" >/dev/null; then
             echo "$pid"
         fi
     done
@@ -352,25 +372,21 @@ swap_frontend() {
 # running app.
 # ---------------------------------------------------------------------------
 
+# Puts DEPLOY_NODE_BIN, or else the directory of the app's own node, first
+# on PATH. Never relies on the caller's PATH: a forced-command SSH session
+# may not have node on it at all.
 select_node() {
-    local pid=$1 exe="" rc=0
-    if [[ -z $NODE_BIN && -e /proc/$pid/exe ]]; then
-        exe=$(readlink -f "/proc/$pid/exe") && NODE_BIN=$(dirname "$exe")
+    local found exe
+    if [[ -z $NODE_BIN ]]; then
+        # single_app_pid has already accepted this process, so this finds it.
+        found=$(app_node_path "$1") || die "Can't tell which node process $1 runs"
+        exe=${found%%$'\n'*}
+        NODE_BIN=$(dirname "$exe")
+        log "App's node: $exe (from the ${found#*$'\n'})"
     fi
-    if [[ -n $NODE_BIN ]]; then
-        PATH=$NODE_BIN:$PATH
-    elif [[ -n $NVM_SH && -s $NVM_SH ]]; then
-        # nvm isn't safe under set -eu, and a forced-command SSH session
-        # never sources the profile that would normally load it.
-        set +eu
-        # shellcheck disable=SC1090
-        . "$NVM_SH" && nvm use --silent "$NODE_VERSION" >/dev/null
-        rc=$?
-        set -eu
-        ((rc == 0)) || die "nvm could not load Node $NODE_VERSION from $NVM_SH"
-    fi
-    command -v node >/dev/null || die "node not found"
-    command -v npm >/dev/null || die "npm not found"
+    [[ -x $NODE_BIN/node ]] || die "No node in $NODE_BIN"
+    [[ -x $NODE_BIN/npm ]] || die "No npm next to node in $NODE_BIN"
+    PATH=$NODE_BIN:$PATH
     log "Using node $(node -v) at $(command -v node)"
 }
 

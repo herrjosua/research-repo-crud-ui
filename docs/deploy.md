@@ -18,7 +18,7 @@ this page).
 |---|---|
 | OS | Rocky Linux 8.10 (glibc 2.28), bash 4.4, `flock` from util-linux |
 | `$HOME` | `/home` |
-| Node | v24 via nvm, `/home/.nvm` (the app runs `/home/.nvm/versions/node/v24.21.0/bin/node`) |
+| Node | v24, installed by the Node.js Selector under `/home/.nvm/versions` (the app runs `/home/.nvm/versions/node/v24.21.0/bin/node`). Despite the path, there's no nvm: `~/.nvm/nvm.sh` doesn't exist. |
 | App checkout | `~/apps/research-repo-crud-ui`, always a release tag (detached HEAD) |
 | Launcher | `~/www/ux-research.joshuabock.com/server.js`, run by the Node.js Selector; it requires `backend/server.js` from the checkout |
 | Secrets | `backend/.env`, not in git. The script never reads or writes it. |
@@ -82,6 +82,8 @@ The script that runs is always the live release's copy. It re-executes from
 a temporary copy of itself before the checkout replaces the file, and all its
 code sits in functions called from the last line. So a change to
 `deploy.sh` takes effect from the deploy *after* the release that contains it.
+(v1.2.8 is the one exception: see
+[One-time deploy of v1.2.8](#one-time-deploy-of-v128-run-its-own-copy).)
 
 ### Finding the app process
 
@@ -92,8 +94,26 @@ these:
   `/home/www/ux-research.joshuabock.com/server.js`, read from
   `/proc/<pid>/cmdline`, which keeps argument boundaries;
 - an executable, `/proc/<pid>/exe` with symlinks resolved, whose name is
-  `node`. If the executable can't be read, the script uses the name in
-  argv[0].
+  `node`.
+
+The same `node` is the one the deploy uses: its directory goes first on
+`PATH`, and `npm` must be next to it. The script never relies on `node`
+already being on `PATH`.
+
+Some hosts, this one included, refuse to read `/proc/<pid>/exe` even for your
+own processes (`ls -l /proc/<pid>/exe` says "Permission denied"), while
+`/proc/<pid>/cmdline` stays readable. The script then uses argv[0] from
+`/proc/<pid>/cmdline` instead, but only if it's an absolute path to an
+executable named `node`, as it is here. The log says which one it used:
+
+```
+App's node: /home/.nvm/versions/node/v24.21.0/bin/node (from the argv[0] of process 11571; its exe link can't be read)
+```
+
+Whether to use `/proc` at all is decided once, from the script's own process.
+On Linux it never falls back to `ps` for a process: a process `/proc` can't
+describe doesn't count as the app. The `ps` fallback exists only for systems
+without `/proc` (macOS, where the test harness runs locally).
 
 It never goes by the process name (comm). Node 24 on Linux renames its main
 thread, so the app shows up as `MainThread`:
@@ -147,13 +167,16 @@ script. So v1.2.7 is deployed by hand, once. After that, every deploy is
 Before starting: v1.2.7 is merged to `main`, tagged `v1.2.7`, and the tag is
 pushed.
 
-1. **SSH in and load Node 24.** A plain SSH session may not load nvm. Make
-   sure `NODE_ENV` isn't `production`, or `npm ci` skips vite:
+1. **SSH in and check Node 24 is on `PATH`.** It is in an interactive SSH
+   session on this host; there's no nvm to load. If `node -v` isn't v24, put
+   the app's own node first. Make sure `NODE_ENV` isn't `production`, or
+   `npm ci` skips vite:
 
    ```bash
-   source ~/.nvm/nvm.sh && nvm use 24
+   command -v node && node -v    # v24.x
+   # only if it isn't:
+   export PATH=/home/.nvm/versions/node/v24.21.0/bin:$PATH
    unset NODE_ENV
-   node -v    # v24.x
    ```
 
 2. **Check the checkout is clean and on v1.2.6:**
@@ -244,6 +267,56 @@ kill <pid of the app process>
 
 If there's no app process to kill, press Restart in the Node.js Selector.
 
+## One-time deploy of v1.2.8 (run its own copy)
+
+v1.2.7's `deploy.sh` can never deploy on this host. It can't read
+`/proc/<pid>/exe`, and it then refuses with "No app process found" (see
+[Finding the app process](#finding-the-app-process)). Normally the live
+release's copy of the script runs the deploy, so v1.2.8 has to be deployed by
+running **v1.2.8's own copy**, once. From v1.2.9 on, deploys go back to
+`scripts/deploy.sh <tag>`.
+
+This is safe. The script doesn't care where it's run from: every path comes
+from its defaults (or `DEPLOY_*`), not from the script's own location. It
+still re-executes from a private temporary copy, which is harmless. For this
+one deploy the rollback code is v1.2.8's too.
+
+Before starting: v1.2.8 is merged to `main`, tagged `v1.2.8`, and the tag is
+pushed.
+
+1. **Fetch the tag.** `git show` below needs it locally:
+
+   ```bash
+   git -C ~/apps/research-repo-crud-ui fetch --tags origin
+   ```
+
+2. **Extract v1.2.8's script** outside the checkout:
+
+   ```bash
+   git -C ~/apps/research-repo-crud-ui show v1.2.8:scripts/deploy.sh > ~/deploy-v1.2.8.sh
+   ```
+
+3. **Dry run, then deploy.** Run it with `bash` rather than `chmod +x`, so a
+   `noexec` mount can't get in the way. The dry run should find the app
+   process, log `App's node: ... (from the argv[0] of process ...)` and plan
+   `backend reinstall: yes`. That's expected, because the hand-deployed
+   v1.2.7 has no `.deploy-fingerprint`:
+
+   ```bash
+   bash ~/deploy-v1.2.8.sh --dry-run v1.2.8
+   bash ~/deploy-v1.2.8.sh v1.2.8
+   ```
+
+4. **Remove the copy.** The script deletes its own temporary copy, not this
+   one:
+
+   ```bash
+   rm ~/deploy-v1.2.8.sh
+   ```
+
+5. **Check** `curl -s https://ux-research.joshuabock.com/api/health` reports
+   1.2.8, and the footer says v1.2.8.
+
 ## Manual rollback
 
 Only needed after exit 2. Read the end of `~/logs/deploy/research-repo-crud-ui.log` first.
@@ -279,8 +352,7 @@ through the environment. The test harness uses these overrides.
 | `DEPLOY_STATE_DIR` | `~/apps/.research-repo-crud-ui-deploy`; must be on the same filesystem as the checkout |
 | `DEPLOY_LOCK_FILE` | `$DEPLOY_STATE_DIR/deploy.lock` |
 | `DEPLOY_LOG_FILE` | `~/logs/deploy/research-repo-crud-ui.log` |
-| `DEPLOY_NODE_BIN` | empty: use the directory of the running app's own `node` (`/proc/<pid>/exe`) |
-| `DEPLOY_NVM_SH` / `DEPLOY_NODE_VERSION` | `~/.nvm/nvm.sh` / `24`; only used if the app's node can't be found |
+| `DEPLOY_NODE_BIN` | empty: use the directory of the running app's own `node` (`/proc/<pid>/exe`, else argv[0]; see [Finding the app process](#finding-the-app-process)) |
 | `DEPLOY_SCL` | `scl enable gcc-toolset-14 --`; the prefix for the better-sqlite3 compile |
 
 The log isn't rotated. It grows by a few hundred lines per deploy.
@@ -308,6 +380,16 @@ back with one restart), and the Selector giving up (exit 2). It also checks
 that near-miss processes are never signalled: node with similar arguments,
 and a non-node process with the launcher path as an argument.
 
+It also simulates a host that refuses to read `/proc/<pid>/exe`. A `readlink`
+stub first on `PATH` fails for `/proc/<pid>/exe`, as GNU `readlink -f` does
+there, and the app is started with argv[0] set to an absolute `.../node`, as
+the Selector does. A dry run and a deploy must then find the app through
+argv[0] and deploy with that `node`. A `ps` stub proves `ps` never runs. Two
+decoys must be left alone: node with the launcher argument and a relative
+argv[0], and one with an argv[0] not named `node`. The stub only models the
+host because `deploy.sh` reads the exe link in exactly one place, with a
+plain `readlink -f`. The harness checks that on every OS.
+
 The fake app runs node through a symlink named `MainThread`, so its process
 name is `MainThread` on every OS, as the real app's is under Node 24 on
 Linux. The harness checks that `pgrep -x node` can't see it. Every refusal
@@ -317,9 +399,10 @@ process lookup can't show up as a run of passing refusals.
 
 It needs bash 4.4+, `flock`, git, node, curl and perl. CI runs it on Linux. On
 macOS, `brew install bash flock` and run it with Homebrew's bash. There the
-script falls back from `/proc` to `ps`, so the `/proc` code paths are only
-exercised in CI. Neither place can test the real `npm ci`, the gcc-toolset
-compile, or Cloudflare. The first real deploy covers those.
+script falls back from `/proc` to `ps`, so the `/proc` code paths, including
+the unreadable-exe phase (reported as `SKIP`), are only exercised in CI.
+Neither place can test the real `npm ci`, the gcc-toolset compile, or
+Cloudflare. The first real deploy covers those.
 
 ## Later: deploying from GitHub Actions
 
