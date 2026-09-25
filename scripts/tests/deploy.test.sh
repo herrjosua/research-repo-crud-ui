@@ -10,7 +10,8 @@
 #
 # Needs bash 4.4+, git, node, curl, flock and perl. On Linux the script under
 # test reads /proc; elsewhere (macOS) it falls back to ps, so the /proc paths
-# are only covered on Linux (CI).
+# are only covered on Linux (CI). That includes the phase that simulates a
+# host refusing to read /proc/<pid>/exe, by stubbing readlink on PATH.
 #
 # The fake app runs node through a symlink named MainThread, so its process
 # name (comm) is never "node" on any OS. That's what Node 24 on Linux does to
@@ -30,6 +31,12 @@ APP=$T/home/apps/research-repo-crud-ui
 LAUNCHER=$T/home/www/server.js
 BIN=$T/bin
 APP_EXE=$BIN/MainThread
+# argv[0] the fake Selector starts the app with; see start_selector.
+APP_ARGV0=$APP_EXE
+# readlink and ps stand-ins for the unreadable-/proc/<pid>/exe phase.
+NOEXE_BIN=$T/noexe-bin
+READLINK_LOG=$T/readlink.log
+PS_LOG=$T/ps.log
 PORT=$((20000 + RANDOM % 20000))
 NPM_LOG=$T/npm.log
 OUT=$T/last.out
@@ -131,6 +138,36 @@ EOF
     chmod +x "$BIN/npm" "$BIN/scl"
 }
 
+# Stand-ins, put first on PATH, for a host that refuses to read
+# /proc/<pid>/exe even for the user's own processes: GNU readlink -f then
+# prints nothing and exits 1. Every other readlink goes to the real one. ps
+# is only logged, to prove deploy.sh never falls back to it on Linux.
+setup_noexe_stubs() {
+    mkdir -p "$NOEXE_BIN"
+    : >"$READLINK_LOG"
+    : >"$PS_LOG"
+    {
+        printf '#!/usr/bin/env bash\nreal=%q\nlog=%q\n' "$(command -v readlink)" "$READLINK_LOG"
+        cat <<'EOF'
+for arg; do
+    if [[ $arg =~ ^/proc/[0-9]+/exe$ ]]; then
+        echo "readlink $*" >>"$log"
+        exit 1
+    fi
+done
+exec "$real" "$@"
+EOF
+    } >"$NOEXE_BIN/readlink"
+    {
+        printf '#!/usr/bin/env bash\nreal=%q\nlog=%q\n' "$(command -v ps)" "$PS_LOG"
+        cat <<'EOF'
+echo "ps $*" >>"$log"
+exec "$real" "$@"
+EOF
+    } >"$NOEXE_BIN/ps"
+    chmod +x "$NOEXE_BIN/readlink" "$NOEXE_BIN/ps"
+}
+
 # One release: version $1, backend dependency marker $2 (a different marker
 # means a different lockfile), and $3 = broken (crashes at startup),
 # mismatch (package.json disagrees with the tag), nohealth, or empty.
@@ -202,13 +239,17 @@ setup_repos() {
 }
 
 # The fake Node.js Selector: runs the launcher, restarts it a second after it
-# exits. With $1 = n, gives up after n crashes in a row.
+# exits. With $1 = n, gives up after n crashes in a row. $2 is the argv[0] to
+# start the app with (default: the MainThread path it really runs). On Linux
+# that changes the arguments but not comm; on macOS it changes comm too, so
+# only the Linux-only phase passes one.
 start_selector() {
     local give_up=${1:-0}
-    PORT=$PORT LAUNCHER=$LAUNCHER APP_EXE=$APP_EXE PATH=$BIN:$PATH bash -c '
+    APP_ARGV0=${2:-$APP_EXE}
+    PORT=$PORT LAUNCHER=$LAUNCHER APP_EXE=$APP_EXE APP_ARGV0=$APP_ARGV0 PATH=$BIN:$PATH bash -c '
         crashes=0
         while :; do
-            "$APP_EXE" "$LAUNCHER" 2>/dev/null
+            (exec -a "$APP_ARGV0" "$APP_EXE" "$LAUNCHER" 2>/dev/null)
             if (($? != 0)); then crashes=$((crashes + 1)); else crashes=0; fi
             if (('"$give_up"' > 0 && crashes >= '"$give_up"')); then exit 0; fi
             sleep 1
@@ -223,7 +264,7 @@ stop_selector() {
         wait "$SELECTOR_PID" 2>/dev/null || true
         SELECTOR_PID=""
     fi
-    pkill -f -x -- "$(re_escape "$APP_EXE $LAUNCHER")" 2>/dev/null || true
+    pkill -f -x -- "$(re_escape "$APP_ARGV0 $LAUNCHER")" 2>/dev/null || true
 }
 
 start_decoy() {
@@ -262,7 +303,7 @@ wait_for_version() {
 }
 
 app_pid() {
-    pgrep -f -x -- "$(re_escape "$APP_EXE $LAUNCHER")" | head -n 1
+    pgrep -f -x -- "$(re_escape "$APP_ARGV0 $LAUNCHER")" | head -n 1
 }
 
 # The app process's name as the OS reports it (never "node" here).
@@ -281,12 +322,14 @@ fingerprint_now() {
 }
 
 # Runs the checkout's own deploy.sh, the way the server will. Sets RC.
+# NODE_BIN="" passes DEPLOY_NODE_BIN empty, so the script finds the app's
+# node itself; STUB_PATH is put first on PATH.
 deploy() {
     : >"$NPM_LOG"
-    env HOME="$T/home" TMPDIR="$T/tmp" \
+    env HOME="$T/home" TMPDIR="$T/tmp" PATH="${STUB_PATH:+$STUB_PATH:}$PATH" \
         DEPLOY_APP_DIR="$APP" DEPLOY_LAUNCHER="$LAUNCHER" DEPLOY_PORT="$PORT" \
         DEPLOY_HEALTH_URL="" DEPLOY_STATE_DIR="$T/state" DEPLOY_LOG_FILE="$T/logs/deploy.log" \
-        DEPLOY_NODE_BIN="$BIN" DEPLOY_NVM_SH="" \
+        DEPLOY_NODE_BIN="${NODE_BIN-$BIN}" \
         DEPLOY_HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-15}" DEPLOY_POLL_INTERVAL=1 \
         FAKE_NPM_LOG="$NPM_LOG" FAKE_NPM_FAIL="${FAKE_NPM_FAIL:-}" \
         "$BASH" "$APP/scripts/deploy.sh" "$@" >"$OUT" 2>&1
@@ -478,6 +521,50 @@ main() {
     start_selector
     wait_for_version 0.0.4
     check "  ...and a manual Restart brings v0.0.4 back" test "$(health_version)" = 0.0.4
+
+    echo "Host that refuses to read /proc/<pid>/exe (argv[0] stands in)"
+    local exe_lines
+    # The readlink stub only models the host if the link is read nowhere
+    # else, and by nothing but that one readlink (no [[ -e ]], realpath...).
+    exe_lines=$(grep -v '^[[:space:]]*#' "$ROOT/scripts/deploy.sh" | grep -c '/proc/[^ ]*/exe')
+    check "deploy.sh reads /proc/<pid>/exe in exactly one place" test "$exe_lines" -eq 1
+    # shellcheck disable=SC2016 # the $1 is deploy.sh's, matched literally
+    check "  ...with a plain readlink -f, which the stub stands in for" grep -Fq 'readlink -f "/proc/$1/exe"' "$ROOT/scripts/deploy.sh"
+    if [[ ! -r /proc/$$/cmdline ]]; then
+        echo "  SKIP  the rest needs Linux /proc; without it deploy.sh uses ps and never reads /proc"
+    else
+        setup_noexe_stubs
+        stop_selector
+        # The host's shape: comm MainThread, argv[0] an absolute path to node.
+        start_selector 0 "$BIN/node"
+        wait_for_version 0.0.4
+        pid0=$(app_pid)
+        check "the app runs with argv[0] $BIN/node" test -n "$pid0"
+        check "  ...and its process name is still $(app_comm), not node" test "$(app_comm)" != node
+        # Both have the launcher as an argument and really are node, but
+        # their argv[0] can't vouch for that: relative, and not named node.
+        start_decoy "$LAUNCHER"
+        (exec -a "$APP_EXE" node -e 'setInterval(() => {}, 1000)' "$LAUNCHER") &
+        DECOY_PIDS+=($!)
+
+        STUB_PATH=$NOEXE_BIN NODE_BIN="" deploy --dry-run v0.0.6
+        check "a dry run exits 0" test "$RC" -eq 0
+        check "  ...finds the app process $pid0" out_has "restart process $pid0"
+        check "  ...because it really couldn't read the exe link" test -s "$READLINK_LOG"
+        check "  ...takes the app's node from argv[0]" out_has "App's node: $BIN/node (from the argv[0] of process $pid0; its exe link can't be read)"
+        check "  ...and deploys with it" grep -q "Using node v.* at $BIN/node\$" "$OUT"
+        check "  ...never ran ps" test ! -s "$PS_LOG"
+
+        : >"$READLINK_LOG"
+        STUB_PATH=$NOEXE_BIN NODE_BIN="" deploy v0.0.6
+        check "a deploy exits 0" test "$RC" -eq 0
+        check "  ...serves 0.0.6" test "$(health_version)" = 0.0.6
+        check "  ...with a new PID" test "$(app_pid)" != "$pid0"
+        check "  ...one SIGTERM" test "$(count_in_out 'Sending SIGTERM')" -eq 1
+        check "  ...couldn't read the exe link" test -s "$READLINK_LOG"
+        check "  ...never ran ps" test ! -s "$PS_LOG"
+        check "  ...left the decoys alone (relative argv[0]; argv[0] not named node)" kill -0 "${DECOY_PIDS[-2]}" "${DECOY_PIDS[-1]}"
+    fi
 
     echo "Housekeeping"
     check "no temp copies of deploy.sh left behind" test -z "$(ls -A "$T/tmp")"
