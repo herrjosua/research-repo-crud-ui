@@ -18,7 +18,13 @@ function App() {
     let content;
 
     if (me.isLoading || demoUsers.isLoading) {
-        content = <p>Loading…</p>;
+        content = (
+            <Grid>
+                <Column sm={4} md={8} lg={16}>
+                    <p className={styles.loading}>Loading…</p>
+                </Column>
+            </Grid>
+        );
     } else if (me.isError) {
         content = isDemo
             ? <DemoUserPicker onLoginSuccess={() => me.refetch()} />

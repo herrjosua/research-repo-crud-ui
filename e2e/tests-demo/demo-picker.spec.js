@@ -25,6 +25,11 @@ test('the demo picker shows all three profiles, passes an accessibility scan, an
     // Confirm a genuine, real login happened — the dashboard actually rendered.
     await expect(page.getByRole('button', { name: 'New session' })).toBeVisible();
 
+    // The header greeting uses the logged-in persona's own name (git_name
+    // from GET /auth/me), not a generic label — confirms it's wired to the
+    // real session and not hardcoded to whichever persona was clicked first.
+    await expect(page.getByText('Welcome, Priya Patel')).toBeVisible();
+
     // The disclaimer stays up on the dashboard, not just the picker.
     await expect(page.getByText('Demonstration environment', { exact: true })).toBeVisible();
 

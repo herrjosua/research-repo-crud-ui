@@ -1,0 +1,12 @@
+@use '@carbon/react/scss/type';
+@use './styles/variables' as vars;
+
+// HeaderGlobalBar has no align-items rule of its own (Carbon only sets
+// block-size: 100% on it, meant for icon-only HeaderGlobalAction children,
+// which center themselves) — plain text needs its own vertical centering.
+.welcome {
+  display: flex;
+  align-items: center;
+  margin-inline-end: vars.$spacing-action-gap;
+  @include type.type-style('body-compact-01');
+}

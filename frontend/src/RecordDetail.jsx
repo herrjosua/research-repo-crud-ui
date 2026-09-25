@@ -173,6 +173,7 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
   return (
     <Modal
       open
+      className={styles.modal}
       modalHeading={record.data ? record.data.title : 'Loading…'}
       passiveModal
       onRequestClose={onClose}
@@ -199,10 +200,12 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
             />
           )}
           <p>{record.data.date}</p>
-          <Tag type="gray">{record.data.type}</Tag>
-          {record.data.tags.map((tag) => (
-            <Tag key={tag} type="blue">{tag}</Tag>
-          ))}
+          <div className={styles.tags}>
+            <Tag type="gray">{record.data.type}</Tag>
+            {record.data.tags.map((tag) => (
+              <Tag key={tag} type="blue">{tag}</Tag>
+            ))}
+          </div>
           {record.data.read_only && (
             <InlineNotification
               kind="info"

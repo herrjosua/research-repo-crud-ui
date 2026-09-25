@@ -88,10 +88,22 @@ export default function Dashboard() {
     });
   }
 
-  if (records.isLoading) return <p>Loading records…</p>;
+  if (records.isLoading) {
+    return (
+      <Grid>
+        <Column sm={4} md={8} lg={16}>
+          <p className={styles.loading}>Loading records…</p>
+        </Column>
+      </Grid>
+    );
+  }
   if (records.isError) {
     return (
-      <InlineNotification kind="error" title="Failed to load records" subtitle={records.error.message} />
+      <Grid>
+        <Column sm={4} md={8} lg={16}>
+          <InlineNotification kind="error" title="Failed to load records" subtitle={records.error.message} />
+        </Column>
+      </Grid>
     );
   }
 
@@ -170,9 +182,11 @@ export default function Dashboard() {
             >
               <h2>{highlightMatch(record.title, searchQuery)}</h2>
               <p>{record.date} · {highlightMatch(record.type, searchQuery)}</p>
-            {record.tags.map((tag) => (
-              <Tag key={tag} type="blue">{tag}</Tag>
-            ))}
+            <div className={styles.tags}>
+              {record.tags.map((tag) => (
+                <Tag key={tag} type="blue">{tag}</Tag>
+              ))}
+            </div>
           </ClickableTile>
         ))}
       </Column>

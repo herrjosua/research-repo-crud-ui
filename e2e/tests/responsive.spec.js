@@ -103,7 +103,8 @@ for (const width of MD_WIDTHS) {
         let results = await new AxeBuilder({ page }).analyze();
         expect(results.violations).toEqual([]);
 
-        // --- Header: title and logout action both fit ---
+        // --- Header: title, welcome greeting, and logout action all fit ---
+        await expectWithinViewport(page.getByText('Welcome, E2E Tester'), width);
         await expectWithinViewport(page.getByRole('button', { name: 'Log out' }), width);
         await expectClickable(page.getByRole('button', { name: 'Log out' }));
 

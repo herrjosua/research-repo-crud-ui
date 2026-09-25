@@ -4,6 +4,22 @@
   margin-bottom: vars.$spacing-tile-gap;
 }
 
+.loading {
+  text-align: center;
+  margin-top: vars.$spacing-tile-gap;
+}
+
+// Tags render back-to-back with no gap between them (Carbon zeroes the
+// margin on every tag after the first) and no space above/below the row,
+// since Carbon's reset zeroes <p> margin too. $spacing-action-gap matches
+// the button row's own gap in RecordDetail.
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: vars.$spacing-action-gap;
+  margin-block: vars.$spacing-action-gap;
+}
+
 .highlight {
   background-color: vars.$highlight-background;
   color: vars.$highlight-text;
