@@ -5,10 +5,10 @@ import styles from './DemoDisclaimer.module.scss';
 // content, not an event. InlineNotification is always a live region
 // (role="status"), so screen readers would announce it on every mount —
 // including after each login. Callout has no role and is read in order.
-export default function DemoDisclaimer() {
+export default function DemoDisclaimer({ className }) {
     return (
         <Callout
-            className={styles.disclaimer}
+            className={className ? `${styles.disclaimer} ${className}` : styles.disclaimer}
             kind="info"
             title="Demonstration environment"
             subtitle="This is a demonstration environment using fictional sample data for a hypothetical organization. No real people, patients, or protected information are represented. Content resets automatically every hour."

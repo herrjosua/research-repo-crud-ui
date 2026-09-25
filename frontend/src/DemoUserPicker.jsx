@@ -17,10 +17,10 @@ export default function DemoUserPicker({ onLoginSuccess }) {
 
     return (
         <div className={styles.container}>
-            <h1>Choose a demo account</h1>
-            <p>This is a public demo — pick a profile to explore the app as that person.</p>
+            <DemoDisclaimer className={styles.banner} />
 
-            <DemoDisclaimer />
+            <h1>Choose a demo account</h1>
+            <p>Pick a profile to explore the app as that person.</p>
 
             <div className={styles.grid}>
                 {(demoUsers.data || []).map((user) => (

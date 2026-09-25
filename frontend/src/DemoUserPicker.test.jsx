@@ -31,16 +31,24 @@ describe('DemoUserPicker', () => {
         expect(screen.getByRole('button', { name: /Jordan Lee/ })).toBeInTheDocument();
     });
 
-    it('shows the demo disclaimer before the profile buttons', () => {
+    it('shows the demo disclaimer first, then the heading, intro text, and profile buttons', () => {
         useDemoUsers.mockReturnValue({ data: sampleUsers });
         useDemoLogin.mockReturnValue({ mutate: vi.fn(), isPending: false, isError: false });
 
         render(<DemoUserPicker onLoginSuccess={vi.fn()} />);
 
-        const title = screen.getByText('Demonstration environment');
         expect(screen.getByText(/No real people, patients, or protected information are represented\./)).toBeInTheDocument();
-        // DOCUMENT_POSITION_FOLLOWING: the profiles come after the banner.
-        expect(title.compareDocumentPosition(screen.getByRole('button', { name: /Priya Patel/ })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+        const inOrder = [
+            screen.getByText('Demonstration environment'),
+            screen.getByRole('heading', { level: 1, name: 'Choose a demo account' }),
+            screen.getByText('Pick a profile to explore the app as that person.'),
+            screen.getByRole('button', { name: /Priya Patel/ }),
+        ];
+        // DOCUMENT_POSITION_FOLLOWING: each element comes after the one before it.
+        for (let i = 1; i < inOrder.length; i++) {
+            expect(inOrder[i - 1].compareDocumentPosition(inOrder[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        }
     });
 
     it('calls demoLogin.mutate with the selected username, and onLoginSuccess on success', async () => {

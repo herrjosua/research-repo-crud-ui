@@ -1,3 +1,5 @@
+@use './styles/variables' as vars;
+
 .container {
   max-width: 600px;
   margin: 4rem auto;
@@ -5,11 +7,18 @@
   text-align: center;
 }
 
+// The banner is separate from the heading and intro, so it gets the larger
+// gap. Two classes so this outranks DemoDisclaimer's own margin-bottom.
+.container .banner {
+  margin-bottom: vars.$spacing-tile-gap * 2;
+}
+
 .grid {
   display: flex;
   justify-content: center;
   gap: 2rem;
-  margin-top: 2rem;
+  // The intro text introduces the profiles, so keep it close to them.
+  margin-top: vars.$spacing-action-gap;
   flex-wrap: wrap;
 }
 
