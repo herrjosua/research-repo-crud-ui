@@ -69,3 +69,70 @@ test('dashboard, record detail, and delete confirmation are all keyboard-operabl
     await expect(detailModal).not.toBeVisible();
     await expect(page.getByRole('button', { name: 'New session' })).toBeVisible();
 });
+
+test.describe('the record detail modal only shows a focus ring on its close button for real keyboard focus', () => {
+    test.beforeEach(async ({ page, request }) => {
+        const username = `e2e-tester-${randomUUID()}`;
+        const password = 'a-real-password-123';
+
+        await request.post('/api/auth/signup', {
+            data: { username, password, gitName: 'E2E Tester', gitEmail: 'e2e-tester@example.com' },
+        });
+
+        await page.goto('/');
+        await page.getByLabel('Username').fill(username);
+        await page.getByLabel('Password', { exact: true }).fill(password);
+        await page.getByRole('button', { name: 'Log in' }).click();
+        await expect(page.getByRole('button', { name: 'New session' })).toBeVisible();
+    });
+
+    // Carbon's Modal always moves focus to its close button on open, even
+    // for a mouse-driven open — that's correct a11y behavior and isn't what
+    // this checks. This checks that the ring itself, which is visual noise
+    // for a mouse user, doesn't show in that case.
+    test('a mouse-driven open does not show the ring', async ({ page }) => {
+        const tile = page.locator('.cds--tile--clickable', { hasText: STABLE_RAW_SESSION_TITLE });
+        await tile.click();
+
+        const closeButton = page.getByRole('dialog').getByRole('button', { name: 'Close' });
+        await expect(closeButton).toBeFocused();
+        expect(await closeButton.evaluate((el) => el.matches(':focus-visible'))).toBe(false);
+    });
+
+    // The same automatic focus move as above, but this time triggered by a
+    // keyboard open — the ring must still show, since this is the case a
+    // keyboard user actually relies on to know where focus landed.
+    test('a keyboard-driven open shows the ring', async ({ page }) => {
+        const tile = page.locator('.cds--tile--clickable', { hasText: STABLE_RAW_SESSION_TITLE });
+        await tile.focus();
+        await page.keyboard.press('Enter');
+
+        const closeButton = page.getByRole('dialog').getByRole('button', { name: 'Close' });
+        await expect(closeButton).toBeFocused();
+        expect(await closeButton.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
+    });
+
+    // Open with a mouse (ring suppressed, per the first case above), then
+    // reach the close button again via a real Tab press — Carbon's focus
+    // trap wraps Tab from the last tabbable element back to the first
+    // (the close button). The ring must show here: this is a genuine
+    // keyboard interaction, even though the same element was mouse-focused
+    // moments earlier, so the earlier suppression must not stick around.
+    test('a Tab press that wraps the focus trap back onto the close button shows the ring', async ({ page }) => {
+        const tile = page.locator('.cds--tile--clickable', { hasText: STABLE_RAW_SESSION_TITLE });
+        await tile.click();
+
+        const closeButton = page.getByRole('dialog').getByRole('button', { name: 'Close' });
+        await expect(closeButton).toBeFocused();
+        expect(await closeButton.evaluate((el) => el.matches(':focus-visible'))).toBe(false);
+
+        // Shift+Tab from the close button (the trap's first tabbable
+        // element) wraps to the last one; Tab from there wraps forward
+        // again, landing back on the close button.
+        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press('Tab');
+
+        await expect(closeButton).toBeFocused();
+        expect(await closeButton.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
+    });
+});

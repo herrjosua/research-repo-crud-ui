@@ -14,8 +14,8 @@ export default function AppHeader() {
     }
 
     return (
-        <Header aria-label="Research Repo CRUD UI">
-            <HeaderName href="#" prefix="">Research Repo</HeaderName>
+        <Header aria-label="UX Research Repo">
+            <HeaderName href="#" prefix="">UX Research Repo</HeaderName>
             <HeaderGlobalBar>
                 <HeaderGlobalAction aria-label="Log out" onClick={handleLogout}>
                     <Logout size={20} />

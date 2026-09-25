@@ -5,6 +5,11 @@
     padding-bottom: vars.$footer-height;
 }
 
+.loading {
+    text-align: center;
+    margin-top: vars.$spacing-tile-gap;
+}
+
 .footer {
     position: fixed;
     bottom: 0;

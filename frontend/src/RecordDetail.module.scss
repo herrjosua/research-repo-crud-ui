@@ -10,3 +10,30 @@
   flex-wrap: wrap;
   gap: vars.$spacing-action-gap;
 }
+
+// Same problem as .actions' own gap, plus no space between the date line
+// and the pill row, or between the pill row and what follows: Carbon zeroes
+// the margin on every tag after the first and zeroes <p> margin in its
+// reset. $spacing-tile-gap, not $spacing-action-gap, because the metadata
+// and the Edit/Delete/View history row below it are separate sections, not
+// one control group.
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: vars.$spacing-action-gap;
+  margin-block: vars.$spacing-tile-gap;
+}
+
+// Carbon's Modal moves focus to its own close button on every open,
+// including a mouse-driven one, so its :focus ring shows even when no
+// keyboard was involved. :focus-visible reflects the browser's own
+// heuristic for whether focus should be visibly indicated (it does not
+// match a mouse-triggered programmatic .focus(), but does match one
+// triggered by an actual keydown, including Carbon's own Tab-wrap inside
+// the focus trap) — so suppress the ring only in the case the browser
+// itself says shouldn't show one, never for a real keyboard interaction.
+.modal :global(.cds--modal-close:focus:not(:focus-visible)) {
+  border-color: transparent;
+  outline: none;
+  box-shadow: none;
+}
