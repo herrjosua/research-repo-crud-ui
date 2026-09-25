@@ -89,11 +89,15 @@ jobs:
             echo "::endgroup::"
 
             # Retry ONLY a pre-auth transport failure (SSH exit 255) matching
-            # one of two failure modes we've actually seen or could see on
-            # this shared host: the kex-exchange banner refusal (confirmed by
+            # one of the failure modes we've actually seen or could see on
+            # this shared host: the connection-slot refusal (confirmed by
             # host support: server out of connection slots, not IP/account
-            # based), or a plain TCP-level "Connection refused". Both are
-            # transport-layer failures before deploy.sh ever runs, so both
+            # based) - which OpenSSH words differently depending on verbosity:
+            # "Connection closed by remote host" in verbose (-v) output, or
+            # "Connection closed by <host> port <port>" in the plain output
+            # this step actually produces (no -v) - the kex-exchange banner
+            # refusal, or a plain TCP-level "Connection refused". All are
+            # transport-layer failures before deploy.sh ever runs, so all
             # are safe to retry the same way. A real auth failure or host-key
             # mismatch is also exit 255 but won't match this text, so it
             # fails loud on attempt 1 rather than retrying something
@@ -101,7 +105,7 @@ jobs:
             # retried here: retrying a completed deploy attempt could stack
             # a second deploy on top of a live rollback.
             if [[ $deploy_rc -eq 255 ]] && grep -qE \
-                'Connection closed by remote host|kex_exchange_identification|Not allowed at this time|Connection refused' \
+                'Connection closed by remote host|Connection closed by [^ ]+ port [0-9]+|kex_exchange_identification|Not allowed at this time|Connection refused' \
                 <<<"$ssh_output"; then
               if (( attempt < max_attempts )); then
                 delay=${delays[$((attempt - 1))]}
