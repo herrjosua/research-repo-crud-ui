@@ -8,9 +8,16 @@
 #
 #   scripts/tests/deploy.test.sh
 #
-# Needs bash 4.4+, git, node, curl and flock. On Linux the script under test
-# reads /proc; elsewhere (macOS) it falls back to ps, so the /proc paths are
-# only covered on Linux (CI).
+# Needs bash 4.4+, git, node, curl, flock and perl. On Linux the script under
+# test reads /proc; elsewhere (macOS) it falls back to ps, so the /proc paths
+# are only covered on Linux (CI).
+#
+# The fake app runs node through a symlink named MainThread, so its process
+# name (comm) is never "node" on any OS. That's what Node 24 on Linux does to
+# every node process (it renames its main thread), and the reason deploy.sh
+# must never look processes up by name. process.title would change the name
+# too, but on Linux it also overwrites the arguments, which would hide the
+# launcher path; the real app never does that.
 
 set -uo pipefail
 
@@ -22,6 +29,7 @@ SRC=$T/src
 APP=$T/home/apps/research-repo-crud-ui
 LAUNCHER=$T/home/www/server.js
 BIN=$T/bin
+APP_EXE=$BIN/MainThread
 PORT=$((20000 + RANDOM % 20000))
 NPM_LOG=$T/npm.log
 OUT=$T/last.out
@@ -61,6 +69,7 @@ check() {
 setup_stubs() {
     mkdir -p "$BIN"
     ln -s "$(command -v node)" "$BIN/node"
+    ln -s "$(command -v node)" "$APP_EXE"
 
     cat >"$BIN/npm" <<'EOF'
 #!/usr/bin/env bash
@@ -196,10 +205,10 @@ setup_repos() {
 # exits. With $1 = n, gives up after n crashes in a row.
 start_selector() {
     local give_up=${1:-0}
-    PORT=$PORT LAUNCHER=$LAUNCHER PATH=$BIN:$PATH bash -c '
+    PORT=$PORT LAUNCHER=$LAUNCHER APP_EXE=$APP_EXE PATH=$BIN:$PATH bash -c '
         crashes=0
         while :; do
-            node "$LAUNCHER" 2>/dev/null
+            "$APP_EXE" "$LAUNCHER" 2>/dev/null
             if (($? != 0)); then crashes=$((crashes + 1)); else crashes=0; fi
             if (('"$give_up"' > 0 && crashes >= '"$give_up"')); then exit 0; fi
             sleep 1
@@ -214,12 +223,25 @@ stop_selector() {
         wait "$SELECTOR_PID" 2>/dev/null || true
         SELECTOR_PID=""
     fi
-    pkill -f -- "node $LAUNCHER" 2>/dev/null || true
+    pkill -f -x -- "$(re_escape "$APP_EXE $LAUNCHER")" 2>/dev/null || true
 }
 
 start_decoy() {
     node -e 'setInterval(() => {}, 1000)' "$@" &
     DECOY_PIDS+=($!)
+}
+
+# Not node, but with the launcher path as an argument.
+start_non_node_decoy() {
+    perl -e 'sleep 120' "$LAUNCHER" &
+    DECOY_PIDS+=($!)
+}
+
+re_escape() {
+    # Escapes regex metacharacters; one bracket class reads better than a
+    # ${var//} per character.
+    # shellcheck disable=SC2001
+    sed 's/[][\.*^$+?(){}|]/\\&/g' <<<"$1"
 }
 
 # ---------------------------------------------------------------------------
@@ -240,7 +262,14 @@ wait_for_version() {
 }
 
 app_pid() {
-    pgrep -f -- "node $LAUNCHER" | head -n 1
+    pgrep -f -x -- "$(re_escape "$APP_EXE $LAUNCHER")" | head -n 1
+}
+
+# The app process's name as the OS reports it (never "node" here).
+app_comm() {
+    local comm
+    comm=$(ps -p "$(app_pid)" -o comm=)
+    echo "${comm##*/}"
 }
 
 live_tag() {
@@ -268,6 +297,16 @@ out_has() { grep -Fq -- "$1" "$OUT"; }
 npm_log_has() { grep -Fq -- "$1" "$NPM_LOG"; }
 count_in_out() { grep -Fc -- "$1" "$OUT"; }
 
+# A refusal: exit 3 AND its own reason, so no refusal test can pass because
+# of an unrelated refusal (as they all once did, for "No app process found").
+expect_refusal() {
+    local desc=$1 reason=$2
+    shift 2
+    deploy "$@"
+    check "$desc" test "$RC" -eq 3
+    check "  ...because: $reason" out_has "$reason"
+}
+
 # ---------------------------------------------------------------------------
 
 main() {
@@ -276,7 +315,7 @@ main() {
         exit 1
     fi
     local missing=0 tool
-    for tool in git node curl flock pgrep; do
+    for tool in git node curl flock pgrep perl; do
         command -v "$tool" >/dev/null || { echo "missing: $tool" >&2; missing=1; }
     done
     ((missing == 0)) || exit 1
@@ -293,41 +332,49 @@ main() {
 
     local pid0 pid1 pid2 fp
 
-    echo "Preflight refusals (exit 3, nothing changed)"
+    echo "Sanity: the script finds the app"
     pid0=$(app_pid)
-    deploy v1.2
-    check "a malformed tag is refused" test "$RC" -eq 3
-    deploy 'v0.0.2;touch pwned'
-    check "a tag with shell junk is refused" test "$RC" -eq 3
+    check "the fake app's process name is $(app_comm), not node" test "$(app_comm)" != node
+    check "  ...so pgrep -x node can't see it" bash -c "! pgrep -x node | grep -qx '$pid0'"
+    deploy --dry-run v0.0.2
+    if ((RC != 0)) || ! out_has "restart process $pid0"; then
+        echo "  FAIL  a dry run of a valid tag must succeed and find process $pid0 (exit $RC):"
+        sed 's/^/        /' "$OUT"
+        echo "Stopping: every later result would be meaningless."
+        exit 1
+    fi
+    check "a dry run of a valid tag finds process $pid0" true
+
+    echo "Preflight refusals (exit 3 with their own reason, nothing changed)"
+    expect_refusal "a malformed tag is refused" "is not vMAJOR.MINOR.PATCH" v1.2
+    expect_refusal "a tag with shell junk is refused" "is not vMAJOR.MINOR.PATCH" 'v0.0.2;touch pwned'
     check "  ...and nothing ran" test ! -e "$APP/pwned"
-    deploy v9.9.9
-    check "a tag that doesn't exist is refused" test "$RC" -eq 3
-    deploy v0.0.7
-    check "a tag whose package.json versions disagree is refused" test "$RC" -eq 3
-    deploy v0.0.8
-    check "a tag without /api/health is refused" test "$RC" -eq 3
-    deploy --bogus v0.0.2
-    check "an unknown option is refused" test "$RC" -eq 3
+    expect_refusal "a tag that doesn't exist is refused" "Tag v9.9.9 does not exist on origin" v9.9.9
+    expect_refusal "a tag whose package.json versions disagree is refused" "don't match the tag" v0.0.7
+    expect_refusal "a tag without /api/health is refused" "has no /api/health" v0.0.8
+    expect_refusal "an unknown option is refused" "Unknown option: --bogus" --bogus v0.0.2
 
     echo 'x' >>"$APP/backend/server.js"
-    deploy v0.0.2
-    check "uncommitted changes are refused" test "$RC" -eq 3
+    expect_refusal "uncommitted changes are refused" "has uncommitted changes" v0.0.2
     git -C "$APP" checkout -q -- backend/server.js
 
     flock "$T/state/deploy.lock" sleep 30 &
     local holder=$!
     sleep 0.5
-    deploy v0.0.2
-    check "a held lock is refused" test "$RC" -eq 3
-    check "  ...saying another deploy is running" out_has "Another deploy is running"
+    expect_refusal "a held lock is refused" "Another deploy is running" v0.0.2
     # The sleep holds the lock, not flock itself.
     kill $(pgrep -P "$holder") "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
 
     start_decoy "$LAUNCHER"
-    deploy v0.0.2
-    check "two app processes are refused" test "$RC" -eq 3
+    expect_refusal "two app processes are refused" "More than one app process found" v0.0.2
     kill "${DECOY_PIDS[-1]}"; wait "${DECOY_PIDS[-1]}" 2>/dev/null
     unset 'DECOY_PIDS[-1]'
+
+    stop_selector
+    expect_refusal "no app process is refused" "No app process found" v0.0.2
+    start_selector
+    wait_for_version 0.0.1
+    pid0=$(app_pid)
 
     check "  ...still on v0.0.1 after all refusals" test "$(live_tag)" = v0.0.1
     check "  ...app never restarted" test "$(app_pid)" = "$pid0"
@@ -343,13 +390,15 @@ main() {
     echo "Deploy v0.0.1 -> v0.0.2 (first scripted deploy, backend installed)"
     start_decoy "$LAUNCHER.bak"
     start_decoy "$APP/backend/server.js"
+    start_non_node_decoy
     deploy v0.0.2
     check "exits 0" test "$RC" -eq 0
     check "  ...checked out v0.0.2" test "$(live_tag)" = v0.0.2
     check "  ...new process serves 0.0.2" test "$(health_version)" = 0.0.2
     pid1=$(app_pid)
     check "  ...with a new PID" test "$pid1" != "$pid0"
-    check "  ...near-miss node processes were left alone" kill -0 "${DECOY_PIDS[0]}" "${DECOY_PIDS[1]}"
+    check "  ...near-miss processes were left alone (node with similar args, non-node with the launcher arg)" kill -0 "${DECOY_PIDS[0]}" "${DECOY_PIDS[1]}" "${DECOY_PIDS[2]}"
+    check "  ...and the new process isn't named node either" test "$(app_comm)" != node
     check "  ...backend installed in staging, --omit=dev" npm_log_has "npm ci --prefix $T/state/backend-staging --omit=dev"
     check "  ...better-sqlite3 compiled under scl" npm_log_has "scl enable gcc-toolset-14 -- npm run build-release"
     check "  ...fingerprint written" test -s "$APP/backend/node_modules/.deploy-fingerprint"

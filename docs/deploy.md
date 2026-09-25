@@ -38,7 +38,7 @@ about 20 seconds.
    - another deploy holds the lock;
    - the tag isn't exactly `vMAJOR.MINOR.PATCH`;
    - tracked files in the checkout have uncommitted changes;
-   - there isn't exactly one app process;
+   - there isn't exactly one app process (see [Finding the app process](#finding-the-app-process));
    - `git fetch` fails, or the tag doesn't exist;
    - the tag's `backend/package.json` and `frontend/package.json` versions don't equal the tag;
    - the tag has no `/api/health` (anything older than v1.2.7).
@@ -55,10 +55,8 @@ about 20 seconds.
    live `dist` keeps serving throughout.
 6. **Swaps** in the new `node_modules` and `dist`. The old ones become
    `backend/node_modules.prev` and `frontend/dist.prev`.
-7. **Restarts:** SIGTERM to the app process, never `-9`. The process is
-   identified by an argument exactly equal to the launcher path, and its start
-   time is checked again just before the signal, so a reused PID is never
-   killed.
+7. **Restarts:** SIGTERM to the app process, never `-9`. Its start time is
+   checked again just before the signal, so a reused PID is never killed.
 8. **Waits** (120s by default) for a *new* app process. That process must
    answer `http://127.0.0.1:26851/api/health` (sent with the right `Host`),
    then the public `https://ux-research.joshuabock.com/api/health`. Both must
@@ -84,6 +82,34 @@ The script that runs is always the live release's copy. It re-executes from
 a temporary copy of itself before the checkout replaces the file, and all its
 code sits in functions called from the last line. So a change to
 `deploy.sh` takes effect from the deploy *after* the release that contains it.
+
+### Finding the app process
+
+The app process is the one process owned by this user that has both of
+these:
+
+- an argument exactly equal to the launcher path,
+  `/home/www/ux-research.joshuabock.com/server.js`, read from
+  `/proc/<pid>/cmdline`, which keeps argument boundaries;
+- an executable, `/proc/<pid>/exe` with symlinks resolved, whose name is
+  `node`. If the executable can't be read, the script uses the name in
+  argv[0].
+
+It never goes by the process name (comm). Node 24 on Linux renames its main
+thread, so the app shows up as `MainThread`:
+
+```
+$ ps -o pid,comm,args -u "$USER" | grep '[s]erver.js'
+27769 MainThread  /home/.nvm/versions/node/v24.21.0/bin/node /home/www/ux-research.joshuabock.com/server.js
+$ pgrep -u "$(id -u)" -x node; echo $?
+1
+```
+
+`pgrep -f` with the launcher path only narrows down which processes to
+check. The exact-argument and executable checks decide. So none of these
+counts, and none is ever signalled: `server.js.bak`, another node process
+running some other `server.js`, or a non-node process that happens to have
+the launcher path as an argument.
 
 ### Exit codes
 
@@ -279,9 +305,17 @@ version-only bump skips the backend install and that a dependency change
 reinstalls it. It covers frontend-build and better-sqlite3-compile failures
 (rolled back without a restart), a release that crashes at startup (rolled
 back with one restart), and the Selector giving up (exit 2). It also checks
-that node processes with similar command lines are never signalled.
+that near-miss processes are never signalled: node with similar arguments,
+and a non-node process with the launcher path as an argument.
 
-It needs bash 4.4+, `flock`, git, node and curl. CI runs it on Linux. On
+The fake app runs node through a symlink named `MainThread`, so its process
+name is `MainThread` on every OS, as the real app's is under Node 24 on
+Linux. The harness checks that `pgrep -x node` can't see it. Every refusal
+test checks its own error message as well as exit 3. The harness starts
+with a dry run of a valid tag and stops at once if that fails, so a broken
+process lookup can't show up as a run of passing refusals.
+
+It needs bash 4.4+, `flock`, git, node, curl and perl. CI runs it on Linux. On
 macOS, `brew install bash flock` and run it with Homebrew's bash. There the
 script falls back from `/proc` to `ps`, so the `/proc` code paths are only
 exercised in CI. Neither place can test the real `npm ci`, the gcc-toolset

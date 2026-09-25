@@ -139,13 +139,46 @@ proc_start() {
     fi
 }
 
+# The executable a process runs, symlinks resolved. /proc/<pid>/exe on
+# Linux; elsewhere (only the local test harness) ps's comm, which there is
+# the path the process was started with.
+proc_exe() {
+    if [[ -e /proc/$1/exe ]]; then
+        readlink -f "/proc/$1/exe"
+    else
+        readlink -f "$(ps -p "$1" -o comm=)"
+    fi
+}
+
+# Whether a process's executable is node. Never goes by the process name
+# (comm): Node 24 on Linux renames its main thread to "MainThread", so
+# `pgrep -x node` finds nothing. Falls back to argv[0] if the executable
+# can't be read.
+is_node_process() {
+    local exe=""
+    exe=$(proc_exe "$1" 2>/dev/null) || exe=""
+    if [[ -z $exe ]]; then
+        exe=$(proc_args "$1" 2>/dev/null | sed -n 1p) || exe=""
+    fi
+    # Linux appends this when the binary was replaced after the process
+    # started (e.g. nvm reinstalled it); it's still the same node.
+    exe=${exe% (deleted)}
+    [[ ${exe##*/} == node ]]
+}
+
 # Every node process owned by this user with an argument exactly equal to
-# the launcher path. Never pkill -f: it would match any command line that
-# merely contains "server.js".
+# the launcher path. pgrep -f only narrows the search to command lines
+# containing the path somewhere; the exact-argument and executable checks
+# decide. Never pkill -f: it would match any command line that merely
+# contains "server.js".
 find_app_pids() {
-    local pid
-    for pid in $(pgrep -u "$(id -u)" -x node || true); do
-        if proc_args "$pid" 2>/dev/null | grep -Fqx -- "$LAUNCHER"; then
+    local pid pattern
+    # Escapes regex metacharacters; one bracket class reads better than a
+    # ${var//} per character.
+    # shellcheck disable=SC2001
+    pattern=$(sed 's/[][\.*^$+?(){}|]/\\&/g' <<<"$LAUNCHER")
+    for pid in $(pgrep -u "$(id -u)" -f -- "$pattern" || true); do
+        if proc_args "$pid" 2>/dev/null | grep -Fqx -- "$LAUNCHER" && is_node_process "$pid"; then
             echo "$pid"
         fi
     done
