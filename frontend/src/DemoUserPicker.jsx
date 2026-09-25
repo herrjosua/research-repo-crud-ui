@@ -1,5 +1,6 @@
 import { useDemoUsers, useDemoLogin } from './api/auth';
 import { InlineNotification } from '@carbon/react';
+import DemoDisclaimer from './DemoDisclaimer';
 import styles from './DemoUserPicker.module.scss';
 
 function initials(name) {
@@ -16,8 +17,10 @@ export default function DemoUserPicker({ onLoginSuccess }) {
 
     return (
         <div className={styles.container}>
+            <DemoDisclaimer className={styles.banner} />
+
             <h1>Choose a demo account</h1>
-            <p>This is a public demo — pick a profile to explore the app as that person.</p>
+            <p>Pick a profile to explore the app as that person.</p>
 
             <div className={styles.grid}>
                 {(demoUsers.data || []).map((user) => (

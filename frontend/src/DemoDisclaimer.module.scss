@@ -1,0 +1,21 @@
+@use './styles/variables' as vars;
+
+// text-align: start because the demo picker's container is centred.
+.disclaimer {
+  margin-bottom: vars.$spacing-tile-gap;
+  text-align: start;
+
+  // Carbon caps every Callout's root (.cds--actionable-notification) at
+  // 288/608/736/832px per breakpoint via max-inline-size. Lift the cap so the
+  // banner spans its container. Compounding with our class raises specificity
+  // above Carbon's single-class rule and leaves other notifications alone.
+  &:global(.cds--actionable-notification) {
+    max-inline-size: none;
+    inline-size: 100%;
+  }
+
+  // Full-width box, but keep the title/subtitle lines to a readable measure.
+  :global(.cds--actionable-notification__text-wrapper) {
+    max-inline-size: 80ch;
+  }
+}
