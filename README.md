@@ -42,8 +42,11 @@ With `DEMO_MODE=true` in `backend/.env`, the backend seeds three demo users at
 startup (Priya Patel, UX Researcher; Sam Okafor, Product/UX Designer; Jordan
 Lee, Research Ops Lead), and the login page shows a picker for passwordless
 login as one of them. Self-signup is closed, and the demo usernames can't log
-in with a password. See [`backend/README.md`](./backend/README.md) for the
-demo endpoints and their rate limits.
+in with a password. The picker and the dashboard both show a "Demonstration
+environment" notice saying the data is fictional and resets hourly (the reset
+itself is a host cron job outside this repo). See
+[`backend/README.md`](./backend/README.md) for the demo endpoints and their
+rate limits.
 
 ## Testing
 

@@ -20,6 +20,11 @@ test('a real user can log in, browse, and log out — with an accessibility scan
 
     await page.goto('/');
 
+    // DEMO_MODE is off for this suite, so the fictional-data banner must not
+    // appear on either screen.
+    await expect(page.getByLabel('Username')).toBeVisible();
+    await expect(page.getByText('Demonstration environment')).toHaveCount(0);
+
     // --- Accessibility scan of the login screen itself, before logging in ---
     // This screen was never actually scanned before — the only prior scan in
     // this test ran after login, against the dashboard.
@@ -34,6 +39,7 @@ test('a real user can log in, browse, and log out — with an accessibility scan
     // --- Browse: confirm the dashboard actually rendered ---
     await expect(page.getByRole('button', { name: 'New session' })).toBeVisible();
     await expect(page.getByText(/of \d+ records/)).toBeVisible();
+    await expect(page.getByText('Demonstration environment')).toHaveCount(0);
 
     // --- Accessibility scan of the real, logged-in dashboard ---
     results = await new AxeBuilder({ page }).analyze();

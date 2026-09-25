@@ -1,0 +1,7 @@
+@use './styles/variables' as vars;
+
+// text-align: start because the demo picker's container is centred.
+.disclaimer {
+  margin-bottom: vars.$spacing-tile-gap;
+  text-align: start;
+}
