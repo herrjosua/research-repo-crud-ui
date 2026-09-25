@@ -34,7 +34,13 @@ npm test
 
 Playwright starts both apps itself (per the config above) if they aren't
 already running, waits for them to be ready, then runs the test files in
-`tests/`.
+`tests/`. `npm run test:demo` does the same for `tests-demo/`, with the
+backend in demo mode.
+
+CI runs both, in Chromium, as the `e2e` job in
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml). There it adds an
+HTML report and keeps traces of failed tests, uploaded as an artifact when a
+run fails. The configs themselves are the same locally and in CI.
 
 ## What's covered
 

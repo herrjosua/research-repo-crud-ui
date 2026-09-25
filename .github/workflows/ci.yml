@@ -68,3 +68,67 @@ jobs:
       # Runs deploy.sh against a throwaway checkout and a fake Selector. On
       # Linux this also covers the /proc process matching macOS can't.
       - run: scripts/tests/deploy.test.sh
+
+  # Both Playwright configs, one per matrix leg so a failure in one never
+  # hides the other and their test-results/ and playwright-report/ can't
+  # overwrite each other. Each config's webServer starts the frontend and a
+  # backend on a throwaway repo (e2e/support/start-backend.js) and sets
+  # NODE_ENV and DEMO_MODE itself.
+  e2e:
+    name: e2e (${{ matrix.suite }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: main
+            script: test
+          - suite: demo
+            script: test:demo
+    defaults:
+      run:
+        working-directory: e2e
+    env:
+      # The throwaway repo copies the real scripts from here.
+      REAL_AGENTIC_REPO_ROOT: ${{ github.workspace }}/agentic-repo
+      PYTHON_BIN: python3
+      # app.js refuses to start without one; tests only need a placeholder.
+      SESSION_SECRET: ci-placeholder-not-a-secret
+      PLAYWRIGHT_HTML_OPEN: never
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: herrjosua/agentic-repo
+          path: agentic-repo
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: agentic-repo/requirements.txt
+      - run: pip install -r ../agentic-repo/requirements.txt
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+            e2e/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm ci
+        working-directory: backend
+      - run: npm ci
+      # After e2e's npm ci, so npx uses its pinned Playwright. Headless only,
+      # and every spec runs in Chromium (no projects in either config).
+      - run: npx playwright install --with-deps --only-shell chromium
+      - run: npm run ${{ matrix.script }} -- --forbid-only --reporter=list,html --trace=retain-on-failure
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-${{ matrix.suite }}
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 14

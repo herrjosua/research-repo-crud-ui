@@ -31,6 +31,10 @@ Thumbs.db
 .vscode/
 *.swp
 
+# Playwright output (the HTML report is only written in CI)
+e2e/test-results/
+e2e/playwright-report/
+
 # Build output (once frontend exists)
 frontend/dist/
 frontend/build/
