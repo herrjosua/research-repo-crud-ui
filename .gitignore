@@ -35,6 +35,11 @@ Thumbs.db
 frontend/dist/
 frontend/build/
 
+# scripts/deploy.sh's staged build and rollback copies on the server
+frontend/dist.next/
+frontend/dist.prev/
+backend/node_modules.prev/
+
 # Stray venv, in case IntelliJ created one despite this being a Node project
 .venv/
 

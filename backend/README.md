@@ -93,6 +93,9 @@ Runs the full Jest + supertest suite (76 tests across three files):
   handler was missing, so any error — not just an oversized body — leaked a
   full stack trace including server file paths). See the Decision Log for
   the full writeup.
+- **`tests/health.test.js`** — `GET /api/health`: status, the
+  `package.json` version, `startedAt`, `no-store`, and nothing else in the
+  body.
 
 **Records and security tests never touch the real agentic-repo.** They run
 against a disposable, git-initialized fixture repo created fresh per test
@@ -130,11 +133,13 @@ backend/
 │   ├── rateLimiter.js    In-memory, per-IP rate limiter factory; applied to /sessions and write routes on /records
 │   └── httpsRedirect.js  HTTP→HTTPS redirect, gated on NODE_ENV=production and X-Forwarded-Proto; extracted from app.js so it's unit-testable without reloading the whole app under a different NODE_ENV
 ├── routes/
+│   ├── health.js    GET /api/health — status, version, startedAt; polled by scripts/deploy.sh
 │   ├── auth.js      Signup / login / logout / me / demo-users / demo-login
 │   └── records.js   Sessions + file CRUD (shells out to agentic-repo's Python scripts); validates topicSlug/slug against a safe pattern before either reaches the Python scripts
 ├── tests/
 │   ├── auth.test.js       Auth flow, rate limiting, and demo mode tests
 │   ├── records.test.js    Records CRUD + history tests
+│   ├── health.test.js     /api/health tests
 │   ├── security.test.js  Adversarial security tests (path traversal, SQL injection, oversized bodies, tampered cookies, XSS, security headers/robots.txt/rate limiting, HTTPS redirect)
 │   └── helpers/
 │       └── setupTestRepo.js   Creates/destroys the disposable fixture repo used by records.test.js and security.test.js
@@ -146,6 +151,12 @@ backend/
 
 All routes below (except where noted) require a logged-in session (`401`
 otherwise).
+
+### Health (v1.2.7)
+
+| Method | Path          | Body | Notes |
+|--------|---------------|------|-------|
+| GET    | `/api/health` | —    | Public, unauthenticated. `{ status: "ok", version, startedAt }` after a `SELECT 1` against the database; `503` with `status: "error"` if that fails. `version` is `backend/package.json`'s; `startedAt` is when this process loaded the app. `Cache-Control: no-store`. [`scripts/deploy.sh`](../scripts/deploy.sh) polls it to confirm a new release is live. |
 
 ### Auth (v0.6, extended in v1.2 for demo mode)
 
