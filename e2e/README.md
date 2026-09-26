@@ -34,8 +34,17 @@ npm test
 
 Playwright starts both apps itself (per the config above) if they aren't
 already running, waits for them to be ready, then runs the test files in
-`tests/`. `npm run test:demo` does the same for `tests-demo/`, with the
-backend in demo mode.
+`tests/`. `npm run test:demo` runs the separate `tests-demo/` suite instead,
+against its own backend instance with `DEMO_MODE=true`.
+
+Both configs' backend runs against a throwaway agentic-repo checkout built
+fresh from [`fixtures/corpus/`](./fixtures/README.md) by
+`support/start-backend.js` — the same disposable-repo mechanism the Jest
+suite uses (`backend/tests/helpers/setupTestRepo.js`,
+`backend/throwawayRepo.js`). E2E deletes records, so it must never run
+against the real checkout `backend/.env` points at; `start-backend.js`
+checks the repo it built is actually a throwaway one before the server ever
+starts, on top of the backend's own `NODE_ENV=test` guard.
 
 CI runs both, in Chromium, as the `e2e` job in
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). There it adds an
@@ -44,6 +53,9 @@ run fails. The configs themselves are the same locally and in CI.
 
 ## What's covered
 
+- **`smoke.spec.js`** — the login page loads and shows the username field. A
+  minimal sanity check, separate from the full login flow below, so a broken
+  build or server fails fast with an obvious signal.
 - **`login-browse-logout.spec.js`** — the core flow: a test user is created
   by calling `POST /api/auth/signup` directly (there's no signup screen in
   the UI yet — `useSignup()` exists in the frontend's `api/auth.js` but isn't
@@ -56,7 +68,17 @@ run fails. The configs themselves are the same locally and in CI.
   top of it, and confirming `Escape` closes them one at a time rather than
   both at once. Includes accessibility scans of both modal states, which the
   first test never reaches.
-
+- **`delete-confirm-cancel-mouse.spec.js`** — regression test for a bug
+  where clicking Cancel with the *mouse* on the nested delete-confirmation
+  dialog also closed the detail modal beneath it. Root cause: the confirm
+  dialog is portaled straight to `document.body` via `createPortal`, so
+  React's synthetic click event — which bubbles along the React tree, not
+  the DOM tree — still reaches the outer modal's click-outside-to-close
+  handler, which then finds the click target physically outside its own DOM
+  container and closes too. A Playwright trial click can't catch this (it
+  never dispatches a real event), so this test uses a real `.click()`. Run
+  at two widths (672px and 1400px), since the bug is driven by React's event
+  tree rather than CSS but that's worth asserting rather than assuming.
 - **`responsive.spec.js`** — the same real-login flow at Carbon's md
   breakpoint range (`setViewportSize` to 672px, the floor, and 1055px, the last
   pixel before lg; phone-size is deliberately out of scope). Asserts the
@@ -71,11 +93,28 @@ run fails. The configs themselves are the same locally and in CI.
   mid-transition button colors and report a bogus, run-to-run-varying contrast
   failure.
 
-Each test uses a unique, timestamped test username (`e2e-tester-<timestamp>`)
-rather than a fixed one, since the test-mode database persists across
-separate `npm test` runs (there's no per-run isolation the way Jest's
+Each test uses a unique test username (`e2e-tester-<randomUUID()>`) rather
+than a fixed one, since the test-mode database persists across separate
+`npm test` runs (there's no per-run isolation the way Jest's
 `JEST_WORKER_ID` scoping provides) — a fixed username would eventually hit a
-stale `409` on signup.
+stale `409` on signup. It's `randomUUID()`, not a timestamp: Playwright runs
+spec files across parallel workers, and two workers can generate a
+millisecond-resolution timestamp at the same instant, so a timestamp alone
+isn't actually unique here.
+
+### `tests-demo/` — demo mode
+
+`npm run test:demo` runs
+[`demo-picker.spec.js`](./tests-demo/demo-picker.spec.js) against a backend
+started with `DEMO_MODE=true`: the regular `LoginForm` is entirely absent
+(the app branches to the picker rather than showing both), all three seeded
+profiles render as one-click login buttons, the disclaimer shows before any
+profile is picked and stays up on the dashboard afterward, the header
+greeting uses the logged-in persona's real name (confirming a genuine
+session rather than a hardcoded label), and a run at the 672px md floor
+confirms the disclaimer banner doesn't push either screen into horizontal
+scroll. Both the picker and the post-login dashboard get their own
+accessibility scan, since neither is reached by the suite above.
 
 ## Real accessibility issues found and fixed
 

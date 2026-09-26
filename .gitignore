@@ -49,3 +49,8 @@ backend/node_modules.prev/
 
 # Local curl testing artifacts (contains live session cookies)
 cookies.txt
+
+# Backup safety net for docs/deploy.md's key rotation steps, which generate
+# these under ~/.ssh — not here — but in case one ever lands in the repo:
+github-actions-deploy*
+host-key.pub

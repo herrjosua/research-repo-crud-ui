@@ -14,23 +14,28 @@ this page).
 
 ## The server
 
+`scripts/deploy.sh` defines this reference deployment's actual paths near
+its top (`APP_DIR`, `LAUNCHER`, and the rest — see
+[Configuration](#configuration)); adjust them for a different host.
+
 | What | Where |
 |---|---|
 | OS | Rocky Linux 8.10 (glibc 2.28), bash 4.4, `flock` from util-linux |
 | `$HOME` | `/home` |
-| Node | v24, installed by the Node.js Selector under `/home/.nvm/versions` (the app runs `/home/.nvm/versions/node/v24.21.0/bin/node`). Despite the path, there's no nvm: `~/.nvm/nvm.sh` doesn't exist. |
+| Node | v24, installed by the process manager (see below) under a path shaped like a Node version manager's, e.g. `<node-bin>` — though no version manager is actually installed on this host; its shell config puts that directory on `PATH` directly. |
 | App checkout | `~/apps/research-repo-crud-ui`, always a release tag (detached HEAD) |
-| Launcher | `~/www/ux-research.joshuabock.com/server.js`, run by the Node.js Selector; it requires `backend/server.js` from the checkout |
+| Launcher | `<launcher>`, run by the process manager; it requires `backend/server.js` from the checkout |
 | Secrets | `backend/.env`, not in git. The script never reads or writes it. |
 | Port | 26851 (`PORT` in `backend/.env`; the script has its own copy, `DEPLOY_PORT`) |
 | Deploy log | `~/logs/deploy/research-repo-crud-ui.log`, outside the web root |
 | Deploy state | `~/apps/.research-repo-crud-ui-deploy/`: the lock file and the backend staging directory |
 
-The Selector restarts the app whenever its process exits, and it has
-crash-loop protection. There's no Selector CLI on this host
-(`cloudlinux-selector` and `selectorctl` don't exist), so a restart is a plain
-`kill` (SIGTERM) of the app process. The Selector starts a new one within
-about 20 seconds.
+Some shared hosts run Node apps through a control-panel feature that assigns
+the port, expects the app at a specific launcher path, and restarts it
+whenever its process exits, with crash-loop protection — this doc calls
+that **the process manager** below. There's no CLI for it on this host, so
+a restart is a plain `kill` (SIGTERM) of the app process; it starts a new
+one within about 20 seconds.
 
 ## What a deploy does
 
@@ -39,7 +44,11 @@ about 20 seconds.
    - the tag isn't exactly `vMAJOR.MINOR.PATCH`;
    - tracked files in the checkout have uncommitted changes;
    - there isn't exactly one app process (see [Finding the app process](#finding-the-app-process));
-   - `git fetch` fails, or the tag doesn't exist;
+   - `git fetch` fails — including two cases it names specifically: the tag
+     was moved forward on origin, or the local and origin tags have
+     diverged onto different commits entirely. Either message includes the
+     recovery command (`git tag -d <tag> && git fetch --tags origin`), for
+     when the move was intentional — or the tag doesn't exist at all;
    - the tag's `backend/package.json` and `frontend/package.json` versions don't equal the tag;
    - the tag has no `/api/health` (anything older than v1.2.7).
 2. **Records the live release** (the tag at HEAD) for rollback.
@@ -73,10 +82,10 @@ about 20 seconds.
 
 **It exits 2 (needs a human)** in either of these cases:
 - the rollback itself fails;
-- no app process appears after the rollback. The Selector may have given up
-  on a crashing release. The log then says to **press Restart for the app in
-  the Node.js Selector control panel**. The script never retries a restart in
-  a loop.
+- no app process appears after the rollback. The process manager may have
+  given up on a crashing release. The log then says to **press Restart for
+  the app in the host's control panel**. The script never retries a restart
+  in a loop.
 
 The script that runs is always the live release's copy. It re-executes from
 a temporary copy of itself before the checkout replaces the file, and all its
@@ -90,9 +99,9 @@ code sits in functions called from the last line. So a change to
 The app process is the one process owned by this user that has both of
 these:
 
-- an argument exactly equal to the launcher path,
-  `/home/www/ux-research.joshuabock.com/server.js`, read from
-  `/proc/<pid>/cmdline`, which keeps argument boundaries;
+- an argument exactly equal to the launcher path, `<launcher>` (`LAUNCHER`
+  at the top of `scripts/deploy.sh`), read from `/proc/<pid>/cmdline`,
+  which keeps argument boundaries;
 - an executable, `/proc/<pid>/exe` with symlinks resolved, whose name is
   `node`.
 
@@ -107,7 +116,7 @@ own processes (`ls -l /proc/<pid>/exe` says "Permission denied"), while
 executable named `node`, as it is here. The log says which one it used:
 
 ```
-App's node: /home/.nvm/versions/node/v24.21.0/bin/node (from the argv[0] of process 11571; its exe link can't be read)
+App's node: <node-bin> (from the argv[0] of process 11571; its exe link can't be read)
 ```
 
 Whether to use `/proc` at all is decided once, from the script's own process.
@@ -120,7 +129,7 @@ thread, so the app shows up as `MainThread`:
 
 ```
 $ ps -o pid,comm,args -u "$USER" | grep '[s]erver.js'
-27769 MainThread  /home/.nvm/versions/node/v24.21.0/bin/node /home/www/ux-research.joshuabock.com/server.js
+27769 MainThread  <node-bin> <launcher>
 $ pgrep -u "$(id -u)" -x node; echo $?
 1
 ```
@@ -168,14 +177,14 @@ Before starting: v1.2.7 is merged to `main`, tagged `v1.2.7`, and the tag is
 pushed.
 
 1. **SSH in and check Node 24 is on `PATH`.** It is in an interactive SSH
-   session on this host; there's no nvm to load. If `node -v` isn't v24, put
-   the app's own node first. Make sure `NODE_ENV` isn't `production`, or
-   `npm ci` skips vite:
+   session on this host; there's no version manager to load. If `node -v`
+   isn't v24, put the app's own node first. Make sure `NODE_ENV` isn't
+   `production`, or `npm ci` skips vite:
 
    ```bash
    command -v node && node -v    # v24.x
-   # only if it isn't:
-   export PATH=/home/.nvm/versions/node/v24.21.0/bin:$PATH
+   # only if it isn't (use the directory <node-bin> above lives in):
+   export PATH=<node-bin-dir>:$PATH
    unset NODE_ENV
    ```
 
@@ -232,7 +241,7 @@ pushed.
    the launcher, and send it SIGTERM (a plain `kill`, never `kill -9`):
 
    ```bash
-   ps -o pid,lstart,args -u "$USER" | grep '[w]ww/ux-research.joshuabock.com/server.js'
+   ps -o pid,lstart,args -u "$USER" | grep '[s]erver.js'
    kill <pid>
    ```
 
@@ -240,7 +249,7 @@ pushed.
    and health should report 1.2.7:
 
    ```bash
-   ps -o pid,lstart,args -u "$USER" | grep '[w]ww/ux-research.joshuabock.com/server.js'
+   ps -o pid,lstart,args -u "$USER" | grep '[s]erver.js'
    curl -s https://ux-research.joshuabock.com/api/health
    # {"status":"ok","version":"1.2.7","startedAt":"..."}
    ```
@@ -265,7 +274,7 @@ rm -rf frontend/dist && mv frontend/dist.prev frontend/dist
 kill <pid of the app process>
 ```
 
-If there's no app process to kill, press Restart in the Node.js Selector.
+If there's no app process to kill, press Restart in the host's control panel.
 
 ## One-time deploy of v1.2.8 (run its own copy)
 
@@ -331,7 +340,7 @@ It says which step failed.
    - `rm -rf backend/node_modules && mv backend/node_modules.prev backend/node_modules`
    - the same for `frontend/dist` and `frontend/dist.prev`
 4. Restart. If an app process exists, `kill` it once. Otherwise press Restart
-   in the Node.js Selector.
+   in the host's control panel.
 5. Check `curl -s https://ux-research.joshuabock.com/api/health` reports the
    expected version.
 
@@ -343,7 +352,7 @@ through the environment. The test harness uses these overrides.
 | Variable | Default |
 |---|---|
 | `DEPLOY_APP_DIR` | `~/apps/research-repo-crud-ui` |
-| `DEPLOY_LAUNCHER` | `~/www/ux-research.joshuabock.com/server.js` |
+| `DEPLOY_LAUNCHER` | `<launcher>` — this reference deployment's actual value is set at the top of `scripts/deploy.sh` |
 | `DEPLOY_PORT` | `26851` |
 | `DEPLOY_HOST` | `ux-research.joshuabock.com` (the `Host` sent to the local health check) |
 | `DEPLOY_HEALTH_URL` | `https://ux-research.joshuabock.com/api/health`; set it empty to skip the public check |
@@ -359,9 +368,14 @@ The log isn't rotated. It grows by a few hundred lines per deploy.
 
 ## Testing the script
 
+The `deploy-script` job in
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) is the source of
+truth for the exact commands; this is the same thing locally:
+
 ```bash
-shellcheck scripts/deploy.sh scripts/tests/deploy.test.sh scripts/ssh-deploy-wrapper.sh
+shellcheck scripts/deploy.sh scripts/tests/deploy.test.sh scripts/ssh-retry-classify.sh scripts/tests/ssh-retry-classify.test.sh
 scripts/tests/deploy.test.sh
+scripts/tests/ssh-retry-classify.test.sh
 ```
 
 [`scripts/tests/deploy.test.sh`](../scripts/tests/deploy.test.sh) runs the
@@ -369,21 +383,21 @@ real script against a throwaway setup:
 - an origin with release tags, and a checkout of it;
 - stand-ins for `npm` and `scl`;
 - a tiny app with `/api/health`;
-- a loop that restarts the app like the Selector does, and can give up after
-  repeated crashes like its crash-loop protection.
+- a loop that restarts the app like the process manager does, and can give
+  up after repeated crashes like its crash-loop protection.
 
 It covers every refusal, the dry run, and a normal deploy. It checks that a
 version-only bump skips the backend install and that a dependency change
 reinstalls it. It covers frontend-build and better-sqlite3-compile failures
 (rolled back without a restart), a release that crashes at startup (rolled
-back with one restart), and the Selector giving up (exit 2). It also checks
+back with one restart), and the process manager giving up (exit 2). It also checks
 that near-miss processes are never signalled: node with similar arguments,
 and a non-node process with the launcher path as an argument.
 
 It also simulates a host that refuses to read `/proc/<pid>/exe`. A `readlink`
 stub first on `PATH` fails for `/proc/<pid>/exe`, as GNU `readlink -f` does
 there, and the app is started with argv[0] set to an absolute `.../node`, as
-the Selector does. A dry run and a deploy must then find the app through
+the process manager does. A dry run and a deploy must then find the app through
 argv[0] and deploy with that `node`. A `ps` stub proves `ps` never runs. Two
 decoys must be left alone: node with the launcher argument and a relative
 argv[0], and one with an argv[0] not named `node`. The stub only models the
@@ -403,6 +417,12 @@ script falls back from `/proc` to `ps`, so the `/proc` code paths, including
 the unreadable-exe phase (reported as `SKIP`), are only exercised in CI.
 Neither place can test the real `npm ci`, the gcc-toolset compile, or
 Cloudflare. The first real deploy covers those.
+
+[`scripts/tests/ssh-retry-classify.test.sh`](../scripts/tests/ssh-retry-classify.test.sh)
+tests [`scripts/ssh-retry-classify.sh`](../scripts/ssh-retry-classify.sh)
+directly: it feeds the classifier each known failure string (and near-miss
+text that shouldn't match) against exit code 255, and separately checks exit
+codes 0-3 are never retried regardless of their output.
 
 ## Deploying from GitHub Actions
 
@@ -441,19 +461,42 @@ shell is ever reachable through that key.
 
 ### The connection-refusal retry
 
+[`scripts/ssh-retry-classify.sh`](../scripts/ssh-retry-classify.sh) (tested by
+[`scripts/tests/ssh-retry-classify.test.sh`](../scripts/tests/ssh-retry-classify.test.sh))
+decides, from one SSH attempt's exit code and output, whether the workflow
+step should retry it or fail loud.
+
 The shared host occasionally refuses new SSH connections before
-authentication — either a `kex_exchange_identification` banner refusal (host
-support confirmed this is the server being out of connection slots, not
-anything IP- or account-specific) or a plain TCP-level `Connection refused`
-during a transient outage. Both happen **before** `deploy.sh` ever starts, so
-both are safe to retry the same way: the workflow retries an SSH exit 255
-matching that pre-auth transport failure text, up to 3 times (10s/30s/60s
-backoff), and nothing else. A real auth failure or host-key mismatch is also
-exit 255 but won't match the retried text, so it fails loud on the first
-attempt instead of retrying something that retrying can't fix. Once a
-connection succeeds and `deploy.sh` actually runs (exit 0-3), that result is
-never retried — stacking a second deploy attempt on top of a live rollback
-would be worse than a failed workflow run.
+authentication, and OpenSSH describes that differently depending on exactly
+how the connection was dropped: a `kex_exchange_identification` banner
+refusal (host support confirmed this is the server being out of connection
+slots, not anything IP- or account-specific), a plain TCP-level `Connection
+refused`, a `Not allowed at this time` refusal, or — the wording this
+workflow step's non-verbose output actually produces — `Connection closed by
+<host> port <port>` or `Connection reset by <host> port <port>` (the
+verbose-only phrasing, `Connection closed by remote host`, is matched too, in
+case that ever shows up). All of these happen **before** `deploy.sh` ever
+starts, so all are safe to retry the same way: the workflow retries an SSH
+exit 255 matching one of these, up to 3 times (10s/30s/60s backoff), and
+nothing else. A real auth failure or host-key mismatch is also exit 255 but
+won't match the retried text, so it fails loud on the first attempt instead
+of retrying something that retrying can't fix. Once a connection succeeds and
+`deploy.sh` actually runs (exit 0-3), that result is never retried — stacking
+a second deploy attempt on top of a live rollback would be worse than a
+failed workflow run.
+
+One thing the text match can't tell apart: `Connection closed/reset by ...
+port ...` can also happen *after* `deploy.sh` has already started on the
+server, not just before — SSH can't say when in the session the drop
+happened, so the wording is identical either way. A resulting retry is safe
+rather than racy because `deploy.sh` ignores SIGHUP (`trap '' HUP`, set right
+after argument parsing) specifically so a dropped connection doesn't kill a
+deploy partway through, and its own `flock` (see
+[Configuration](#configuration)) refuses a second concurrent run rather than
+stacking one on top of the first. A retry after a mid-session drop can still
+end the workflow run with a misleading "refused, nothing changed" while the
+first attempt's `deploy.sh` keeps running to completion in the background —
+that's a confusing job result, not a double-deploy risk.
 
 `SSH_ORIGINAL_COMMAND` populating correctly under a `bash <path>` forced
 command (rather than the wrapper's own path directly) was confirmed against a
@@ -526,3 +569,64 @@ Before relying on it for a real release:
   server can't run concurrently: `deploy.sh`'s own lock (see
   [Configuration](#configuration)) covers this, but it's worth seeing the
   second one refuse with exit 3 rather than assuming.
+
+### Rotating the deploy key
+
+Do this periodically, or immediately if the private key may have leaked.
+The old key stays valid until step 7, so a botched rotation can't lock you
+out.
+
+1. **Generate a new dedicated keypair directly under `~/.ssh`**, not the
+   current directory — that way the private key can never end up inside
+   this repo's working tree by accident:
+   ```bash
+   ssh-keygen -t ed25519 -f ~/.ssh/<key-name> -N "" -C github-actions-deploy
+   ```
+   Keep both this and the old key's files locally until the rotation is
+   confirmed working end to end in step 6.
+2. **Back up `~/.ssh/authorized_keys` on the server**, then add the new
+   public key as a second forced-command entry, copying the exact
+   restriction stanza from the existing line (`command=`, `no-pty`,
+   `no-agent-forwarding`, `no-X11-forwarding`, `no-port-forwarding`,
+   `no-user-rc`):
+   ```bash
+   ssh user@host cp ~/.ssh/authorized_keys ~/.ssh/authorized_keys.bak
+   ```
+   Then append the new line by hand — `ssh-copy-id` won't add the
+   restrictions, so don't use it here.
+3. **Test the new key authenticates, without triggering a real deploy:**
+   ```bash
+   ssh -N -i ~/.ssh/<key-name> -p <port> -o IdentitiesOnly=yes user@host
+   ```
+   `-N` tells SSH not to send a command at all, so the forced command in
+   `authorized_keys` never runs; this only proves the key and its
+   `authorized_keys` entry are valid, without exercising a deploy.
+4. **Load the new private key into the production environment secret:**
+   ```bash
+   pbcopy < ~/.ssh/<key-name>
+   ```
+   Paste into Settings → Environments → `production` →
+   `DEPLOY_SSH_PRIVATE_KEY`. Environment secrets override repo-level secrets
+   of the same name, so this takes effect on the next tag push without
+   touching anything else.
+5. **Don't regenerate `DEPLOY_SSH_HOST_KEY` as part of this** unless the
+   server's host key itself changed — key rotation only replaces the client
+   key, not the host's identity. If you do need to rebuild it, remember that
+   for a non-default port the entry must be scoped to `[host]:port`, not the
+   bare host (`ssh-keyscan -p <port> <host>` produces this automatically) —
+   otherwise `StrictHostKeyChecking=yes` rejects the connection even with a
+   correct key. Verify any freshly scanned key against the host's
+   fingerprint out of band before trusting it, same as initial setup.
+6. **Push a real tag (or re-run a workflow) and confirm the Actions job
+   succeeds** using the new key — check the run logs to see which key
+   authenticated, not just that the job is green. Since v1.2.10, an auth
+   failure fails loud on the first attempt rather than retrying (see
+   [The connection-refusal retry](#the-connection-refusal-retry)), so a
+   misconfigured `authorized_keys` line for the new key shows up as an
+   immediate failure.
+7. **Once confirmed, remove the old key's line from `authorized_keys`.**
+   Keep the new local private key (`chmod 600`), rather than deleting it, so
+   you can re-run the `ssh -N` check from step 3 later without generating a
+   fresh key each time. Delete only the `~/.ssh/authorized_keys.bak` from
+   step 2, and only after a few days once you're sure you won't need to
+   restore the old entry.
