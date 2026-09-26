@@ -225,6 +225,7 @@ setup_repos() {
     make_release 0.0.7 B mismatch
     make_release 0.0.8 B nohealth
     make_release 0.0.9 D           # good; needs a backend install
+    make_release 0.0.10 D          # good; used only to test a diverged/moved local tag
     git clone -q --bare "$SRC" "$ORIGIN"
     git clone -q "$ORIGIN" "$APP"
     git -C "$APP" -c advice.detachedHead=false checkout -q v0.0.1
@@ -396,6 +397,38 @@ main() {
     expect_refusal "a tag whose package.json versions disagree is refused" "don't match the tag" v0.0.7
     expect_refusal "a tag without /api/health is refused" "has no /api/health" v0.0.8
     expect_refusal "an unknown option is refused" "Unknown option: --bogus" --bogus v0.0.2
+
+    echo "A local tag that diverges from a force-moved origin tag is refused with a clear message"
+    local original_sha diverge_target forward_target
+    original_sha=$(git -C "$APP" rev-parse "refs/tags/v0.0.10^{commit}")
+
+    # Origin's tag force-moved to an earlier, unrelated commit: $APP's local
+    # tag isn't an ancestor of it, so this is a genuine divergence.
+    diverge_target=$(git -C "$SRC" rev-parse "v0.0.4^{commit}")
+    git -C "$SRC" tag -f v0.0.10 "$diverge_target" >/dev/null
+    git -C "$SRC" push -q --force "$ORIGIN" refs/tags/v0.0.10
+    expect_refusal "a tag that diverged from origin's moved tag is refused" \
+        "diverges from origin's tag" v0.0.10
+    check "  ...names the recovery command" out_has "git tag -d v0.0.10 && git fetch --tags origin"
+
+    # Origin's tag force-moved forward, onto a descendant of $APP's local
+    # tag: still refused (git never fast-forwards tags), but with the
+    # "moved forward" wording instead of "diverges".
+    echo "marker" >"$SRC/forward-move-marker.txt"
+    git -C "$SRC" add forward-move-marker.txt
+    git -C "$SRC" commit -qm "commit after v0.0.10, for the forward-move test"
+    forward_target=$(git -C "$SRC" rev-parse HEAD)
+    git -C "$SRC" tag -f v0.0.10 "$forward_target" >/dev/null
+    git -C "$SRC" push -q --force "$ORIGIN" refs/tags/v0.0.10
+    expect_refusal "a tag origin moved forward past is refused, with its own message" \
+        "was moved forward from" v0.0.10
+    check "  ...names the recovery command" out_has "git tag -d v0.0.10 && git fetch --tags origin"
+
+    # Put origin's tag back where $APP already has it, so later "fetch
+    # --tags" calls (which fetch every tag, not just their target) don't
+    # keep failing on v0.0.10.
+    git -C "$SRC" tag -f v0.0.10 "$original_sha" >/dev/null
+    git -C "$SRC" push -q --force "$ORIGIN" refs/tags/v0.0.10
 
     echo 'x' >>"$APP/backend/server.js"
     expect_refusal "uncommitted changes are refused" "has uncommitted changes" v0.0.2
