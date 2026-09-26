@@ -64,10 +64,11 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-      - run: shellcheck scripts/deploy.sh scripts/tests/deploy.test.sh
+      - run: shellcheck scripts/deploy.sh scripts/tests/deploy.test.sh scripts/ssh-retry-classify.sh scripts/tests/ssh-retry-classify.test.sh
       # Runs deploy.sh against a throwaway checkout and a fake Selector. On
       # Linux this also covers the /proc process matching macOS can't.
       - run: scripts/tests/deploy.test.sh
+      - run: scripts/tests/ssh-retry-classify.test.sh
 
   # Both Playwright configs, one per matrix leg so a failure in one never
   # hides the other and their test-results/ and playwright-report/ can't

@@ -419,8 +419,35 @@ preflight() {
     OLD_VERSION=$(version_at "$OLD_SHA" backend/package.json)
 
     log "Fetching tags"
-    run git -C "$APP_DIR" fetch --tags --quiet origin ||
+    if ! run git -C "$APP_DIR" fetch --tags --quiet origin; then
+        # git refuses to move ANY local tag that differs from origin's,
+        # whether origin's is ahead, behind, or on a different line entirely
+        # - tags never fast-forward the way branches do. Tell the difference
+        # ourselves so the message says which one happened, since both are
+        # "would clobber existing tag" to git. ls-remote reads origin's
+        # current tag without touching the local ref the failed fetch left
+        # alone; try the peeled ref first (annotated tags), then the plain
+        # one (lightweight, e.g. the ones this project's releases use).
+        local local_sha origin_sha
+        local_sha=$(git -C "$APP_DIR" rev-parse -q --verify "refs/tags/$TAG^{commit}" 2>/dev/null) || true
+        origin_sha=""
+        if [[ -n $local_sha ]]; then
+            origin_sha=$(git -C "$APP_DIR" ls-remote origin "refs/tags/$TAG^{}" 2>/dev/null | awk '{print $1}') || true
+            if [[ -z $origin_sha ]]; then
+                origin_sha=$(git -C "$APP_DIR" ls-remote origin "refs/tags/$TAG" 2>/dev/null | awk '{print $1}') || true
+            fi
+        fi
+        if [[ -n $origin_sha && $origin_sha != "$local_sha" ]]; then
+            if git -C "$APP_DIR" merge-base --is-ancestor "$local_sha" "$origin_sha" 2>/dev/null; then
+                die "Origin's tag $TAG was moved forward from ${local_sha:0:12} to ${origin_sha:0:12}. If this move was intentional, run:
+  git tag -d $TAG && git fetch --tags origin"
+            else
+                die "Local tag $TAG (at ${local_sha:0:12}) diverges from origin's tag (at ${origin_sha:0:12}). If this move was intentional, run:
+  git tag -d $TAG && git fetch --tags origin"
+            fi
+        fi
         die "git fetch failed. If it says a tag would be clobbered, $TAG was moved on the remote; tags are never rewritten here."
+    fi
 
     target_sha=$(git -C "$APP_DIR" rev-parse -q --verify "refs/tags/$TAG^{commit}") ||
         die "Tag $TAG does not exist on origin"
