@@ -17,9 +17,9 @@ Research Repo CRUD UI/
 ├── backend/    Node/Express API — see backend/README.md for setup, env vars, and the full API reference
 ├── frontend/   React app — see frontend/README.md for setup and stack decisions
 ├── e2e/        Playwright + axe-core end-to-end and accessibility tests — see e2e/README.md
-├── scripts/    deploy.sh (runs on the webhost) and its test harness — see docs/deploy.md
+├── scripts/    deploy.sh (runs on the webhost), ssh-deploy-wrapper.sh and ssh-retry-classify.sh (used by the CD workflow to reach it), and their test harnesses — see docs/deploy.md
 ├── docs/       deploy.md, the deploy runbook
-├── .github/workflows/ci.yml   GitHub Actions CI (see below)
+├── .github/workflows/   ci.yml (see CI below) and deploy.yml (tag-triggered CD, see docs/deploy.md)
 ├── LICENSE
 └── .gitignore
 ```
@@ -101,9 +101,11 @@ and pull request to `main`, as four jobs:
   [`herrjosua/agentic-repo`](https://github.com/herrjosua/agentic-repo)
   (`main`) for the Python scripts the tests copy, installs its
   `requirements.txt` on Python 3.13, and runs the Jest suite.
-- **deploy-script**: shellcheck on the deploy scripts, then
-  `scripts/tests/deploy.test.sh`, which runs `deploy.sh` against a throwaway
-  checkout and a fake Node.js Selector.
+- **deploy-script**: shellcheck on `deploy.sh`, `ssh-retry-classify.sh`, and
+  their tests, then `scripts/tests/deploy.test.sh` (runs `deploy.sh` against
+  a throwaway checkout and a fake process manager) and
+  `scripts/tests/ssh-retry-classify.test.sh` (the SSH connection-failure
+  classifier the CD workflow uses to decide whether to retry).
 - **e2e**: both Playwright configs, as two matrix legs (`e2e (main)` and
   `e2e (demo)`) so a failure in one never hides the other. Each sets up
   agentic-repo and Python like the backend job, installs Chromium only, and
@@ -135,13 +137,20 @@ including:
 
 ### Deploy
 
-On the webhost, `scripts/deploy.sh <tag>` deploys a release tag in one step.
-It checks the tag out, rebuilds only what changed (compiling better-sqlite3
-from source for the host's older glibc), and restarts the app through the
-Node.js Selector. It confirms through `/api/health` that the new version is
-live, and rolls back automatically if anything fails. See
-[`docs/deploy.md`](./docs/deploy.md) for the runbook, including the one-time
-manual deploy of v1.2.7 and the one-time run of v1.2.8's own script.
+Pushing a `vX.Y.Z` tag on `main` triggers
+[`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml): after
+confirming the tag's commit actually reached `main` through a PR, the job
+waits for approval against the `production` GitHub Environment, then SSHes
+into the webhost — through a forced-command key, retrying a specific set of
+pre-auth connection failures (`scripts/ssh-retry-classify.sh`) — to run
+`scripts/deploy.sh <tag>` there. `deploy.sh` checks the tag out, rebuilds
+only what changed (compiling better-sqlite3 from source for the host's older
+glibc), and restarts the app through the host's process manager. It confirms
+through `/api/health` that the new version is live, and rolls back
+automatically if anything fails; `scripts/deploy.sh <tag>` can also be run
+by hand directly on the host. See [`docs/deploy.md`](./docs/deploy.md) for
+the full runbook, including the one-time manual deploy of v1.2.7 and the
+one-time run of v1.2.8's own script.
 
 ## Roadmap
 
@@ -155,7 +164,7 @@ Research Repo CRUD UI**.
 - [x] v0.9 — React Frontend: Auth + Browse
 - [x] v1.0 — React Frontend: Create/Edit/Delete
 - [x] v1.1 — Testing (Unit + QA)
-- [ ] v1.2 — Deploy + Polish
+- [x] v1.2 — Deploy + Polish
 - [ ] v1.3 — Agentic LLM Layer (local, Ollama)
 - [ ] v1.4 — Enterprise Integration Design (Copilot / SharePoint) — design doc only
 

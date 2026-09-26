@@ -3,7 +3,8 @@
 React app for the CRUD UI. v0.9 (Auth + Browse) and v1.0 (Create/Edit/Delete)
 are both complete: login, session persistence, logout, a filterable
 dashboard, and full create/edit/delete with a WYSIWYG content editor and
-edit history. v1.1 (Testing) is also complete. v1.2 (Deploy + Polish) is next.
+edit history. v1.1 (Testing) and v1.2 (Deploy + Polish) are also complete —
+see [v1.2 (Deploy + Polish)](#v12-deploy--polish) below.
 
 **Stack:** Vite + React, [Carbon Design System](https://carbondesignsystem.com/)
 for components, [TanStack Query](https://tanstack.com/query) for data
@@ -31,24 +32,42 @@ dev without needing CORS config on the Express side.
 ## Testing
 
 ```bash
-npm test
+npm test         # single run (vitest run)
+npm run test:watch   # watch mode
 ```
 
-Runs Vitest in watch mode. Current coverage:
+The `frontend` job in
+[`../.github/workflows/ci.yml`](../.github/workflows/ci.yml) is the source
+of truth for what actually runs in CI. Current test files:
 
 - **`LoginForm`**: successful login (calls `onLoginSuccess`), a failed login
   showing the server's actual error message, and the pending state (button
   disabled and reads "Logging in…" while the request is in flight).
+- **`DemoUserPicker`**: a profile button per demo user, disclaimer/heading
+  ordering, calling `demoLogin.mutate` with the selected username, disabling
+  every button while pending, and the error-notification and
+  no-demo-users-yet states — the demo-mode counterpart to `LoginForm`.
 - **`Dashboard`**: kind/tag filtering logic (including combined filters and
   the "no matching records" empty state), plus loading and error states.
+- **`App`**: whether `LoginForm` or `DemoUserPicker` renders for a given
+  `useMe`/`useDemoUsers` result, and exactly when `DemoDisclaimer` shows
+  (above the dashboard once logged in, never on the login/picker screen
+  itself, and never as an announced live region).
+- **`CreateSessionForm`** and **`EditRecordForm`**: the researcher/designer
+  attribution field — auto-filled and disabled for a non-lead, a
+  reassignment dropdown for a lead, and (`EditRecordForm` only) that a
+  record kind with no attribution field shows none.
+- **`RecordDetail`**: that a save warning from the backend displays and
+  refocuses Edit, a clean save shows none, and a read-only record (e.g. a
+  component generated from Figma) hides Edit/Delete, points to where the
+  real edit should happen instead, and keeps View history available.
 
 Tests mock `fetch` directly (via `client.js`'s use of the global `fetch`)
 rather than mocking the API hooks themselves for `LoginForm`, since that
 exercises the real React Query mutation lifecycle (`isPending`/`isError`)
 end to end. `Dashboard`'s tests mock `useRecords` directly instead, since its
 filtering logic is synchronous client-side `useMemo` work with no async
-round-trip worth simulating; `CreateSessionForm` and `RecordDetail` are
-mocked out as simple stand-ins to keep those tests scoped to filtering only.
+round-trip worth simulating.
 
 `vitest.setup.js` loads `@testing-library/jest-dom`'s matchers (e.g.
 `toBeInTheDocument()`); the `test` block in `vite.config.js` configures the
@@ -167,43 +186,57 @@ frontend/
 │   │                       useDeleteRecord, useRecordHistory
 │   ├── styles/
 │   │   └── _variables.scss Shared Sass tokens (spacing, header height)
-│   ├── App.jsx              Top-level: session gate (login vs. dashboard), header
+│   ├── App.jsx              Top-level: session gate (login/picker vs. dashboard), demo disclaimer, header
 │   ├── App.module.scss
+│   ├── App.test.jsx          Which screen renders per demo-user state, and demo disclaimer visibility
 │   ├── Header.jsx           Carbon Header + logout action
 │   ├── LoginForm.jsx         Carbon Form, wired to useLogin
 │   ├── LoginForm.test.jsx    Success, error, and pending-state tests
+│   ├── DemoUserPicker.jsx      Passwordless login: one button per seeded demo profile, shown instead of LoginForm when DEMO_MODE is on
+│   ├── DemoUserPicker.module.scss
+│   ├── DemoUserPicker.test.jsx Profile buttons, pending/error states, demo-login call
+│   ├── DemoDisclaimer.jsx      Permanent "Demonstration environment" notice (Callout, not a live region) — shown on the picker and above the dashboard
+│   ├── DemoDisclaimer.module.scss
 │   ├── Dashboard.jsx         Kind + tag filtering, record list (h1 page title, h2 per record), "New session" button, opens RecordDetail
 │   ├── Dashboard.module.scss
 │   ├── Dashboard.test.jsx    Kind/tag filtering, empty state, loading/error state tests
 │   ├── CreateSessionForm.jsx  Structured fields + CKEditor content, posts to POST /sessions
+│   ├── CreateSessionForm.test.jsx  Researcher-attribution field: auto-fill, disable, reassignment
 │   ├── EditRecordForm.jsx     Frontmatter fields + CKEditor content, posts to PUT
+│   ├── EditRecordForm.test.jsx     Attribution field + save-warning passthrough
 │   ├── RecordDetail.jsx      Read view, Edit toggle, Delete confirmation, history panel
 │   ├── RecordDetail.module.scss
+│   ├── RecordDetail.test.jsx  Save-warning display and read-only (generated) record handling
 │   ├── index.scss           `@use '@carbon/react';` — Carbon's base styles
 │   └── main.jsx             React Query's QueryClientProvider, wrapped in Carbon's FeatureFlags (enable-experimental-focus-wrap-without-sentinels)
 ```
 
-## Still to build
+## v1.2 (Deploy + Polish)
 
-**v1.2 (Deploy + Polish):**
-- Responsive layout (currently desktop-oriented — intentionally deferred)
-- A signup screen (`useSignup()` exists in `api/auth.js`, unused so far) —
-  and per the current plan, likely stays unused: v1.2 calls for *closed*
-  signup + seeded demo accounts for the public/portfolio deploy, not open
-  self-registration
-- Deploy target: decided — the existing webhost, not AWS (see the Notion
-  Decision Log for rationale). Still open before it can go live: confirming
-  the host's control panel can run a persistent Node.js process (not yet
-  checked), setting up a subdomain, and provisioning HTTPS/SSL for it
-- Security hardening: path validation on slugs, `helmet` headers,
-  `robots.txt`, and rate limiting on `/sessions`/`/records/*` writes are all
-  done (see `../backend/README.md`'s Security notes section). HTTPS is
-  prepped (`trust proxy` + redirect, gated on `NODE_ENV=production`) but
-  actual certs are still pending the deploy target decision below. A
-  demo-data-reset cron is still open — see the Notion roadmap for the full
-  checklist
+Shipped. What changed for the frontend:
 
-See the Version Milestone Roadmap in Notion for full detail and decision
-rationale, including three real bugs found and fixed during v1.0 (a silent
-git-commit-loss bug, a `build_index.py` crash, and its root cause in how
-`gray-matter` handles frontmatter dates).
+- **Responsive layout**, scoped to Carbon's `md` breakpoint and up
+  (672–1055px), tested at both edges by
+  [`../e2e/tests/responsive.spec.js`](../e2e/tests/responsive.spec.js).
+  Phone-size (`sm`, below 672px) is deliberately out of scope — this is a
+  tool used on laptops and tablets, not a phone app.
+- **Demo mode UI**: `DemoUserPicker.jsx` (passwordless login as one of three
+  seeded profiles) shows instead of `LoginForm` when the backend has
+  `DEMO_MODE=true`, and `DemoDisclaimer.jsx` — a permanent "Demonstration
+  environment" notice, not a dismissible or announced one — shows on the
+  picker and above the dashboard.
+- **Deploy**: live at `https://ux-research.joshuabock.com`, one Node
+  process serving both the API and this app's build (see
+  [`../docs/deploy.md`](../docs/deploy.md) for the full runbook).
+- **Security hardening**: covered in
+  [`../backend/README.md`](../backend/README.md)'s Security notes — path
+  validation, `helmet` headers, `robots.txt`, rate limiting, and HTTPS
+  (terminated at Cloudflare's edge) are all live, not just prepped.
+- **Signup screen**: still not built. `useSignup()` exists in `api/auth.js`
+  but has no screen — the public deploy uses closed signup with seeded demo
+  accounts instead, per the Notion Decision Log.
+
+See the Version Milestone Roadmap in Notion for what's next (v1.3, v1.4) and
+full decision rationale, including three real bugs found and fixed during
+v1.0 (a silent git-commit-loss bug, a `build_index.py` crash, and its root
+cause in how `gray-matter` handles frontmatter dates).

@@ -10,9 +10,8 @@ remain the source of truth for research content), `express-session` +
 `bcrypt` for auth, `gray-matter` for frontmatter parsing, Jest + supertest
 for testing.
 
-v0.6–v1.1 are complete (backend foundation through testing); v1.2 (Deploy +
-Polish) is in progress. See the Version Milestone Roadmap in Notion for full
-detail and decision rationale.
+v0.6–v1.2 are complete (backend foundation through deploy). See the Version
+Milestone Roadmap in Notion for full detail and decision rationale.
 
 ## Setup
 
@@ -35,7 +34,7 @@ right interpreter — one that has `python-frontmatter` installed — rather tha
 whatever bare `python3` resolves to on `PATH`, which ServBay shadows with a
 broken shim on this machine):
 ```bash
-cd /Users/joshuacbock/IdeaProjects/agentic-repo
+cd /absolute/path/to/your/agentic-repo
 source .venv/bin/activate
 which python3
 ```
@@ -44,11 +43,19 @@ which python3
 PORT=3001
 NODE_ENV=development
 SESSION_SECRET=<paste the generated value here>
-AGENTIC_REPO_ROOT=/Users/joshuacbock/IdeaProjects/agentic-repo
-PYTHON_BIN=/Users/joshuacbock/IdeaProjects/agentic-repo/.venv/bin/python3
+AGENTIC_REPO_ROOT=/absolute/path/to/your/agentic-repo
+PYTHON_BIN=/absolute/path/to/your/agentic-repo/.venv/bin/python3
 DEMO_MODE=false
 ```
-**Never commit `.env`** — it's already covered by `.gitignore`.
+**Never commit `.env`** — it's already covered by `.gitignore`. The server
+refuses to start (`routes/records.js`) if `AGENTIC_REPO_ROOT` is unset.
+
+For a production deployment, see
+[`.env.production.example`](./.env.production.example) instead — it covers
+the additional settings (`ALLOWED_HOSTS`, `TRUST_PROXY`, `HTTPS_REDIRECT`,
+`FRONTEND_DIST`, `GIT_COMMITTER_NAME`/`EMAIL`) that only apply under
+`NODE_ENV=production` — and [`../docs/deploy.md`](../docs/deploy.md) for the
+full deploy runbook.
 
 ### 3. Run the server
 ```bash
@@ -69,7 +76,10 @@ automatically at startup.
 npm test
 ```
 
-Runs the full Jest + supertest suite (76 tests across three files):
+Runs the full Jest + supertest suite. The `backend` job in
+[`../.github/workflows/ci.yml`](../.github/workflows/ci.yml) is the source of
+truth for what actually runs — this list is a guide to what each file
+covers, not a count to keep in sync:
 
 - **`tests/auth.test.js`** — signup, login, logout, `/me`, the rate limiter
   (including the 6th attempt still being blocked even with the correct
@@ -81,6 +91,15 @@ Runs the full Jest + supertest suite (76 tests across three files):
   gray-matter date-coercion fix), `DELETE /records/:id` (including the
   raw-session-is-two-files case), and `GET /records/:id/history` (including
   `--follow` lineage across a delete-then-recreate under the same slug).
+- **`tests/gitScope.test.js`** — that each write commits only the files that
+  request actually touched, and `routes/records.js`'s `withRepoLock` queue
+  serializing concurrent writes to `AGENTIC_REPO_ROOT`.
+- **`tests/production.test.js`** — `middleware/hostCheck.js`'s `421` on an
+  unrecognized `Host`, `proxyTrust.js`'s trust-proxy setting, the HTTPS
+  redirect switch, and serving the built frontend (`frontend.js`).
+- **`tests/throwawayGuard.test.js`** — that the server refuses to start
+  under `NODE_ENV=test` unless `AGENTIC_REPO_ROOT` points at a throwaway
+  repo (`throwawayRepo.js`).
 - **`tests/security.test.js`** — a dedicated adversarial suite across seven
   vectors: path traversal via `topicSlug`/`slug`, SQL injection on
   login/signup, oversized request bodies, tampered/malformed session
@@ -97,7 +116,7 @@ Runs the full Jest + supertest suite (76 tests across three files):
   `package.json` version, `startedAt`, `no-store`, and nothing else in the
   body.
 
-**Records and security tests never touch the real agentic-repo.** They run
+**No backend test ever touches the real agentic-repo.** Every test file runs
 against a disposable, git-initialized fixture repo created fresh per test
 run (see `tests/helpers/setupTestRepo.js`), seeded by copying the actual
 Python scripts (`new_research_session.py`, `export_records.py`,
@@ -129,21 +148,30 @@ backend/
 ├── db.js             better-sqlite3 connection + users table schema (test/prod db split via NODE_ENV)
 ├── demoUsers.js       The three demo identities (Priya/Sam/Jordan) — single source of truth for seeding, the demo-login allowlist, and what the picker UI receives
 ├── seedDemoUsers.js   Idempotently creates the demo users on startup, only when DEMO_MODE=true
+├── frontend.js        Serves the built frontend (frontend/dist) from this same process in production, with an SPA fallback for client-side routes
+├── proxyTrust.js       Cloudflare's published IP ranges plus the host proxy's own address, for Express's trust-proxy setting in production
+├── throwawayRepo.js    Marks/detects a disposable agentic-repo checkout made by tests/helpers/setupTestRepo.js
+├── validation.js       Input validation for POST /sessions and PUT /records/:id frontmatter, mirroring agentic-repo's own field rules
 ├── middleware/
 │   ├── rateLimiter.js    In-memory, per-IP rate limiter factory; applied to /sessions and write routes on /records
-│   └── httpsRedirect.js  HTTP→HTTPS redirect, gated on NODE_ENV=production and X-Forwarded-Proto; extracted from app.js so it's unit-testable without reloading the whole app under a different NODE_ENV
+│   ├── httpsRedirect.js  HTTP→HTTPS redirect, gated on NODE_ENV=production and X-Forwarded-Proto; extracted from app.js so it's unit-testable without reloading the whole app under a different NODE_ENV
+│   └── hostCheck.js      Rejects requests whose Host header isn't in ALLOWED_HOSTS (421); off when ALLOWED_HOSTS is unset
 ├── routes/
 │   ├── health.js    GET /api/health — status, version, startedAt; polled by scripts/deploy.sh
 │   ├── auth.js      Signup / login / logout / me / demo-users / demo-login
 │   └── records.js   Sessions + file CRUD (shells out to agentic-repo's Python scripts); validates topicSlug/slug against a safe pattern before either reaches the Python scripts
 ├── tests/
-│   ├── auth.test.js       Auth flow, rate limiting, and demo mode tests
-│   ├── records.test.js    Records CRUD + history tests
-│   ├── health.test.js     /api/health tests
-│   ├── security.test.js  Adversarial security tests (path traversal, SQL injection, oversized bodies, tampered cookies, XSS, security headers/robots.txt/rate limiting, HTTPS redirect)
+│   ├── auth.test.js           Auth flow, rate limiting, and demo mode tests
+│   ├── records.test.js        Records CRUD + history tests
+│   ├── gitScope.test.js       Commit-scoping (only changed files) and the write-request lock/queue
+│   ├── production.test.js     Host check, proxy trust, HTTPS redirect switch, and serving the built frontend
+│   ├── throwawayGuard.test.js The NODE_ENV=test startup guard requiring a throwaway AGENTIC_REPO_ROOT
+│   ├── health.test.js         /api/health tests
+│   ├── security.test.js       Adversarial security tests (path traversal, SQL injection, oversized bodies, tampered cookies, XSS, security headers/robots.txt/rate limiting, HTTPS redirect)
 │   └── helpers/
-│       └── setupTestRepo.js   Creates/destroys the disposable fixture repo used by records.test.js and security.test.js
-├── .env.example  Template for required environment variables
+│       └── setupTestRepo.js   Creates/destroys the disposable fixture repo shared by every test file
+├── .env.example              Template for required environment variables (development)
+├── .env.production.example   Template for the additional settings NODE_ENV=production reads — see ../docs/deploy.md
 └── app.db        SQLite file (git-ignored, created on first run; app.test.*.db files are the test-only equivalent)
 ```
 
@@ -282,11 +310,14 @@ cookies.txt` / `-b cookies.txt` to persist the cookie across requests.
   `middleware/rateLimiter.js` — separate from the stricter login/demo-login
   limiters noted above, since these guard the actual write endpoints rather
   than auth attempts
-- HTTPS is prepped but not fully live: `app.set('trust proxy', 1)` and an
-  HTTP→HTTPS redirect (`middleware/httpsRedirect.js`) both activate only
-  under `NODE_ENV=production`, so Express correctly reads the real protocol
-  once a reverse proxy (e.g. an ALB or nginx) terminates TLS in front of it.
-  The deploy target itself is decided (the existing webhost, not AWS);
-  actual certificate provisioning is still pending confirming the host
-  supports a persistent Node.js process, plus subdomain and SSL setup there
-  — see the Version Milestone Roadmap
+- HTTPS is fully live in production, terminated at Cloudflare's edge in
+  front of the host. `trust proxy` (production only) is set to the host's
+  own proxy address plus Cloudflare's published IP ranges (`proxyTrust.js`),
+  so `req.ip` and `req.secure` reflect the real visitor rather than the last
+  hop. The app's own HTTP→HTTPS redirect (`middleware/httpsRedirect.js`)
+  stays off by default (`HTTPS_REDIRECT=false`) since Cloudflare's edge
+  already enforces HTTPS — see `.env.production.example` for when to turn it
+  on instead
+- `middleware/hostCheck.js` rejects any request whose `Host` header isn't in
+  `ALLOWED_HOSTS` with `421`, registered before every other middleware so
+  nothing downstream ever acts on a hostname the app doesn't own

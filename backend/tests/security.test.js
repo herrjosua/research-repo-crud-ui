@@ -534,7 +534,7 @@ describe('VECTOR 8: Python-traceback masking on subprocess errors', () => {
 
         const fakeTraceback = [
             'Traceback (most recent call last):',
-            '  File "/Users/joshuacbock/IdeaProjects/agentic-repo/research/scripts/export_records.py", line 42, in <module>',
+            '  File "/home/deploy/agentic-repo/research/scripts/export_records.py", line 42, in <module>',
             "    raise ValueError('something broke')",
             'ValueError: something broke',
         ].join('\n');
