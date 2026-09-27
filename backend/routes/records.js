@@ -8,6 +8,7 @@ const matter = require('gray-matter');
 const db = require('../db');
 const rateLimiter = require('../middleware/rateLimiter');
 const { isThrowawayRepo } = require('../throwawayRepo');
+const requireAuth = require('../middleware/requireAuth');
 
 const execFileAsync = promisify(execFile);
 const router = express.Router();
@@ -122,13 +123,6 @@ const GENERATED_READ_ONLY_ERROR = 'Generated from Figma: edit the source in Figm
 
 function isGeneratedRecord(record) {
   return typeof record.path === 'string' && record.path.startsWith(GENERATED_PATH_PREFIX);
-}
-
-function requireAuth(req, res, next) {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'not logged in' });
-  }
-  next();
 }
 
 // Every route below requires a logged-in session.
