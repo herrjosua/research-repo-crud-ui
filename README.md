@@ -94,7 +94,7 @@ which copies the real Python scripts into a fresh, git-initialized temp folder.
 ## CI
 
 [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) runs on every push
-and pull request to `main`, as four jobs:
+and pull request to `main`, as five jobs:
 
 - **frontend**: `npm ci`, `npm run lint`, and the Vitest suite on Node 24.
 - **backend**: checks out
@@ -106,6 +106,10 @@ and pull request to `main`, as four jobs:
   a throwaway checkout and a fake process manager) and
   `scripts/tests/ssh-retry-classify.test.sh` (the SSH connection-failure
   classifier the CD workflow uses to decide whether to retry).
+- **chromatic**: builds Storybook, publishes it to Chromatic, and fails
+  while any story has an unreviewed or denied visual change against the
+  last-approved baseline. It's a required check, so it blocks merge — see
+  [`CONTRIBUTING.md`](./CONTRIBUTING.md) for how diffs get reviewed.
 - **e2e**: both Playwright configs, as two matrix legs (`e2e (main)` and
   `e2e (demo)`) so a failure in one never hides the other. Each sets up
   agentic-repo and Python like the backend job, installs Chromium only, and
