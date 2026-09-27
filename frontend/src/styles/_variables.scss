@@ -87,5 +87,23 @@ $border-interactive: theme.$border-interactive;
 $chat-accent: colors.$teal-60;
 $chat-accent-text: theme.$text-on-color;
 
+// Ask the Repo KindTag's one categorical color Carbon's `<Tag>` has no
+// native type for — `transcript` (see ask-the-repo/TOKEN_MAPPING.md#kindtag
+// and KindTag.module.scss's comment on `.orange` for the full history:
+// found broken in three separate real contexts across two tickets before
+// landing here). Unlike `$chat-accent` above, this can't be one flat value
+// for both themes — a shade light enough to read on a light background is
+// necessarily too light to read on a dark one, and vice versa — so this is
+// a light/dark *pair* of flat Carbon global colors (not `theme.$x` tokens;
+// Carbon has no orange theme scale), picked for solid (non-alpha-tinted)
+// backdrop-independent contrast: verified 6.02:1 (light pair, against its
+// own background) and 6.31:1 (dark pair) — comfortably over the 4.5:1
+// minimum, and unlike an alpha tint, that number can't shift depending on
+// what real element ends up behind the chip.
+$kind-tag-orange-background: colors.$orange-20;
+$kind-tag-orange-text: colors.$orange-70;
+$kind-tag-orange-background-dark: colors.$orange-90;
+$kind-tag-orange-text-dark: colors.$orange-40;
+
 $highlight-background: theme.$support-warning;
 $highlight-text: theme.$text-primary;

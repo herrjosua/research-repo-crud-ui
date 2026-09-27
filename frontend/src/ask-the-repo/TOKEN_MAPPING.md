@@ -75,9 +75,52 @@ categorical labels, so `<Tag>` (not a bespoke chip) is the right primitive.
 blue, cyan, teal, green, gray, cool-gray, warm-gray, high-contrast, outline`
 — confirmed against `Tag.d.ts` and `_tag.scss`). `KindTag.jsx` renders
 `transcript` as `type="gray"` and `KindTag.module.scss`'s `.orange` class
-layers the real `orange-40` global token (not an invented hex) on top via a
+layers real orange global tokens (not invented hex values) on top via a
 same-specificity, later-in-source-order override — the same `:global()`
-pattern `RecordDetail.module.scss` already uses.
+pattern `RecordDetail.module.scss` already uses. `orange-40` (the table's
+"Carbon global color" above) is the *categorical identity* color from
+Direction B v2, not literally what renders in both themes: a solid
+`orange-20`/`orange-70` pair (white theme) and `orange-90`/`orange-40`
+(dark theme) is what actually ships, chosen for guaranteed contrast
+against every real background this chip renders on — see
+`KindTag.module.scss`'s comment on `.orange` for why a solid pair replaced
+an earlier alpha-tinted `orange-40` background.
+
+**Variable source**: `frontend/src/styles/_variables.scss`'s
+`$kind-tag-orange-background`/`-text` (white theme) and
+`-background-dark`/`-text-dark` (dark theme, switched by the same
+`:global(.cds--g100)` selector every other theme-conditional value in
+this file uses) — never hardcoded in `KindTag.module.scss` itself, and
+never editing anything under `@carbon/*`. Per the app-wide theming
+conventions (`frontend/CLAUDE.md`), any future custom color that needs
+the same "no Carbon token fits" treatment should follow this same
+variable-in-`_variables.scss` pattern and get its own entry here.
+
+**Verified contrast** (WCAG relative-luminance math against
+`getComputedStyle()` values from a running instance, both themes, every
+real background this chip renders against):
+
+| Context | Backdrop | Contrast |
+|---|---|---|
+| White — rail default (`$background`) | `#ffffff` | 6.02:1 |
+| White — rail hover (`$background-hover`) | `#f1f1f1` | 6.02:1 |
+| White — rail selected (`$background-selected`) | `#e8e8e8` | 6.02:1 |
+| White — chat citations (`$surface`) | `#f4f4f4` | 6.02:1 |
+| G100 — rail default (`$background`) | `#161616` | 6.31:1 |
+| G100 — rail hover (`$background-hover`) | `#292929` | 6.31:1 |
+| G100 — rail selected (`$background-selected`) | `#333333` | 6.31:1 |
+| G100 — chat citations (`$surface`) | `#262626` | 6.31:1 |
+| Storybook Docs-page canvas (`.cds--g100` class present, real backdrop stays white — the case that broke the old alpha-tinted version) | `#ffffff` | 6.31:1 |
+
+The number repeats per theme because the background is now solid (not an
+alpha tint composited over whatever's behind it), so it's the same pairing
+against its own opaque background regardless of which real element ends
+up behind the chip — see the Storybook row: same 6.31:1 as every other
+dark-theme context, even though its actual ambient backdrop is white.
+Both numbers are comfortably over the 4.5:1 minimum. Story 5's
+still-unbuilt source panel/citation modal isn't in this table yet since it
+doesn't exist — re-verify against its real background once built, the
+same way every row above was verified, before assuming it's covered.
 
 ## Spacing
 
