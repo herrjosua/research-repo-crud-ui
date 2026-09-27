@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AskTheRepo from './AskTheRepo';
 
@@ -60,5 +60,30 @@ describe('AskTheRepo', () => {
 
         expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
         expect(screen.getByText(/top pain points users reported in the checkout flow/)).toBeInTheDocument();
+    });
+
+    it('lists the active reply\'s sources in the right rail, and follows each new reply', async () => {
+        const user = userEvent.setup();
+        render(<AskTheRepo />);
+        const rail = screen.getByRole('complementary', { name: 'Sources' });
+
+        // No conversation open yet — nothing to cite.
+        expect(within(rail).getByText(/Sources will appear here/)).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: /Pain points in checkout flow/ }));
+
+        // c1's seeded reply cites four sources.
+        expect(within(rail).getAllByRole('article')).toHaveLength(4);
+        expect(within(rail).getByRole('button', { name: 'Checkout Usability Study — Wave 2' })).toBeInTheDocument();
+
+        await user.type(screen.getByLabelText('Ask a question about the research'), 'And payments?');
+        await user.click(screen.getByRole('button', { name: 'Send' }));
+
+        // The mock reply (900ms, see ChatPanel.jsx) becomes the active
+        // message; the rail switches to its one cited source.
+        expect(
+            await within(rail).findByRole('button', { name: 'Research Plan — Checkout Q3' }, { timeout: 3000 })
+        ).toBeInTheDocument();
+        expect(within(rail).getAllByRole('article')).toHaveLength(1);
     });
 });

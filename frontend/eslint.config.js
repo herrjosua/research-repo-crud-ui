@@ -5,7 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // `storybook-static` is `build-storybook`'s output (gitignored, like `dist`) —
+  // without it here, running lint after a Storybook build lints the bundle.
+  globalIgnores(['dist', 'storybook-static']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

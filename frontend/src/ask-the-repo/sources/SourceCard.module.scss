@@ -1,0 +1,172 @@
+@use '@carbon/react/scss/type';
+@use '../../styles/variables' as vars;
+
+// Sits directly on the sources rail's own `$background` (SourcesPanel.
+// module.scss), so hover/selected use the `$background-hover`/
+// `$background-selected` pair calibrated for that elevation — the same
+// pair (and the same `$border-interactive` start border for "selected")
+// ConversationList already uses on the left rail's identical
+// `$background`, not the `$layer-*` pair (see frontend/CLAUDE.md rule 2
+// and _variables.scss's comment on `$surface`).
+//
+// `position: relative` anchors `.open`'s stretched `::after` overlay (the
+// whole card is its click target — see SourceCard.jsx's doc comment).
+.card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    border: 1px solid vars.$border-subtle;
+    border-inline-start: 3px solid transparent;
+    background: vars.$background;
+
+    &:hover {
+        background: vars.$background-hover;
+    }
+
+    // Tighter inline padding when the sources rail itself is narrow (its
+    // `container-type` and the 12rem threshold live in SourcesPanel.module.
+    // scss — see the comment on `$narrow-rail` there for the measured
+    // overflow this prevents). Outside that container (e.g. Storybook's
+    // SourceCard stories) this never applies.
+    @container (max-width: 12rem) {
+        padding-inline: 0.5rem;
+    }
+}
+
+.selected {
+    background: vars.$background-selected;
+    border-inline-start-color: vars.$border-interactive;
+
+    &:hover {
+        background: vars.$background-selected;
+    }
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem 0.5rem;
+    margin-block-end: 0.25rem;
+
+    // KindTag (Carbon's `Tag`) is a flex item here and would otherwise
+    // shrink and ellipsize its label to make room for the page number —
+    // measured at the md floor (~107px of card content), "INTERVIEW" and
+    // "TRANSCRIPT" collapsed to "IN…"/"TR…", losing the kind entirely. Held
+    // at its natural width instead; `flex-wrap` drops the page number to
+    // the next line if both don't fit. Layout only — KindTag's own styles
+    // are untouched.
+    > :first-child {
+        flex-shrink: 0;
+    }
+}
+
+// `$text-secondary`, not `$text-helper`, for every piece of secondary text
+// on this card: it has to stay readable on the hover/selected overlays,
+// not just the default background — see _variables.scss's comment on
+// `$surface` for the measured helper-text failure this avoids.
+.page {
+    @include type.type-style('code-01');
+    flex-shrink: 0;
+    color: vars.$text-secondary;
+}
+
+// The card's one real button (see SourceCard.jsx), reset to read as the
+// card's title. Its `::after` covers the whole card so a click anywhere
+// opens the source; `.pin` sits above that overlay (`z-index`) so it stays
+// independently clickable.
+.open {
+    @include type.type-style('heading-compact-01');
+    padding: 0;
+    border: none;
+    background: none;
+    color: vars.$text-primary;
+    text-align: start;
+    cursor: pointer;
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+    }
+
+    &:focus {
+        outline: none;
+    }
+
+    // Focus ring drawn on the overlay (the whole card's footprint), since
+    // that's what the button actually represents to a mouse user.
+    &:focus-visible::after {
+        outline: 2px solid vars.$focus;
+        outline-offset: -2px;
+    }
+}
+
+.excerpt {
+    @include type.type-style('body-compact-01');
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0;
+    color: vars.$text-secondary;
+    font-style: italic;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}
+
+.meta {
+    @include type.type-style('label-01');
+    margin: 0;
+    color: vars.$text-secondary;
+}
+
+// Plain icon + text toggle (see SourceCard.jsx for why not Carbon's
+// `Button`), styled like Story 4's "Save as deliverable" button
+// (chat/AssistantMessage.module.scss's `.saveButton`) and raised over
+// `.open`'s overlay so it stays its own click target.
+//
+// `$text-secondary` at rest and `$text-primary` for hover/pinned — not
+// interactive blue (`$link-primary`, or `$border-interactive` as Story 4's
+// saved state uses): measured in the white theme, blue-60 text on this
+// card's hover/selected overlays is only 4.44:1 / 4.09:1, under AA's
+// 4.5:1. `$text-secondary` is the token already measured to clear AA on
+// those overlays (see `.page` above), in both themes.
+.pin {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: flex-start;
+    align-self: flex-start;
+    gap: 0.375rem;
+    margin-block-start: 0.5rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: vars.$text-secondary;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    text-align: start;
+    cursor: pointer;
+
+    svg {
+        flex-shrink: 0;
+        fill: currentColor;
+    }
+
+    &:hover,
+    &[aria-pressed='true'] {
+        color: vars.$text-primary;
+    }
+
+    &:focus {
+        outline: none;
+    }
+
+    &:focus-visible {
+        outline: 2px solid vars.$focus;
+        outline-offset: 2px;
+    }
+}

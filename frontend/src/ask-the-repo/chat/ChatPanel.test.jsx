@@ -1,6 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ChatPanel from './ChatPanel';
+import { useConversationMessages } from './useConversationMessages';
+
+// ChatPanel's messages live in `useConversationMessages` (lifted to
+// AskTheRepo.jsx in Story 5), so mount it with that same store here.
+function ChatPanelWithStore({ projectId, conversationId }) {
+    const { getMessages, appendMessage } = useConversationMessages();
+    return (
+        <ChatPanel
+            projectId={projectId}
+            conversationId={conversationId}
+            messages={getMessages(conversationId)}
+            onAppendMessage={appendMessage}
+        />
+    );
+}
 
 // Composer's Carbon TextArea measures itself via ResizeObserver, and the
 // message list scrolls itself into view on mount/update via
@@ -17,20 +32,20 @@ beforeAll(() => {
 
 describe('ChatPanel', () => {
     it('shows starter questions for the active project when no conversation is selected', () => {
-        render(<ChatPanel projectId="checkout" conversationId={null} />);
+        render(<ChatPanelWithStore projectId="checkout" conversationId={null} />);
 
         expect(screen.getByText('Try asking')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'What are the top pain points in the checkout flow?' })).toBeInTheDocument();
     });
 
     it('falls back to the "all" starters for a project id with no entry of its own', () => {
-        render(<ChatPanel projectId="not-a-real-project" conversationId={null} />);
+        render(<ChatPanelWithStore projectId="not-a-real-project" conversationId={null} />);
 
         expect(screen.getByRole('button', { name: 'What are the most common pain points across all projects?' })).toBeInTheDocument();
     });
 
     it('shows c1\'s seeded message history when that conversation is active', () => {
-        render(<ChatPanel projectId="checkout" conversationId="c1" />);
+        render(<ChatPanelWithStore projectId="checkout" conversationId="c1" />);
 
         expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
         expect(screen.getByText(/top pain points users reported in the checkout flow/)).toBeInTheDocument();
@@ -39,7 +54,7 @@ describe('ChatPanel', () => {
 
     it('fills the composer instead of sending when a starter question is clicked', async () => {
         const user = userEvent.setup();
-        render(<ChatPanel projectId="checkout" conversationId={null} />);
+        render(<ChatPanelWithStore projectId="checkout" conversationId={null} />);
 
         await user.click(screen.getByRole('button', { name: 'Why do users abandon before payment?' }));
 
@@ -51,7 +66,7 @@ describe('ChatPanel', () => {
 
     it('sends a message and shows a mock assistant reply', async () => {
         const user = userEvent.setup();
-        render(<ChatPanel projectId="checkout" conversationId={null} />);
+        render(<ChatPanelWithStore projectId="checkout" conversationId={null} />);
 
         const field = screen.getByLabelText('Ask a question about the research');
         await user.type(field, 'What does the data say?');
@@ -67,7 +82,7 @@ describe('ChatPanel', () => {
 
     it('toggles the save affordance for a specific message independently of others', async () => {
         const user = userEvent.setup();
-        render(<ChatPanel projectId="checkout" conversationId="c1" />);
+        render(<ChatPanelWithStore projectId="checkout" conversationId="c1" />);
 
         await user.click(screen.getByRole('button', { name: 'Save as deliverable' }));
 

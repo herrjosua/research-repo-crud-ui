@@ -113,17 +113,53 @@ real background this chip renders against):
 | G100 — rail selected (`$background-selected`) | `#333333` | 15.92:1 |
 | G100 — chat citations (`$surface`) | `#262626` | 15.92:1 |
 | Storybook Docs-page canvas (`.cds--g100` class present, real backdrop stays white — the case that broke the old alpha-tinted version) | `#ffffff` | 15.92:1 |
+| White — sources rail card, default / hover / selected (Story 5; same `$background` + overlay tokens as the rail rows above) | `#ffffff` / `#f1f1f1` / `#e8e8e8` | 15.92:1 |
+| White — source detail modal body (Story 5; Carbon `Modal` wraps its body in a `Layer`, measured resolving to `$layer-01` — the same value as `$surface` above) | `#f4f4f4` | 15.92:1 |
+| G100 — sources rail card, default / hover / selected | `#161616` / `#292929` / `#333333` | 15.92:1 |
+| G100 — source detail modal body | `#262626` | 15.92:1 |
 
 The number repeats everywhere, including across the theme toggle, because
 both sides of the pairing are now solid *and* theme-independent: `#ffd9be`
 background, `#000000` text, always — nothing in this table can shift it,
 which is the whole point of moving off a themed orange text color. 15.92:1
 comfortably clears not just the 4.5:1 AA minimum but the 7:1 AAA one.
-Story 5's still-unbuilt source panel/citation modal isn't in this table
-yet since it doesn't exist — re-verify against its real background once
-built, the same way every row above was verified, before assuming it's
-covered (though for a solid, theme-independent pair like this one, that
-re-verification should just reconfirm the same 15.92:1).
+Story 5's sources rail and detail modal were re-verified against their
+real backgrounds (the four Story 5 rows above), and neither adds a new
+backdrop: the card renders on the rail's `$background` with the same
+hover/selected overlays as the left rail, and Carbon's `Modal` body
+resolves to `$layer-01` (`$surface`). Both reconfirmed 15.92:1, and
+KindTag needed no change.
+
+### Story 5 additions (Carbon tokens re-exported, not custom colors)
+
+`_variables.scss` gained two plain Carbon re-exports — no custom values,
+so nothing to add to the override table above — each with a comment on
+where it's used:
+
+- `$focus` → `theme.$focus`: focus ring for `SourceCard`'s stretched
+  click overlay, which Carbon's own focus styles don't reach.
+- `$border-strong` → `theme.$border-strong-01`: the rule beside the
+  modal's cited excerpt (neutral, so it doesn't read as interactive blue
+  or as the chat-identity teal).
+
+One token *choice* is worth recording for reuse: on the sources rail
+card, text on the hover/selected overlays uses `$text-secondary`, not
+Carbon's interactive `$link-primary`. The card's pin toggle started as a
+Carbon ghost `Button` (`$link-primary` text) and measured 5.00:1 on the
+default card but **4.44:1 on hover and 4.09:1 on selected** (white theme),
+under AA's 4.5:1. With `$text-secondary` at rest and `$text-primary` when
+hovered or pinned, it measures (default / hover / selected):
+
+| Theme | At rest | Pinned |
+|---|---|---|
+| White | 7.81 / 6.94 / 6.39 | 18.10 / — / 14.80 |
+| G100 | 10.59 / 8.51 / 7.44 | 16.45 / — / 11.56 |
+
+The same caution applies to Story 4's "Save as deliverable" saved state
+(`$border-interactive` text) if it's ever reused on an overlay rather than
+on `$surface`. The modal's own Carbon tertiary buttons sit on the plain
+modal layer, so they keep Carbon's defaults: 4.55:1 at rest in white
+(passes, narrowly), 6.38:1 hovered; 15.13 / 16.45:1 in g100.
 
 ## Spacing
 
@@ -200,22 +236,23 @@ frontend/src/ask-the-repo/
     AssistantMessage.jsx / .module.scss / .test.jsx / .stories.jsx # built in this ticket
     Composer.jsx / .module.scss / .test.jsx / .stories.jsx         # built in this ticket
     StarterQuestions.jsx / .module.scss / .test.jsx / .stories.jsx # built in this ticket
+    useConversationMessages.js                # per-conversation message store, lifted out of ChatPanel in Story 5
   rails/
     LeftRail.jsx / .module.scss / .test.jsx / .stories.jsx         # built in the left-rail ticket
     ProjectSwitcher.jsx / .module.scss / .test.jsx / .stories.jsx  # built in the left-rail ticket
     ConversationList.jsx / .module.scss / .test.jsx / .stories.jsx # built in the left-rail ticket
-    RightRail.jsx / .module.scss              # saved insights / context — still planned
   insights/
     SavedInsightsView.jsx / .module.scss
     InsightCard.jsx / .module.scss
   sources/
-    SourceCard.jsx / .module.scss
-    SourceDetailModal.jsx / .module.scss
+    SourcesPanel.jsx / .module.scss / .test.jsx / .stories.jsx      # the right rail — built in the sources-panel ticket (Story 5)
+    SourceCard.jsx / .module.scss / .test.jsx / .stories.jsx        # built in Story 5
+    SourceDetailModal.jsx / .module.scss / .test.jsx / .stories.jsx # built in Story 5
     KindTag.jsx / .module.scss / .test.jsx    # built in the token-mapping ticket
   mock/
     constants.js                              # PROJECTS — built in the left-rail ticket
     conversations.js                          # CONVERSATIONS — built in the left-rail ticket
-    messages.js                               # INITIAL_MESSAGES_BY_CONVERSATION — built in this ticket
+    messages.js                               # INITIAL_MESSAGES_BY_CONVERSATION — built in Story 4; sources gained contextBefore/contextAfter in Story 5
     starters.js                               # STARTERS — built in this ticket
 ```
 
