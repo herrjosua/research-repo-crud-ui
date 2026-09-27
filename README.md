@@ -175,3 +175,4 @@ This project was built by Joshua Bock with AI assistance from Claude — used bo
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
