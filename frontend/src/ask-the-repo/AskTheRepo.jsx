@@ -3,6 +3,8 @@ import { Grid, Column, Tabs, TabList, Tab, TabPanels, TabPanel } from '@carbon/r
 import BreadcrumbBar from './shell/BreadcrumbBar';
 import LeftRail from './rails/LeftRail';
 import ChatPanel from './chat/ChatPanel';
+import { useConversationMessages, latestAssistantMessage } from './chat/useConversationMessages';
+import SourcesPanel from './sources/SourcesPanel';
 import { PROJECTS } from './mock/constants';
 import { CONVERSATIONS } from './mock/conversations';
 import styles from './AskTheRepo.module.scss';
@@ -18,6 +20,15 @@ export default function AskTheRepo() {
     // be local-only to the rail.
     const [activeProjectId, setActiveProjectId] = useState('all');
     const [activeConversationId, setActiveConversationId] = useState(null);
+    // Lifted out of ChatPanel in Story 5, for the same reason as the state
+    // above: the sources rail now reads the active conversation's messages
+    // too. The "active" assistant message the rail shows is derived, not
+    // stored — always the latest reply in the open conversation, matching
+    // AskView.tsx's `activeSources` — so there's no second piece of state
+    // to keep in sync as replies land or conversations switch.
+    const { getMessages, appendMessage } = useConversationMessages();
+    const activeMessages = getMessages(activeConversationId);
+    const activeAssistantMessage = latestAssistantMessage(activeMessages);
 
     // Mirrors AskView.tsx's handleSelectProject/handleSelectConv: picking a
     // project drops any open conversation (it may belong to a different
@@ -94,10 +105,13 @@ export default function AskTheRepo() {
                             written `:not([hidden])` so it never fights that. */}
                         <TabPanels>
                             <TabPanel className={styles.tabPanel}>
-                                {/* Nested Grid/Column split for the rail (lg=4/
-                                    md=2/sm=4) + content (lg=12/md=6/sm=4) — same
-                                    spans Dashboard.jsx uses for its own sidebar +
-                                    content, giving the same inter-column gutter.
+                                {/* Nested Grid/Column split for the left rail (lg=4/
+                                    md=2/sm=4) — the same span Dashboard.jsx uses for
+                                    its own sidebar — then the chat panel (lg=8/md=4)
+                                    and the sources rail (lg=4/md=2), which mirrors
+                                    the left rail's span so the chat sits centered
+                                    between two equal rails. All three share Grid's
+                                    own inter-column gutter.
                                     `narrow`: this Grid is nested inside the outer
                                     Column above, which already supplies the page
                                     margin — without it, this inner Grid adds its
@@ -125,8 +139,16 @@ export default function AskTheRepo() {
                                             onSelectConversation={handleSelectConversation}
                                         />
                                     </Column>
-                                    <Column lg={12} md={6} sm={4}>
-                                        <ChatPanel projectId={activeProjectId} conversationId={activeConversationId} />
+                                    <Column lg={8} md={4} sm={4}>
+                                        <ChatPanel
+                                            projectId={activeProjectId}
+                                            conversationId={activeConversationId}
+                                            messages={activeMessages}
+                                            onAppendMessage={appendMessage}
+                                        />
+                                    </Column>
+                                    <Column lg={4} md={2} sm={4}>
+                                        <SourcesPanel message={activeAssistantMessage} />
                                     </Column>
                                 </Grid>
                             </TabPanel>

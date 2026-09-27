@@ -1,0 +1,27 @@
+@use '../../styles/variables' as vars;
+
+// The sources rail's real surface (SourcesPanel.module.scss's `.panel`),
+// at roughly the rail's lg width — the only backdrop SourceCard renders on.
+.rail {
+    max-inline-size: 20rem;
+    padding: 0.75rem;
+    background: vars.$background;
+}
+
+.states {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.stateLabel {
+    margin: 0 0 0.375rem;
+    font-size: 0.75rem;
+    color: vars.$text-secondary;
+}
+
+// Static stand-in for `.card:hover` (SourceCard.module.scss) — same token,
+// so the snapshot shows the real hover color. Keep in sync with that rule.
+.forceHover > article {
+    background: vars.$background-hover;
+}

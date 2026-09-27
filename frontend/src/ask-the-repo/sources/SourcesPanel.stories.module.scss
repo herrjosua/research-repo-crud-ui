@@ -1,0 +1,13 @@
+// Stand-in for the rail's Grid Column (see SourcesPanel.stories.jsx):
+// roughly the lg column width, and a fixed height so the panel's
+// `block-size: 100%` resolves and its list scrolls.
+.frame {
+    inline-size: 20rem;
+    block-size: 40rem;
+}
+
+// Measured width of the md=2 Column at a 672px viewport (136px, in the
+// real page at exactly 672px wide).
+.narrow {
+    inline-size: 8.5rem;
+}

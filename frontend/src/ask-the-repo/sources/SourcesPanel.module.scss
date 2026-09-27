@@ -1,0 +1,109 @@
+@use '@carbon/react/scss/type';
+@use '../../styles/variables' as vars;
+
+// Mirror image of LeftRail's `.rail` (rails/LeftRail.module.scss): the same
+// `$background` surface, a border on the side facing the chat panel, and
+// `block-size: 100%` as the end of AskTheRepo's bounded-height chain
+// (`.page` → … → `.railRow`, see AskTheRepo.module.scss) — `.body` below
+// scrolls its own overflow instead of growing the page.
+.panel {
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+    block-size: 100%;
+    background: vars.$background;
+    border-inline-start: 1px solid vars.$border-subtle;
+    // Lets `.body` (below) and SourceCard's own padding respond to the
+    // rail's real width rather than the viewport's — see `$narrow-rail`.
+    container-type: inline-size;
+}
+
+// The rail's width at the md floor (136px measured at a 672px viewport)
+// leaves, after a classic always-visible scrollbar (~15px), too little
+// room for the widest KindTag ("TRANSCRIPT", 91px) inside default
+// padding — measured overflowing its card by 8px. Below this width, the
+// body and card tighten their padding; every lg/wider rail is unaffected.
+$narrow-rail: 12rem;
+
+// Same height and bottom border as LeftRail's `.header`, so the two rails'
+// headers line up across the chat panel.
+.header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    block-size: 2.5rem;
+    padding-inline: 0.75rem;
+    border-block-end: 1px solid vars.$border-subtle;
+    flex-shrink: 0;
+}
+
+// Same label treatment as LeftRail's "Recent" `.sectionLabel`, as a real
+// heading for the rail's landmark.
+.heading {
+    @include type.type-style('label-01');
+    margin: 0;
+    color: vars.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.count {
+    @include type.type-style('code-01');
+    padding-inline: 0.25rem;
+    border: 1px solid vars.$border-subtle;
+    color: vars.$text-secondary;
+}
+
+.context {
+    @include type.type-style('label-01');
+    margin: 0 0 0.5rem;
+    color: vars.$text-secondary;
+}
+
+.body {
+    flex: 1;
+    min-block-size: 0;
+    overflow-y: auto;
+    padding: 0.75rem;
+
+    @container (max-width: #{$narrow-rail}) {
+        padding: 0.5rem;
+    }
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.empty {
+    padding: 2rem 0.5rem;
+    color: vars.$text-secondary;
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+// The preview-only boundary for the cards' pin toggles (the modal carries
+// its own notification). Plain secondary text rather than a Carbon
+// InlineNotification: this rail is as narrow as 136px at the md floor,
+// where a notification's icon + title + subtitle layout doesn't fit.
+.footer {
+    @include type.type-style('label-01');
+    display: flex;
+    align-items: flex-start;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-block-start: 1px solid vars.$border-subtle;
+    color: vars.$text-secondary;
+    flex-shrink: 0;
+}
+
+.footerIcon {
+    flex-shrink: 0;
+    fill: currentColor;
+}
