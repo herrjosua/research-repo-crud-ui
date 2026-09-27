@@ -4,6 +4,11 @@ import '../src/index.scss';
 
 /** @type { import('@storybook/react-vite').Preview } */
 const preview = {
+  // Every story gets an autodocs page by default (opt out per-story with
+  // tags: ['!autodocs']) — this track exists for the documentation/style
+  // guide value, so that should be the default, not something each future
+  // story has to remember to turn on.
+  tags: ['autodocs'],
   parameters: {
     controls: {
       matchers: {

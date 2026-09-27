@@ -4,6 +4,11 @@ import projectViteConfig from '../vite.config.js';
 /** @type { import('@storybook/react-vite').StorybookConfig } */
 const config = {
   stories: ['../src/**/*.stories.@(js|jsx)'],
+  // Controls/Actions/Interactions ship inside the `storybook` core package
+  // itself in v10 — no addon install needed for those. Docs (the autodocs
+  // page + props table) and a11y (a real axe scan per story) don't, so
+  // they're listed explicitly.
+  addons: ['@storybook/addon-docs', '@storybook/addon-a11y'],
   framework: {
     name: '@storybook/react-vite',
     options: {},
