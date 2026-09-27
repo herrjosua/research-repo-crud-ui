@@ -12,6 +12,7 @@ dist
 dist.next
 dist.prev
 dist-ssr
+storybook-static
 *.local
 
 # Editor directories and files
