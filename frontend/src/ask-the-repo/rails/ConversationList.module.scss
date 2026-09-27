@@ -63,13 +63,13 @@
 .time {
     flex-shrink: 0;
     @include type.type-style('label-01');
-    color: vars.$text-muted;
+    color: vars.$text-secondary;
 }
 
 .preview {
     display: block;
     overflow: hidden;
-    color: vars.$text-muted;
+    color: vars.$text-secondary;
     font-size: 0.75rem;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -77,7 +77,7 @@
 
 .empty {
     padding: 1rem 0.75rem;
-    color: vars.$text-muted;
+    color: vars.$text-secondary;
     font-size: 0.75rem;
     text-align: center;
 }
