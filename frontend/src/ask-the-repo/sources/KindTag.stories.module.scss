@@ -1,4 +1,4 @@
-clear@use '../../styles/variables' as vars;
+@use '../../styles/variables' as vars;
 
 // Backdrops for the `AllBackgrounds` regression-guard story — one class
 // per real background KindTag is confirmed to render against (see
