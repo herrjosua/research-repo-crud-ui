@@ -26,5 +26,35 @@ $footer-text: theme.$text-secondary;
 $background: theme.$background;
 $border-subtle: theme.$border-subtle-00;
 
+// Added for the Ask the Repo left rail (see ask-the-repo/TOKEN_MAPPING.md's
+// `textPrimary`/`textSecondary`/`textMuted`/`surface` rows for the mapping
+// these follow). `background-hover`/`background-selected`/
+// `border-interactive` have no Direction B v2 equivalent — the reference
+// hand-rolls its active/hover nav-item state from its brand `teal` accent
+// instead, but nothing else in this app uses that accent yet, so the rail
+// uses Carbon's own semantic selection tokens (already proven to re-theme
+// via `cds--g100` with no per-component work, same as every other
+// `theme.$x` value here).
+//
+// `background-hover`/`background-selected`, not `layer-hover-01`/
+// `layer-selected-01`: the rail's own surface is `$background` (below),
+// and Carbon's `layer-hover-01`/`layer-selected-01` are the hover/selected
+// pair calibrated for something sitting on `$layer-01` one step up, not on
+// `$background` directly. Confirmed by reading both pairs' actual computed
+// values in a running instance of each theme: `layer-hover-01`/
+// `layer-selected-01` differ by only 6/255 in g100 (`#333333` vs
+// `#393939`) — too close to read as two distinct states on a `$background`
+// surface, whereas `background-hover`/`background-selected` are alpha
+// overlays designed to composite over an arbitrary base color, with a much
+// larger step between them (e.g. g100: 16% vs 24% alpha over the same
+// gray) — the correct pairing for a `$background`-level list like this.
+$surface: theme.$layer-01;
+$text-primary: theme.$text-primary;
+$text-secondary: theme.$text-secondary;
+$text-muted: theme.$text-helper;
+$background-hover: theme.$background-hover;
+$background-selected: theme.$background-selected;
+$border-interactive: theme.$border-interactive;
+
 $highlight-background: theme.$support-warning;
 $highlight-text: theme.$text-primary;

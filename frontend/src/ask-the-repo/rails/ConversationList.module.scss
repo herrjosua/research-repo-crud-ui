@@ -1,0 +1,83 @@
+@use '@carbon/react/scss/type';
+@use '../../styles/variables' as vars;
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.item {
+    display: block;
+    inline-size: 100%;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    border-inline-start: 2px solid transparent;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+        background: vars.$background-hover;
+    }
+}
+
+.active {
+    background: vars.$background-selected;
+    border-inline-start-color: vars.$border-interactive;
+
+    &:hover {
+        background: vars.$background-selected;
+    }
+}
+
+.row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-block-end: 0.125rem;
+}
+
+.title {
+    overflow: hidden;
+    color: vars.$text-primary;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.unreadDot {
+    display: inline-block;
+    inline-size: 6px;
+    block-size: 6px;
+    margin-inline-end: 0.375rem;
+    border-radius: 50%;
+    background: vars.$border-interactive;
+    vertical-align: middle;
+}
+
+.time {
+    flex-shrink: 0;
+    @include type.type-style('label-01');
+    color: vars.$text-muted;
+}
+
+.preview {
+    display: block;
+    overflow: hidden;
+    color: vars.$text-muted;
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.empty {
+    padding: 1rem 0.75rem;
+    color: vars.$text-muted;
+    font-size: 0.75rem;
+    text-align: center;
+}
