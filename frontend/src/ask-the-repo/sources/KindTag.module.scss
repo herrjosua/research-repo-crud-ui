@@ -11,37 +11,29 @@
 
 // Carbon's Tag has no `orange` category (see ../TOKEN_MAPPING.md#kindtag).
 // KindTag.jsx starts this kind from the neutral `gray` type; this layers the
-// real orange global tokens on top at equal specificity (one class each),
-// winning on source order alone — no !important needed.
+// real orange/black global tokens on top at equal specificity (one class
+// each), winning on source order alone — no !important needed.
 //
 // SOLID background, not an alpha tint over whatever's behind it (the
-// previous approach, `rgba(orange-40, 0.08)`) — found broken by a third
+// original approach, `rgba(orange-40, 0.08)`) — found broken by a third
 // rendering context after two single-context patches already happened
 // here (Story 3's rail, then this chip's own `$surface` chat-citation
 // background): Storybook's own Docs-page preview wrapper
-// (`.sbdocs-preview`) always renders on a hardcoded *white* canvas, even
-// with the dark-theme toolbar selected — `.cds--g100` still lands on a
-// real ancestor there (so this rule's dark-theme branch still matches and
-// picks `orange-40` text, correctly *for a dark backdrop*), but the
-// actual pixels behind the tag stay white, since nothing in this file
-// controls that wrapper. `orange-40` text on the old alpha tint composited
-// over that white canvas measured ~2.3:1 — the exact kind of mismatch an
-// ambient-alpha tint can never fully rule out, because it always assumes
-// whatever the theme class implies about the backdrop is actually true of
-// the *specific* element sitting behind it, which this Storybook wrapper
-// disproves.
+// (`.sbdocs-preview`) always renders on a hardcoded *white* canvas
+// regardless of the theme toolbar, so a themed orange text color picked for
+// a dark backdrop could still land on real white pixels. A solid,
+// theme-independent background/text pair makes every rendering context
+// backdrop-independent *and* theme-independent by construction: the tag
+// supplies its own guaranteed-contrast pairing no matter what's behind it
+// or which theme is active, the same way Carbon's other four Tag colors
+// (blue/purple/teal/red, all solid) already work — matching that existing
+// pattern instead of being the one exception that assumes its backdrop.
 //
-// The fix generalizes rather than patching this one new case: every real
-// background this chip is confirmed to render against — `$background`/
-// `$background-hover`/`$background-selected` (rail, all three states) and
-// `$surface` (chat citations; also the presumed surface for Story 5's
-// still-unbuilt source panel/citation modal) — plus the Storybook-only
-// white-canvas case above, in both themes. A solid background makes every
-// one of those backdrop-independent by construction: the tag now supplies
-// its own guaranteed-contrast pairing regardless of what's behind it, the
-// same way Carbon's other four Tag colors (blue/purple/teal/red, all solid)
-// already work — matching that existing pattern instead of being the one
-// exception that assumes its backdrop.
+// One flat pair for both themes, not the light/dark pair this used to be:
+// once the text role is solid black instead of a themed orange, there's no
+// need for a separate dark-theme background to keep colored text legible —
+// black reads fine on this same light amber/peach chip in either theme,
+// which is also simpler than hand-tuning a second orange shade per theme.
 //
 // The actual color values live in `_variables.scss` as
 // `$kind-tag-orange-*` (the same "flat Carbon global color, re-exported
@@ -50,21 +42,11 @@
 // touching Carbon's own package source; this file only consumes the
 // project-level variable.
 //
-// `$kind-tag-orange-background`/`-text` (light bg, dark text — white
-// theme): 6.02:1 against its own background, and now identical against
-// every real context above *and* the Storybook white-canvas case, since
-// none of them can shift a solid color.
+// 15.92:1 (WCAG relative-luminance math) against its own background —
+// identical in every real context this chip renders in (rail
+// default/hover/selected, `$surface`, the Storybook white-canvas case) and
+// in both themes, since neither side of the pairing can shift.
 .orange:global(.cds--tag--gray) {
   background-color: vars.$kind-tag-orange-background;
   color: vars.$kind-tag-orange-text;
-}
-
-// `$kind-tag-orange-background-dark`/`-text-dark` (dark bg, light text —
-// dark theme): 6.31:1 against its own background, same
-// backdrop-independence — also raises the rail's `$background-selected`
-// case specifically (previously the tightest real-context margin at
-// 4.56:1 under the old tint, now 6.31:1).
-:global(.cds--g100) .orange:global(.cds--tag--gray) {
-  background-color: vars.$kind-tag-orange-background-dark;
-  color: vars.$kind-tag-orange-text-dark;
 }

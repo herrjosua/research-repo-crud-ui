@@ -11,8 +11,8 @@ import styles from './KindTag.module.scss';
  *
  * Wraps Carbon's `Tag`, which has no `orange` type: `transcript` renders
  * from the neutral `gray` type, with `KindTag.module.scss` layering a
- * solid (not alpha-tinted — see that file's comment) real orange global
- * color pair on top, one per theme.
+ * solid (not alpha-tinted — see that file's comment) amber/peach
+ * background and solid black text on top, the same pair in both themes.
  *
  * `kind` (one of `interview` | `survey` | `doc` | `transcript` |
  * `synthesis`): key into `KIND_META`, selecting the label text and Carbon
