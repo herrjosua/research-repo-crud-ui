@@ -1,12 +1,13 @@
 import DemoDisclaimer from './DemoDisclaimer';
 
-// Placeholder story: exercises a Carbon component (Callout) plus this
-// component's own SCSS Module (DemoDisclaimer.module.scss), which is enough
-// to confirm both resolve correctly inside Storybook's own dev server. The
-// component has no PropTypes/TS, so there's no docgen source for argTypes —
-// `args` is given explicitly so Controls has a real field to render.
+// Grouped under Shared/Core: genuinely reused across two entry points
+// (App.jsx's standalone login screen and DemoUserPicker.jsx's account
+// picker), unlike the app's other top-level .jsx files, which are each
+// mounted by exactly one parent. The component has no PropTypes/TS, so
+// there's no docgen source for argTypes — `args`/`argTypes` are given
+// explicitly so Controls has a real field to render.
 export default {
-  title: 'DemoDisclaimer',
+  title: 'Shared/Core/DemoDisclaimer',
   component: DemoDisclaimer,
   argTypes: {
     className: { control: 'text' },
