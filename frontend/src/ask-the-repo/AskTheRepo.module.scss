@@ -1,36 +1,31 @@
 @use '../styles/variables' as vars;
 
-// The bounded-height chain that makes the rail and ChatPanel share a
-// height by construction — see AskTheRepo.jsx's comment on `.page` for
-// why this replaced a JS (ResizeObserver + useLayoutEffect) approach.
-// Each link below hands a genuine (non-auto) height to the next; the
-// chain ends at LeftRail's `.rail` and ChatPanel's `.panel`, which each
-// scroll their own overflow internally instead of growing the page.
+// The bounded-height chain that makes the rail, ChatPanel and the sources
+// rail share a height by construction — see AskTheRepo.jsx's comment on
+// `.page` for why this replaced a JS (ResizeObserver + useLayoutEffect)
+// approach. Each link below hands a genuine (non-auto) height to the next;
+// the chain ends at LeftRail's `.rail`, ChatPanel's `.panel` and
+// SourcesPanel's `.panel`, which each scroll their own overflow internally
+// instead of growing the page.
 //
-// `.page` — the anchor. `100dvh` (dynamic viewport height, not a
-// percentage) is what makes this a *real* height instead of another
-// auto-sized box: percentages need a non-auto ancestor to resolve
-// against, and nothing above this in the real page (`<main>`, `body`,
-// `html` — see App.module.scss) is bounded, by design, since Dashboard's
-// page (and every other page) needs to just grow with its own content
-// and let the *page* scroll, not be forced to fill the viewport. Scoping
-// the anchor to here, rather than to `<main>`/`body`/`html`, is
-// deliberate: this ticket only needs Ask the Repo's own rail/chat row to
-// have a real height to stretch against, and anchoring higher up — e.g.
-// making `<main>` itself `flex: 1` — would force *every* page's content
-// area to always fill the viewport regardless of how little content it
-// has, which directly undoes the sticky-footer fix (footer sitting right
-// after short content, not floating a viewport-height below it).
-// `- vars.$header-height` accounts for the one thing above this that
-// *is* fixed-position (Carbon's `<Header>`, via `.main`'s own
-// `padding-top`) — the banner/breadcrumb/tab bar below it are real,
-// natural-flow content this component already renders, so they're
-// handled by `flex: 0 0 auto` (nothing extra needed) further down the
-// chain, not by guessing their height too.
+// `.page` — filled by `flex: 1` from App.jsx's `<main>`, which is the real
+// anchor: App.module.scss's `.fillViewport` makes `main` exactly the
+// viewport minus the sticky footer, and a flex column, whenever this
+// section is showing. `flex: 1` (rather than this element computing its
+// own `calc(100dvh - …)`) is what accounts for the demo banner App renders
+// above it when DEMO_MODE is on: the banner keeps its natural height —
+// which varies, since it wraps at narrow widths — and this takes the rest,
+// with no banner height to know or subtract. The old self-anchored
+// `calc(100dvh - $header-height)` left out both the banner and the footer,
+// so the page overflowed the viewport by both. `min-block-size: 0` lets it
+// be smaller than its content (a flex item's default minimum is its
+// content size). The banner/breadcrumb/tab bar inside keep their natural
+// height via plain flex defaults further down the chain.
 .page {
     display: flex;
     flex-direction: column;
-    block-size: calc(100dvh - vars.$header-height);
+    flex: 1;
+    min-block-size: 0;
 }
 
 .tabList {
@@ -49,9 +44,19 @@
 // all — a flex item's *own* internal `display` is independent of how it
 // participates in its parent's layout, so `flex: 1` here and `display:
 // grid` from Carbon coexist without conflict.
+//
+// `grid-template-rows: minmax(0, 1fr)`: a bounded Grid alone isn't enough.
+// Carbon's Grid sets no rows, so it gets one implicit `auto` row, and an
+// `auto` row's minimum is its content's height — a tall conversation
+// grew that row past the Grid (measured: 904px of row inside a 695px Grid
+// at an 800px viewport), and `.tabsColumn`'s `block-size: 100%` then
+// resolved against the oversized row, so nothing below ever scrolled
+// internally; the window did. `minmax(0, 1fr)` pins the row to exactly the
+// Grid's height, whatever the content. Same fix on `.railRow` below.
 .tabsGrid {
     flex: 1;
     min-block-size: 0;
+    grid-template-rows: minmax(0, 1fr);
 }
 
 // Carbon's Column is a plain block by default; this Grid has exactly one
@@ -93,9 +98,13 @@
 // own default `align-items: stretch` (no override needed — this
 // replaces the `align-items: start` override from the JS-based fix,
 // which existed only to protect a measurement this component no longer
-// takes) is what makes the rail and content Columns below match height,
-// now that this Grid itself has a real height to stretch them into.
+// takes) is what makes the rail and content Columns below match height —
+// but only because `grid-template-rows: minmax(0, 1fr)` gives it a row of
+// exactly this Grid's height to stretch them into; with Carbon's implicit
+// `auto` row the row grew to the tallest Column's content instead (see
+// `.tabsGrid` above).
 .railRow {
     flex: 1;
     min-block-size: 0;
+    grid-template-rows: minmax(0, 1fr);
 }

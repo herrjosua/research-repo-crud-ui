@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import App from './App';
 import { useMe, useDemoUsers } from './api/auth';
+import styles from './App.module.scss';
 
 vi.mock('./api/auth', () => ({
     useMe: vi.fn(),
@@ -12,7 +14,14 @@ vi.mock('./api/auth', () => ({
 vi.mock('./LoginForm', () => ({ default: () => <p>login form</p> }));
 vi.mock('./DemoUserPicker', () => ({ default: () => <p>demo picker</p> }));
 vi.mock('./Dashboard', () => ({ default: () => <p>dashboard</p> }));
-vi.mock('./Header', () => ({ default: () => <p>header</p> }));
+vi.mock('./ask-the-repo/AskTheRepo', () => ({ default: () => <p>ask the repo</p> }));
+// A button (still labeled "header") so the layout tests below can switch
+// sections through App's real `onNavigate` wiring.
+vi.mock('./Header', () => ({
+    default: ({ onNavigate }) => (
+        <button type="button" onClick={() => onNavigate('ask-the-repo')}>header</button>
+    ),
+}));
 
 const DISCLAIMER_TITLE = 'Demonstration environment';
 
@@ -90,5 +99,45 @@ describe('App demo disclaimer', () => {
 
         expect(screen.getByText('dashboard')).toBeInTheDocument();
         expect(screen.queryByText(DISCLAIMER_TITLE)).not.toBeInTheDocument();
+    });
+});
+
+// jsdom has no layout, so the actual heights are verified in a browser (see
+// App.module.scss's `.fillViewport`); these pin down *when* `main` switches
+// into that bounded, viewport-filling mode — Ask the Repo only, with or
+// without the demo banner — so no other page ever loses its content-height
+// layout.
+describe('App main layout', () => {
+    it('keeps main content-sized for the dashboard', () => {
+        useMe.mockReturnValue(loggedIn);
+        useDemoUsers.mockReturnValue({ isLoading: false, data: sampleUsers });
+
+        render(<App />);
+
+        expect(screen.getByRole('main')).not.toHaveClass(styles.fillViewport);
+    });
+
+    it.each([
+        ['on', sampleUsers],
+        ['off', []],
+    ])('bounds main to the viewport for Ask the Repo with DEMO_MODE %s', async (_mode, demoUsers) => {
+        const user = userEvent.setup();
+        useMe.mockReturnValue(loggedIn);
+        useDemoUsers.mockReturnValue({ isLoading: false, data: demoUsers });
+
+        render(<App />);
+        await user.click(screen.getByRole('button', { name: 'header' }));
+
+        expect(screen.getByText('ask the repo')).toBeInTheDocument();
+        expect(screen.getByRole('main')).toHaveClass(styles.fillViewport);
+    });
+
+    it('keeps main content-sized on the login screen', () => {
+        useMe.mockReturnValue(loggedOut);
+        useDemoUsers.mockReturnValue({ isLoading: false, data: [] });
+
+        render(<App />);
+
+        expect(screen.getByRole('main')).not.toHaveClass(styles.fillViewport);
     });
 });

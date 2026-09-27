@@ -19,6 +19,10 @@ function App() {
     const isDemo = demoUsers.data?.length > 0;
 
     let content;
+    // Only Ask the Repo fills the viewport (its rail/chat row scrolls
+    // internally); every other page grows with its content and lets the
+    // page scroll. See `.fillViewport` in App.module.scss.
+    let fillsViewport = false;
 
     if (me.isLoading || demoUsers.isLoading) {
         content = (
@@ -33,6 +37,7 @@ function App() {
             ? <DemoUserPicker onLoginSuccess={() => me.refetch()} />
             : <LoginForm onLoginSuccess={() => me.refetch()} />;
     } else {
+        fillsViewport = activeSection === 'ask-the-repo';
         content = (
             <>
                 <AppHeader activeSection={activeSection} onNavigate={setActiveSection} />
@@ -50,7 +55,7 @@ function App() {
 
     return (
         <>
-            <main className={styles.main}>
+            <main className={fillsViewport ? `${styles.main} ${styles.fillViewport}` : styles.main}>
                 {content}
             </main>
             <footer className={styles.footer}>v{__APP_VERSION__}</footer>

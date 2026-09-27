@@ -66,14 +66,22 @@ export default function AskTheRepo() {
         // (non-auto) size for a *grid item's own children* to inherit via
         // `height: 100%` when the *row itself* already has a definite
         // height to stretch that item into — which requires the chain to
-        // start from something real, not content-derived. `100dvh` here
-        // is that anchor: see `styles.page` in AskTheRepo.module.scss for
-        // the full chain this sets up (page → tabsGrid → tabsColumn →
-        // tabPanel → the rail/content row), each link using `flex: 1` or
-        // Grid's own default stretch to pass a real height to the next,
-        // ending at LeftRail's `.rail` and ChatPanel's `.panel`, each of
-        // which scrolls its own overflow internally
-        // (`overflow-y: auto`) instead of growing the page.
+        // start from something real, not content-derived, *and* every
+        // Grid in the chain to declare that row (`grid-template-rows:
+        // minmax(0, 1fr)` on `tabsGrid`/`railRow` — Carbon's Grid alone
+        // gives an implicit `auto` row, which grew to fit a tall
+        // conversation until that was added). The anchor is App.jsx's
+        // `<main>` (App.module.scss's `.fillViewport`: viewport minus the
+        // sticky footer, as a flex column), which this fills with
+        // `flex: 1` so the demo banner App renders above it, when present,
+        // is accounted for by layout rather than arithmetic. See
+        // `styles.page` in AskTheRepo.module.scss for the full chain (main
+        // → page → tabsGrid → tabsColumn → tabPanel → the rail/content
+        // row), each link using `flex: 1` or Grid stretch into a definite
+        // row to pass a real height to the next, ending at LeftRail's
+        // `.rail`, ChatPanel's `.panel` and SourcesPanel's `.panel`, each
+        // of which scrolls its own overflow internally (`overflow-y:
+        // auto`) instead of growing the page.
         <div className={styles.page}>
             <BreadcrumbBar />
             {/* Same Grid/Column Dashboard.jsx wraps its whole page in (a full-
