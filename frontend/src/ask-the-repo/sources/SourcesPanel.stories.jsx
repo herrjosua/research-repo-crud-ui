@@ -1,4 +1,5 @@
 import SourcesPanel from './SourcesPanel';
+import { useSavedInsights } from '../insights/useSavedInsights';
 import { INITIAL_MESSAGES_BY_CONVERSATION } from '../mock/messages';
 import styles from './SourcesPanel.stories.module.scss';
 
@@ -36,6 +37,15 @@ export default {
   },
 };
 
+// Which sources are saved as insights lives in `useSavedInsights` (lifted
+// to AskTheRepo.jsx in Story 6, since the Saved Insights tab reads it
+// too), so each story mounts that same store around the panel — "Save as
+// insight" in the modal still toggles for real.
+function SourcesPanelWithStore(args) {
+  const { savedSourceIds, toggleSourceInsight } = useSavedInsights();
+  return <SourcesPanel {...args} savedSourceIds={savedSourceIds} onToggleSaveSource={toggleSourceInsight} />;
+}
+
 // Live-editable playground: click a card to open its detail modal, pin a
 // source from the card or the modal, save it as an insight — all
 // session-only (see the footer note and the modal's notification).
@@ -45,7 +55,7 @@ export const Default = {
   },
   render: (args) => (
     <div className={styles.frame}>
-      <SourcesPanel {...args} />
+      <SourcesPanelWithStore {...args} />
     </div>
   ),
 };
@@ -67,7 +77,7 @@ export const MdFloorWidth = {
   },
   render: (args) => (
     <div className={`${styles.frame} ${styles.narrow}`}>
-      <SourcesPanel {...args} />
+      <SourcesPanelWithStore {...args} />
     </div>
   ),
 };

@@ -1,0 +1,112 @@
+@use '@carbon/react/scss/type';
+@use '../../styles/variables' as vars;
+
+// A Carbon narrow Grid (SavedInsightsView.jsx) that fills the Saved
+// Insights TabPanel — the same bounded flex column
+// (`.tabPanel:not([hidden])` in AskTheRepo.module.scss) the Ask tab's rail
+// row fills — and scrolls its own overflow, so a long list scrolls inside
+// the tab instead of growing the page (see AskTheRepo.module.scss's `.page`
+// chain). No `display` override: Carbon's `display: grid` stays, same as
+// `.tabsGrid`/`.railRow`. `align-content: start` keeps the one row at its
+// content height rather than stretched, so short content sits at the top.
+// Sits on the page's own `$background`; the cards are Carbon `Tile`s one
+// layer up.
+.view {
+    flex: 1;
+    min-block-size: 0;
+    overflow-y: auto;
+    align-content: start;
+    padding-block: vars.$spacing-tile-gap 2rem;
+    background: vars.$background;
+}
+
+.header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-block-end: vars.$spacing-tile-gap;
+}
+
+.heading {
+    @include type.type-style('heading-03');
+    margin: 0;
+    color: vars.$text-primary;
+}
+
+.total {
+    @include type.type-style('label-01');
+    color: vars.$text-secondary;
+}
+
+// Carbon's InlineNotification caps its own width (`max-inline-size`); let
+// it span the column so its edge lines up with the cards below.
+.notice {
+    max-inline-size: none;
+    margin-block-end: 2rem;
+}
+
+.groups {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.groupHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-block-end: vars.$spacing-tile-gap;
+}
+
+// Same label treatment as the left rail's "Recent" and the sources rail's
+// "Sources" headings.
+.groupLabel {
+    @include type.type-style('label-01');
+    margin: 0;
+    color: vars.$text-secondary;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.rule {
+    flex: 1;
+    block-size: 1px;
+    background: vars.$border-subtle;
+}
+
+.groupCount {
+    @include type.type-style('code-01');
+    color: vars.$text-secondary;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.empty {
+    padding-block: 4rem;
+    text-align: center;
+    color: vars.$text-secondary;
+}
+
+.emptyIcon {
+    margin-block-end: vars.$spacing-tile-gap;
+    fill: currentColor;
+}
+
+.emptyTitle {
+    @include type.type-style('body-01');
+    margin: 0 0 0.25rem;
+    color: vars.$text-primary;
+}
+
+.emptyBody {
+    @include type.type-style('body-compact-01');
+    margin: 0;
+}

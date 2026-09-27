@@ -23,22 +23,26 @@ function toggleIn(set, id) {
  * this ticket: no kind-filter chips, no project stats footer, no collapse
  * toggle.
  *
- * Owns its own session-only UI state, since nothing outside the rail
- * reads it yet: which source's modal is open, which source was opened
- * last (the card's "selected" state — kept after the modal closes, so the
- * card focus returns to is also the one highlighted), and which sources
- * have been pinned / saved as insights. Pin/save are visual only until
- * v1.3.7 — the footer note and the modal's notification say so. Lift
- * `pinnedIds`/`savedIds` when the Saved Insights tab needs to read them.
+ * Owns the session-only UI state nothing outside the rail reads: which
+ * source's modal is open, which source was opened last (the card's
+ * "selected" state — kept after the modal closes, so the card focus
+ * returns to is also the one highlighted), and which sources are pinned.
+ * Which sources are *saved as insights* is not local: the Saved Insights
+ * tab reads it too, so it lives in `useSavedInsights`
+ * (`../insights/useSavedInsights.js`), lifted to `AskTheRepo.jsx` in
+ * Story 6, and arrives here as `savedSourceIds` / `onToggleSaveSource`.
+ * Neither pins nor insights persist until v1.3.7 — the footer note and the
+ * modal's notification say so.
  *
  * `message`: the active assistant message (`../mock/messages.js`'s
  * message shape), or `null` when the conversation has no reply yet.
+ * `savedSourceIds` (`Set` of source ids saved as insights),
+ * `onToggleSaveSource(source)`.
  */
-export default function SourcesPanel({ message }) {
+export default function SourcesPanel({ message, savedSourceIds, onToggleSaveSource }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedSourceId, setSelectedSourceId] = useState(null);
     const [pinnedIds, setPinnedIds] = useState(() => new Set());
-    const [savedIds, setSavedIds] = useState(() => new Set());
     const launcherRef = useRef(null);
 
     const sources = message?.sources ?? [];
@@ -99,8 +103,8 @@ export default function SourcesPanel({ message }) {
                 onClose={() => setModalOpen(false)}
                 pinned={selectedSource ? pinnedIds.has(selectedSource.id) : false}
                 onTogglePin={() => setPinnedIds((prev) => toggleIn(prev, selectedSource.id))}
-                saved={selectedSource ? savedIds.has(selectedSource.id) : false}
-                onToggleSave={() => setSavedIds((prev) => toggleIn(prev, selectedSource.id))}
+                saved={selectedSource ? savedSourceIds.has(selectedSource.id) : false}
+                onToggleSave={() => onToggleSaveSource(selectedSource)}
                 launcherButtonRef={launcherRef}
             />
         </aside>

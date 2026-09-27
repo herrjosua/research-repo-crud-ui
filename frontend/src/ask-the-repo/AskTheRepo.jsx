@@ -5,6 +5,8 @@ import LeftRail from './rails/LeftRail';
 import ChatPanel from './chat/ChatPanel';
 import { useConversationMessages, latestAssistantMessage } from './chat/useConversationMessages';
 import SourcesPanel from './sources/SourcesPanel';
+import SavedInsightsView from './insights/SavedInsightsView';
+import { useSavedInsights } from './insights/useSavedInsights';
 import { PROJECTS } from './mock/constants';
 import { CONVERSATIONS } from './mock/conversations';
 import styles from './AskTheRepo.module.scss';
@@ -29,6 +31,9 @@ export default function AskTheRepo() {
     const { getMessages, appendMessage } = useConversationMessages();
     const activeMessages = getMessages(activeConversationId);
     const activeAssistantMessage = latestAssistantMessage(activeMessages);
+    // Lifted in Story 6: the sources rail saves insights and the Saved
+    // Insights tab reads/removes them. Session-only until v1.3.7.
+    const { insights, savedSourceIds, toggleSourceInsight, removeInsight } = useSavedInsights();
 
     // Mirrors AskView.tsx's handleSelectProject/handleSelectConv: picking a
     // project drops any open conversation (it may belong to a different
@@ -156,13 +161,16 @@ export default function AskTheRepo() {
                                         />
                                     </Column>
                                     <Column lg={4} md={2} sm={4}>
-                                        <SourcesPanel message={activeAssistantMessage} />
+                                        <SourcesPanel
+                                            message={activeAssistantMessage}
+                                            savedSourceIds={savedSourceIds}
+                                            onToggleSaveSource={toggleSourceInsight}
+                                        />
                                     </Column>
                                 </Grid>
                             </TabPanel>
                             <TabPanel className={styles.tabPanel}>
-                                {/* Saved insights content: a later ticket. */}
-                                <p className={styles.placeholder}>Saved insights content ships in a later ticket.</p>
+                                <SavedInsightsView insights={insights} projects={PROJECTS} onRemove={removeInsight} />
                             </TabPanel>
                         </TabPanels>
                     </Tabs>
