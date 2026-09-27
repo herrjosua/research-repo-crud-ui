@@ -128,7 +128,7 @@ ticket's ask):
 ## Folder structure
 
 New components live under `frontend/src/ask-the-repo/`, nested by concern
-(chat / rails / insights / sources / context / mock), mirroring how the
+(chat / rails / insights / sources / mock), mirroring how the
 Figma Make export was already decomposed
 (`docs/Build_Direction_B_v2_Design_decomposed/DECOMPOSITION_NOTES.md`) rather
 than the existing app's flat `src/*.jsx` convention — this feature is large
@@ -138,8 +138,9 @@ unnavigable. Each component still follows the app's existing per-file
 convention (`Name.jsx` + `Name.module.scss` + `Name.test.jsx`, default
 export, CSS Modules via `@use './styles/variables'`).
 
-`sources/` (this ticket's `KindTag`) and `shell/` (page-shell/nav-tickets's
-`BreadcrumbBar`) exist so far. Planned shape for the remaining tickets:
+`sources/` (`KindTag`), `shell/` (`BreadcrumbBar`), `rails/` (project
+switcher + conversation history), and now `chat/` (message list, composer,
+assistant responses) all exist. Planned shape for the remaining tickets:
 
 ```
 frontend/src/ask-the-repo/
@@ -148,25 +149,28 @@ frontend/src/ask-the-repo/
   shell/
     BreadcrumbBar.jsx / .module.scss          # breadcrumb sub-header, built in the page-shell ticket
   chat/
-    ChatPanel.jsx / .module.scss
-    ChatMessage.jsx / .module.scss
-    AssistantMessage.jsx / .module.scss
+    ChatPanel.jsx / .module.scss / .test.jsx / .stories.jsx        # built in this ticket
+    ChatMessage.jsx / .module.scss / .test.jsx / .stories.jsx      # built in this ticket
+    AssistantMessage.jsx / .module.scss / .test.jsx / .stories.jsx # built in this ticket
+    Composer.jsx / .module.scss / .test.jsx / .stories.jsx         # built in this ticket
+    StarterQuestions.jsx / .module.scss / .test.jsx / .stories.jsx # built in this ticket
   rails/
-    LeftRail.jsx / .module.scss               # project/source navigation
-    RightRail.jsx / .module.scss              # saved insights / context
+    LeftRail.jsx / .module.scss / .test.jsx / .stories.jsx         # built in the left-rail ticket
+    ProjectSwitcher.jsx / .module.scss / .test.jsx / .stories.jsx  # built in the left-rail ticket
+    ConversationList.jsx / .module.scss / .test.jsx / .stories.jsx # built in the left-rail ticket
+    RightRail.jsx / .module.scss              # saved insights / context — still planned
   insights/
     SavedInsightsView.jsx / .module.scss
     InsightCard.jsx / .module.scss
   sources/
     SourceCard.jsx / .module.scss
     SourceDetailModal.jsx / .module.scss
-    KindTag.jsx / .module.scss / .test.jsx    # built in this ticket
-  context/
-    AskSubViewContext.jsx
+    KindTag.jsx / .module.scss / .test.jsx    # built in the token-mapping ticket
   mock/
-    constants.js
-    conversations.js
-    starters.js
+    constants.js                              # PROJECTS — built in the left-rail ticket
+    conversations.js                          # CONVERSATIONS — built in the left-rail ticket
+    messages.js                               # INITIAL_MESSAGES_BY_CONVERSATION — built in this ticket
+    starters.js                               # STARTERS — built in this ticket
 ```
 
 **Page-shell ticket note:** the reference `AppHeader.tsx`'s primary tab nav

@@ -16,6 +16,13 @@
     display: flex;
     flex-direction: column;
     inline-size: 100%;
+    // `block-size: 100%`, filling the rail-row Grid's own height —
+    // AskTheRepo.module.scss's `.railRow` comment covers where that real
+    // (non-auto) height actually comes from. This is the end of that
+    // chain: `.conversations` below is what actually scrolls if its own
+    // content (however many conversations there are) runs longer than
+    // this.
+    block-size: 100%;
     background: vars.$background;
     border-inline-end: 1px solid vars.$border-subtle;
 }
@@ -37,12 +44,34 @@
 .body {
     display: flex;
     flex-direction: column;
+    // Fills whatever `.rail` leaves after `.header`; `min-block-size: 0`
+    // lets it actually shrink below its content's natural size instead
+    // of forcing `.rail` to grow — `.conversations` (not this element) is
+    // what scrolls, so this itself stays `overflow: visible` (the
+    // default) rather than adding a second scroll container.
+    flex: 1;
+    min-block-size: 0;
 }
 
 .divider {
     block-size: 1px;
     margin: 0.5rem 0.75rem;
     background: vars.$border-subtle;
+    flex-shrink: 0;
+}
+
+// The actual scroll container: fills whatever `.body` leaves after
+// ProjectSwitcher + `.divider` (both natural height, so this is the only
+// flexible child), and scrolls its own conversation list internally once
+// there are more conversations than fit — keeping ProjectSwitcher always
+// visible above it, the same way ChatPanel's composer stays pinned below
+// its own scrolling message list.
+.conversations {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-block-size: 0;
+    overflow-y: auto;
 }
 
 .sectionLabel {

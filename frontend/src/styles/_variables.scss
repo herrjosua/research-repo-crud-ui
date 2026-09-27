@@ -1,4 +1,5 @@
 @use '@carbon/react/scss/theme';
+@use '@carbon/colors' as colors;
 
 // Layout magnitudes — not covered by Carbon's own token set, specific to
 // this app's structure.
@@ -31,10 +32,12 @@ $border-subtle: theme.$border-subtle-00;
 // follow). `background-hover`/`background-selected`/`border-interactive`
 // have no Direction B v2 equivalent — the reference hand-rolls its
 // active/hover nav-item state from its brand `teal` accent instead, but
-// nothing else in this app uses that accent yet, so the rail uses Carbon's
-// own semantic selection tokens (already proven to re-theme via
-// `cds--g100` with no per-component work, same as every other `theme.$x`
-// value here).
+// the rail itself uses Carbon's own semantic selection tokens (already
+// proven to re-theme via `cds--g100` with no per-component work, same as
+// every other `theme.$x` value here) rather than that accent — kept for
+// the one place Direction B v2's own mapping table (TOKEN_MAPPING.md's
+// "Not theme-dependent" section) already called out as the right use for
+// it: marking chat content as the assistant's/user's own, below.
 //
 // No separate `$text-muted`/`theme.$text-helper` token: an earlier version
 // of the rail used it for secondary text (timestamps, counts), which
@@ -67,6 +70,22 @@ $text-secondary: theme.$text-secondary;
 $background-hover: theme.$background-hover;
 $background-selected: theme.$background-selected;
 $border-interactive: theme.$border-interactive;
+
+// Chat panel's one deliberate brand-accent departure from the generic
+// Carbon tokens above (see comment on `$surface` for why the rail itself
+// doesn't use it): TOKEN_MAPPING.md's `teal`/`userBubble` → `teal-60` and
+// `userBubbleText` → `theme.$text-on-color` mapping, for the user's chat
+// bubble and the assistant avatar — the two places this app needs an
+// "this is chat content" identity marker distinct from Carbon's own
+// interactive-blue "this is selected" marker (`$border-interactive`,
+// which the chat panel's "Save as deliverable" toggle reuses instead of
+// adding a second teal variant for that unrelated meaning). `teal-60` is
+// a flat global color (not `theme.$x`), so — unlike everything else in
+// this file — it's the same hex in both themes; `text-on-color` is a
+// `theme.$x` token specifically for text/icons on top of a brand-colored
+// surface like this one, so it still re-themes correctly on its own.
+$chat-accent: colors.$teal-60;
+$chat-accent-text: theme.$text-on-color;
 
 $highlight-background: theme.$support-warning;
 $highlight-text: theme.$text-primary;

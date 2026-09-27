@@ -1,0 +1,47 @@
+@use '../../styles/variables' as vars;
+
+// This panel's real height is `block-size: 100%`, resolving against the
+// genuine (non-auto) height the CSS chain in AskTheRepo.jsx/.scss now
+// gives its Column (`.page` → `.tabsGrid` → `.tabsColumn` → `.tabPanel`
+// → `.railRow`, each a real `flex: 1`/Grid-stretch link) — no JS
+// measurement involved.
+//
+// `display: grid`, not `flex`, for the two rows below: a plain flex
+// column's item with `flex: 1`/`flex-basis: 0` still doesn't reliably
+// keep a scrollable child from being *measured* at its full content size
+// in every layout context — `grid-template-rows: minmax(0, 1fr) auto` is
+// the more robust way to say "give the composer its natural height, and
+// clip/scroll the messages row to whatever's left."
+.panel {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    block-size: 100%;
+    background: vars.$surface;
+    border: 1px solid vars.$border-subtle;
+    // Stays inside the Grid Column Story 3 established (AskTheRepo.jsx) —
+    // no position: fixed/absolute here, so this never spans the full
+    // browser width or reaches into the sidebar/future-right-rail space;
+    // it only ever fills the height *within* that column.
+}
+
+// The scrolling middle pane: sized by `.panel`'s `minmax(0, 1fr)` row
+// (see the comment there), and `overflow-y: auto` is what makes that
+// claimed space scroll instead of pushing the composer down and off the
+// panel. The composer itself (ChatPanel.jsx, rendered as this element's
+// sibling, in `.panel`'s own `auto`-sized second row) needs no
+// scroll-pinning styles of its own — a plain grid row sized to its
+// content is what keeps it out of the scrolling area and fixed at the
+// bottom.
+.messages {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.sendingIndicator {
+    margin: 0;
+    color: vars.$text-secondary;
+    font-size: 0.75rem;
+}

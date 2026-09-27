@@ -1,10 +1,101 @@
 @use '../styles/variables' as vars;
 
+// The bounded-height chain that makes the rail and ChatPanel share a
+// height by construction — see AskTheRepo.jsx's comment on `.page` for
+// why this replaced a JS (ResizeObserver + useLayoutEffect) approach.
+// Each link below hands a genuine (non-auto) height to the next; the
+// chain ends at LeftRail's `.rail` and ChatPanel's `.panel`, which each
+// scroll their own overflow internally instead of growing the page.
+//
+// `.page` — the anchor. `100dvh` (dynamic viewport height, not a
+// percentage) is what makes this a *real* height instead of another
+// auto-sized box: percentages need a non-auto ancestor to resolve
+// against, and nothing above this in the real page (`<main>`, `body`,
+// `html` — see App.module.scss) is bounded, by design, since Dashboard's
+// page (and every other page) needs to just grow with its own content
+// and let the *page* scroll, not be forced to fill the viewport. Scoping
+// the anchor to here, rather than to `<main>`/`body`/`html`, is
+// deliberate: this ticket only needs Ask the Repo's own rail/chat row to
+// have a real height to stretch against, and anchoring higher up — e.g.
+// making `<main>` itself `flex: 1` — would force *every* page's content
+// area to always fill the viewport regardless of how little content it
+// has, which directly undoes the sticky-footer fix (footer sitting right
+// after short content, not floating a viewport-height below it).
+// `- vars.$header-height` accounts for the one thing above this that
+// *is* fixed-position (Carbon's `<Header>`, via `.main`'s own
+// `padding-top`) — the banner/breadcrumb/tab bar below it are real,
+// natural-flow content this component already renders, so they're
+// handled by `flex: 0 0 auto` (nothing extra needed) further down the
+// chain, not by guessing their height too.
+.page {
+    display: flex;
+    flex-direction: column;
+    block-size: calc(100dvh - vars.$header-height);
+}
+
 .tabList {
     background: vars.$background;
     border-bottom: 1px solid vars.$border-subtle;
 }
 
+// Next link: this Grid is a direct flex child of `.page` (a sibling of
+// BreadcrumbBar, which stays its own natural height — flex items default
+// to `flex: 0 1 auto`, i.e. content-sized, unless given a `flex` value,
+// so BreadcrumbBar needs nothing extra here). `flex: 1` gives *this*
+// Grid a genuine height — Carbon's own `.cds--css-grid` sets no explicit
+// height, so without this it would still be auto-sized despite `.page`
+// being bounded. No `display` override: Carbon's own `display: grid` on
+// this element has to stay, or its Column stops laying out in columns at
+// all — a flex item's *own* internal `display` is independent of how it
+// participates in its parent's layout, so `flex: 1` here and `display:
+// grid` from Carbon coexist without conflict.
+.tabsGrid {
+    flex: 1;
+    min-block-size: 0;
+}
+
+// Carbon's Column is a plain block by default; this Grid has exactly one
+// (full-width) Column, so CSS Grid's own default `align-items: stretch`
+// already gives it a genuine height matching `.tabsGrid`'s — this class
+// only needs to turn that Column itself into the *next* flex column, so
+// TabList (a direct child, alongside the two TabPanels — Carbon's
+// `<TabPanels>` renders no wrapper of its own) keeps its natural height
+// and the active TabPanel gets the next `flex: 1`.
+.tabsColumn {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+}
+
+// The active TabPanel (Carbon hides the inactive one via the `[hidden]`
+// attribute, which the browser's own UA stylesheet already sets to
+// `display: none` — `:not([hidden])` keeps this rule from ever having to
+// fight that, at any specificity). `flex: 1` fills whatever `.tabsColumn`
+// has left after TabList; `min-block-size: 0` is what lets it actually
+// be *smaller* than its content when needed (a plain `flex: 1` child
+// defaults to a content-based minimum size, which — same failure mode as
+// the JS approach was working around — would let a tall conversation
+// grow this panel instead of scrolling inside the row below it).
+.tabPanel:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-block-size: 0;
+}
+
 .placeholder {
     padding-block: vars.$spacing-tile-gap;
+}
+
+// The last link before the actual rail/content row: fills the active
+// tabPanel's height (same "no `display` override" reasoning as
+// `.tabsGrid` above — this stays a real Carbon Grid internally). Grid's
+// own default `align-items: stretch` (no override needed — this
+// replaces the `align-items: start` override from the JS-based fix,
+// which existed only to protect a measurement this component no longer
+// takes) is what makes the rail and content Columns below match height,
+// now that this Grid itself has a real height to stretch them into.
+.railRow {
+    flex: 1;
+    min-block-size: 0;
 }

@@ -2,7 +2,6 @@
 
 .main {
     padding-top: vars.$header-height;
-    padding-bottom: vars.$footer-height;
 }
 
 .loading {
@@ -10,11 +9,24 @@
     margin-top: vars.$spacing-tile-gap;
 }
 
+// `position: sticky`, not `fixed`: `fixed` pinned this to the *viewport*
+// bottom regardless of content length, which is what left a large gap
+// above it on any page shorter than the viewport (Research Records
+// filtered down to one record shows the identical gap — this was never
+// Ask-the-Repo-specific, just easiest to notice there since its content
+// is normally shorter). `sticky` keeps the same "stays visible while
+// scrolling a tall page" behavior (Research Records' normal 84-record
+// view scrolls past a long way, and this still tracks the viewport
+// bottom there), but on a short page it just renders in its own natural
+// place directly after `.main`'s content instead of floating below a
+// gap — the same content-determines-page-height pattern every other
+// page here already follows. `.main`'s own `padding-bottom` (compensating
+// for the footer overlapping fixed-positioned content) is gone for the
+// same reason: sticky content never overlaps, so there's nothing left to
+// compensate for.
 .footer {
-    position: fixed;
+    position: sticky;
     bottom: 0;
-    left: 0;
-    right: 0;
     height: vars.$footer-height;
     display: flex;
     align-items: center;

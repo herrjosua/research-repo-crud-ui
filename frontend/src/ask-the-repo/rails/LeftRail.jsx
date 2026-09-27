@@ -12,7 +12,12 @@ import styles from './LeftRail.module.scss';
  * `AskView.tsx` `leftCollapsed` state) — reimplemented here on Carbon/SCSS
  * rather than porting that file's Tailwind/inline-style original.
  * Collapsed state is local UI state, not lifted to the caller: nothing
- * outside the rail needs to know whether it's collapsed.
+ * outside the rail needs to know whether it's collapsed — ChatPanel's own
+ * height now comes entirely from the CSS chain in AskTheRepo.jsx/.scss
+ * (`.page` → `.tabsGrid` → `.tabsColumn` → `.tabPanel` → `.railRow`, each
+ * link handing a real height to the next via `flex: 1` or Grid's own
+ * `align-items: stretch`), not from measuring this component, so this
+ * doesn't need to report its own resizes to anyone anymore.
  *
  * `projects` / `activeProjectId` / `onSelectProject`: passed straight
  * through to `ProjectSwitcher`.

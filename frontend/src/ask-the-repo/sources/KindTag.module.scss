@@ -13,7 +13,29 @@
 // KindTag.jsx starts this kind from the neutral `gray` type; this layers the
 // real orange-40 global token on top at equal specificity (one class each),
 // winning on source order alone — no !important needed.
+//
+// Text color is theme-conditional (`:global(.cds--g100)`, not a `theme.$x`
+// token) — a further exception on top of the one TOKEN_MAPPING.md already
+// documents here, found while building the Ask the Repo chat panel: this
+// chip renders inside AssistantMessage's cited-sources list, on top of
+// `$surface` (`theme.$layer-01`), and `orange-40` text on that surface
+// composites to only ~2.1:1 in white theme (measured via getComputedStyle
+// + WCAG relative-luminance math against a running instance) — nowhere
+// close to the 4.5:1 minimum, because `orange-40` is simply too light a
+// shade for text on a light surface, regardless of the background tint's
+// own alpha (raising the tint's alpha only pulls the composited
+// background *closer* to the same-hue foreground text, which lowers
+// contrast further, not the fix it might look like at a glance).
+// `orange-70` (a dark shade of the same hue) fixes white theme (6.76:1 in
+// this exact composition) but would fail dark theme the same way in
+// reverse (too dark on a dark surface) — dark theme keeps the original
+// `orange-40`/0.08 pairing, already passing (measured 5.42:1) and left
+// alone rather than "corrected" into a thinner margin.
 .orange:global(.cds--tag--gray) {
   background-color: rgba(colors.$orange-40, 0.08);
+  color: colors.$orange-70;
+}
+
+:global(.cds--g100) .orange:global(.cds--tag--gray) {
   color: colors.$orange-40;
 }
