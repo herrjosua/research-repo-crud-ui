@@ -50,6 +50,17 @@ DEMO_MODE=false
 **Never commit `.env`** — it's already covered by `.gitignore`. The server
 refuses to start (`routes/records.js`) if `AGENTIC_REPO_ROOT` is unset.
 
+**Ask the Repo** (`POST /api/ask`) is off unless `LLM_PROVIDER=ollama` is
+set. It then needs a local [Ollama](https://ollama.com) at
+`http://localhost:11434` with both models pulled:
+```bash
+ollama pull nomic-embed-text   # embeddings
+ollama pull gemma2:9b          # answers
+```
+Everything stays on this machine: no cloud calls, no API keys.
+`OLLAMA_BASE_URL`, `OLLAMA_EMBED_MODEL` and `OLLAMA_CHAT_MODEL` override the
+defaults. Any other `LLM_PROVIDER` value refuses to start.
+
 For a production deployment, see
 [`.env.production.example`](./.env.production.example) instead — it covers
 the additional settings (`ALLOWED_HOSTS`, `TRUST_PROXY`, `HTTPS_REDIRECT`,
@@ -115,6 +126,19 @@ covers, not a count to keep in sync:
 - **`tests/health.test.js`** — `GET /api/health`: status, the
   `package.json` version, `startedAt`, `no-store`, and nothing else in the
   body.
+- **`tests/ask.test.js`** — `POST /api/ask` through the real app and
+  `export_records.py` over E2E's fixed corpus, against a fake Ollama that
+  speaks Ollama's real HTTP API (`tests/helpers/fakeOllama.js`): the
+  response contract, plain-text output, citation renumbering, the
+  embedding cache (embed once, re-embed only an edited passage), the
+  project filter, and the generic `502` when Ollama fails.
+- **`tests/ask.unit.test.js`** — cosine similarity, ranking, the embedding
+  cache, chunking, kind/date mapping, the plain-text sanitizer, and
+  citation parsing.
+- **`tests/ask.disabled.test.js`** — `503` when `LLM_PROVIDER` is unset.
+- **`tests/ask.live.test.js`** — the same flow against a real local Ollama.
+  Skipped unless `OLLAMA_LIVE=1` (`OLLAMA_LIVE=1 npx jest
+  tests/ask.live.test.js`), so CI never needs Ollama.
 
 **No backend test ever touches the real agentic-repo.** Every test file runs
 against a disposable, git-initialized fixture repo created fresh per test
@@ -152,13 +176,22 @@ backend/
 ├── proxyTrust.js       Cloudflare's published IP ranges plus the host proxy's own address, for Express's trust-proxy setting in production
 ├── throwawayRepo.js    Marks/detects a disposable agentic-repo checkout made by tests/helpers/setupTestRepo.js
 ├── validation.js       Input validation for POST /sessions and PUT /records/:id frontmatter, mirroring agentic-repo's own field rules
+├── ask/                Ask the Repo's RAG pipeline (used by routes/ask.js)
+│   ├── config.js         LLM_PROVIDER switch
+│   ├── ollama.js         Plain-fetch client for Ollama's /api/embed and /api/chat
+│   ├── corpus.js         export_records.py records → passages; kind/date mapping for sources
+│   ├── retrieval.js      Cosine similarity, ranking, and the lazy in-memory embedding cache
+│   ├── answer.js         Prompt, citation renumbering, and the Source objects returned
+│   └── plainText.js      Flattens model output to plain text (no markdown/HTML passes through)
 ├── middleware/
+│   ├── requireAuth.js    401 unless logged in; shared by records.js and ask.js
 │   ├── rateLimiter.js    In-memory, per-IP rate limiter factory; applied to /sessions and write routes on /records
 │   ├── httpsRedirect.js  HTTP→HTTPS redirect, gated on NODE_ENV=production and X-Forwarded-Proto; extracted from app.js so it's unit-testable without reloading the whole app under a different NODE_ENV
 │   └── hostCheck.js      Rejects requests whose Host header isn't in ALLOWED_HOSTS (421); off when ALLOWED_HOSTS is unset
 ├── routes/
 │   ├── health.js    GET /api/health — status, version, startedAt; polled by scripts/deploy.sh
 │   ├── auth.js      Signup / login / logout / me / demo-users / demo-login
+│   ├── ask.js       POST /api/ask — Ask the Repo (local Ollama RAG), gated by LLM_PROVIDER
 │   └── records.js   Sessions + file CRUD (shells out to agentic-repo's Python scripts); validates topicSlug/slug against a safe pattern before either reaches the Python scripts
 ├── tests/
 │   ├── auth.test.js           Auth flow, rate limiting, and demo mode tests
@@ -168,8 +201,13 @@ backend/
 │   ├── throwawayGuard.test.js The NODE_ENV=test startup guard requiring a throwaway AGENTIC_REPO_ROOT
 │   ├── health.test.js         /api/health tests
 │   ├── security.test.js       Adversarial security tests (path traversal, SQL injection, oversized bodies, tampered cookies, XSS, security headers/robots.txt/rate limiting, HTTPS redirect)
+│   ├── ask.test.js            POST /api/ask integration tests against a fake Ollama
+│   ├── ask.unit.test.js       Similarity, embedding cache, chunking, sanitizer, citation tests
+│   ├── ask.disabled.test.js   POST /api/ask with LLM_PROVIDER unset
+│   ├── ask.live.test.js       POST /api/ask against a real local Ollama (OLLAMA_LIVE=1 only)
 │   └── helpers/
-│       └── setupTestRepo.js   Creates/destroys the disposable fixture repo shared by every test file
+│       ├── setupTestRepo.js   Creates/destroys the disposable fixture repo shared by every test file
+│       └── fakeOllama.js      Local HTTP server speaking Ollama's /api/embed and /api/chat
 ├── .env.example              Template for required environment variables (development)
 ├── .env.production.example   Template for the additional settings NODE_ENV=production reads — see ../docs/deploy.md
 └── app.db        SQLite file (git-ignored, created on first run; app.test.*.db files are the test-only equivalent)
@@ -207,6 +245,74 @@ otherwise).
 | PUT    | `/api/records/:id`      | `{ frontmatter?: {...}, content?: "..." }`             | Merges frontmatter, replaces content if given. Reruns `build_index.py`. Rate-limited: 30 requests / 15 min per IP. |
 | DELETE | `/api/records/:id`      | —                                                        | Deletes the file (whole session folder for `kind: raw`). Reruns `build_index.py`. 204 on success. Rate-limited: 30 requests / 15 min per IP. |
 | GET    | `/api/records/:id/history` | —                                                     | Full edit history via `git log --follow`. Array of `{ hash, authorName, authorEmail, date, message }`, newest first. |
+
+### Ask the Repo (v1.3.6)
+
+| Method | Path       | Body                                   | Notes |
+|--------|------------|----------------------------------------|-------|
+| POST   | `/api/ask` | `{ question: string, project?: string }` | RAG over every record, answered by a local Ollama. `503` unless `LLM_PROVIDER=ollama`; `502` if Ollama is unreachable or fails. |
+
+`question` is 1–2000 characters. `project` is optional: omitted, `null` or
+`"all"` searches the whole repo; anything else must be a tag slug
+(`^[a-z0-9-]+$`) and only records carrying that tag are searched. (Records
+have no project field yet, so a tag is the closest real grouping. If no
+record has the tag, the answer says so and the model isn't called.)
+
+**Response (`200`)** is the contract the frontend wires against:
+
+```jsonc
+{
+  "answer": "Physicians read every line before accepting it [1]. …",
+  "sources": [Source, …],
+  "model": "gemma2:9b"
+}
+```
+
+- `answer` is **plain text**. Paragraphs are separated by `\n\n` (the split
+  `AssistantMessage` already does); lists use `- ` / `1. `; there is no
+  markdown or HTML. Citations are `[n]` markers where `[n]` is
+  `sources[n - 1]`.
+- `sources` holds **only the passages the answer cites**, in `[1]`, `[2]`, …
+  order. It is `[]` when the answer cites nothing, e.g. when the repo
+  doesn't cover the question.
+
+`Source` is the frontend's mock source shape
+(`frontend/src/ask-the-repo/mock/messages.js`), plus fields identifying the
+real record:
+
+| Field           | Type             | Notes |
+|-----------------|------------------|-------|
+| `id`            | string           | `"<recordId>#<passage>"`, unique per cited passage and stable while the record is unchanged. |
+| `kind`          | string           | One of `KIND_META`'s kinds: raw `interview` → `interview`, raw `survey` → `survey`, other raw sessions → `transcript`, findings/analytics → `synthesis`, deliverables/components → `doc`. |
+| `title`         | string           | The record's title. |
+| `excerpt`       | string           | The cited passage, verbatim from the record (≤ ~600 chars, may contain `\n`). |
+| `project`       | string \| null   | The request's `project` filter, or `null` when unfiltered. |
+| `date`          | string \| null   | `"Jan 14, 2025"`, the mock's format; `null` if the record has no date. |
+| `contextBefore` | string \| null   | The record text just before the excerpt (≤ ~400 chars, `…`-clipped). |
+| `contextAfter`  | string \| null   | The record text just after it. |
+| `section`       | string \| null   | The heading the excerpt sits under. |
+| `recordId`      | string           | For `GET /api/records/:id`, e.g. `raw:2025-02-25-usability-test-…`. |
+| `recordKind`    | string           | `raw` \| `finding` \| `component` \| `analytics` \| `deliverable`. |
+| `recordType`    | string \| null   | e.g. `usability-test`, `personas`. |
+| `score`         | number           | Cosine similarity of the passage to the question. |
+
+The mock's `page` is never set (markdown records have no pages), which
+`SourceCard` already handles.
+
+**How it works.** Every question re-reads the corpus through
+`export_records.py` (about 0.1s), like `GET /api/records`, splits each record
+into passages of up to ~600 characters that never cross a heading, and embeds
+them with `nomic-embed-text`. Embeddings are cached in memory, keyed by a hash
+of each passage's text, and built lazily: the first question embeds the whole
+corpus (a few seconds warm, plus the model's load time if Ollama evicted it)
+and later questions embed only the question. A record edited through the
+CRUD routes is re-embedded on the next question, just the passages that
+changed, with no invalidation hook. Deleted passages leave the cache. The
+question is scored against every passage by brute-force cosine similarity,
+each record's best passage is kept, and the top 6 go to `gemma2:9b` with
+instructions to answer only from them and cite `[n]`. The reply is then
+flattened to plain text (`ask/plainText.js`), and its citations are
+renumbered to match `sources`.
 
 ### Git attribution (v0.8)
 
@@ -286,8 +392,14 @@ cookies.txt` / `-b cookies.txt` to persist the cookie across requests.
   Auth was originally considered but is deprecated as of March 2025
 - Session store uses `better-sqlite3-session-store`, not `connect-sqlite3`,
   to avoid a vulnerable `sqlite3`/`node-gyp`/`tar` dependency chain
-- All `/api/sessions` and `/api/records` routes require an authenticated
-  session
+- All `/api/sessions`, `/api/records` and `/api/ask` routes require an
+  authenticated session
+- `POST /api/ask` never passes model output through raw: the answer is
+  flattened to plain text server-side (HTML tags and `<script>`/`<style>`
+  contents removed, markdown unwrapped) before it's returned, and Ollama
+  errors are logged server-side and returned as a generic `502`. Record text
+  is given to the model as data, with instructions to ignore any
+  instructions inside it
 - `topicSlug`/`slug` are validated against `^[a-z0-9-]+$` before ever
   reaching `new_research_session.py`, preventing path traversal (see above)
 - `app.js` includes a generic JSON error-handling middleware — any error
