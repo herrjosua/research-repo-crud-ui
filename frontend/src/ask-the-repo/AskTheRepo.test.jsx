@@ -2,12 +2,27 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AskTheRepo from './AskTheRepo';
 
+// ChatPanel mounts a Composer (Carbon's TextArea, which measures itself via
+// ResizeObserver — no such API in jsdom) and scrolls its message list into
+// view on mount (Element.scrollIntoView — also missing in jsdom). Same stubs
+// as CreateSessionForm.test.jsx, for the same reason.
+beforeAll(() => {
+    globalThis.ResizeObserver = class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    };
+    Element.prototype.scrollIntoView = () => {};
+});
+
 describe('AskTheRepo', () => {
     it('shows the Ask panel and selects the Ask tab by default', () => {
         render(<AskTheRepo />);
 
         expect(screen.getByRole('tab', { name: 'Ask' })).toHaveAttribute('aria-selected', 'true');
-        expect(screen.getByRole('tabpanel')).toHaveTextContent('Chat content ships in a later ticket.');
+        // No conversation is selected by default, so the chat panel starts
+        // on its empty/starter state rather than a message list.
+        expect(screen.getByRole('tabpanel')).toHaveTextContent('Try asking');
     });
 
     it('switches to the Saved Insights panel when that tab is clicked', async () => {
@@ -21,7 +36,7 @@ describe('AskTheRepo', () => {
         // Carbon's TabPanels keeps unselected panels mounted with a `hidden`
         // attribute rather than removing them, so this checks visibility, not
         // presence in the DOM.
-        expect(screen.getByText('Chat content ships in a later ticket.')).not.toBeVisible();
+        expect(screen.getByText('Try asking')).not.toBeVisible();
     });
 
     it('switches back to Ask after Saved Insights has been selected', async () => {
@@ -31,6 +46,19 @@ describe('AskTheRepo', () => {
         await user.click(screen.getByRole('tab', { name: 'Saved Insights' }));
         await user.click(screen.getByRole('tab', { name: 'Ask' }));
 
-        expect(screen.getByRole('tabpanel')).toHaveTextContent('Chat content ships in a later ticket.');
+        expect(screen.getByRole('tabpanel')).toHaveTextContent('Try asking');
+    });
+
+    it('opens a conversation from the left rail into the chat panel', async () => {
+        const user = userEvent.setup();
+        render(<AskTheRepo />);
+
+        // "Pain points in checkout flow" (c1) is the one conversation with
+        // seeded mock history (see mock/messages.js) — opening it should
+        // replace the starter empty-state with that real message list.
+        await user.click(screen.getByRole('button', { name: /Pain points in checkout flow/ }));
+
+        expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
+        expect(screen.getByText(/top pain points users reported in the checkout flow/)).toBeInTheDocument();
     });
 });

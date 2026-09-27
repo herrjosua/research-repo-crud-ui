@@ -1,5 +1,5 @@
 @use '@carbon/react/scss/type';
-@use '@carbon/colors' as colors;
+@use '../../styles/variables' as vars;
 
 // Direction B v2 renders kind labels in mono/uppercase to read as a distinct
 // taxonomy chip, unlike the plain Tags in Dashboard.jsx/RecordDetail.jsx —
@@ -11,9 +11,42 @@
 
 // Carbon's Tag has no `orange` category (see ../TOKEN_MAPPING.md#kindtag).
 // KindTag.jsx starts this kind from the neutral `gray` type; this layers the
-// real orange-40 global token on top at equal specificity (one class each),
-// winning on source order alone — no !important needed.
+// real orange/black global tokens on top at equal specificity (one class
+// each), winning on source order alone — no !important needed.
+//
+// SOLID background, not an alpha tint over whatever's behind it (the
+// original approach, `rgba(orange-40, 0.08)`) — found broken by a third
+// rendering context after two single-context patches already happened
+// here (Story 3's rail, then this chip's own `$surface` chat-citation
+// background): Storybook's own Docs-page preview wrapper
+// (`.sbdocs-preview`) always renders on a hardcoded *white* canvas
+// regardless of the theme toolbar, so a themed orange text color picked for
+// a dark backdrop could still land on real white pixels. A solid,
+// theme-independent background/text pair makes every rendering context
+// backdrop-independent *and* theme-independent by construction: the tag
+// supplies its own guaranteed-contrast pairing no matter what's behind it
+// or which theme is active, the same way Carbon's other four Tag colors
+// (blue/purple/teal/red, all solid) already work — matching that existing
+// pattern instead of being the one exception that assumes its backdrop.
+//
+// One flat pair for both themes, not the light/dark pair this used to be:
+// once the text role is solid black instead of a themed orange, there's no
+// need for a separate dark-theme background to keep colored text legible —
+// black reads fine on this same light amber/peach chip in either theme,
+// which is also simpler than hand-tuning a second orange shade per theme.
+//
+// The actual color values live in `_variables.scss` as
+// `$kind-tag-orange-*` (the same "flat Carbon global color, re-exported
+// under a semantic name in this app's own theme layer" pattern
+// `$chat-accent` already uses for teal) — never hardcoded here, and never
+// touching Carbon's own package source; this file only consumes the
+// project-level variable.
+//
+// 15.92:1 (WCAG relative-luminance math) against its own background —
+// identical in every real context this chip renders in (rail
+// default/hover/selected, `$surface`, the Storybook white-canvas case) and
+// in both themes, since neither side of the pairing can shift.
 .orange:global(.cds--tag--gray) {
-  background-color: rgba(colors.$orange-40, 0.08);
-  color: colors.$orange-40;
+  background-color: vars.$kind-tag-orange-background;
+  color: vars.$kind-tag-orange-text;
 }

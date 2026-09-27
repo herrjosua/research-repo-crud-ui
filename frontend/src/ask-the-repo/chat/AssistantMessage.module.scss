@@ -1,0 +1,89 @@
+@use '@carbon/react/scss/type';
+@use '../../styles/variables' as vars;
+
+.message {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    color: vars.$text-secondary;
+
+    p {
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    strong {
+        color: vars.$text-primary;
+    }
+}
+
+.sources {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sourcesLabel {
+    @include type.type-style('label-01');
+    margin: 0;
+    color: vars.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.sourceList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.sourceItem {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid vars.$border-subtle;
+    font-size: 0.75rem;
+    color: vars.$text-secondary;
+}
+
+.sourceTitle {
+    max-inline-size: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.saveButton {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 0.375rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: vars.$text-secondary;
+    font-size: 0.75rem;
+    cursor: pointer;
+
+    &:hover {
+        color: vars.$text-primary;
+    }
+}
+
+.saved {
+    color: vars.$border-interactive;
+
+    &:hover {
+        color: vars.$border-interactive;
+    }
+}

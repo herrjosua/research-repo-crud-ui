@@ -31,7 +31,10 @@ test('Ask the Repo is reachable from primary nav, its tabs switch, and the theme
     const askTab = page.getByRole('tab', { name: 'Ask' });
     const insightsTab = page.getByRole('tab', { name: 'Saved Insights' });
     await expect(askTab).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByText('Chat content ships in a later ticket.')).toBeVisible();
+    // Real chat panel (Story 4): starter questions on the empty state, plus
+    // the composer itself — not just "the placeholder text is gone".
+    await expect(page.getByText('Try asking')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Ask a question about the research' })).toBeVisible();
 
     // --- Tabs switch views ---
     await insightsTab.click();

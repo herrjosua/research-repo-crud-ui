@@ -75,9 +75,55 @@ categorical labels, so `<Tag>` (not a bespoke chip) is the right primitive.
 blue, cyan, teal, green, gray, cool-gray, warm-gray, high-contrast, outline`
 — confirmed against `Tag.d.ts` and `_tag.scss`). `KindTag.jsx` renders
 `transcript` as `type="gray"` and `KindTag.module.scss`'s `.orange` class
-layers the real `orange-40` global token (not an invented hex) on top via a
+layers a real amber/peach global color plus solid black text on top via a
 same-specificity, later-in-source-order override — the same `:global()`
-pattern `RecordDetail.module.scss` already uses.
+pattern `RecordDetail.module.scss` already uses. `orange-40` (the table's
+"Carbon global color" above) is the *categorical identity* color from
+Direction B v2, not literally what renders: `orange-20` (a light,
+amber/peach Carbon global color) paired with solid black text is what
+actually ships — the same pair in both themes, chosen for guaranteed
+contrast against every real background this chip renders on. See
+`KindTag.module.scss`'s comment on `.orange` for why a solid background
+replaced the original alpha-tinted `orange-40` background, and why a
+single flat pair replaced an intermediate light/dark orange-text pair
+(hand-tuning a second orange shade per theme, including a near-black
+`orange-90` background that wasn't actually amber/peach anymore).
+
+**Variable source**: `frontend/src/styles/_variables.scss`'s
+`$kind-tag-orange-background`/`-text` — one flat pair, same in both
+themes, like `$chat-accent` above — never hardcoded in
+`KindTag.module.scss` itself, and never editing anything under
+`@carbon/*`. Per the app-wide theming conventions (`frontend/CLAUDE.md`),
+any future custom color that needs the same "no Carbon token fits"
+treatment should follow this same variable-in-`_variables.scss` pattern
+and get its own entry here.
+
+**Verified contrast** (WCAG relative-luminance math against
+`getComputedStyle()` values from a running instance, both themes, every
+real background this chip renders against):
+
+| Context | Backdrop | Contrast |
+|---|---|---|
+| White — rail default (`$background`) | `#ffffff` | 15.92:1 |
+| White — rail hover (`$background-hover`) | `#f1f1f1` | 15.92:1 |
+| White — rail selected (`$background-selected`) | `#e8e8e8` | 15.92:1 |
+| White — chat citations (`$surface`) | `#f4f4f4` | 15.92:1 |
+| G100 — rail default (`$background`) | `#161616` | 15.92:1 |
+| G100 — rail hover (`$background-hover`) | `#292929` | 15.92:1 |
+| G100 — rail selected (`$background-selected`) | `#333333` | 15.92:1 |
+| G100 — chat citations (`$surface`) | `#262626` | 15.92:1 |
+| Storybook Docs-page canvas (`.cds--g100` class present, real backdrop stays white — the case that broke the old alpha-tinted version) | `#ffffff` | 15.92:1 |
+
+The number repeats everywhere, including across the theme toggle, because
+both sides of the pairing are now solid *and* theme-independent: `#ffd9be`
+background, `#000000` text, always — nothing in this table can shift it,
+which is the whole point of moving off a themed orange text color. 15.92:1
+comfortably clears not just the 4.5:1 AA minimum but the 7:1 AAA one.
+Story 5's still-unbuilt source panel/citation modal isn't in this table
+yet since it doesn't exist — re-verify against its real background once
+built, the same way every row above was verified, before assuming it's
+covered (though for a solid, theme-independent pair like this one, that
+re-verification should just reconfirm the same 15.92:1).
 
 ## Spacing
 
@@ -128,7 +174,7 @@ ticket's ask):
 ## Folder structure
 
 New components live under `frontend/src/ask-the-repo/`, nested by concern
-(chat / rails / insights / sources / context / mock), mirroring how the
+(chat / rails / insights / sources / mock), mirroring how the
 Figma Make export was already decomposed
 (`docs/Build_Direction_B_v2_Design_decomposed/DECOMPOSITION_NOTES.md`) rather
 than the existing app's flat `src/*.jsx` convention — this feature is large
@@ -138,8 +184,9 @@ unnavigable. Each component still follows the app's existing per-file
 convention (`Name.jsx` + `Name.module.scss` + `Name.test.jsx`, default
 export, CSS Modules via `@use './styles/variables'`).
 
-`sources/` (this ticket's `KindTag`) and `shell/` (page-shell/nav-tickets's
-`BreadcrumbBar`) exist so far. Planned shape for the remaining tickets:
+`sources/` (`KindTag`), `shell/` (`BreadcrumbBar`), `rails/` (project
+switcher + conversation history), and now `chat/` (message list, composer,
+assistant responses) all exist. Planned shape for the remaining tickets:
 
 ```
 frontend/src/ask-the-repo/
@@ -148,25 +195,28 @@ frontend/src/ask-the-repo/
   shell/
     BreadcrumbBar.jsx / .module.scss          # breadcrumb sub-header, built in the page-shell ticket
   chat/
-    ChatPanel.jsx / .module.scss
-    ChatMessage.jsx / .module.scss
-    AssistantMessage.jsx / .module.scss
+    ChatPanel.jsx / .module.scss / .test.jsx / .stories.jsx        # built in this ticket
+    ChatMessage.jsx / .module.scss / .test.jsx / .stories.jsx      # built in this ticket
+    AssistantMessage.jsx / .module.scss / .test.jsx / .stories.jsx # built in this ticket
+    Composer.jsx / .module.scss / .test.jsx / .stories.jsx         # built in this ticket
+    StarterQuestions.jsx / .module.scss / .test.jsx / .stories.jsx # built in this ticket
   rails/
-    LeftRail.jsx / .module.scss               # project/source navigation
-    RightRail.jsx / .module.scss              # saved insights / context
+    LeftRail.jsx / .module.scss / .test.jsx / .stories.jsx         # built in the left-rail ticket
+    ProjectSwitcher.jsx / .module.scss / .test.jsx / .stories.jsx  # built in the left-rail ticket
+    ConversationList.jsx / .module.scss / .test.jsx / .stories.jsx # built in the left-rail ticket
+    RightRail.jsx / .module.scss              # saved insights / context — still planned
   insights/
     SavedInsightsView.jsx / .module.scss
     InsightCard.jsx / .module.scss
   sources/
     SourceCard.jsx / .module.scss
     SourceDetailModal.jsx / .module.scss
-    KindTag.jsx / .module.scss / .test.jsx    # built in this ticket
-  context/
-    AskSubViewContext.jsx
+    KindTag.jsx / .module.scss / .test.jsx    # built in the token-mapping ticket
   mock/
-    constants.js
-    conversations.js
-    starters.js
+    constants.js                              # PROJECTS — built in the left-rail ticket
+    conversations.js                          # CONVERSATIONS — built in the left-rail ticket
+    messages.js                               # INITIAL_MESSAGES_BY_CONVERSATION — built in this ticket
+    starters.js                               # STARTERS — built in this ticket
 ```
 
 **Page-shell ticket note:** the reference `AppHeader.tsx`'s primary tab nav

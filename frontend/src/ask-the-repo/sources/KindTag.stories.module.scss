@@ -1,0 +1,45 @@
+@use '../../styles/variables' as vars;
+
+// Backdrops for the `AllBackgrounds` regression-guard story — one class
+// per real background KindTag is confirmed to render against (see
+// KindTag.module.scss's comment on `.orange` for why this list exists:
+// found broken by a third context, one context at a time, twice already).
+// `hover`/`selected` are alpha overlays by design (see
+// ask-the-repo/rails/LeftRail.module.scss's own comment on `.rail`), so
+// `.context` always supplies the real `$background` base first — the same
+// two-layer structure the rail itself renders, not a flat approximation.
+.contexts {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.contextLabel {
+    margin: 0 0 0.375rem;
+    font-size: 0.75rem;
+    color: vars.$text-secondary;
+}
+
+.context {
+    padding: 1rem;
+    background: vars.$background;
+}
+
+.surface {
+    background: vars.$surface;
+}
+
+.tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.75rem;
+}
+
+.hover {
+    background: vars.$background-hover;
+}
+
+.selected {
+    background: vars.$background-selected;
+}

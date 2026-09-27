@@ -1,0 +1,41 @@
+@use '@carbon/react/scss/type';
+@use '../../styles/variables' as vars;
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding-block: 2rem;
+}
+
+.label {
+    @include type.type-style('label-01');
+    color: vars.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    inline-size: 100%;
+    max-inline-size: 32rem;
+}
+
+.question {
+    padding: 0.625rem 0.875rem;
+    border: 1px solid vars.$border-subtle;
+    background: transparent;
+    color: vars.$text-secondary;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+        border-color: vars.$chat-accent;
+        background: vars.$background-hover;
+        color: vars.$text-primary;
+    }
+}
