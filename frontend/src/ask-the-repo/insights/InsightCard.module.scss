@@ -1,0 +1,68 @@
+@use '@carbon/react/scss/type';
+@use '../../styles/variables' as vars;
+
+// Carbon's `Tile` supplies the surface (`$layer-01`, i.e. `$surface`) and
+// padding; this only lays out the contents. The card itself has no hover
+// or selected state — it isn't one click target. The interactive parts
+// are the two Carbon buttons, whose own hover tokens (ghost:
+// `$background-hover`, an alpha overlay meant to sit on any layer) are
+// calibrated for exactly this kind of `$layer-01` parent.
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+// `$text-secondary` for the date: it sits on `$layer-01`, where
+// `$text-helper` is only borderline (see _variables.scss's comment on
+// `$surface`).
+.meta {
+    @include type.type-style('label-01');
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    color: vars.$text-secondary;
+
+    // Same reason as SourceCard's `.row`: KindTag is a flex item and
+    // would otherwise shrink and ellipsize its label on a narrow card.
+    > :first-child {
+        flex-shrink: 0;
+    }
+}
+
+// Pulled up/right into the Tile's padding so the 32px button's icon lines
+// up with the meta row instead of pushing the card taller.
+.remove {
+    flex-shrink: 0;
+    margin-block-start: -0.5rem;
+    margin-inline-end: -0.5rem;
+}
+
+.title {
+    @include type.type-style('heading-compact-01');
+    margin: 0;
+    color: vars.$text-primary;
+}
+
+.content {
+    @include type.type-style('body-01');
+    margin: 0;
+    color: vars.$text-secondary;
+}
+
+// Pulled back by the ghost button's own start padding so "Show more" lines
+// up with the content above it (15px — `1rem - 1px` — in @carbon/react
+// 1.116's sm ghost button, the same measurement Story 5 took for this
+// button size; re-check after a Carbon upgrade that changes button padding).
+.toggle {
+    align-self: flex-start;
+    margin-inline-start: calc(-1rem + 1px);
+}

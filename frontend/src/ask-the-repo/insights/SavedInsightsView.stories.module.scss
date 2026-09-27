@@ -1,0 +1,9 @@
+// Stand-in for the Saved Insights TabPanel: bounded height (so the view's
+// own `overflow-y: auto` has something to scroll within), flex column so
+// the view's `flex: 1` fills it — the same shape AskTheRepo's
+// `.tabPanel:not([hidden])` gives it in the real page.
+.frame {
+    display: flex;
+    flex-direction: column;
+    block-size: 44rem;
+}

@@ -32,7 +32,7 @@ describe('AskTheRepo', () => {
         await user.click(screen.getByRole('tab', { name: 'Saved Insights' }));
 
         expect(screen.getByRole('tab', { name: 'Saved Insights' })).toHaveAttribute('aria-selected', 'true');
-        expect(screen.getByRole('tabpanel')).toHaveTextContent('Saved insights content ships in a later ticket.');
+        expect(screen.getByRole('tabpanel')).toHaveTextContent('No saved insights yet');
         // Carbon's TabPanels keeps unselected panels mounted with a `hidden`
         // attribute rather than removing them, so this checks visibility, not
         // presence in the DOM.
@@ -85,5 +85,30 @@ describe('AskTheRepo', () => {
             await within(rail).findByRole('button', { name: 'Research Plan — Checkout Q3' }, { timeout: 3000 })
         ).toBeInTheDocument();
         expect(within(rail).getAllByRole('article')).toHaveLength(1);
+    });
+
+    it('shows an insight saved from a source in the Saved Insights tab, and removing it un-saves the source', async () => {
+        const user = userEvent.setup();
+        render(<AskTheRepo />);
+        await user.click(screen.getByRole('button', { name: /Pain points in checkout flow/ }));
+
+        // Save from the source detail modal.
+        const rail = screen.getByRole('complementary', { name: 'Sources' });
+        await user.click(within(rail).getByRole('button', { name: 'Checkout Usability Study — Wave 2' }));
+        await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save as insight' }));
+        await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }));
+
+        // It's grouped under its project in the Saved Insights tab.
+        await user.click(screen.getByRole('tab', { name: 'Saved Insights' }));
+        const group = screen.getByRole('region', { name: 'Checkout Redesign' });
+        expect(within(group).getByRole('heading', { name: 'Checkout Usability Study — Wave 2' })).toBeInTheDocument();
+
+        // Removing it there clears the saved state back in the rail's modal.
+        await user.click(within(group).getByRole('button', { name: 'Remove insight' }));
+        expect(screen.getByText('No saved insights yet')).toBeInTheDocument();
+
+        await user.click(screen.getByRole('tab', { name: 'Ask' }));
+        await user.click(within(rail).getByRole('button', { name: 'Checkout Usability Study — Wave 2' }));
+        expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save as insight' })).toHaveAttribute('aria-pressed', 'false');
     });
 });

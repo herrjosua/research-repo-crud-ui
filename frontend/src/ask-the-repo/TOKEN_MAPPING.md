@@ -117,6 +117,8 @@ real background this chip renders against):
 | White — source detail modal body (Story 5; Carbon `Modal` wraps its body in a `Layer`, measured resolving to `$layer-01` — the same value as `$surface` above) | `#f4f4f4` | 15.92:1 |
 | G100 — sources rail card, default / hover / selected | `#161616` / `#292929` / `#333333` | 15.92:1 |
 | G100 — source detail modal body | `#262626` | 15.92:1 |
+| White — saved insight card (Story 6; Carbon `Tile`, measured resolving to `$layer-01` — same value as `$surface`) | `#f4f4f4` | 15.92:1 |
+| G100 — saved insight card | `#262626` | 15.92:1 |
 
 The number repeats everywhere, including across the theme toggle, because
 both sides of the pairing are now solid *and* theme-independent: `#ffd9be`
@@ -129,6 +131,19 @@ backdrop: the card renders on the rail's `$background` with the same
 hover/selected overlays as the left rail, and Carbon's `Modal` body
 resolves to `$layer-01` (`$surface`). Both reconfirmed 15.92:1, and
 KindTag needed no change.
+
+Story 6's saved insight card (a Carbon `Tile` on the Saved Insights tab's
+`$background`) likewise lands on `$layer-01` — the rows above — and needed
+no new tokens: every color on the card and in the tab is an existing
+`_variables.scss` re-export or a Carbon component default. Measured (white
+/ g100, WCAG math on `getComputedStyle()`): card text 16.45 / 13.76 (title),
+7.10 / 8.86 (content, save date); group labels and counts 7.81 / 10.59;
+ghost "Show more"/"Show less" 4.55 / 6.43 at rest (Carbon's `$link-primary`
+on `$layer-01` — passes, narrowly, in white) and 6.34 / 7.49 hovered; the
+remove `IconButton`'s icon 16.45 / 13.76 at rest, 14.72 / 11.60 hovered.
+Unlike the sources rail card (below), the insight card has no hover or
+selected state of its own, so Carbon's ghost-button defaults sit on a plain
+layer and don't need the `$text-secondary` override.
 
 ### Story 5 additions (Carbon tokens re-exported, not custom colors)
 
@@ -242,8 +257,9 @@ frontend/src/ask-the-repo/
     ProjectSwitcher.jsx / .module.scss / .test.jsx / .stories.jsx  # built in the left-rail ticket
     ConversationList.jsx / .module.scss / .test.jsx / .stories.jsx # built in the left-rail ticket
   insights/
-    SavedInsightsView.jsx / .module.scss
-    InsightCard.jsx / .module.scss
+    SavedInsightsView.jsx / .module.scss / .test.jsx / .stories.jsx # the Saved Insights tab — built in Story 6
+    InsightCard.jsx / .module.scss / .test.jsx / .stories.jsx       # built in Story 6
+    useSavedInsights.js / .test.jsx           # session-only insights store, lifted to AskTheRepo.jsx — Story 6
   sources/
     SourcesPanel.jsx / .module.scss / .test.jsx / .stories.jsx      # the right rail — built in the sources-panel ticket (Story 5)
     SourceCard.jsx / .module.scss / .test.jsx / .stories.jsx        # built in Story 5
@@ -254,6 +270,7 @@ frontend/src/ask-the-repo/
     conversations.js                          # CONVERSATIONS — built in the left-rail ticket
     messages.js                               # INITIAL_MESSAGES_BY_CONVERSATION — built in Story 4; sources gained contextBefore/contextAfter in Story 5
     starters.js                               # STARTERS — built in this ticket
+    insights.js                               # SAMPLE_INSIGHTS story/test fixtures — Story 6 (the real tab starts empty)
 ```
 
 **Page-shell ticket note:** the reference `AppHeader.tsx`'s primary tab nav

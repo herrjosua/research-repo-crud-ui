@@ -1,0 +1,9 @@
+@use '../../styles/variables' as vars;
+
+// The Saved Insights tab's own surface (SavedInsightsView.module.scss's
+// `.view`), at roughly its lg column width.
+.page {
+    max-inline-size: 48rem;
+    padding: 1rem;
+    background: vars.$background;
+}

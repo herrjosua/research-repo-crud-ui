@@ -88,10 +88,6 @@
     min-block-size: 0;
 }
 
-.placeholder {
-    padding-block: vars.$spacing-tile-gap;
-}
-
 // The last link before the actual rail/content row: fills the active
 // tabPanel's height (same "no `display` override" reasoning as
 // `.tabsGrid` above — this stays a real Carbon Grid internally). Grid's
