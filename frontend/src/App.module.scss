@@ -4,6 +4,30 @@
     padding-top: vars.$header-height;
 }
 
+// Ask the Repo only (App.jsx sets this when that section is showing): the
+// top of the bounded-height chain its rail/chat row scrolls inside (see
+// AskTheRepo.module.scss's `.page`). `main` becomes exactly the viewport
+// minus the sticky footer below it — `border-box`, so `padding-top`'s
+// header offset is included — and a flex column, so whatever renders above
+// AskTheRepo (the demo banner, when DEMO_MODE is on) keeps its own natural
+// height and `.page` takes the rest via `flex: 1`. That makes the banner's
+// height part of the layout by construction instead of a number to
+// subtract: it's 100px at lg but wraps taller at the md floor, and with
+// DEMO_MODE off it simply isn't there. The previous anchor
+// (`.page { block-size: calc(100dvh - $header-height) }`) accounted for
+// neither the banner nor the footer, so the page overflowed the viewport by
+// both.
+//
+// Scoped to this one section on purpose: making `main` bounded for every
+// page would force short pages (a filtered Research Records view) to fill
+// the viewport and float the footer away from their content — the gap the
+// sticky footer below exists to avoid.
+.fillViewport {
+    display: flex;
+    flex-direction: column;
+    block-size: calc(100dvh - #{vars.$footer-height});
+}
+
 .loading {
     text-align: center;
     margin-top: vars.$spacing-tile-gap;
