@@ -1,0 +1,19 @@
+@use '@carbon/react/scss/type';
+@use '@carbon/colors' as colors;
+
+// Direction B v2 renders kind labels in mono/uppercase to read as a distinct
+// taxonomy chip, unlike the plain Tags in Dashboard.jsx/RecordDetail.jsx —
+// kept as a local override rather than folded into the shared Tag look.
+.tag {
+  @include type.type-style('code-01');
+  text-transform: uppercase;
+}
+
+// Carbon's Tag has no `orange` category (see ../TOKEN_MAPPING.md#kindtag).
+// KindTag.jsx starts this kind from the neutral `gray` type; this layers the
+// real orange-40 global token on top at equal specificity (one class each),
+// winning on source order alone — no !important needed.
+.orange:global(.cds--tag--gray) {
+  background-color: rgba(colors.$orange-40, 0.08);
+  color: colors.$orange-40;
+}

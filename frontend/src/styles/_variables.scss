@@ -19,5 +19,12 @@ $footer-background: theme.$background;
 $footer-border: theme.$border-subtle-01;
 $footer-text: theme.$text-secondary;
 
+// Generic page-chrome colors (Direction B v2's `bg`/`border` fields — see
+// ask-the-repo/TOKEN_MAPPING.md — collapsed onto the one Carbon token that
+// matched both `border` and `borderSubtle` exactly, per that file's
+// recommendation).
+$background: theme.$background;
+$border-subtle: theme.$border-subtle-00;
+
 $highlight-background: theme.$support-warning;
 $highlight-text: theme.$text-primary;

@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Grid, Column } from '@carbon/react';
 import { useMe, useDemoUsers } from './api/auth';
 import LoginForm from './LoginForm';
 import DemoUserPicker from './DemoUserPicker';
 import DemoDisclaimer from './DemoDisclaimer';
 import Dashboard from './Dashboard';
+import AskTheRepo from './ask-the-repo/AskTheRepo';
 import AppHeader from './Header';
 
 import styles from './App.module.scss';
@@ -11,6 +13,7 @@ import styles from './App.module.scss';
 function App() {
     const me = useMe();
     const demoUsers = useDemoUsers();
+    const [activeSection, setActiveSection] = useState('dashboard');
     // The backend returns [] unless DEMO_MODE is on; a failed request leaves
     // data undefined, which also counts as not-demo.
     const isDemo = demoUsers.data?.length > 0;
@@ -32,7 +35,7 @@ function App() {
     } else {
         content = (
             <>
-                <AppHeader />
+                <AppHeader activeSection={activeSection} onNavigate={setActiveSection} />
                 {isDemo && (
                     <Grid>
                         <Column sm={4} md={8} lg={16}>
@@ -40,7 +43,7 @@ function App() {
                         </Column>
                     </Grid>
                 )}
-                <Dashboard />
+                {activeSection === 'ask-the-repo' ? <AskTheRepo /> : <Dashboard />}
             </>
         );
     }
