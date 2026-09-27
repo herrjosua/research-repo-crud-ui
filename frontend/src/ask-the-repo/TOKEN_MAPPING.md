@@ -138,13 +138,15 @@ unnavigable. Each component still follows the app's existing per-file
 convention (`Name.jsx` + `Name.module.scss` + `Name.test.jsx`, default
 export, CSS Modules via `@use './styles/variables'`).
 
-Only `sources/` (this ticket's `KindTag`) exists so far. Planned shape for
-the remaining 7 tickets:
+`sources/` (this ticket's `KindTag`) and `shell/` (page-shell/nav-tickets's
+`BreadcrumbBar`) exist so far. Planned shape for the remaining tickets:
 
 ```
 frontend/src/ask-the-repo/
   AskTheRepo.jsx / .module.scss / .test.jsx   # page shell (mounts next to Dashboard)
   TOKEN_MAPPING.md                            # this file
+  shell/
+    BreadcrumbBar.jsx / .module.scss          # breadcrumb sub-header, built in the page-shell ticket
   chat/
     ChatPanel.jsx / .module.scss
     ChatMessage.jsx / .module.scss
@@ -166,6 +168,22 @@ frontend/src/ask-the-repo/
     conversations.js
     starters.js
 ```
+
+**Page-shell ticket note:** the reference `AppHeader.tsx`'s primary tab nav
+(switching between "Research Records" and "Ask the Repo") and its dark/light
+toggle button both live in the real app's *existing* `Header.jsx`/`App.jsx`,
+not under `ask-the-repo/` — they're global app chrome (the theme toggle
+re-themes `Dashboard` too), not Ask-the-Repo-specific content, even though
+the reference bundles them into one `AppHeader` component. Likewise
+`useTheme.js` (the localStorage + `prefers-color-scheme` hook backing that
+toggle) lives at `frontend/src/useTheme.js`, alongside `Header.jsx`, not
+under `ask-the-repo/`. Only the two top-level tabs (Ask / Saved Insights) and
+the breadcrumb sub-header are Ask-the-Repo's own — the `AskSubViewNav`
+reference component didn't get its own file, since Carbon's own `<Tabs>`
+already manages selection state without a bespoke nav component or a
+`AskSubViewContext`-style React Context (this app had no existing
+tab/nav-with-Context convention to extend, and Carbon's `<Tabs>` needs only
+local `useState` in `AskTheRepo.jsx`).
 
 Deliberately **not** carried over from the reference: a `shared/ModalOverlay`
 — this app already uses Carbon's own `<Modal>` directly (`Dashboard.jsx`,
