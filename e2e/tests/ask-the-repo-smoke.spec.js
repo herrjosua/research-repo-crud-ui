@@ -39,7 +39,11 @@ test('Ask the Repo is reachable from primary nav, its tabs switch, and the theme
     // --- Tabs switch views ---
     await insightsTab.click();
     await expect(insightsTab).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByText('Saved insights content ships in a later ticket.')).toBeVisible();
+    // Real Saved Insights view (Story 6): its heading, the session-only
+    // notice, and — since nothing was saved in this flow — the empty state.
+    await expect(page.getByRole('heading', { name: 'Saved insights' })).toBeVisible();
+    await expect(page.getByText('Session only')).toBeVisible();
+    await expect(page.getByText('No saved insights yet')).toBeVisible();
 
     // --- Nav back to Research Records leaves Ask the Repo ---
     await page.getByRole('link', { name: 'Research Records' }).click();
