@@ -1,7 +1,6 @@
 @use '../styles/variables' as vars;
 
 .tabList {
-    padding-inline: 1rem;
     background: vars.$background;
     border-bottom: 1px solid vars.$border-subtle;
 }

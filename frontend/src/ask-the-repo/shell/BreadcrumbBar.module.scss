@@ -1,10 +1,12 @@
 @use '../../styles/variables' as vars;
 
 .bar {
-    display: flex;
-    align-items: center;
-    padding-inline: 1rem;
-    block-size: 2.5rem;
     background: vars.$background;
     border-bottom: 1px solid vars.$border-subtle;
+}
+
+.content {
+    display: flex;
+    align-items: center;
+    block-size: 2.5rem;
 }

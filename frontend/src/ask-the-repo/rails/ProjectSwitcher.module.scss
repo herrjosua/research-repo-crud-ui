@@ -1,0 +1,66 @@
+@use '@carbon/react/scss/type';
+@use '../../styles/variables' as vars;
+
+.switcher {
+    padding-block-start: 0.75rem;
+}
+
+.sectionLabel {
+    @include type.type-style('label-01');
+    margin: 0 0.75rem 0.375rem;
+    color: vars.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    inline-size: 100%;
+    padding: 0.375rem 0.75rem;
+    border: none;
+    border-inline-start: 2px solid transparent;
+    background: transparent;
+    color: vars.$text-secondary;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+        background: vars.$background-hover;
+        color: vars.$text-primary;
+    }
+}
+
+.active {
+    background: vars.$background-selected;
+    border-inline-start-color: vars.$border-interactive;
+    color: vars.$text-primary;
+
+    &:hover {
+        background: vars.$background-selected;
+    }
+}
+
+.label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.count {
+    flex-shrink: 0;
+    @include type.type-style('label-01');
+    color: vars.$text-secondary;
+}

@@ -1,0 +1,54 @@
+@use '@carbon/react/scss/type';
+@use '../../styles/variables' as vars;
+
+// Sized by its parent Grid Column (see AskTheRepo.jsx — the same
+// lg=4/md=2/sm=4 span Dashboard.jsx uses for its own sidebar column), not a
+// fixed px width: a fixed width here would either overflow that column at
+// narrow breakpoints or leave it not actually filled at wide ones, and
+// would fight the shared Grid gutter/margin that column-based sizing gets
+// for free. `max-inline-size` on `.collapsed` only narrows the rail within
+// whatever width the column already provides — it doesn't (and, kept as a
+// plain Column span rather than a JS-driven one, can't) shrink the column
+// itself, so the content column next to it doesn't grow to reclaim that
+// space. Revisit if that becomes a real problem once Story 4's chat panel
+// makes the reclaimed width matter.
+.rail {
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+    background: vars.$background;
+    border-inline-end: 1px solid vars.$border-subtle;
+}
+
+.collapsed {
+    max-inline-size: 3rem;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    block-size: 2.5rem;
+    padding-inline: 0.5rem;
+    border-block-end: 1px solid vars.$border-subtle;
+    flex-shrink: 0;
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+}
+
+.divider {
+    block-size: 1px;
+    margin: 0.5rem 0.75rem;
+    background: vars.$border-subtle;
+}
+
+.sectionLabel {
+    @include type.type-style('label-01');
+    margin: 0 0.75rem 0.375rem;
+    color: vars.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
