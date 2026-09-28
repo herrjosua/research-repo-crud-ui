@@ -5,7 +5,8 @@ import styles from './Button.stories.module.scss';
 // The one place to review the app's button theming (styles/_carbon-tokens.scss:
 // the teal primary and tertiary buttons and the teal focus ring — see
 // ask-the-repo/TOKEN_MAPPING.md "Primary and tertiary buttons" / "Focus
-// ring"). Ghost stays Carbon blue by decision. Carbon's
+// ring" / "Links"). Ghost buttons are teal through the link tokens — a
+// ghost label *is* Carbon's link color. Carbon's
 // own <Button>, not a wrapper: grouped under Shared/Core like DemoDisclaimer
 // because every feature renders it.
 //

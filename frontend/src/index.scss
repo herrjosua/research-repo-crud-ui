@@ -1,9 +1,9 @@
 // Theme-layer token overrides (styles/_carbon-tokens.scss): loaded before
-// @carbon/react so they can configure its token modules, and their focus
+// @carbon/react so they can configure its token modules, and their theme-token
 // declarations included after it so they follow Carbon's own.
 @use './styles/carbon-tokens';
 @use './styles/ckeditor';
 @use '@carbon/react';
 
-@include carbon-tokens.focus-tokens;
-@include ckeditor.focus-tokens;
+@include carbon-tokens.theme-tokens;
+@include ckeditor.theme-tokens;

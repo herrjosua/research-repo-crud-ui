@@ -124,7 +124,21 @@ test('at 672px the question dropdown wraps long questions instead of clipping th
     await page.getByRole('link', { name: 'Ask the Repo' }).click();
     await page.setViewportSize({ width: 672, height: 800 });
 
-    await page.getByRole('button', { name: questions[0], exact: true }).click();
+    // Wait for static mode before clicking a question. Until /api/ask/config
+    // answers, Ask renders its live-mode starters, and the first of those has
+    // exactly questions[0]'s text — clicking it only fills the composer, so
+    // nothing is asked and the dropdown below never appears (v1.3.6.7:
+    // reproduced every time by delaying the config response 1.5s). The static
+    // list's own label only renders once the config says `mode: 'static'`.
+    await expect(page.getByText('Choose a question', { exact: true })).toBeVisible();
+
+    const firstQuestion = page.getByRole('button', { name: questions[0], exact: true });
+    await firstQuestion.click();
+    // The click's own result, not just the next step's: picking a question
+    // starts the conversation, which replaces the empty-state list. If this
+    // times out, the click didn't ask anything.
+    await expect(firstQuestion).toHaveCount(0);
+
     const dropdown = page.getByRole('combobox', { name: 'Choose a question' });
     await dropdown.click();
     const options = page.getByRole('option');

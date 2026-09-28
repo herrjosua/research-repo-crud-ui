@@ -12,7 +12,7 @@
 //
 // Tied to CKEditor 5's CSS-variable theming API (verified against
 // ckeditor5 48.5); re-check after a CKEditor upgrade.
-@mixin focus-tokens {
+@mixin theme-tokens {
   .ck {
     --ck-color-focus-border: var(--cds-focus);
     --ck-focus-ring: 1px solid var(--ck-color-focus-border);
@@ -27,5 +27,19 @@
   .cds--g90 .ck,
   .cds--g100 .ck {
     --ck-color-focus-border: var(--cds-focus-inverse);
+  }
+
+  // Links inside the editing area take Carbon's global
+  // `a { color: var(--cds-link-primary) }`, so they hit the same white
+  // surface: the dark theme's teal-40 link is 2.33:1 on it (Carbon's stock
+  // blue-40 was already 2.35:1 — failing before teal). The inverse link
+  // pair is Carbon's token for a link on a light surface in a dark theme:
+  // teal-60 at 4.99:1, hover teal-70 at 7.71:1. Re-pointing the two custom
+  // properties inside the editing area keeps Carbon's own `a` rule doing the
+  // coloring.
+  .cds--g90 .ck-content,
+  .cds--g100 .ck-content {
+    --cds-link-primary: var(--cds-link-inverse);
+    --cds-link-primary-hover: var(--cds-link-inverse-hover);
   }
 }

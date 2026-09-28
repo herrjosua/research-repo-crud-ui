@@ -4,9 +4,9 @@
 
 // Carbon token overrides — the app's theme layer. index.scss loads this
 // module before `@carbon/react` (the button tokens are configured on first
-// load) and includes `focus-tokens` after it (so those declarations follow
+// load) and includes `theme-tokens` after it (so those declarations follow
 // Carbon's own). Every value is documented, with measured contrast, in
-// ask-the-repo/TOKEN_MAPPING.md ("Primary button", "Focus ring").
+// ask-the-repo/TOKEN_MAPPING.md ("Primary and tertiary buttons", "Focus ring", "Links").
 //
 // Tied to Carbon's component-token and custom-property APIs (verified
 // against @carbon/styles 1.115); re-check after a Carbon upgrade.
@@ -102,35 +102,59 @@ $-teal-tertiary-active: (
   $button-tertiary-active: $-teal-tertiary-active
 );
 
-// ── Focus ring ────────────────────────────────────────────────────────
-// `focus` is a theme token, not a component token. It isn't configured
-// through `theme`'s `$theme` / `zone`'s `$zones` maps on purpose: Carbon
-// picks each component token's per-theme value by comparing theme maps
-// key-for-key (`theme.matches`), so a zone map with a changed `focus` no
-// longer matches Carbon's stock `$g100` and the zone silently stops
-// emitting every button/tag/notification token. Instead the two
-// properties are declared on Carbon's own theme selectors — the same
+// ── Focus ring and links ──────────────────────────────────────────────
+// `focus` and the `link-*` tokens are theme tokens, not component tokens.
+// They aren't configured through `theme`'s `$theme` / `zone`'s `$zones`
+// maps on purpose: Carbon picks each component token's per-theme value by
+// comparing theme maps key-for-key (`theme.matches`), so a zone map with a
+// changed key no longer matches Carbon's stock `$g100` and the zone
+// silently stops emitting every button/tag/notification token. Instead
+// these properties are declared on Carbon's own theme selectors — the same
 // custom properties, selectors and mixin Carbon's zones use — which leaves
 // Carbon's theme maps (and that matching) untouched. `:root` covers the
 // default white theme, which has no zone class of its own.
 //
-// Light themes: teal-60, the primary button's hue (Carbon's stock light
-// focus is likewise its primary blue-60). Dark themes: teal-30 — Carbon's
-// stock dark focus is white, the lightest ring available, and teal-60
-// drops to ~2.4:1 on g100's `layer-02`; teal-30 is also Direction B v2's
-// dark `tealLight`. `focus-inverse` (rings on inverted surfaces: toggletips,
-// high-contrast notifications) is the mirror pair.
-@mixin focus-tokens {
+// Focus — light themes: teal-60, the primary button's hue (Carbon's stock
+// light focus is likewise its primary blue-60). Dark themes: teal-30 —
+// Carbon's stock dark focus is white, the lightest ring available, and
+// teal-60 drops to ~2.4:1 on g100's `layer-02`; teal-30 is also Direction
+// B v2's dark `tealLight`. `focus-inverse` (rings on inverted surfaces:
+// toggletips, high-contrast notifications) is the mirror pair.
+//
+// Links (decided 2026-09-28: links join the teal system) — the same shape
+// as Carbon's stock blues, one ramp step for one step: light primary
+// teal-60 (stock blue-60), secondary teal-70 (blue-70), inverse teal-40
+// (blue-40) / hover teal-30 (blue-30); dark primary teal-40 (blue-40),
+// hover and secondary teal-30 (blue-30), inverse teal-60 (blue-60) / hover
+// teal-70 (blue-70). One deliberate step off stock: light
+// `link-primary-hover` is teal-80, not teal-70. Carbon's ghost button
+// draws its hover/pressed label from this token over `background-active`
+// (50% gray), and teal-70 there is 4.28:1 on `layer-01` — the same failure
+// stock blue-70 has (4.33:1). Teal-80 is 6.34:1. `link-visited` stays
+// Carbon's purple: it means something different. Ghost buttons have no
+// color token of their own (their label *is* the link color), so they're
+// teal through these as well.
+@mixin theme-tokens {
   :root,
   .cds--white,
   .cds--g10 {
     @include custom-property.declaration('focus', colors.$teal-60);
     @include custom-property.declaration('focus-inverse', colors.$teal-30);
+    @include custom-property.declaration('link-primary', colors.$teal-60);
+    @include custom-property.declaration('link-primary-hover', colors.$teal-80);
+    @include custom-property.declaration('link-secondary', colors.$teal-70);
+    @include custom-property.declaration('link-inverse', colors.$teal-40);
+    @include custom-property.declaration('link-inverse-hover', colors.$teal-30);
   }
 
   .cds--g90,
   .cds--g100 {
     @include custom-property.declaration('focus', colors.$teal-30);
     @include custom-property.declaration('focus-inverse', colors.$teal-60);
+    @include custom-property.declaration('link-primary', colors.$teal-40);
+    @include custom-property.declaration('link-primary-hover', colors.$teal-30);
+    @include custom-property.declaration('link-secondary', colors.$teal-30);
+    @include custom-property.declaration('link-inverse', colors.$teal-60);
+    @include custom-property.declaration('link-inverse-hover', colors.$teal-70);
   }
 }

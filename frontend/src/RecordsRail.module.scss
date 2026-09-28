@@ -72,6 +72,18 @@ $inset: 0.5rem;
     :global(.cds--accordion__content) {
         padding-inline-end: $inset;
     }
+
+    // Carbon fades an open section's content in from `opacity: 0` via
+    // `@starting-style` (110ms) — on *every* first render, not only when a
+    // section is expanded. Both sections here start open, so the whole tag
+    // list faded in on each visit to Records, and an axe scan landing in
+    // that window read the labels at ~1.9:1 (tests-demo/demo-picker.spec.js
+    // failed 4 of 6 runs). Sections open and close instantly instead.
+    // Depends on Carbon's `.cds--accordion__wrapper` transition (verified
+    // against @carbon/react 1.116); re-check on upgrade.
+    :global(.cds--accordion__wrapper) {
+        transition: none;
+    }
 }
 
 // Same type as LeftRail's `.sectionLabel` ("Recent").

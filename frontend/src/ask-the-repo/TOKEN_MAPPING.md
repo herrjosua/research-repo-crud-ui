@@ -90,11 +90,14 @@ Same shape as Carbon's stock values: one color per role, identical in white
 and g100. Not the reference's `tealHover` (`teal-50` in dark): white label
 text on `teal-50` is 3.34:1, under 4.5:1.
 
-Only the primary and tertiary button tokens change. Ghost buttons (their
-text is `link-primary`), `interactive`, `link-primary` and
-`border-interactive` stay Carbon blue, so ghost buttons, links, checkboxes
-and selection markers keep Carbon's blue. Ghost stays blue by decision
-(2026-09-28): lower priority, open to revisiting. The focus ring is its
+Primary and tertiary buttons change through their own tokens. Ghost
+buttons have no color token of their own — their label is `link-primary`
+at rest and `link-primary-hover` on hover/press — so they're teal through
+the link tokens (next-but-one section). Ghost was first kept blue (earlier
+2026-09-28); moving links to teal later the same day moved ghost with them,
+by decision, rather than pinning ghost back to blue with a component-scoped
+override. `interactive` and `border-interactive` stay Carbon blue, so
+checkboxes and selection markers keep Carbon's blue. The focus ring is its
 own override (next section). Disabled primary buttons keep Carbon's gray
 disabled tokens. `Shared/Core/Button` in Storybook shows every kind × state
 in both themes.
@@ -179,6 +182,64 @@ use `vars.$focus` like the rest: conversation-list rows, starter questions,
 text box's `$chat-accent` ring override is removed: it existed only to be
 teal rather than Carbon blue, and it gave 3.03:1 in g100 where the token
 gives 8.89:1.
+
+### Links (decision, 2026-09-28)
+
+A deliberate extension, not a bug fix: links join the teal system with the
+buttons and focus ring. Declared alongside `focus` in
+`../styles/_carbon-tokens.scss` (`theme-tokens` mixin), on Carbon's own
+theme selectors, for the same reason (see "Focus ring"). Carbon's global
+`a { color: var(--cds-link-primary) }` means plain links — record bodies,
+CKEditor content — follow without per-component styling, as do breadcrumb
+crumbs, Ask's citations (`vars.$link`) and ghost buttons.
+
+| Token | Stock white | This app, white | Stock g100 | This app, g100 |
+|---|---|---|---|---|
+| `link-primary` | `blue-60` | `teal-60` `#007d79` | `blue-40` | `teal-40` `#08bdba` |
+| `link-primary-hover` | `blue-70` | `teal-80` `#004144` | `blue-30` | `teal-30` `#3ddbd9` |
+| `link-secondary` | `blue-70` | `teal-70` `#005d5d` | `blue-30` | `teal-30` |
+| `link-inverse` | `blue-40` | `teal-40` | `blue-60` | `teal-60` |
+| `link-inverse-hover` | `blue-30` | `teal-30` | `blue-70` | `teal-70` |
+| `link-visited` | `purple-60` | unchanged | `purple-40` | unchanged |
+
+One step for one step with Carbon's blues, except light
+`link-primary-hover`: teal-80, not teal-70 — see the ghost button note
+below. `link-visited` keeps Carbon's purple: "visited" is a different
+meaning, not a brand color.
+
+**Measured** (running app and `Shared/Core/Link`, `getComputedStyle()`,
+AA 4.5:1 for text):
+
+| Context | White | g100 |
+|---|---|---|
+| Breadcrumb crumb (page) | 4.99:1 | 7.75:1 |
+| Record-body link (modal, `layer-01`) | 4.54:1 | 6.48:1 |
+| Ask citation, rest / hover | 4.54 / 9.29:1 | 6.48 / 7.05:1 |
+| On `layer-02` (computed; no link renders there today) | 4.99:1 | 4.95:1 |
+| CKEditor content link | 4.99:1 | 4.99:1 (exception below) |
+
+**Exception — CKEditor in g100** (`../styles/_ckeditor.scss`): the editing
+area stays white in the dark theme, so the g100 link (teal-40) would be
+2.33:1 on it. This wasn't new: Carbon's stock g100 link, blue-40, was
+already 2.35:1 there. Inside `.ck-content` in dark themes, `link-primary` /
+`-hover` are re-pointed to the inverse pair (Carbon's token for a link on a
+light surface in a dark theme): teal-60 at 4.99:1, hover teal-70 at 7.71:1.
+Same shape as the focus-ring exception for the same surface.
+
+**Ghost button pressed state — fixed here.** Chromatic's a11y check flagged
+`Shared/Core/Button`'s ghost *active* cell in white: `#0043ce` on `#c1c1c1`
+= 4.33:1 (the label on Carbon's 50% gray `background-active`, over
+`layer-01`). Pre-existing Carbon behavior — none of the tokens involved
+(`link-primary-hover`, `background-active`, `layer-01`) was overridden — and
+newly caught because storybook-addon-pseudo-states now forces the pressed
+state. Stock blue-70 on the page background just passes (4.56:1), which is
+why nothing in the app had surfaced it. Fixed at the token: light
+`link-primary-hover` is teal-80, not the teal-70 a strict step-for-step
+mapping gives (teal-70 there would be 4.28:1 — the same failure). Ghost
+label contrast now, every state (white page / white `layer-01` / g100 page /
+g100 `layer-01`): rest 4.99 / 4.54 / 7.75 / 6.48, hover 10.11 / 9.32 /
+8.54 / 7.10, pressed 6.68 / 6.34 / 5.54 / 4.81. axe: no violations in
+either Button or Link story, either theme.
 
 ### Color-vision deficiency check
 
