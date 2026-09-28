@@ -150,6 +150,13 @@ covers, not a count to keep in sync:
   gray-matter date-coercion fix), `DELETE /records/:id` (including the
   raw-session-is-two-files case), and `GET /records/:id/history` (including
   `--follow` lineage across a delete-then-recreate under the same slug).
+- **`tests/projectTags.test.js`** — agentic-repo's project tagging, against
+  its own fixture corpus with a `research/projects.yml`
+  (`tests/fixtures/projects-corpus/`): no `project-*` tag written into a raw
+  session on create or edit, findings/analytics summaries/deliverables
+  keeping exactly one through any edit, `projects.yml` committed with a new
+  raw session, and a deleted raw session's entry removed (or skipped with a
+  warning, never failing the delete).
 - **`tests/gitScope.test.js`** — that each write commits only the files that
   request actually touched, and `routes/records.js`'s `withRepoLock` queue
   serializing concurrent writes to `AGENTIC_REPO_ROOT`.
@@ -223,6 +230,7 @@ backend/
 ├── frontend.js        Serves the built frontend (frontend/dist) from this same process in production, with an SPA fallback for client-side routes
 ├── proxyTrust.js       Cloudflare's published IP ranges plus the host proxy's own address, for Express's trust-proxy setting in production
 ├── throwawayRepo.js    Marks/detects a disposable agentic-repo checkout made by tests/helpers/setupTestRepo.js
+├── projects.js         agentic-repo's project-tag rules (research/projects.yml): which project-* tags PUT keeps, and removing a deleted raw session's entry
 ├── validation.js       Input validation for POST /sessions and PUT /records/:id frontmatter, mirroring agentic-repo's own field rules
 ├── ask/                Ask the Repo's RAG pipeline (used by routes/ask.js)
 │   ├── config.js         LLM_PROVIDER switch
@@ -409,6 +417,20 @@ a crash) silently skipped the commit entirely, even though the real file
 change was already saved to disk. If `build_index.py` reports an issue, the
 response is still `200`/`204` with a `warning` field, but that's now purely
 informational — it never affects whether the change gets committed.
+
+**Project tags (agentic-repo's `research/projects.yml`).** Only when that
+file exists in the checkout; otherwise none of this happens. A raw
+session's project comes from `projects.yml`, so `POST /sessions` and `PUT`
+strip `project-*` tags from a raw session's `tags` rather than writing them
+into `raw/`. On a finding, analytics summary or deliverable, `PUT` keeps the
+file's existing `project-*` tag and ignores any the request adds, changes or
+removes; a record with none keeps none. `new_research_session.py` adds each
+new raw session to `projects.yml`, and `POST /sessions` commits that line
+with the session. `DELETE` of a raw session removes its `projects.yml` line
+(a one-line text edit, so comments and formatting survive) and commits it;
+if the file can't be edited safely it logs a warning and the delete goes
+ahead. If `projects.yml` already had uncommitted edits, neither route
+commits it, so those edits stay uncommitted.
 
 **Frontmatter dates stay plain dates.** `gray-matter`'s underlying YAML
 library silently upgrades a plain `date: 2025-01-14` frontmatter value into
