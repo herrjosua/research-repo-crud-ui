@@ -1,0 +1,13 @@
+@use '../../styles/variables' as vars;
+
+// The chat column's real frame: its width and height at 1280x860 with the
+// demo banner showing (measured in the running app, the same height as the
+// left rail's frame in rails/LeftRail.stories.module.scss), on the page's
+// `$background`. ChatPanel fills its column's height (`block-size: 100%`),
+// so without a fixed height here a short thread collapses the panel and
+// the composer no longer sits at the bottom.
+.column {
+    inline-size: 592px;
+    block-size: 551px;
+    background: vars.$background;
+}

@@ -4,6 +4,7 @@ import ChatPanel from './ChatPanel';
 import { useAskRepo } from './useAskRepo';
 import { STARTERS } from './starters';
 import { INITIAL_MESSAGES_BY_CONVERSATION } from '../fixtures/messages';
+import styles from './ChatPanel.stories.module.scss';
 
 const THREAD = INITIAL_MESSAGES_BY_CONVERSATION.c1;
 const QUESTION = 'What did the prior auth usability tests find?';
@@ -12,6 +13,10 @@ const USER_MESSAGE = { id: 'm-q', role: 'user', content: QUESTION, timestamp: '1
 // Grouped under Ask the Repo. ChatPanel is presentational: everything it
 // shows comes from `useAskRepo` (owned by AskTheRepo.jsx) as props, so each
 // state below is just a set of args, with no network or timers involved.
+//
+// Every story renders in the chat column's real frame (its width and
+// height at 1280x860 with the demo banner), so the thread fills the space
+// above the composer and the composer sits at the bottom, as in the app.
 export default {
   title: 'Ask the Repo/ChatPanel',
   component: ChatPanel,
@@ -28,6 +33,13 @@ export default {
     onSignIn: fn(),
     onOpenSource: fn(),
   },
+  decorators: [
+    (Story) => (
+      <div className={styles.column}>
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 // Live playground: the real `useAskRepo` store with a stand-in for POST

@@ -303,6 +303,7 @@ frontend/src/ask-the-repo/
     BreadcrumbBar.jsx / .module.scss          # breadcrumb sub-header, built in the page-shell ticket
   chat/
     ChatPanel.jsx / .module.scss / .test.jsx / .stories.jsx        # built in this ticket
+    ChatPanel.stories.module.scss             # the chat column's real frame for the ChatPanel stories
     ChatMessage.jsx / .module.scss / .test.jsx / .stories.jsx      # built in this ticket
     AssistantMessage.jsx / .module.scss / .test.jsx / .stories.jsx # built in this ticket
     Composer.jsx / .module.scss / .test.jsx / .stories.jsx         # built in this ticket
