@@ -19,7 +19,8 @@ import styles from './ChatPanel.module.scss';
  *   taking long enough to explain why), `error` (`{ kind, question }` when
  *   `status` is `'error'`; `kind` keys `./askCopy.js`'s `ERROR_COPY`).
  * - `unavailable`: the server has no language model. Shows the "not
- *   available here" notice and disables the composer and starters.
+ *   available here" notice, disables the composer, and leaves out the
+ *   starters, which could only fill a composer that can't send.
  * - `announcement`: text for the polite live region (new answers and
  *   errors), from `useAskRepo`.
  * - `onSend(text)`, `onRetry()`, `onSignIn()`, `onOpenSource(source,
@@ -114,17 +115,14 @@ export default function ChatPanel({
     return (
         <div className={styles.panel}>
             {/* Focusable so the thread can be scrolled from the keyboard even
-                when nothing inside it is focusable (starters disabled while
-                loading or unavailable) — axe's scrollable-region-focusable. */}
+                when nothing inside it is focusable (an empty conversation
+                while unavailable has no starters) — axe's
+                scrollable-region-focusable. */}
             <div className={styles.messages} role="region" aria-label="Conversation" tabIndex={0}>
                 {messages.length === 0 && unavailableNotice}
                 {messages.length === 0 ? (
-                    starters.length > 0 && (
-                        <StarterQuestions
-                            questions={starters}
-                            onSelect={handleSelectStarter}
-                            disabled={loading || unavailable}
-                        />
+                    !unavailable && starters.length > 0 && (
+                        <StarterQuestions questions={starters} onSelect={handleSelectStarter} />
                     )
                 ) : (
                     messages.map((message) => (

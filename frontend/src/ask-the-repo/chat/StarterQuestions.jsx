@@ -9,10 +9,12 @@ import styles from './StarterQuestions.module.scss';
  * composer (`onSelect`) so the user can review or edit it before sending.
  *
  * `questions` (array of question strings, from `./starters.js`'s
- * `startersFor(projectId)`), `onSelect(question)`, `disabled` (bool — while
- * a question is being answered, or when asking isn't available).
+ * `startersFor(projectId)`), `onSelect(question)`. There's no disabled
+ * state: ChatPanel doesn't render the starters when asking isn't
+ * available, and a conversation that's waiting on an answer already has
+ * its question in the thread, so the starters aren't showing then either.
  */
-export default function StarterQuestions({ questions, onSelect, disabled = false }) {
+export default function StarterQuestions({ questions, onSelect }) {
     return (
         <div className={styles.wrapper}>
             <p className={styles.label}>Try asking</p>
@@ -22,7 +24,6 @@ export default function StarterQuestions({ questions, onSelect, disabled = false
                         key={question}
                         type="button"
                         className={styles.question}
-                        disabled={disabled}
                         onClick={() => onSelect(question)}
                     >
                         {question}

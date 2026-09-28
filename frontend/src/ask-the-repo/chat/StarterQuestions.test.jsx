@@ -23,12 +23,4 @@ describe('StarterQuestions', () => {
         expect(onSelect).toHaveBeenCalledWith(QUESTIONS[1]);
         expect(onSelect).toHaveBeenCalledTimes(1);
     });
-
-    it('disables every question when disabled', () => {
-        render(<StarterQuestions questions={QUESTIONS} onSelect={() => {}} disabled />);
-
-        for (const question of QUESTIONS) {
-            expect(screen.getByRole('button', { name: question })).toBeDisabled();
-        }
-    });
 });

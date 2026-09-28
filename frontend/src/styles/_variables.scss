@@ -85,10 +85,6 @@ $border-strong: theme.$border-strong-01;
 // since a citation is a link to the source it names.
 $link: theme.$link-primary;
 $link-hover: theme.$link-primary-hover;
-// Custom (non-Carbon) buttons' disabled text, e.g. the chat's starter
-// questions while asking is unavailable. WCAG exempts disabled controls
-// from contrast minimums; Carbon uses this same token for its own.
-$text-disabled: theme.$text-disabled;
 
 // Chat panel's one deliberate brand-accent departure from the generic
 // Carbon tokens above (see comment on `$surface` for why the rail itself

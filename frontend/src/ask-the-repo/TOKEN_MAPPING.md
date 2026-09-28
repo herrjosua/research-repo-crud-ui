@@ -178,17 +178,13 @@ modal layer, so they keep Carbon's defaults: 4.55:1 at rest in white
 
 ### Wiring additions (Carbon tokens re-exported, not custom colors)
 
-Wiring the Ask tab to `POST /api/ask` added three more plain re-exports to
+Wiring the Ask tab to `POST /api/ask` added two more plain re-exports to
 `_variables.scss`, again with no custom values:
 
 - `$link` / `$link-hover` → `theme.$link-primary` / `theme.$link-primary-hover`:
   the inline `[n]` citation buttons in an answer (`chat/AssistantMessage`),
   since a citation is a link to its source. The chip's border is
   `$border-strong`, its hover fill `$background-hover`, its focus ring `$focus`.
-- `$text-disabled` → `theme.$text-disabled`: the starter questions'
-  disabled text while a question is loading or asking is unavailable. WCAG
-  exempts disabled controls from the contrast minimum, and Carbon uses the
-  same token for its own.
 
 The citation chip is `label-01` text (small, so it needs 4.5:1) and sized
 24×24px for WCAG 2.2's target-size minimum. Measured with

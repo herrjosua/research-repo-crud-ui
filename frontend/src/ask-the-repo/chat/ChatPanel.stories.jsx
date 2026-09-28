@@ -89,7 +89,8 @@ export const LoadingSlow = {
 };
 
 // No language model on this server (GET /api/ask/config said so, or a
-// question got a 503): the notice, with the composer and starters disabled.
+// question got a 503): the notice and a disabled composer, with no starter
+// questions, since picking one could only fill a composer that can't send.
 export const Unavailable = {
   args: {
     unavailable: true,

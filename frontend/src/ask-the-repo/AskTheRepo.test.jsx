@@ -291,7 +291,8 @@ describe('AskTheRepo', () => {
 
         expect(screen.getByText("Ask the Repo isn't available here.")).toBeInTheDocument();
         expect(composer()).toBeDisabled();
-        expect(screen.getByRole('button', { name: STARTERS.all[0] })).toBeDisabled();
+        expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: STARTERS.all[0] })).not.toBeInTheDocument();
     });
 
     it('switches to "not available" when a question gets a 503', async () => {
@@ -304,6 +305,11 @@ describe('AskTheRepo', () => {
         expect(await screen.findByText("Ask the Repo isn't available here.")).toBeInTheDocument();
         expect(screen.getByText('Anything?', { selector: 'div' })).toBeInTheDocument();
         expect(composer()).toBeDisabled();
+
+        // A new chat stays unavailable, without starters.
+        await user.click(screen.getByRole('button', { name: 'New chat' }));
+        expect(screen.getByText("Ask the Repo isn't available here.")).toBeInTheDocument();
+        expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
     });
 
     it('sends the user back to sign in after a 401', async () => {

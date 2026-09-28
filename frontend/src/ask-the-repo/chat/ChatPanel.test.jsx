@@ -102,13 +102,13 @@ describe('ChatPanel', () => {
     });
 
     describe('while loading', () => {
-        it('shows the loading state and disables the composer and starters', () => {
-            renderPanel({ status: 'loading' });
+        it('shows the loading state after the question and disables the composer', () => {
+            renderPanel({ status: 'loading', messages: [THREAD[0]] });
 
             expect(screen.getByText('Searching the repo…')).toBeInTheDocument();
             expect(screen.queryByText(/can take up to 20 seconds/)).not.toBeInTheDocument();
             expect(composer()).toBeDisabled();
-            expect(screen.getByRole('button', { name: STARTERS[0] })).toBeDisabled();
+            expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
         });
 
         it('explains the wait once the answer is slow', () => {
@@ -119,13 +119,14 @@ describe('ChatPanel', () => {
     });
 
     describe('when unavailable', () => {
-        it('says so and disables the composer and starters', () => {
+        it('says so, disables the composer, and shows no starters', () => {
             renderPanel({ unavailable: true });
 
             expect(screen.getByText("Ask the Repo isn't available here.")).toBeInTheDocument();
             expect(screen.getByText(/You can still browse everything under Research Records/)).toBeInTheDocument();
             expect(composer()).toBeDisabled();
-            expect(screen.getByRole('button', { name: STARTERS[0] })).toBeDisabled();
+            expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
+            expect(screen.queryByRole('button', { name: STARTERS[0] })).not.toBeInTheDocument();
         });
 
         it('shows the notice after the thread when it follows a question', () => {

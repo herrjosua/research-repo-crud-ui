@@ -28,12 +28,3 @@ export const Default = {
     questions: 'checkout',
   },
 };
-
-// While a question is being answered, or when asking isn't available here,
-// the starters can't be picked.
-export const Disabled = {
-  args: {
-    questions: 'checkout',
-    disabled: true,
-  },
-};

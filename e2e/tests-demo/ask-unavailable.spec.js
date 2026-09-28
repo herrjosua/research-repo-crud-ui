@@ -13,13 +13,13 @@ test('Ask the Repo says it isn\'t available without a language model, and passes
     const config = await page.request.get('/api/ask/config');
     expect(await config.json()).toEqual({ enabled: false, projects: [] });
 
-    // ...so the notice shows before anyone asks, and asking is disabled.
+    // ...so the notice shows before anyone asks, asking is disabled, and
+    // there are no starter questions to pick.
     await expect(page.getByText("Ask the Repo isn't available here.")).toBeVisible();
     await expect(page.getByText(/You can still browse everything under Research Records/)).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Ask a question about the research' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
-    const starters = page.getByText('Try asking').locator('..').getByRole('button');
-    await expect(starters.first()).toBeDisabled();
+    await expect(page.getByText('Try asking')).toHaveCount(0);
 
     // POST /api/ask agrees: 503, never a broken chat.
     const ask = await page.request.post('/api/ask', { data: { question: 'anything' } });
