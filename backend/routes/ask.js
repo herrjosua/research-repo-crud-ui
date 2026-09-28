@@ -4,15 +4,16 @@ const { SAFE_SLUG_RE } = require('../validation');
 const { resolveProvider } = require('../ask/config');
 const { createOllamaClient, OllamaError, OLLAMA_DEFAULTS } = require('../ask/ollama');
 const { loadRecords } = require('../ask/corpus');
-const { createEmbeddingIndex, rankPassages } = require('../ask/retrieval');
-const { buildMessages, renumberCitations, toSource } = require('../ask/answer');
-const { toPlainText } = require('../ask/plainText');
+const { createEmbeddingIndex } = require('../ask/retrieval');
+const { createAskPipeline } = require('../ask/pipeline');
+const { loadStaticAnswers, ANSWERS_FILE } = require('../ask/staticAnswers');
 const { readProjectList, recordProjectTag } = require('../projects');
 
 // ---------------------------------------------------------------------------
-// POST /api/ask — Ask the Repo's RAG endpoint (local Ollama only).
+// POST /api/ask — Ask the Repo's RAG endpoint (local Ollama), or with
+// LLM_PROVIDER=static, the public demo's captured answers.
 //
-// Request body:
+// Request body (LLM_PROVIDER=ollama):
 //   {
 //     question: string,          // required, 1–2000 chars after trimming
 //     project?: string | null,   // optional; omitted, null, or "all" = whole repo.
@@ -20,7 +21,16 @@ const { readProjectList, recordProjectTag } = require('../projects');
 //                                // records carrying that tag are searched.
 //   }
 //
-// 200 response:
+// Request body (LLM_PROVIDER=static):
+//   {
+//     questionId: string,        // required: an id from GET /api/ask/config's
+//                                // `questions`. There is no model, so a free-text
+//                                // `question` is rejected (400) and an unknown
+//                                // id is 404. Any `project` is ignored: each
+//                                // captured question already has its own.
+//   }
+//
+// 200 response (both providers; in static mode, the captured answer verbatim):
 //   {
 //     answer: string,     // plain text (see ask/plainText.js). Paragraphs are
 //                         // separated by "\n\n"; citations are "[n]" markers
@@ -51,19 +61,17 @@ const { readProjectList, recordProjectTag } = require('../projects');
 //   (No `page`: markdown records have no pages. SourceCard already omits it.)
 //
 // Errors (all `{ error: string }`): 400 bad input, 401 not logged in,
-// 503 LLM_PROVIDER not set, 502 Ollama unreachable or failed, 500 anything else.
+// 404 unknown questionId (static), 503 LLM_PROVIDER not set, 502 Ollama
+// unreachable or failed, 500 anything else.
 // ---------------------------------------------------------------------------
 
 const MAX_QUESTION_CHARS = 2000;
-// Records handed to the model per question. Six best-matching passages (one
-// per record) is ~3–4k characters of context: enough to synthesize across
-// sessions, small enough for a 9B model to stay grounded.
-const TOP_K = 6;
-// Low temperature: this is retrieval-grounded summarization, not writing.
-const CHAT_OPTIONS = { temperature: 0.2, num_ctx: 8192 };
 
 const provider = resolveProvider(process.env);
+// GET /api/ask/config's `mode` for each provider.
+const MODES = { ollama: 'live', static: 'static' };
 
+// Live mode only. Static mode never builds a client, so it can't reach Ollama.
 const ollama = provider === 'ollama'
   ? createOllamaClient({
     baseUrl: process.env.OLLAMA_BASE_URL || OLLAMA_DEFAULTS.baseUrl,
@@ -72,7 +80,21 @@ const ollama = provider === 'ollama'
   })
   : null;
 
-const index = ollama ? createEmbeddingIndex({ embed: ollama.embed, loadRecords }) : null;
+const pipeline = ollama
+  ? createAskPipeline({ ollama, index: createEmbeddingIndex({ embed: ollama.embed, loadRecords }) })
+  : null;
+
+// Static mode only: read and validated once, at startup, so a missing or
+// broken file stops the server instead of failing each request. Live mode
+// and a disabled Ask never read it, so they start without it.
+//
+// ASK_STATIC_ANSWERS_FILE is test-only: under NODE_ENV=test (set by Jest) it
+// points at a fixture instead. Everywhere else it's ignored, so a deployed
+// server always serves the checked-in file.
+const answersFile = process.env.NODE_ENV === 'test' && process.env.ASK_STATIC_ANSWERS_FILE
+  ? process.env.ASK_STATIC_ANSWERS_FILE
+  : ANSWERS_FILE;
+const staticAnswers = provider === 'static' ? loadStaticAnswers(answersFile) : null;
 
 function validateAsk(body) {
   const { question, project } = body || {};
@@ -96,7 +118,14 @@ router.use(requireAuth);
 // GET /api/ask/config — what the Ask tab needs before anyone asks anything.
 // Always 200 for a signed-in user (never 503, unlike POST):
 //   {
-//     enabled: boolean,  // true only when LLM_PROVIDER is set (to "ollama")
+//     enabled: boolean,  // true when LLM_PROVIDER is set ("ollama" or "static")
+//     mode: 'live' | 'static' | null,
+//                        // live: POST takes a typed question; static: POST
+//                        // takes a questionId from `questions`; null: off
+//     questions?: [{ id, question, project }],
+//                        // static mode only: the captured questions, in
+//                        // curated order. project: the project-* tag the
+//                        // question was captured under, or null for all.
 //     projects: [{ id, label, count }],
 //                        // id: the full project-* tag POST's `project` filter
 //                        // matches; label: from research/projects.yml;
@@ -121,12 +150,34 @@ router.get('/config', async (req, res) => {
       return res.status(500).json({ error: 'internal server error' });
     }
   }
-  res.json({ enabled: Boolean(provider), projects });
+  const body = { enabled: Boolean(provider), mode: MODES[provider] ?? null, projects };
+  if (staticAnswers) {
+    body.questions = staticAnswers.questions.map(({ id, question, project }) => ({ id, question, project }));
+  }
+  res.json(body);
 });
+
+function answerStatic(req, res) {
+  const { question, questionId } = req.body || {};
+  if (question !== undefined) {
+    return res.status(400).json({ error: 'this server only answers its listed questions; send questionId, not question' });
+  }
+  if (typeof questionId !== 'string' || !questionId) {
+    return res.status(400).json({ error: 'questionId is required' });
+  }
+  const entry = staticAnswers.byId.get(questionId);
+  if (!entry) {
+    return res.status(404).json({ error: 'unknown questionId' });
+  }
+  res.json({ answer: entry.answer, sources: entry.sources, model: staticAnswers.metadata.model });
+}
 
 router.post('/', async (req, res) => {
   if (!provider) {
     return res.status(503).json({ error: 'ask the repo is not enabled on this server' });
+  }
+  if (provider === 'static') {
+    return answerStatic(req, res);
   }
 
   const inputError = validateAsk(req.body);
@@ -138,28 +189,8 @@ router.post('/', async (req, res) => {
   const project = req.body.project && req.body.project !== 'all' ? req.body.project : null;
 
   try {
-    const { passages } = await index.refresh();
-    const inScope = project
-      ? passages.filter(({ record }) => Array.isArray(record.tags) && record.tags.includes(project))
-      : passages;
-
-    if (inScope.length === 0) {
-      return res.json({
-        answer: `No records in the repo are tagged "${project}", so there's nothing to answer from.`,
-        sources: [],
-        model: ollama.chatModel,
-      });
-    }
-
-    const ranked = rankPassages(await index.embedQuery(question), inScope, TOP_K);
-    const raw = await ollama.chat(buildMessages(question, ranked), CHAT_OPTIONS);
-    const { text, cited } = renumberCitations(toPlainText(raw), ranked.length);
-
-    res.json({
-      answer: text || "The model didn't return an answer. Try rephrasing the question.",
-      sources: cited.map((i) => toSource(ranked[i], project)),
-      model: ollama.chatModel,
-    });
+    const { answer, sources, model } = await pipeline.ask(question, project);
+    res.json({ answer, sources, model });
   } catch (err) {
     if (err instanceof OllamaError) {
       console.error(`[POST /api/ask] ${err.message}: ${err.detail || ''}`);

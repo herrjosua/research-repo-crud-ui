@@ -286,7 +286,7 @@ describe('GET /api/ask/config', () => {
         const res = await agent.get('/api/ask/config');
 
         expect(res.status).toBe(200);
-        expect(res.body).toEqual({ enabled: true, projects: [] });
+        expect(res.body).toEqual({ enabled: true, mode: 'live', projects: [] });
         expect(fakeOllama.state.requests).toHaveLength(0);
     });
 });

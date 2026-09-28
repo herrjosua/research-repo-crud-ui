@@ -49,9 +49,9 @@ it('answers 503 when LLM_PROVIDER is not set', async () => {
     expect(res.body).toEqual({ error: 'ask the repo is not enabled on this server' });
 });
 
-it('still answers GET /api/ask/config, with enabled false', async () => {
+it('still answers GET /api/ask/config, with enabled false and no mode', async () => {
     const res = await agent.get('/api/ask/config');
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ enabled: false, projects: [] });
+    expect(res.body).toEqual({ enabled: false, mode: null, projects: [] });
 });
