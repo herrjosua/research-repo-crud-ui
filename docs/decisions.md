@@ -1,7 +1,7 @@
 # Decision log
 
 Short notes on why the project works the way it does. Newest decisions are
-at the bottom. Status as of 2026-09-27.
+at the bottom. Status as of 2026-09-28.
 
 ## 1. Run the LLM locally with Ollama first
 
@@ -96,16 +96,20 @@ repo, and local app use points at a push-disabled clone,
 
 ## 9. The Chromatic check blocks on unreviewed visual diffs
 
-**Decision:** The required `chromatic` CI job fails while any snapshot is
-unreviewed or denied. After accepting changes in Chromatic, re-run the job.
+**Decision:** Chromatic's **UI Tests** check is a required check on `main`.
+It stays pending, and blocks the merge, while any visual or accessibility
+change in a pull request's build is unaccepted, and turns green on its own
+once every change is accepted. The CI workflow's `chromatic` job only builds
+and publishes Storybook; it isn't the gate.
 
-**Why:** It was originally set to pass on any successful build
-(`exitZeroOnChanges: true`), so it never blocked anything. Chromatic's own
-GitHub statuses weren't reaching pull requests, so the fix lives in the CI
-job.
+**Why:** The CI job passed even with unreviewed changes in the build,
+so it couldn't gate merges. Chromatic's own checks weren't posting on pull
+requests because the Chromatic project wasn't linked to the GitHub
+repository. Linking it made UI Tests (and the non-required Storybook
+Publish) post on every pull request.
 
-**Status:** New stories don't block. The blocking path hasn't yet been
-tested against a change to an already-approved story.
+**Status:** Proven against new stories. A change to an already-approved
+story is still to be tested.
 
 ## 10. Styling follows Carbon; overrides go through the theme layer
 
