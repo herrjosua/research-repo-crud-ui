@@ -135,12 +135,13 @@ function clip(text, max, { fromEnd = false } = {}) {
 // Loads every record by shelling out to export_records.py, exactly like
 // GET /api/records. Read fresh on every call (~0.1s for the whole corpus), so
 // Ask the Repo always sees the same records the rest of the app does,
-// including edits made a moment ago through PUT /api/records.
-async function loadRecords() {
+// including edits made a moment ago through PUT /api/records. `summary`
+// passes --summary (no html/searchText), for callers that only need tags.
+async function loadRecords({ summary = false } = {}) {
     const scriptsDir = path.join(process.env.AGENTIC_REPO_ROOT, 'research', 'scripts');
     const { stdout } = await execFileAsync(
         process.env.PYTHON_BIN || 'python3',
-        [path.join(scriptsDir, 'export_records.py')],
+        [path.join(scriptsDir, 'export_records.py'), ...(summary ? ['--summary'] : [])],
         {
             cwd: scriptsDir,
             // See PYTHON_ENV in routes/records.js for why.

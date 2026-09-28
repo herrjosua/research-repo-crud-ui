@@ -306,7 +306,36 @@ otherwise).
 
 | Method | Path       | Body                                   | Notes |
 |--------|------------|----------------------------------------|-------|
+| GET    | `/api/ask/config` | — | What the Ask tab needs up front: whether asking works here, and the project list. Always `200` for a signed-in user (never `503`); `401` when signed out. |
 | POST   | `/api/ask` | `{ question: string, project?: string }` | RAG over every record, answered by a local Ollama. `503` unless `LLM_PROVIDER=ollama`; `502` if Ollama is unreachable or fails. |
+
+**`GET /api/ask/config`** responds:
+
+```jsonc
+{
+  "enabled": true,  // true only when LLM_PROVIDER=ollama; false means POST /api/ask answers 503
+  "projects": [
+    { "id": "project-onboarding", "label": "Onboarding", "count": 21 },
+    …,
+    { "id": "project-cross-cutting", "label": "Cross-cutting", "count": 25 }
+  ]
+}
+```
+
+- `projects` has one entry per project under `projects:` in
+  `research/projects.yml`, in that file's order, with `project-cross-cutting`
+  moved last.
+- `id` is the full tag, exactly what `POST /api/ask`'s `project` filter matches.
+- `label` is read from `projects.yml` (parsed with the YAML engine
+  `gray-matter` already bundles). `export_records.py` outputs each record's
+  project tag but not project names, so the file is the only place labels exist.
+- `count` is how many records from `export_records.py --summary` carry the tag.
+  That includes raw sessions and components, whose tag the script adds from
+  `projects.yml`.
+- A checkout without `research/projects.yml` (the e2e and default test
+  corpora) has project tagging off, so `projects` is `[]`. The export isn't run
+  at all in that case. An unreadable or malformed file is logged as a warning
+  and also gives `[]`.
 
 `question` is 1–2000 characters. `project` is optional: omitted, `null` or
 `"all"` searches the whole repo; anything else must be a tag slug
@@ -342,7 +371,8 @@ real record:
 | `kind`          | string           | One of `KIND_META`'s kinds: raw `interview` → `interview`, raw `survey` → `survey`, other raw sessions → `transcript`, findings/analytics → `synthesis`, deliverables/components → `doc`. |
 | `title`         | string           | The record's title. |
 | `excerpt`       | string           | The cited passage, verbatim from the record (≤ ~600 chars, may contain `\n`). |
-| `project`       | string \| null   | The request's `project` filter, or `null` when unfiltered. |
+| `project`       | string \| null   | The request's `project` filter, echoed back, or `null` when unfiltered. The same on every source in a response. |
+| `recordProject` | string \| null   | The cited record's own `project-*` tag (e.g. `project-onboarding`), or `null` if it has none (a checkout without `projects.yml`). Use this, not `project`, to say which project a source belongs to: under an unfiltered question `project` is always `null`. |
 | `date`          | string \| null   | `"Jan 14, 2025"`, the mock's format; `null` if the record has no date. |
 | `contextBefore` | string \| null   | The record text just before the excerpt (≤ ~400 chars, `…`-clipped). |
 | `contextAfter`  | string \| null   | The record text just after it. |
