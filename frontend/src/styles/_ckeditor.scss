@@ -1,0 +1,45 @@
+// CKEditor 5 (CreateSessionForm/EditRecordForm) draws its own focus
+// border, `--ck-focus-ring` (`1px solid var(--ck-color-focus-border)`, a
+// fixed blue — both declared on :root in ckeditor5.css). Pointed at Carbon's focus token instead, so the editor's ring
+// follows the app's theme like every other field's.
+//
+// Both are redeclared on CKEditor's own `.ck` elements: a custom property
+// that references another resolves where it's declared, so CKEditor's own
+// :root `--ck-focus-ring` has already frozen to its blue, and a :root
+// `var(--cds-focus)` would freeze to the white theme's teal and never
+// follow `.cds--g100` on <body>. Width stays CKEditor's 1px border
+// (a 2px one would shift the editor's content on focus).
+//
+// Tied to CKEditor 5's CSS-variable theming API (verified against
+// ckeditor5 48.5); re-check after a CKEditor upgrade.
+@mixin theme-tokens {
+  .ck {
+    --ck-color-focus-border: var(--cds-focus);
+    --ck-focus-ring: 1px solid var(--ck-color-focus-border);
+  }
+
+  // CKEditor isn't themed for dark mode: its toolbar and editing area stay
+  // white inside g100's dark modal. A light surface in a dark theme is what
+  // Carbon's `focus-inverse` is for (teal-60 there) — teal-30 `focus` on
+  // that white fill is only 1.70:1; teal-60 clears 3:1 on both sides of the
+  // border (4.99:1 on the white fill, 3.03:1 on the g100 modal). Revisit
+  // if the editor is ever dark-themed.
+  .cds--g90 .ck,
+  .cds--g100 .ck {
+    --ck-color-focus-border: var(--cds-focus-inverse);
+  }
+
+  // Links inside the editing area take Carbon's global
+  // `a { color: var(--cds-link-primary) }`, so they hit the same white
+  // surface: the dark theme's teal-40 link is 2.33:1 on it (Carbon's stock
+  // blue-40 was already 2.35:1 — failing before teal). The inverse link
+  // pair is Carbon's token for a link on a light surface in a dark theme:
+  // teal-60 at 4.99:1, hover teal-70 at 7.71:1. Re-pointing the two custom
+  // properties inside the editing area keeps Carbon's own `a` rule doing the
+  // coloring.
+  .cds--g90 .ck-content,
+  .cds--g100 .ck-content {
+    --cds-link-primary: var(--cds-link-inverse);
+    --cds-link-primary-hover: var(--cds-link-inverse-hover);
+  }
+}

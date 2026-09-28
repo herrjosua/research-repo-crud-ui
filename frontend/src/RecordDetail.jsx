@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Modal, Tag, InlineNotification, Button } from '@carbon/react';
 import { useRecord, useDeleteRecord, useRecordHistory } from './api/records';
 import EditRecordForm from './EditRecordForm';
+import RecordKindTag from './RecordKindTag';
 import { createPortal } from 'react-dom';
 import styles from './RecordDetail.module.scss';
 
@@ -174,6 +175,12 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
     <Modal
       open
       className={styles.modal}
+      modalLabel={record.data && (
+        <span className={styles.label}>
+          <RecordKindTag kind={record.data.kind} />
+          <span>{record.data.date} · {record.data.type}</span>
+        </span>
+      )}
       modalHeading={record.data ? record.data.title : 'Loading…'}
       passiveModal
       onRequestClose={onClose}
@@ -199,11 +206,9 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
               onClose={() => setSaveWarning(null)}
             />
           )}
-          <p>{record.data.date}</p>
           <div className={styles.tags}>
-            <Tag type="gray">{record.data.type}</Tag>
             {record.data.tags.map((tag) => (
-              <Tag key={tag} type="blue">{tag}</Tag>
+              <Tag key={tag} type="gray" size="sm">{tag}</Tag>
             ))}
           </div>
           {record.data.read_only && (
@@ -220,7 +225,7 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
               <>
                 <Button
                   ref={editButtonRef}
-                  kind="tertiary"
+                  kind="primary"
                   onClick={() => {
                     setSaveWarning(null);
                     setIsEditing(true);
@@ -233,7 +238,7 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
                 </Button>
               </>
             )}
-            <Button kind="ghost" onClick={() => setShowHistory(true)}>
+            <Button kind="tertiary" onClick={() => setShowHistory(true)}>
               View history
             </Button>
           </div>
@@ -243,7 +248,7 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
                 {record.data.last_edited_at && ` on ${new Date(record.data.last_edited_at).toLocaleString()}`}
               </p>
           )}
-          <div dangerouslySetInnerHTML={{ __html: cleanRecordHtml(record.data.html) }} />
+          <div className={styles.body} dangerouslySetInnerHTML={{ __html: cleanRecordHtml(record.data.html) }} />
         </>
       )}
 

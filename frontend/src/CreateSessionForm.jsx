@@ -21,6 +21,7 @@ import {
 } from 'ckeditor5';
 import 'ckeditor5/ckeditor5.css';
 import { useCreateSession } from './api/records';
+import styles from './CreateSessionForm.module.scss';
 
 const RESEARCH_TYPES = [
     'usability-test', 'interview', 'survey',
@@ -254,9 +255,19 @@ export default function CreateSessionForm({ onClose }) {
                     />
                 </div>
 
-                <Button type="submit" disabled={createSession.isPending}>
-                    {createSession.isPending ? 'Creating…' : 'Create session'}
-                </Button>
+                {/* Cancel is an outline (tertiary) button, per Direction B v2,
+                    not Carbon's filled secondary: next to a filled teal
+                    primary, a filled secondary reads as the same gray for
+                    protan/deutan users in g100 (see
+                    ask-the-repo/TOKEN_MAPPING.md, "Known tradeoff"). */}
+                <div className={styles.actions}>
+                    <Button type="submit" disabled={createSession.isPending}>
+                        {createSession.isPending ? 'Creating…' : 'Create session'}
+                    </Button>
+                    <Button kind="tertiary" onClick={() => onClose()}>
+                        Cancel
+                    </Button>
+                </div>
             </Stack>
         </Form>
     );

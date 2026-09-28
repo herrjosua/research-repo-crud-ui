@@ -47,7 +47,7 @@ describe('Dashboard', () => {
         const user = userEvent.setup();
         render(<Dashboard />);
 
-        await user.click(screen.getByLabelText('raw'));
+        await user.click(screen.getByLabelText('Raw'));
 
         expect(screen.getByText('2 of 3 records')).toBeInTheDocument();
         expect(screen.queryByText('Raw One')).not.toBeInTheDocument();
@@ -76,7 +76,7 @@ describe('Dashboard', () => {
         // "usability" only appears on Finding One — excluding the "finding"
         // kind on top of that guarantees zero matches deterministically.
         await user.click(screen.getByLabelText('usability'));
-        await user.click(screen.getByLabelText('finding'));
+        await user.click(screen.getByLabelText('Finding'));
 
         expect(screen.getByText('0 of 3 records')).toBeInTheDocument();
         expect(screen.getByText('No matching records')).toBeInTheDocument();

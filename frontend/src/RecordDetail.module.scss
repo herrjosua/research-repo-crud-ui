@@ -1,3 +1,5 @@
+@use '@carbon/react/scss/spacing';
+@use '@carbon/react/scss/type';
 @use './styles/variables' as vars;
 
 :global(.placeholder) {
@@ -11,17 +13,34 @@
   gap: vars.$spacing-action-gap;
 }
 
-// Same problem as .actions' own gap, plus no space between the date line
-// and the pill row, or between the pill row and what follows: Carbon zeroes
-// the margin on every tag after the first and zeroes <p> margin in its
-// reset. $spacing-tile-gap, not $spacing-action-gap, because the metadata
-// and the Edit/Delete/View history row below it are separate sections, not
-// one control group.
+// Modal label (above the title): the record's kind tag, then its date and
+// type — Direction B v2's detail header. The Tag's own outer margin would
+// offset it from the text beside it.
+.label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: vars.$spacing-action-gap;
+
+  :global(.cds--tag) {
+    margin: 0;
+  }
+}
+
+// Same problem as .actions' own gap, plus no space between the pill row and
+// what's around it: Carbon zeroes the margin on every tag after the first
+// and zeroes <p> margin in its reset. $spacing-tile-gap, not
+// $spacing-action-gap, because the tags and the Edit/Delete/View history
+// row below them are separate sections, not one control group.
 .tags {
   display: flex;
   flex-wrap: wrap;
   gap: vars.$spacing-action-gap;
   margin-block: vars.$spacing-tile-gap;
+
+  :global(.cds--tag) {
+    margin: 0;
+  }
 }
 
 // Carbon's Modal moves focus to its own close button on every open,
@@ -36,4 +55,73 @@
   border-color: transparent;
   outline: none;
   box-shadow: none;
+}
+
+// The record's own HTML body (rendered from its markdown). Carbon's reset
+// strips every heading/paragraph style, so the markdown's section headings
+// ("Objective", "Method", "Key Findings") otherwise render at the browser's
+// unstyled size with no spacing. Direction B v2's detail modal sets them as
+// small semibold section headings over body text — Carbon's type scale
+// here, so both themes and the app's font follow.
+.body {
+  @include type.type-style('body-01');
+
+  color: vars.$text-primary;
+
+  h1 {
+    @include type.type-style('heading-03');
+  }
+
+  h2 {
+    @include type.type-style('heading-02');
+  }
+
+  h3,
+  h4 {
+    @include type.type-style('heading-01');
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin-block: spacing.$spacing-06 spacing.$spacing-03;
+
+    &:first-child {
+      margin-block-start: 0;
+    }
+  }
+
+  p,
+  ul,
+  ol,
+  blockquote {
+    margin-block-end: spacing.$spacing-03;
+  }
+
+  ul,
+  ol {
+    padding-inline-start: spacing.$spacing-06;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  ol {
+    list-style: decimal;
+  }
+
+  blockquote {
+    padding-inline-start: spacing.$spacing-05;
+    border-inline-start: 2px solid vars.$border-strong;
+  }
+}
+
+// Links inside the record's own HTML body are plain <a>s, not Carbon
+// Links, so nothing gives them the app's focus ring — they'd fall back to
+// the browser's default. Same ring as the app's other custom focus targets.
+.body a:focus-visible {
+  outline: 2px solid vars.$focus;
+  outline-offset: 1px;
 }

@@ -1,0 +1,13 @@
+@use './styles/variables' as vars;
+
+// The rail's real frames (measured in the running app): 288px wide at a
+// 1280px viewport, 136px at the 672px md floor. Height is left to content —
+// on the Records page the rail grows with the page rather than scrolling.
+.rail {
+    inline-size: 288px;
+    background: vars.$background;
+}
+
+.narrow {
+    inline-size: 136px;
+}

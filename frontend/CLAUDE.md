@@ -25,7 +25,8 @@ section before touching any color or building any new component.
    `transcript`'s orange — see `ask-the-repo/TOKEN_MAPPING.md#kindtag`
    for the shipped example), but they must:
    - Be defined as a SCSS variable in this project's own theme layer
-     (same file/pattern as the teal primary override) — never
+     (same file/pattern as the teal primary override,
+     `src/styles/_carbon-tokens.scss`) — never
      hardcoded inline in a component's stylesheet
    - Never touch or edit Carbon's own package files — the override sits
      on top of Carbon, it doesn't modify Carbon's source

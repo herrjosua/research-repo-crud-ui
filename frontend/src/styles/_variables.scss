@@ -1,5 +1,6 @@
 @use '@carbon/react/scss/theme';
 @use '@carbon/colors' as colors;
+@use '@carbon/react/scss/components/tag/tokens' as tag-tokens;
 
 // Layout magnitudes — not covered by Carbon's own token set, specific to
 // this app's structure.
@@ -71,7 +72,8 @@ $background-hover: theme.$background-hover;
 $background-selected: theme.$background-selected;
 $border-interactive: theme.$border-interactive;
 // Keyboard focus ring for custom (non-Carbon) interactive elements —
-// Carbon's own components already draw theirs from this same token.
+// Carbon's own components already draw theirs from this same token, which
+// is teal via styles/_carbon-tokens.scss.
 // Added for the sources rail's card (ask-the-repo/sources/SourceCard.
 // module.scss), whose click target is a stretched overlay Carbon's own
 // focus styles don't cover.
@@ -126,3 +128,21 @@ $kind-tag-orange-text: colors.$black;
 
 $highlight-background: theme.$support-warning;
 $highlight-text: theme.$text-primary;
+
+// Research Records' per-kind accent — the card's left stripe and the rail's
+// swatch (recordKinds.js lists the kinds and their Carbon `Tag` types).
+// Each is Carbon's own `tag-color-<type>` component token, the text color
+// of that kind's Tag, so stripe, swatch and badge always agree and re-theme
+// together: 70-grade in white (e.g. teal-70), 20/30-grade in g100 — both
+// ≥ 3:1 against the card and rail surfaces (see
+// ask-the-repo/TOKEN_MAPPING.md, "Record kinds"). Carbon's tag token
+// module exposes each as `var(--cds-tag-color-<type>, <white value>)`, the
+// shape its own Tag CSS uses (white has no :root declaration;
+// `.cds--g100` declares the dark value).
+$record-kind-colors: (
+  raw: tag-tokens.$tag-color-teal,
+  finding: tag-tokens.$tag-color-green,
+  component: tag-tokens.$tag-color-red,
+  analytics: tag-tokens.$tag-color-purple,
+  deliverable: tag-tokens.$tag-color-magenta,
+);

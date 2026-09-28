@@ -1,0 +1,160 @@
+@use '@carbon/colors' as colors;
+@use '@carbon/react/scss/themes';
+@use '@carbon/react/scss/utilities/custom-property';
+
+// Carbon token overrides — the app's theme layer. index.scss loads this
+// module before `@carbon/react` (the button tokens are configured on first
+// load) and includes `theme-tokens` after it (so those declarations follow
+// Carbon's own). Every value is documented, with measured contrast, in
+// ask-the-repo/TOKEN_MAPPING.md ("Primary and tertiary buttons", "Focus ring", "Links").
+//
+// Tied to Carbon's component-token and custom-property APIs (verified
+// against @carbon/styles 1.115); re-check after a Carbon upgrade.
+
+// ── Primary and tertiary buttons ────────────────────────────────────────────────────
+//
+// Configures Carbon's own `$button-primary` / `-hover` / `-active` token
+// maps (@carbon/styles/scss/components/button/_tokens.scss, all
+// `!default`) rather than restyling `.cds--btn--primary` — so every
+// `<Button kind="primary">` (and anything else Carbon draws from these
+// tokens, e.g. a Modal's primary footer button) turns teal with no extra
+// markup or per-component CSS.
+//
+// Same shape as Carbon's stock values — one color per role, identical in
+// every theme (stock is blue-60 / blue-60-hover / blue-80) — swapped to
+// the teal ramp that's already this app's brand accent (`$chat-accent` in
+// _variables.scss, TOKEN_MAPPING.md's `teal` row). All four zones are
+// listed, like Carbon's own maps, so `.cds--g100` (useTheme.js's dark
+// class) re-emits `--cds-button-primary*` with the same value.
+//
+// Contrast (white label text on the fill, WCAG): 4.99 / 6.36 / 11.42:1 at
+// rest / hover / active.
+$-teal-primary: (
+  fallback: colors.$teal-60,
+  values: (
+    (theme: themes.$white, value: colors.$teal-60),
+    (theme: themes.$g10, value: colors.$teal-60),
+    (theme: themes.$g90, value: colors.$teal-60),
+    (theme: themes.$g100, value: colors.$teal-60),
+  ),
+);
+$-teal-primary-hover: (
+  fallback: colors.$teal-60-hover,
+  values: (
+    (theme: themes.$white, value: colors.$teal-60-hover),
+    (theme: themes.$g10, value: colors.$teal-60-hover),
+    (theme: themes.$g90, value: colors.$teal-60-hover),
+    (theme: themes.$g100, value: colors.$teal-60-hover),
+  ),
+);
+$-teal-primary-active: (
+  fallback: colors.$teal-80,
+  values: (
+    (theme: themes.$white, value: colors.$teal-80),
+    (theme: themes.$g10, value: colors.$teal-80),
+    (theme: themes.$g90, value: colors.$teal-80),
+    (theme: themes.$g100, value: colors.$teal-80),
+  ),
+);
+
+// Tertiary (outline) buttons: teal too. Unlike primary, Carbon's stock
+// tertiary differs per theme — blue-60 in white, but *white* in g100, since
+// its label sits directly on the page at rest and it fills on hover/focus
+// with `text-inverse` (#161616 in g100) on top. So light themes take the
+// primary's teal set and dark themes a light teal set: teal-30 at rest
+// (label 10.63:1 on the g100 page), teal-30-hover (8.93:1), teal-50 pressed
+// (5.42:1) — the same lighter-rest/darker-press shape as stock's
+// white / gray-10 / gray-30.
+$-teal-tertiary: (
+  fallback: colors.$teal-60,
+  values: (
+    (theme: themes.$white, value: colors.$teal-60),
+    (theme: themes.$g10, value: colors.$teal-60),
+    (theme: themes.$g90, value: colors.$teal-30),
+    (theme: themes.$g100, value: colors.$teal-30),
+  ),
+);
+$-teal-tertiary-hover: (
+  fallback: colors.$teal-60-hover,
+  values: (
+    (theme: themes.$white, value: colors.$teal-60-hover),
+    (theme: themes.$g10, value: colors.$teal-60-hover),
+    (theme: themes.$g90, value: colors.$teal-30-hover),
+    (theme: themes.$g100, value: colors.$teal-30-hover),
+  ),
+);
+$-teal-tertiary-active: (
+  fallback: colors.$teal-80,
+  values: (
+    (theme: themes.$white, value: colors.$teal-80),
+    (theme: themes.$g10, value: colors.$teal-80),
+    (theme: themes.$g90, value: colors.$teal-50),
+    (theme: themes.$g100, value: colors.$teal-50),
+  ),
+);
+
+@use '@carbon/react/scss/components/button/tokens' with (
+  $button-primary: $-teal-primary,
+  $button-primary-hover: $-teal-primary-hover,
+  $button-primary-active: $-teal-primary-active,
+  $button-tertiary: $-teal-tertiary,
+  $button-tertiary-hover: $-teal-tertiary-hover,
+  $button-tertiary-active: $-teal-tertiary-active
+);
+
+// ── Focus ring and links ──────────────────────────────────────────────
+// `focus` and the `link-*` tokens are theme tokens, not component tokens.
+// They aren't configured through `theme`'s `$theme` / `zone`'s `$zones`
+// maps on purpose: Carbon picks each component token's per-theme value by
+// comparing theme maps key-for-key (`theme.matches`), so a zone map with a
+// changed key no longer matches Carbon's stock `$g100` and the zone
+// silently stops emitting every button/tag/notification token. Instead
+// these properties are declared on Carbon's own theme selectors — the same
+// custom properties, selectors and mixin Carbon's zones use — which leaves
+// Carbon's theme maps (and that matching) untouched. `:root` covers the
+// default white theme, which has no zone class of its own.
+//
+// Focus — light themes: teal-60, the primary button's hue (Carbon's stock
+// light focus is likewise its primary blue-60). Dark themes: teal-30 —
+// Carbon's stock dark focus is white, the lightest ring available, and
+// teal-60 drops to ~2.4:1 on g100's `layer-02`; teal-30 is also Direction
+// B v2's dark `tealLight`. `focus-inverse` (rings on inverted surfaces:
+// toggletips, high-contrast notifications) is the mirror pair.
+//
+// Links (decided 2026-09-28: links join the teal system) — the same shape
+// as Carbon's stock blues, one ramp step for one step: light primary
+// teal-60 (stock blue-60), secondary teal-70 (blue-70), inverse teal-40
+// (blue-40) / hover teal-30 (blue-30); dark primary teal-40 (blue-40),
+// hover and secondary teal-30 (blue-30), inverse teal-60 (blue-60) / hover
+// teal-70 (blue-70). One deliberate step off stock: light
+// `link-primary-hover` is teal-80, not teal-70. Carbon's ghost button
+// draws its hover/pressed label from this token over `background-active`
+// (50% gray), and teal-70 there is 4.28:1 on `layer-01` — the same failure
+// stock blue-70 has (4.33:1). Teal-80 is 6.34:1. `link-visited` stays
+// Carbon's purple: it means something different. Ghost buttons have no
+// color token of their own (their label *is* the link color), so they're
+// teal through these as well.
+@mixin theme-tokens {
+  :root,
+  .cds--white,
+  .cds--g10 {
+    @include custom-property.declaration('focus', colors.$teal-60);
+    @include custom-property.declaration('focus-inverse', colors.$teal-30);
+    @include custom-property.declaration('link-primary', colors.$teal-60);
+    @include custom-property.declaration('link-primary-hover', colors.$teal-80);
+    @include custom-property.declaration('link-secondary', colors.$teal-70);
+    @include custom-property.declaration('link-inverse', colors.$teal-40);
+    @include custom-property.declaration('link-inverse-hover', colors.$teal-30);
+  }
+
+  .cds--g90,
+  .cds--g100 {
+    @include custom-property.declaration('focus', colors.$teal-30);
+    @include custom-property.declaration('focus-inverse', colors.$teal-60);
+    @include custom-property.declaration('link-primary', colors.$teal-40);
+    @include custom-property.declaration('link-primary-hover', colors.$teal-30);
+    @include custom-property.declaration('link-secondary', colors.$teal-30);
+    @include custom-property.declaration('link-inverse', colors.$teal-60);
+    @include custom-property.declaration('link-inverse-hover', colors.$teal-70);
+  }
+}

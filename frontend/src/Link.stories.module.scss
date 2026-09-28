@@ -1,0 +1,65 @@
+@use '@carbon/colors' as colors;
+@use '@carbon/react/scss/type';
+@use './styles/variables' as vars;
+
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.page,
+.layer,
+.editor {
+  padding: 1.5rem;
+}
+
+.page {
+  background: vars.$background;
+}
+
+.layer {
+  background: vars.$surface;
+}
+
+// CKEditor's editing area: white with dark text in both themes (it isn't
+// dark-themed) — the fixed pair ckeditor5.css itself uses, so this stand-in
+// matches what the real editor puts behind a link.
+.editor {
+  background: colors.$white;
+  color: colors.$black;
+}
+
+.heading {
+  @include type.type-style('heading-02');
+
+  margin-block-end: 1rem;
+  color: inherit;
+}
+
+.page .heading,
+.layer .heading,
+.page .table,
+.layer .table {
+  color: vars.$text-primary;
+}
+
+.table {
+  @include type.type-style('body-compact-01');
+
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0.5rem 1.5rem 0.5rem 0;
+    text-align: start;
+    vertical-align: middle;
+  }
+
+  thead th {
+    @include type.type-style('label-01');
+  }
+
+  tbody th {
+    font-weight: 400;
+  }
+}
