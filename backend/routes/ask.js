@@ -7,6 +7,7 @@ const { loadRecords } = require('../ask/corpus');
 const { createEmbeddingIndex, rankPassages } = require('../ask/retrieval');
 const { buildMessages, renumberCitations, toSource } = require('../ask/answer');
 const { toPlainText } = require('../ask/plainText');
+const { readProjectList, recordProjectTag } = require('../projects');
 
 // ---------------------------------------------------------------------------
 // POST /api/ask — Ask the Repo's RAG endpoint (local Ollama only).
@@ -37,6 +38,7 @@ const { toPlainText } = require('../ask/plainText');
 //     title: string,               // the record's title
 //     excerpt: string,             // the cited passage, verbatim from the record
 //     project: string | null,      // the request's project filter, or null
+//     recordProject: string | null,// the record's own project-* tag, or null
 //     date: string | null,         // "Jan 14, 2025", or null if the record has no date
 //     contextBefore: string | null,// text preceding the excerpt in the record (≤ ~400 chars)
 //     contextAfter: string | null, // text following it (≤ ~400 chars)
@@ -89,6 +91,38 @@ function validateAsk(body) {
 
 const router = express.Router();
 router.use(requireAuth);
+
+// ---------------------------------------------------------------------------
+// GET /api/ask/config — what the Ask tab needs before anyone asks anything.
+// Always 200 for a signed-in user (never 503, unlike POST):
+//   {
+//     enabled: boolean,  // true only when LLM_PROVIDER is set (to "ollama")
+//     projects: [{ id, label, count }],
+//                        // id: the full project-* tag POST's `project` filter
+//                        // matches; label: from research/projects.yml;
+//                        // count: exported records carrying that tag. In
+//                        // projects.yml order, project-cross-cutting last;
+//                        // [] when the checkout has no projects.yml.
+//   }
+// ---------------------------------------------------------------------------
+router.get('/config', async (req, res) => {
+  const projectList = readProjectList(process.env.AGENTIC_REPO_ROOT);
+  let projects = [];
+  if (projectList.length > 0) {
+    try {
+      const counts = new Map();
+      for (const record of await loadRecords({ summary: true })) {
+        const tag = recordProjectTag(record);
+        if (tag) counts.set(tag, (counts.get(tag) || 0) + 1);
+      }
+      projects = projectList.map((project) => ({ ...project, count: counts.get(project.id) || 0 }));
+    } catch (err) {
+      console.error('[GET /api/ask/config] export_records.py failed:', err.message);
+      return res.status(500).json({ error: 'internal server error' });
+    }
+  }
+  res.json({ enabled: Boolean(provider), projects });
+});
 
 router.post('/', async (req, res) => {
   if (!provider) {

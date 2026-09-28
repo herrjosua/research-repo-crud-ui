@@ -2,6 +2,7 @@
 // /api/ask returns. See routes/ask.js for the full response contract.
 
 const { sourceKind, formatDate, clip, CONTEXT_CHARS } = require('./corpus');
+const { recordProjectTag } = require('../projects');
 
 const SYSTEM_PROMPT = [
     'You answer questions about a UX research repository for a healthcare product team.',
@@ -86,6 +87,7 @@ function toSource({ passage, score }, project) {
         title: record.title,
         excerpt: chunk.text,
         project: project || null,
+        recordProject: recordProjectTag(record),
         date: formatDate(record.date),
         contextBefore: previous ? clip(previous.text, CONTEXT_CHARS, { fromEnd: true }) : null,
         contextAfter: next ? clip(next.text, CONTEXT_CHARS) : null,

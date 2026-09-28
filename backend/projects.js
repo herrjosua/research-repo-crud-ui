@@ -118,10 +118,47 @@ function removeRawSessionEntry(repoRoot, folder) {
   return 'removed';
 }
 
+// A record's own project tag (the first project-* tag in its tags, since
+// agentic-repo guarantees exactly one), or null when it has none, as in a
+// checkout without projects.yml.
+function recordProjectTag(record) {
+  const tags = Array.isArray(record.tags) ? record.tags : [];
+  return tags.find(isProjectTag) ?? null;
+}
+
+const CROSS_CUTTING_PROJECT = 'project-cross-cutting';
+
+// The `projects:` list from projects.yml as [{ id, label }], in file order
+// with project-cross-cutting moved last. The labels exist only there
+// (export_records.py outputs tags, not project names), so the file is parsed
+// with the same YAML engine removeRawSessionEntry uses. No projects.yml
+// means [] (tagging is off); an unreadable or malformed one also means [],
+// with a warning, matching export_records.py's tolerance for it.
+function readProjectList(repoRoot) {
+  let parsed;
+  try {
+    parsed = matter.engines.yaml.parse(fs.readFileSync(path.join(repoRoot, PROJECTS_FILE), 'utf8')) || {};
+  } catch (err) {
+    if (err.code !== 'ENOENT') console.warn(`[projects.yml] couldn't read the project list: ${err.message}`);
+    return [];
+  }
+  if (!Array.isArray(parsed.projects)) return [];
+
+  const projects = parsed.projects
+    .filter((entry) => entry && isProjectTag(entry.id))
+    .map((entry) => ({ id: entry.id, label: typeof entry.label === 'string' ? entry.label : entry.id }));
+  return [
+    ...projects.filter((project) => project.id !== CROSS_CUTTING_PROJECT),
+    ...projects.filter((project) => project.id === CROSS_CUTTING_PROJECT),
+  ];
+}
+
 module.exports = {
   PROJECTS_FILE,
   hasProjectsFile,
   isProjectTag,
+  recordProjectTag,
+  readProjectList,
   withoutProjectTags,
   projectSafeTags,
   removeRawSessionEntry,

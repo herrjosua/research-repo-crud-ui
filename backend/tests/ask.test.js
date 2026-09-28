@@ -150,6 +150,8 @@ describe('POST /api/ask', () => {
                 title: expect.any(String),
                 excerpt: expect.any(String),
                 project: null,
+                // This corpus has no projects.yml, so no record has a project tag.
+                recordProject: null,
                 date: expect.stringMatching(/^[A-Z][a-z]{2} \d{1,2}, \d{4}$/),
                 contextBefore: source.contextBefore === null ? null : expect.any(String),
                 contextAfter: source.contextAfter === null ? null : expect.any(String),
@@ -271,5 +273,20 @@ describe('POST /api/ask', () => {
         expect(res.body).toEqual({ error: 'the local language model is unavailable' });
         expect(errorSpy).toHaveBeenCalledWith(expect.stringMatching(/model runner has unexpectedly stopped/));
         errorSpy.mockRestore();
+    });
+});
+
+describe('GET /api/ask/config', () => {
+    it('rejects a request without a session', async () => {
+        const res = await request(server).get('/api/ask/config');
+        expect(res.status).toBe(401);
+    });
+
+    it('is enabled, with no projects in a corpus without projects.yml', async () => {
+        const res = await agent.get('/api/ask/config');
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ enabled: true, projects: [] });
+        expect(fakeOllama.state.requests).toHaveLength(0);
     });
 });
