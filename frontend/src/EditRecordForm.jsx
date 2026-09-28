@@ -30,6 +30,20 @@ function attributionFieldFor(record) {
     return null;
 }
 
+// agentic-repo gives every record exactly one project-* tag. The backend's
+// PUT keeps a finding, analytics summary or deliverable's existing one and
+// never writes one into a raw session (see backend/projects.js), so the
+// project is shown read-only here and kept out of the editable tags.
+const isProjectTag = (tag) => tag.startsWith('project-');
+
+// Raw sessions get their project from research/projects.yml; every other
+// kind carries it in its own frontmatter.
+function projectHelperText(record) {
+    return record.kind === 'raw'
+        ? 'Assigned in research/projects.yml, not in the session itself'
+        : 'Each record keeps its one project tag; it can\'t be changed here';
+}
+
 const ATTRIBUTION_LABELS = { researcher: 'Researcher', designer: 'Designer', evaluator: 'Evaluator' };
 
 const EDITOR_CONFIG = {
@@ -47,7 +61,8 @@ export default function EditRecordForm({ record, onClose }) {
 
     const [title, setTitle] = useState(record.title);
     const [status, setStatus] = useState(record.status || '');
-    const [tags, setTags] = useState(record.tags.join(', '));
+    const projectTags = record.tags.filter(isProjectTag);
+    const [tags, setTags] = useState(record.tags.filter((tag) => !isProjectTag(tag)).join(', '));
     const [content, setContent] = useState(record.rawContent);
     const [attributionValue, setAttributionValue] = useState(
         attributionField ? (record[attributionField] || me.data?.git_name || '') : '',
@@ -56,12 +71,14 @@ export default function EditRecordForm({ record, onClose }) {
 
     const titleInvalid = attemptedSubmit && title.trim() === '';
     const statusInvalid = attemptedSubmit && status === '';
+    const tagList = tags.split(',').map((t) => t.trim()).filter(Boolean);
+    const tagsInvalid = tagList.some(isProjectTag);
 
     function handleSubmit(event) {
         event.preventDefault();
         setAttemptedSubmit(true);
 
-        if (title.trim() === '' || status === '') {
+        if (title.trim() === '' || status === '' || tagsInvalid) {
             return;
         }
 
@@ -70,7 +87,8 @@ export default function EditRecordForm({ record, onClose }) {
                 frontmatter: {
                     title,
                     status,
-                    tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+                    // Sent back unchanged; the server decides what to keep.
+                    tags: [...tagList, ...projectTags],
                     ...(attributionField ? { [attributionField]: attributionValue } : {}),
                 },
                 content,
@@ -106,6 +124,16 @@ export default function EditRecordForm({ record, onClose }) {
                     invalidText="Choose a status — leaving this blank would overwrite the record's current status."
                 />
 
+                {projectTags.length > 0 && (
+                    <TextInput
+                        id="edit-project"
+                        labelText="Project"
+                        helperText={projectHelperText(record)}
+                        value={projectTags.join(', ')}
+                        readOnly
+                    />
+                )}
+
                 <TextInput
                     id="edit-tags"
                     labelText="Tags"
@@ -113,6 +141,8 @@ export default function EditRecordForm({ record, onClose }) {
                     helperText="Comma-separated, e.g. onboarding, usability, mobile"
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
+                    invalid={tagsInvalid}
+                    invalidText="Remove project-* tags from this list. A record's project can't be edited here."
                 />
 
                 {attributionField && (

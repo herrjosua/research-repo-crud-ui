@@ -313,6 +313,18 @@ describe('PUT /api/records/:id', () => {
         expect(res.body.error).toMatch(/tags must be an array of strings or null/);
     });
 
+    // Project tagging is off in a checkout without research/projects.yml (this
+    // fixture); tests/projectTags.test.js covers it on.
+    it('leaves project-* tags as sent when there is no projects.yml', async () => {
+        const res = await agent.put(`/api/records/${recordId}`).send({
+            frontmatter: { tags: ['onboarding', 'project-onboarding'] },
+        });
+        expect(res.status).toBe(200);
+        expect(matter(await fs.readFile(filePath(), 'utf8')).data.tags).toEqual(['onboarding', 'project-onboarding']);
+
+        await agent.put(`/api/records/${recordId}`).send({ frontmatter: { tags: ['onboarding', 'usability'] } });
+    });
+
     it('returns 404 for an id that does not exist', async () => {
         const res = await agent.put('/api/records/raw:does-not-exist').send({ frontmatter: { status: 'final' } });
         expect(res.status).toBe(404);

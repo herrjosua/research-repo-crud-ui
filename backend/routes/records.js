@@ -68,6 +68,13 @@ const {
   validateFrontmatterPatch,
   normalizeFrontmatterDates,
 } = require('../validation');
+const {
+  PROJECTS_FILE,
+  hasProjectsFile,
+  withoutProjectTags,
+  projectSafeTags,
+  removeRawSessionEntry,
+} = require('../projects');
 
 // Every Python script invoked below (new_research_session.py, export_records.py,
 // build_index.py) prints a clean, single-line message to stderr on an expected
@@ -170,7 +177,11 @@ router.post('/sessions', writeLimiter, async (req, res) => {
     }
 
     args.push('--title', title, '--type', type, '--topic-slug', topicSlug);
-    if (tags) args.push('--tags', Array.isArray(tags) ? tags.join(',') : tags);
+    // A raw session's project comes from projects.yml, never its own files.
+    const rawTags = tags && hasProjectsFile(AGENTIC_REPO_ROOT)
+      ? withoutProjectTags(Array.isArray(tags) ? tags : tags.split(',').map((t) => t.trim()))
+      : tags;
+    if (rawTags) args.push('--tags', Array.isArray(rawTags) ? rawTags.join(',') : rawTags);
     if (relatedComponents) args.push('--related-components', Array.isArray(relatedComponents) ? relatedComponents.join(',') : relatedComponents);
     if (relatedFindings) args.push('--related-findings', Array.isArray(relatedFindings) ? relatedFindings.join(',') : relatedFindings);
     args.push('--researcher', resolvedResearcher);
@@ -217,6 +228,11 @@ router.post('/sessions', writeLimiter, async (req, res) => {
   }
 
   await withRepoLock(async () => {
+    // new_research_session.py adds a new raw session to projects.yml. Commit
+    // that too, unless the file already had uncommitted edits: those aren't
+    // this request's to commit.
+    const commitProjectsFile = mode === 'raw' && await projectsFileIsClean();
+
     let stdout;
     try {
       ({ stdout } = await execFileAsync(PYTHON_BIN, args, { cwd: SCRIPTS_DIR, env: PYTHON_ENV }));
@@ -232,7 +248,7 @@ router.post('/sessions', writeLimiter, async (req, res) => {
       // The script prints a fully resolved path, so resolve the root too
       // (e.g. macOS /var -> /private/var), or the relative path escapes it.
       const createdPath = path.relative(await fs.realpath(AGENTIC_REPO_ROOT), createdMatch[1].trim());
-      await commitChange(`Create ${createdPath}`, user, [createdPath]);
+      await commitChange(`Create ${createdPath}`, user, [createdPath, ...(commitProjectsFile ? [PROJECTS_FILE] : [])]);
     }
 
     res.status(201).json({ message: stdout.trim() });
@@ -409,6 +425,24 @@ async function commitChange(message, user, paths) {
 }
 
 // ---------------------------------------------------------------------------
+// Shared helper: true when research/projects.yml exists, is tracked, and has
+// no uncommitted changes, so a write route can commit its own edit to it
+// without sweeping in someone else's. Never throws.
+// ---------------------------------------------------------------------------
+async function projectsFileIsClean() {
+  if (!hasProjectsFile(AGENTIC_REPO_ROOT)) return false;
+  try {
+    const { stdout } = await execFileAsync(
+      'git', ['--literal-pathspecs', 'status', '--porcelain', '--', PROJECTS_FILE], { cwd: AGENTIC_REPO_ROOT },
+    );
+    return stdout.trim() === '';
+  } catch (err) {
+    console.warn(`[projects.yml] couldn't check git status: ${err.message}`);
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // PUT /records/:id — no script exists for editing, so read/modify/write the
 // markdown file directly, then re-run build_index.py to refresh indexes.
 // ---------------------------------------------------------------------------
@@ -468,8 +502,15 @@ router.put('/records/*splat', writeLimiter, async (req, res) => {
       const existing = await fs.readFile(filePath, 'utf8');
       const parsed = matter(existing);
 
+      // Project tags follow agentic-repo's rules, whatever the client sent
+      // (see projects.js).
+      const patch = frontmatter && Object.prototype.hasOwnProperty.call(frontmatter, 'tags')
+          && hasProjectsFile(AGENTIC_REPO_ROOT)
+        ? { ...frontmatter, tags: projectSafeTags(record.kind, frontmatter.tags, parsed.data.tags) }
+        : frontmatter;
+
       const updatedFrontmatter = {
-        ...(frontmatter ? { ...parsed.data, ...frontmatter } : parsed.data),
+        ...(patch ? { ...parsed.data, ...patch } : parsed.data),
         last_edited_by: user.git_name,
         last_edited_at: new Date().toISOString(),
       };
@@ -542,6 +583,22 @@ router.delete('/records/*splat', writeLimiter, async (req, res) => {
       return res.status(500).json({ error: `failed to delete: ${err.message}` });
     }
 
+    // A deleted raw session's projects.yml entry would make build_index.py
+    // fail, so remove it before the reindex. Best effort: the delete has
+    // already happened, so nothing here can fail the request.
+    const extraPaths = [];
+    if (record.kind === 'raw' && hasProjectsFile(AGENTIC_REPO_ROOT)) {
+      const wasClean = await projectsFileIsClean();
+      const folder = path.basename(path.dirname(record.filePath));
+      if (removeRawSessionEntry(AGENTIC_REPO_ROOT, folder) === 'removed') {
+        if (wasClean) {
+          extraPaths.push(PROJECTS_FILE);
+        } else {
+          console.warn(`[projects.yml] removed raw entry ${folder} but left it uncommitted: the file already had uncommitted edits`);
+        }
+      }
+    }
+
     let indexWarning = null;
     try {
       await execFileAsync(PYTHON_BIN, [path.join(SCRIPTS_DIR, 'build_index.py')], { cwd: SCRIPTS_DIR, env: PYTHON_ENV });
@@ -552,7 +609,7 @@ router.delete('/records/*splat', writeLimiter, async (req, res) => {
 
     // A raw record is its whole session folder (see the fs.rm above).
     const removed = record.kind === 'raw' ? path.dirname(record.filePath) : record.filePath;
-    await commitChange(`Delete ${record.path}`, user, [path.relative(AGENTIC_REPO_ROOT, removed), ...INDEX_PATHS]);
+    await commitChange(`Delete ${record.path}`, user, [path.relative(AGENTIC_REPO_ROOT, removed), ...INDEX_PATHS, ...extraPaths]);
 
     if (indexWarning) {
       return res.status(200).json({

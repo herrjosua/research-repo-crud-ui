@@ -162,3 +162,75 @@ describe('EditRecordForm — save warning', () => {
         expect(onClose).toHaveBeenCalledWith(undefined);
     });
 });
+
+describe('EditRecordForm — project tag', () => {
+    const findingRecord = {
+        id: 'finding:onboarding',
+        kind: 'finding',
+        title: 'Onboarding',
+        status: 'synthesized',
+        tags: ['onboarding', 'usability', 'project-onboarding'],
+        rawContent: '# Onboarding',
+        researcher: 'Priya Patel',
+    };
+
+    function setup(record) {
+        useMe.mockReturnValue({ data: { git_name: 'Priya Patel', is_lead: 0 } });
+        useUsers.mockReturnValue({ data: [] });
+        const mutate = vi.fn();
+        useUpdateRecord.mockReturnValue({ mutate, isPending: false, isError: false });
+        const user = userEvent.setup();
+        renderWithQueryClient(<EditRecordForm record={record} onClose={vi.fn()} />);
+        return { mutate, user };
+    }
+
+    it('shows the project read-only and keeps it out of the editable tags', () => {
+        setup(findingRecord);
+
+        const project = screen.getByLabelText('Project');
+        expect(project).toHaveValue('project-onboarding');
+        expect(project).toHaveAttribute('readonly');
+        expect(screen.getByText(/can't be changed here/)).toBeInTheDocument();
+        expect(screen.getByLabelText('Tags')).toHaveValue('onboarding, usability');
+    });
+
+    it('sends the project tag back unchanged alongside the edited tags', async () => {
+        const { mutate, user } = setup(findingRecord);
+
+        const tags = screen.getByLabelText('Tags');
+        await user.clear(tags);
+        await user.type(tags, 'onboarding, funnel');
+        await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+        expect(mutate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                frontmatter: expect.objectContaining({ tags: ['onboarding', 'funnel', 'project-onboarding'] }),
+            }),
+            expect.anything(),
+        );
+    });
+
+    it('rejects a project-* tag typed into the tags input and doesn\'t save', async () => {
+        const { mutate, user } = setup(findingRecord);
+
+        await user.type(screen.getByLabelText('Tags'), ', project-cross-cutting');
+
+        expect(screen.getByText(/Remove project-\* tags from this list/)).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: /save changes/i }));
+        expect(mutate).not.toHaveBeenCalled();
+    });
+
+    it('explains that a raw session\'s project comes from projects.yml', () => {
+        setup({ ...rawRecord, tags: ['onboarding', 'project-onboarding'] });
+
+        expect(screen.getByLabelText('Project')).toHaveValue('project-onboarding');
+        expect(screen.getByText(/Assigned in research\/projects.yml/)).toBeInTheDocument();
+        expect(screen.getByLabelText('Tags')).toHaveValue('onboarding');
+    });
+
+    it('shows no project field for a record without a project tag', () => {
+        setup(rawRecord);
+
+        expect(screen.queryByLabelText('Project')).not.toBeInTheDocument();
+    });
+});

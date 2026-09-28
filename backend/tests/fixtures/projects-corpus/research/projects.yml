@@ -1,0 +1,16 @@
+# Fixture copy of agentic-repo's research/projects.yml format: the project
+# list, plus the raw: and components: maps for the kinds whose files can't
+# carry a project tag.
+
+projects:
+  - id: project-onboarding
+    label: Onboarding
+    description: First-run workspace setup flow for new admins.
+  - id: project-cross-cutting
+    label: Cross-cutting
+    description: Program-level work that belongs to no single project.
+
+raw:
+  2026-01-19-onboarding-usability-test: project-onboarding  # keep this comment
+
+components: {}
