@@ -19,7 +19,9 @@ merge gate; UI Tests is.
 This is a solo project, so the repository owner is the only reviewer:
 open the pull request's Chromatic build and accept or reject each change
 there (Chromatic's separate UI Review feature isn't used). Once every
-change is accepted, UI Tests turns green on its own. Because
+change is accepted, UI Tests turns green on its own. A rejected change
+(Deny in Chromatic) keeps UI Tests failing and the merge blocked until the
+change is accepted or reverted. Because
 "Require branches to be up to date before merging" is on, if `main` moves
 after you accept, GitHub asks you to update the branch, which starts a new
 Chromatic build.
