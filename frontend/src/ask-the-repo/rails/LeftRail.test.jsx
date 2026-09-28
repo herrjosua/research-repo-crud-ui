@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LeftRail from './LeftRail';
 
@@ -14,6 +14,13 @@ const CONVERSATIONS = [
     { id: 'c3', title: 'Search intent patterns', project: 'all', lastMessage: '…', time: 'Mon' },
 ];
 
+// Carbon's Dropdown (the project picker) scrolls its highlighted option
+// into view (Element.scrollIntoView — missing in jsdom). Same stub as
+// CreateSessionForm.test.jsx.
+beforeAll(() => {
+    Element.prototype.scrollIntoView = () => {};
+});
+
 function renderRail(props = {}) {
     return render(
         <LeftRail
@@ -23,6 +30,7 @@ function renderRail(props = {}) {
             conversations={CONVERSATIONS}
             activeConversationId={null}
             onSelectConversation={() => {}}
+            onNewChat={() => {}}
             {...props}
         />
     );
@@ -50,7 +58,8 @@ describe('LeftRail', () => {
         const onSelectProject = vi.fn();
         renderRail({ onSelectProject });
 
-        await user.click(screen.getByRole('button', { name: /Checkout Redesign/ }));
+        await user.click(screen.getByRole('combobox', { name: /Project/ }));
+        await user.click(screen.getByRole('option', { name: /Checkout Redesign/ }));
 
         expect(onSelectProject).toHaveBeenCalledWith('checkout');
     });
@@ -65,16 +74,57 @@ describe('LeftRail', () => {
         expect(onSelectConversation).toHaveBeenCalledWith('c3');
     });
 
-    it('collapses and expands, hiding and restoring the projects/conversations content', async () => {
+    it('scrolls only Recent, as a keyboard-reachable region, with New chat, the picker and the footer pinned outside it', async () => {
         const user = userEvent.setup();
         renderRail();
 
-        expect(screen.getByRole('navigation', { name: 'Projects' })).toBeInTheDocument();
+        const region = screen.getByRole('region', { name: 'Recent conversations' });
+        expect(within(region).getByText('Recent')).toBeInTheDocument();
+        expect(within(region).queryByRole('combobox')).not.toBeInTheDocument();
+        expect(within(region).queryByRole('button', { name: 'New chat' })).not.toBeInTheDocument();
+        expect(within(region).queryByText(/Session only/)).not.toBeInTheDocument();
+
+        await user.tab(); // collapse toggle
+        await user.tab(); // New chat
+        await user.tab(); // project picker
+        expect(screen.getByRole('combobox', { name: /Project/ })).toHaveFocus();
+        await user.tab();
+        expect(region).toHaveFocus();
+    });
+
+    it('collapses and expands, hiding and restoring the picker and conversations', async () => {
+        const user = userEvent.setup();
+        renderRail();
+
+        expect(screen.getByRole('combobox', { name: /Project/ })).toBeInTheDocument();
 
         await user.click(screen.getByRole('button', { name: 'Collapse rail' }));
-        expect(screen.queryByRole('navigation', { name: 'Projects' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('combobox', { name: /Project/ })).not.toBeInTheDocument();
+        expect(screen.queryByRole('region', { name: 'Recent conversations' })).not.toBeInTheDocument();
 
         await user.click(screen.getByRole('button', { name: 'Expand rail' }));
-        expect(screen.getByRole('navigation', { name: 'Projects' })).toBeInTheDocument();
+        expect(screen.getByRole('combobox', { name: /Project/ })).toBeInTheDocument();
+    });
+
+    it('starts a new chat', async () => {
+        const user = userEvent.setup();
+        const onNewChat = vi.fn();
+        renderRail({ onNewChat });
+
+        await user.click(screen.getByRole('button', { name: 'New chat' }));
+
+        expect(onNewChat).toHaveBeenCalledWith();
+    });
+
+    it('says conversations are session only', () => {
+        renderRail();
+
+        expect(screen.getByText(/Session only: conversations aren't saved yet/)).toBeInTheDocument();
+    });
+
+    it('shows the empty history text with no conversations', () => {
+        renderRail({ conversations: [] });
+
+        expect(screen.getByText('Questions you ask will appear here.')).toBeInTheDocument();
     });
 });

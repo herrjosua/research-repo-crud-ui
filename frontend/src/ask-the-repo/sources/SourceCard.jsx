@@ -18,8 +18,9 @@ import styles from './SourceCard.module.scss';
  * title also makes a concise accessible name for "open this source".
  *
  * Pinning is UI-only for now (real persistence is v1.3.7): `pinned` /
- * `onTogglePin` flip session state one level up in `SourcesPanel`, and the
- * panel's footer says so, rather than this button implying it's saved.
+ * `onTogglePin` flip session state in `AskTheRepo.jsx` (shared with the
+ * detail modal), and the rail's footer says so, rather than this button
+ * implying it's saved.
  *
  * The pin is a plain icon + text button — the same pattern as Story 4's
  * "Save as deliverable" (`../chat/AssistantMessage.jsx`) — not Carbon's
@@ -28,11 +29,14 @@ import styles from './SourceCard.module.scss';
  * wide end padding for its icon, so it overflowed the card (measured
  * 164px). This one wraps instead.
  *
- * `source` (`../mock/messages.js`'s source shape), `selected` (bool — the
- * source whose detail modal is open, or was opened last), `onOpen(event)`,
- * `pinned` (bool), `onTogglePin()`.
+ * `source` (a POST /api/ask source; see `../fixtures/messages.js`),
+ * `projectLabel` (the display name of `source.recordProject`, or null),
+ * `selected` (bool — the source whose detail modal is open, or was opened
+ * last), `onOpen(event)`, `pinned` (bool), `onTogglePin()`. The meta line
+ * shows whichever of project and date exist, and is left out when neither
+ * does.
  */
-export default function SourceCard({ source, selected = false, onOpen, pinned = false, onTogglePin }) {
+export default function SourceCard({ source, projectLabel = null, selected = false, onOpen, pinned = false, onTogglePin }) {
     const pinnable = PINNABLE_KINDS.has(source.kind);
 
     return (
@@ -45,9 +49,16 @@ export default function SourceCard({ source, selected = false, onOpen, pinned = 
                 {source.title}
             </button>
             <p className={styles.excerpt}>“{source.excerpt}”</p>
-            <p className={styles.meta}>
-                {source.project} · {source.date}
-            </p>
+            {/* Separate text nodes, not one joined string: the same node
+                structure as before project/date could be missing, so the
+                rendered text (glyph positions included) is unchanged. */}
+            {(projectLabel || source.date) && (
+                <p className={styles.meta}>
+                    {projectLabel}
+                    {projectLabel && source.date && ' · '}
+                    {source.date}
+                </p>
+            )}
             {pinnable && (
                 <button type="button" className={styles.pin} aria-pressed={pinned} onClick={onTogglePin}>
                     {pinned ? <PinFilled size={16} aria-hidden="true" /> : <Pin size={16} aria-hidden="true" />}

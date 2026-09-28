@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SourceDetailModal from './SourceDetailModal';
-import { INITIAL_MESSAGES_BY_CONVERSATION } from '../mock/messages';
+import { INITIAL_MESSAGES_BY_CONVERSATION } from '../fixtures/messages';
 
 const [interview, , transcript, synthesis] = INITIAL_MESSAGES_BY_CONVERSATION.c1[1].sources;
 
@@ -28,6 +28,19 @@ describe('SourceDetailModal', () => {
         expect(screen.getByText(interview.excerpt)).toBeInTheDocument();
         expect(screen.getByText(interview.contextAfter)).toBeInTheDocument();
         expect(screen.getByText('Cited excerpt')).toBeInTheDocument();
+    });
+
+    it('shows the project label and date, and only what exists of them', () => {
+        const { rerender } = renderModal({ projectLabel: 'Checkout Redesign' });
+        expect(screen.getByText('Checkout Redesign')).toBeInTheDocument();
+        expect(screen.getByText(interview.date)).toBeInTheDocument();
+        expect(screen.getByText('·')).toBeInTheDocument();
+
+        rerender(
+            <SourceDetailModal open source={{ ...interview, date: null }} projectLabel={null} onClose={() => {}} onTogglePin={() => {}} onToggleSave={() => {}} />
+        );
+        expect(screen.queryByText('·')).not.toBeInTheDocument();
+        expect(screen.queryByText(interview.date)).not.toBeInTheDocument();
     });
 
     it('states that pins and saved insights are not stored yet', () => {

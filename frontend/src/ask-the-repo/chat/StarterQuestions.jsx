@@ -8,8 +8,11 @@ import styles from './StarterQuestions.module.scss';
  * the question immediately on click; here, clicking one only fills the
  * composer (`onSelect`) so the user can review or edit it before sending.
  *
- * `questions` (array of question strings, e.g. `../mock/starters.js`'s
- * `STARTERS[projectId]`), `onSelect(question)`.
+ * `questions` (array of question strings, from `./starters.js`'s
+ * `startersFor(projectId)`), `onSelect(question)`. There's no disabled
+ * state: ChatPanel doesn't render the starters when asking isn't
+ * available, and a conversation that's waiting on an answer already has
+ * its question in the thread, so the starters aren't showing then either.
  */
 export default function StarterQuestions({ questions, onSelect }) {
     return (

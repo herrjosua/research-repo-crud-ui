@@ -1,8 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import { PROJECTS } from '../mock/constants';
 
 // `{ month: 'short', day: 'numeric', year: 'numeric' }` — "Sep 27, 2026",
-// the same format the mock sources' own `date` field uses.
+// the same format POST /api/ask's sources use for `date`.
 function today() {
     return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
@@ -14,18 +13,19 @@ function today() {
  * tell which sources are saved and the card can show the source's
  * KindTag.
  *
- * `project` is resolved to a `PROJECTS` id: sources carry their project as
- * a display label ("Checkout Redesign"), but insights are grouped by id.
- * A label with no matching project keeps its raw value, which lands the
- * insight in the Saved Insights tab's "Other" bucket instead of silently
- * mis-grouping it.
+ * `project` is the source's `recordProject`: the cited record's own
+ * project-* tag, which is what the Saved Insights tab groups by. (Not
+ * `source.project`, which only echoes the question's filter and is null
+ * for every source of an unfiltered question.) A record with no project,
+ * or one the config's project list doesn't know, lands in the tab's
+ * "Other" group.
  */
 export function insightFromSource(source) {
     return {
         id: `ins-${source.id}`,
         title: source.title,
         content: source.excerpt,
-        project: PROJECTS.find((project) => project.label === source.project)?.id ?? source.project,
+        project: source.recordProject ?? null,
         date: today(),
         savedFrom: 'source',
         sourceId: source.id,

@@ -81,6 +81,10 @@ $focus: theme.$focus;
 // reads as set apart, without borrowing interactive blue (which would
 // read as "clickable") or the chat-identity teal (`$chat-accent`, below).
 $border-strong: theme.$border-strong-01;
+// Ask the Repo's inline [n] citation buttons: Carbon's own link colors,
+// since a citation is a link to the source it names.
+$link: theme.$link-primary;
+$link-hover: theme.$link-primary-hover;
 
 // Chat panel's one deliberate brand-accent departure from the generic
 // Carbon tokens above (see comment on `$surface` for why the rail itself

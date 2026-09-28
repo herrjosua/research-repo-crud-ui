@@ -1,6 +1,7 @@
 // Mirrors `docs/Build_Direction_B_v2_Design_decomposed/src/data/mock/starters.ts`'s
-// `STARTERS` — keyed by project id (see `./constants.js`'s `PROJECTS`),
-// falling back to `all`'s list for any id without its own entry.
+// `STARTERS`, keyed by fixture project id (see `./constants.js`). Story
+// fixture only: the app's starters are `../chat/starters.js`, questions
+// checked against the real corpus.
 export const STARTERS = {
     all: [
         'What are the most common pain points across all projects?',

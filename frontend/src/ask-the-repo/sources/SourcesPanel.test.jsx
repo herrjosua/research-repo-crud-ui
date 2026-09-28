@@ -1,22 +1,28 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SourcesPanel from './SourcesPanel';
-import { useSavedInsights } from '../insights/useSavedInsights';
-import { INITIAL_MESSAGES_BY_CONVERSATION } from '../mock/messages';
-
-// Saved-as-insight state lives in `useSavedInsights` (lifted to
-// AskTheRepo.jsx in Story 6), so mount the panel with that same store.
-function SourcesPanelWithStore({ message }) {
-    const { savedSourceIds, toggleSourceInsight } = useSavedInsights();
-    return <SourcesPanel message={message} savedSourceIds={savedSourceIds} onToggleSaveSource={toggleSourceInsight} />;
-}
+import { INITIAL_MESSAGES_BY_CONVERSATION } from '../fixtures/messages';
+import { projectLabelFor } from '../fixtures/constants';
+import cardStyles from './SourceCard.module.scss';
 
 const REPLY = INITIAL_MESSAGES_BY_CONVERSATION.c1[1];
-const [interview] = REPLY.sources;
+const [interview, survey] = REPLY.sources;
+
+function renderPanel(props = {}) {
+    return render(
+        <SourcesPanel
+            message={REPLY}
+            onOpenSource={() => {}}
+            onTogglePin={() => {}}
+            projectLabelFor={projectLabelFor}
+            {...props}
+        />
+    );
+}
 
 describe('SourcesPanel', () => {
     it('lists every source the message cites, with a count', () => {
-        render(<SourcesPanelWithStore message={REPLY} />);
+        renderPanel();
 
         const panel = screen.getByRole('complementary', { name: 'Sources' });
         expect(within(panel).getAllByRole('article')).toHaveLength(REPLY.sources.length);
@@ -24,50 +30,58 @@ describe('SourcesPanel', () => {
         expect(within(panel).getByText(`Cited in reply · ${REPLY.timestamp}`)).toBeInTheDocument();
     });
 
+    it('shows each source\'s project by its label, from recordProject', () => {
+        renderPanel();
+
+        expect(screen.getAllByText(`Checkout Redesign · ${interview.date}`)).toHaveLength(1);
+    });
+
     it('shows the empty state when there is no active reply', () => {
-        render(<SourcesPanelWithStore message={null} />);
+        renderPanel({ message: null });
 
         expect(screen.getByText(/Sources will appear here/)).toBeInTheDocument();
         expect(screen.queryByRole('article')).not.toBeInTheDocument();
     });
 
-    it('opens the clicked source in the detail modal', async () => {
+    it('says so when the active reply cited nothing', () => {
+        renderPanel({ message: { ...REPLY, sources: [] } });
+
+        expect(screen.getByText("This reply didn't cite any sources.")).toBeInTheDocument();
+        expect(screen.queryByText(/nothing is stored yet/)).not.toBeInTheDocument();
+    });
+
+    it('reports the clicked source through onOpenSource', async () => {
         const user = userEvent.setup();
-        render(<SourcesPanelWithStore message={REPLY} />);
+        const onOpenSource = vi.fn();
+        renderPanel({ onOpenSource });
 
         await user.click(screen.getByRole('button', { name: interview.title }));
 
-        // Carbon marks the open state on the outer `.cds--modal` wrapper.
-        expect(screen.getByRole('dialog').closest('.cds--modal')).toHaveClass('is-visible');
-        expect(screen.getByText(interview.contextBefore)).toBeInTheDocument();
+        expect(onOpenSource).toHaveBeenCalledWith(interview, expect.objectContaining({ type: 'click' }));
     });
 
-    it('shares pin state between a card and its modal', async () => {
+    it('highlights the selected source and shows pinned ones as pinned', () => {
+        renderPanel({ selectedSourceId: survey.id, pinnedIds: new Set([interview.id]) });
+        const [interviewCard, surveyCard] = screen.getAllByRole('article');
+
+        expect(surveyCard).toHaveClass(cardStyles.selected);
+        expect(interviewCard).not.toHaveClass(cardStyles.selected);
+        expect(within(interviewCard).getByRole('button', { name: 'Pinned as top finding' })).toBeInTheDocument();
+    });
+
+    it('reports a pin toggle with its source', async () => {
         const user = userEvent.setup();
-        render(<SourcesPanelWithStore message={REPLY} />);
-        const card = screen.getAllByRole('article')[0];
+        const onTogglePin = vi.fn();
+        renderPanel({ onTogglePin });
 
-        await user.click(within(card).getByRole('button', { name: 'Pin as top finding' }));
-        await user.click(within(card).getByRole('button', { name: interview.title }));
+        await user.click(within(screen.getAllByRole('article')[0]).getByRole('button', { name: 'Pin as top finding' }));
 
-        expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Pinned as top finding' })).toBeInTheDocument();
+        expect(onTogglePin).toHaveBeenCalledWith(interview);
     });
 
     it('states that pins are a preview', () => {
-        render(<SourcesPanelWithStore message={REPLY} />);
+        renderPanel();
 
         expect(screen.getByText(/nothing is stored yet/)).toBeInTheDocument();
-    });
-
-    it('toggles "Save as insight" through the shared insights store', async () => {
-        const user = userEvent.setup();
-        const onToggleSaveSource = vi.fn();
-        render(<SourcesPanel message={REPLY} savedSourceIds={new Set([interview.id])} onToggleSaveSource={onToggleSaveSource} />);
-
-        await user.click(screen.getByRole('button', { name: interview.title }));
-        const dialog = screen.getByRole('dialog');
-        await user.click(within(dialog).getByRole('button', { name: 'Saved as insight' }));
-
-        expect(onToggleSaveSource).toHaveBeenCalledWith(interview);
     });
 });

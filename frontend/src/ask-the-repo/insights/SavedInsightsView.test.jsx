@@ -1,8 +1,8 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SavedInsightsView from './SavedInsightsView';
-import { SAMPLE_INSIGHTS } from '../mock/insights';
-import { PROJECTS } from '../mock/constants';
+import { SAMPLE_INSIGHTS } from '../fixtures/insights';
+import { PROJECTS } from '../fixtures/constants';
 
 describe('SavedInsightsView', () => {
     it('groups insights by project, with unmatched ones under Other', () => {

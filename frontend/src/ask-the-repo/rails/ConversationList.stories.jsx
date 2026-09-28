@@ -1,10 +1,10 @@
 import ConversationList from './ConversationList';
-import { CONVERSATIONS } from '../mock/conversations';
+import { CONVERSATIONS } from '../fixtures/conversations';
 
 // Grouped under Ask the Repo, alongside the rest of the left rail. No
 // PropTypes/TS on ConversationList, so `argTypes` is given explicitly
 // (same reasoning as sources/KindTag.stories.jsx); `activeConversationId`
-// is a closed enum (one of the mock `CONVERSATIONS`' ids) plus `null` for
+// is a closed enum (one of the fixture `CONVERSATIONS`' ids) plus `null` for
 // "nothing open", so `select` is the real control, not free text.
 export default {
   title: 'Ask the Repo/ConversationList',

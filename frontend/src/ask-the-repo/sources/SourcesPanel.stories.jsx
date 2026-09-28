@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import SourcesPanel from './SourcesPanel';
-import { useSavedInsights } from '../insights/useSavedInsights';
-import { INITIAL_MESSAGES_BY_CONVERSATION } from '../mock/messages';
+import { INITIAL_MESSAGES_BY_CONVERSATION } from '../fixtures/messages';
+import { projectLabelFor } from '../fixtures/constants';
 import styles from './SourcesPanel.stories.module.scss';
 
 // The panel's one prop is "the active assistant message" — a closed set of
@@ -15,7 +16,12 @@ const MESSAGES = {
     timestamp: '14:05',
     sources: INITIAL_MESSAGES_BY_CONVERSATION.c1[1].sources.slice(3),
   },
-  'Reply with no sources': { ...INITIAL_MESSAGES_BY_CONVERSATION.c1[1], id: 'm-none', sources: undefined },
+  'Reply with no sources': {
+    ...INITIAL_MESSAGES_BY_CONVERSATION.c1[1],
+    id: 'm-none',
+    content: "The provided sources don't say how long admins took to finish workspace setup.",
+    sources: [],
+  },
   'No reply yet (null)': null,
 };
 
@@ -37,25 +43,39 @@ export default {
   },
 };
 
-// Which sources are saved as insights lives in `useSavedInsights` (lifted
-// to AskTheRepo.jsx in Story 6, since the Saved Insights tab reads it
-// too), so each story mounts that same store around the panel — "Save as
-// insight" in the modal still toggles for real.
-function SourcesPanelWithStore(args) {
-  const { savedSourceIds, toggleSourceInsight } = useSavedInsights();
-  return <SourcesPanel {...args} savedSourceIds={savedSourceIds} onToggleSaveSource={toggleSourceInsight} />;
+// The panel is controlled: the source detail modal, the last-opened
+// ("selected") source and pins live in AskTheRepo.jsx, since an answer's
+// inline citations open the same modal. Each story keeps the selected and
+// pinned state locally, so clicking a card highlights it and pins toggle.
+function SourcesPanelWithState(args) {
+  const [selectedSourceId, setSelectedSourceId] = useState(null);
+  const [pinnedIds, setPinnedIds] = useState(() => new Set());
+  return (
+    <SourcesPanel
+      {...args}
+      selectedSourceId={selectedSourceId}
+      onOpenSource={(source) => setSelectedSourceId(source.id)}
+      pinnedIds={pinnedIds}
+      onTogglePin={(source) => setPinnedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(source.id)) next.delete(source.id);
+        else next.add(source.id);
+        return next;
+      })}
+      projectLabelFor={projectLabelFor}
+    />
+  );
 }
 
-// Live-editable playground: click a card to open its detail modal, pin a
-// source from the card or the modal, save it as an insight — all
-// session-only (see the footer note and the modal's notification).
+// Live-editable playground: click a card to select it, pin a source — all
+// session-only (see the footer note).
 export const Default = {
   args: {
     message: 'c1 reply — 4 sources',
   },
   render: (args) => (
     <div className={styles.frame}>
-      <SourcesPanelWithStore {...args} />
+      <SourcesPanelWithState {...args} />
     </div>
   ),
 };
@@ -77,7 +97,16 @@ export const MdFloorWidth = {
   },
   render: (args) => (
     <div className={`${styles.frame} ${styles.narrow}`}>
-      <SourcesPanelWithStore {...args} />
+      <SourcesPanelWithState {...args} />
     </div>
   ),
+};
+
+// A reply that cited nothing (the question isn't covered): the rail says
+// so instead of the "sources will appear" empty state.
+export const ReplyWithoutSources = {
+  args: {
+    message: 'Reply with no sources',
+  },
+  render: Default.render,
 };

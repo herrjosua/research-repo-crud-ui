@@ -19,9 +19,8 @@
     // `block-size: 100%`, filling the rail-row Grid's own height —
     // AskTheRepo.module.scss's `.railRow` comment covers where that real
     // (non-auto) height actually comes from. This is the end of that
-    // chain: `.conversations` below is what actually scrolls if its own
-    // content (however many conversations there are) runs longer than
-    // this.
+    // chain: `.scroll` below is what actually scrolls if Recent runs
+    // longer than this.
     block-size: 100%;
     background: vars.$background;
     border-inline-end: 1px solid vars.$border-subtle;
@@ -46,9 +45,9 @@
     flex-direction: column;
     // Fills whatever `.rail` leaves after `.header`; `min-block-size: 0`
     // lets it actually shrink below its content's natural size instead
-    // of forcing `.rail` to grow — `.conversations` (not this element) is
-    // what scrolls, so this itself stays `overflow: visible` (the
-    // default) rather than adding a second scroll container.
+    // of forcing `.rail` to grow — `.scroll` (not this element) is what
+    // scrolls, so this itself stays `overflow: visible` (the default)
+    // rather than adding a second scroll container.
     flex: 1;
     min-block-size: 0;
 }
@@ -60,18 +59,21 @@
     flex-shrink: 0;
 }
 
-// The actual scroll container: fills whatever `.body` leaves after
-// ProjectSwitcher + `.divider` (both natural height, so this is the only
-// flexible child), and scrolls its own conversation list internally once
-// there are more conversations than fit — keeping ProjectSwitcher always
-// visible above it, the same way ChatPanel's composer stays pinned below
-// its own scrolling message list.
-.conversations {
-    display: flex;
-    flex-direction: column;
+// The one scroll container: Recent, between the pinned "New chat" button
+// and project dropdown above and the pinned footer below. The dropdown is a
+// fixed-height field, so Recent keeps the rest of the rail however many
+// projects the config lists. It takes focus (tabIndex in LeftRail.jsx), so
+// it gets Carbon's inset focus ring; the inset keeps the ring inside the
+// rail's own border.
+.scroll {
     flex: 1;
     min-block-size: 0;
     overflow-y: auto;
+
+    &:focus-visible {
+        outline: 2px solid vars.$focus;
+        outline-offset: -2px;
+    }
 }
 
 .sectionLabel {
@@ -80,4 +82,30 @@
     color: vars.$text-secondary;
     text-transform: uppercase;
     letter-spacing: 0.02em;
+}
+
+// Full width so "New chat" (with its icon) fits even at the md floor,
+// where the header row has room only for the collapse toggle.
+.newChat {
+    padding: 0.5rem 0.5rem 0;
+    flex-shrink: 0;
+}
+
+// Same treatment as SourcesPanel.module.scss's `.footer`, for the same
+// reason (plain text fits the narrow rail; a notification doesn't).
+.footer {
+    @include type.type-style('label-01');
+    display: flex;
+    align-items: flex-start;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-block-start: 1px solid vars.$border-subtle;
+    color: vars.$text-secondary;
+    flex-shrink: 0;
+}
+
+.footerIcon {
+    flex-shrink: 0;
+    fill: currentColor;
 }

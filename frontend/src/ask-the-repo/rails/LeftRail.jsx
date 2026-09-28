@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { IconButton } from '@carbon/react';
-import { SidePanelClose, SidePanelOpen } from '@carbon/icons-react';
+import { Button, IconButton } from '@carbon/react';
+import { Add, Information, SidePanelClose, SidePanelOpen } from '@carbon/icons-react';
 import ProjectSwitcher from './ProjectSwitcher';
 import ConversationList from './ConversationList';
 import styles from './LeftRail.module.scss';
@@ -22,15 +22,26 @@ import styles from './LeftRail.module.scss';
  * `projects` / `activeProjectId` / `onSelectProject`: passed straight
  * through to `ProjectSwitcher`.
  *
- * `conversations`: the full list (`../mock/conversations.js`'s
- * `CONVERSATIONS` shape) — filtered here to the active project before
- * being handed to `ConversationList`. A conversation tagged project
- * `'all'` shows regardless of which project is active, and every
- * conversation shows when the active project itself is `'all'`, matching
- * `AskView.tsx`'s `filteredConvs` logic.
+ * `conversations`: this session's conversations (`../chat/useAskRepo.js`;
+ * `../fixtures/conversations.js` for the shape) — filtered here to the
+ * active project before being handed to `ConversationList`. A
+ * conversation started under `'all'` shows regardless of which project is
+ * active, and every conversation shows when the active project itself is
+ * `'all'`, matching `AskView.tsx`'s `filteredConvs` logic.
  *
  * `activeConversationId` / `onSelectConversation`: passed through to
- * `ConversationList`.
+ * `ConversationList`. `onNewChat()`: back to the empty state, in the
+ * current project.
+ *
+ * "New chat", the project dropdown under it and the session-only footer
+ * are pinned; Recent is the one scroll region between them. The dropdown
+ * is one field tall however many projects there are (ten in the real
+ * corpus), so Recent keeps the rest of the rail's height.
+ *
+ * Conversations only last until the page is left, and the footer says so
+ * in the Saved Insights tab's words. It's plain text with an icon, like
+ * the sources rail's footer, rather than an InlineNotification: this rail
+ * is as narrow as 136px at the md floor.
  */
 export default function LeftRail({
     projects,
@@ -39,6 +50,7 @@ export default function LeftRail({
     conversations,
     activeConversationId,
     onSelectConversation,
+    onNewChat,
 }) {
     const [collapsed, setCollapsed] = useState(false);
 
@@ -60,13 +72,25 @@ export default function LeftRail({
             </div>
             {!collapsed && (
                 <div className={styles.body}>
+                    <div className={styles.newChat}>
+                        <Button kind="ghost" size="sm" renderIcon={Add} onClick={() => onNewChat()}>
+                            New chat
+                        </Button>
+                    </div>
                     <ProjectSwitcher
                         projects={projects}
                         activeProjectId={activeProjectId}
                         onSelectProject={onSelectProject}
                     />
                     <div className={styles.divider} />
-                    <div className={styles.conversations}>
+                    {/* The rail's only scroll region. Focusable so a keyboard
+                        user can scroll it even with no rows to tab to. */}
+                    <div
+                        className={styles.scroll}
+                        role="region"
+                        aria-label="Recent conversations"
+                        tabIndex={0}
+                    >
                         <p className={styles.sectionLabel}>Recent</p>
                         <ConversationList
                             conversations={visibleConversations}
@@ -74,6 +98,10 @@ export default function LeftRail({
                             onSelectConversation={onSelectConversation}
                         />
                     </div>
+                    <p className={styles.footer}>
+                        <Information size={16} aria-hidden="true" className={styles.footerIcon} />
+                        Session only: conversations aren't saved yet — they stay here until you leave this page.
+                    </p>
                 </div>
             )}
         </aside>

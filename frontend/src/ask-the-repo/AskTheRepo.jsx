@@ -1,39 +1,96 @@
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Grid, Column, Tabs, TabList, Tab, TabPanels, TabPanel } from '@carbon/react';
+import { useQueryClient } from '@tanstack/react-query';
 import BreadcrumbBar from './shell/BreadcrumbBar';
 import LeftRail from './rails/LeftRail';
 import ChatPanel from './chat/ChatPanel';
-import { useConversationMessages, latestAssistantMessage } from './chat/useConversationMessages';
+import { useAskRepo, latestAssistantMessage } from './chat/useAskRepo';
+import { startersFor } from './chat/starters';
 import SourcesPanel from './sources/SourcesPanel';
+import SourceDetailModal from './sources/SourceDetailModal';
 import SavedInsightsView from './insights/SavedInsightsView';
 import { useSavedInsights } from './insights/useSavedInsights';
-import { PROJECTS } from './mock/constants';
-import { CONVERSATIONS } from './mock/conversations';
+import { useAskConfig } from '../api/ask';
 import styles from './AskTheRepo.module.scss';
 
 // Order here drives both the Tab/TabPanel pairing (Carbon's Tabs matches
 // them up by index) and Tabs' own controlled `selectedIndex`.
 const VIEWS = ['ask', 'insights'];
 
+// The project picker's no-filter entry. POST /api/ask treats "all" as the
+// whole repo, cross-cutting records included.
+const ALL_PROJECTS = 'all';
+
+function toggleIn(set, id) {
+    const next = new Set(set);
+    if (next.has(id)) {
+        next.delete(id);
+    } else {
+        next.add(id);
+    }
+    return next;
+}
+
 export default function AskTheRepo() {
+    const queryClient = useQueryClient();
     const [activeView, setActiveView] = useState('ask');
     // Lives here, not inside LeftRail: ChatPanel (below) reads the same
     // active-conversation/-project state the rail writes to, so it can't
     // be local-only to the rail.
-    const [activeProjectId, setActiveProjectId] = useState('all');
+    const [activeProjectId, setActiveProjectId] = useState(ALL_PROJECTS);
     const [activeConversationId, setActiveConversationId] = useState(null);
-    // Lifted out of ChatPanel in Story 5, for the same reason as the state
-    // above: the sources rail now reads the active conversation's messages
-    // too. The "active" assistant message the rail shows is derived, not
+
+    // GET /api/ask/config: whether this server can answer at all, and the
+    // real project list (project-* tags with labels and record counts).
+    // Until it loads, or if it fails, the picker shows only "All
+    // projects", and a 503 from POST /api/ask still switches the tab to
+    // "not available".
+    const config = useAskConfig();
+    const configProjects = useMemo(() => config.data?.projects ?? [], [config.data]);
+    const projects = useMemo(() => {
+        const total = configProjects.reduce((sum, project) => sum + project.count, 0);
+        return [
+            { id: ALL_PROJECTS, label: 'All projects', count: configProjects.length > 0 ? total : undefined },
+            ...configProjects,
+        ];
+    }, [configProjects]);
+    const labelsById = useMemo(
+        () => new Map(configProjects.map((project) => [project.id, project.label])),
+        [configProjects]
+    );
+    // A tag the config doesn't list (it failed to load, or the record was
+    // re-tagged since) shows no project at all rather than the raw
+    // project-* tag; a saved insight from such a record still groups under
+    // "Other" (see groupInsightsByProject).
+    const projectLabelFor = (tag) => (tag ? labelsById.get(tag) ?? null : null);
+
+    // Conversations, their messages, and the request behind each one. The
+    // "active" assistant message the sources rail shows is derived, not
     // stored — always the latest reply in the open conversation, matching
-    // AskView.tsx's `activeSources` — so there's no second piece of state
-    // to keep in sync as replies land or conversations switch.
-    const { getMessages, appendMessage } = useConversationMessages();
-    const activeMessages = getMessages(activeConversationId);
+    // AskView.tsx's `activeSources`.
+    const ask = useAskRepo();
+    const activeMessages = activeConversationId ? ask.getMessages(activeConversationId) : [];
+    const activeRequest = activeConversationId ? ask.getRequest(activeConversationId) : null;
     const activeAssistantMessage = latestAssistantMessage(activeMessages);
-    // Lifted in Story 6: the sources rail saves insights and the Saved
+    const unavailable = config.data?.enabled === false || ask.unavailable;
+
+    // Lifted in Story 6: the sources modal saves insights and the Saved
     // Insights tab reads/removes them. Session-only until v1.3.7.
     const { insights, savedSourceIds, toggleSourceInsight, removeInsight } = useSavedInsights();
+
+    // The source detail modal lives here, not in the sources rail, because
+    // an answer's inline [n] citations open it too. `openSource` is kept
+    // after the modal closes, so the rail card it came from stays
+    // highlighted and Carbon's close animation still has content.
+    const [modal, setModal] = useState({ open: false, source: null });
+    const launcherRef = useRef(null);
+    const [pinnedIds, setPinnedIds] = useState(() => new Set());
+    const openSource = modal.source;
+
+    function handleOpenSource(source, event) {
+        launcherRef.current = event.currentTarget;
+        setModal({ open: true, source });
+    }
 
     // Mirrors AskView.tsx's handleSelectProject/handleSelectConv: picking a
     // project drops any open conversation (it may belong to a different
@@ -47,8 +104,21 @@ export default function AskTheRepo() {
 
     function handleSelectConversation(conversationId) {
         setActiveConversationId(conversationId);
-        const conversation = CONVERSATIONS.find((conv) => conv.id === conversationId);
+        const conversation = ask.conversations.find((conv) => conv.id === conversationId);
         if (conversation) setActiveProjectId(conversation.project);
+    }
+
+    // Asking from the empty state starts a conversation in the active
+    // project and opens it; asking inside one keeps its project.
+    function handleSend(question) {
+        const conversationId = ask.send(activeConversationId, activeProjectId, question);
+        if (!activeConversationId) setActiveConversationId(conversationId);
+    }
+
+    // A 401 means the session is gone. Refetching "me" gets the same 401,
+    // which switches App to the login form.
+    function handleSignIn() {
+        queryClient.invalidateQueries({ queryKey: ['me'] });
     }
 
     return (
@@ -88,6 +158,12 @@ export default function AskTheRepo() {
         // of which scrolls its own overflow internally (`overflow-y:
         // auto`) instead of growing the page.
         <div className={styles.page}>
+            {/* The page's one h1, for screen reader navigation (axe's
+                page-has-heading-one). Visually hidden: the breadcrumb's
+                current-page crumb already shows the same name, and a
+                visible heading would take height from the rail/chat row,
+                which fills the viewport. */}
+            <h1 className="cds--visually-hidden">Ask the Repo</h1>
             <BreadcrumbBar />
             {/* Same Grid/Column Dashboard.jsx wraps its whole page in (a full-
                 width Column: sm=4/md=8/lg=16) — Carbon's Grid is what supplies
@@ -144,38 +220,60 @@ export default function AskTheRepo() {
                                 <Grid narrow className={styles.railRow}>
                                     <Column lg={4} md={2} sm={4}>
                                         <LeftRail
-                                            projects={PROJECTS}
+                                            projects={projects}
                                             activeProjectId={activeProjectId}
                                             onSelectProject={handleSelectProject}
-                                            conversations={CONVERSATIONS}
+                                            conversations={ask.conversations}
                                             activeConversationId={activeConversationId}
                                             onSelectConversation={handleSelectConversation}
+                                            onNewChat={() => setActiveConversationId(null)}
                                         />
                                     </Column>
                                     <Column lg={8} md={4} sm={4}>
                                         <ChatPanel
-                                            projectId={activeProjectId}
-                                            conversationId={activeConversationId}
                                             messages={activeMessages}
-                                            onAppendMessage={appendMessage}
+                                            starters={startersFor(activeProjectId)}
+                                            status={activeRequest?.status}
+                                            slow={activeRequest?.slow}
+                                            error={activeRequest?.error}
+                                            unavailable={unavailable}
+                                            announcement={ask.announcement}
+                                            onSend={handleSend}
+                                            onRetry={() => ask.retry(activeConversationId)}
+                                            onSignIn={handleSignIn}
+                                            onOpenSource={handleOpenSource}
                                         />
                                     </Column>
                                     <Column lg={4} md={2} sm={4}>
                                         <SourcesPanel
                                             message={activeAssistantMessage}
-                                            savedSourceIds={savedSourceIds}
-                                            onToggleSaveSource={toggleSourceInsight}
+                                            selectedSourceId={openSource?.id ?? null}
+                                            onOpenSource={handleOpenSource}
+                                            pinnedIds={pinnedIds}
+                                            onTogglePin={(source) => setPinnedIds((prev) => toggleIn(prev, source.id))}
+                                            projectLabelFor={projectLabelFor}
                                         />
                                     </Column>
                                 </Grid>
                             </TabPanel>
                             <TabPanel className={styles.tabPanel}>
-                                <SavedInsightsView insights={insights} projects={PROJECTS} onRemove={removeInsight} />
+                                <SavedInsightsView insights={insights} projects={configProjects} onRemove={removeInsight} />
                             </TabPanel>
                         </TabPanels>
                     </Tabs>
                 </Column>
             </Grid>
+            <SourceDetailModal
+                open={modal.open}
+                source={openSource}
+                projectLabel={projectLabelFor(openSource?.recordProject)}
+                onClose={() => setModal((prev) => ({ ...prev, open: false }))}
+                pinned={openSource ? pinnedIds.has(openSource.id) : false}
+                onTogglePin={() => setPinnedIds((prev) => toggleIn(prev, openSource.id))}
+                saved={openSource ? savedSourceIds.has(openSource.id) : false}
+                onToggleSave={() => toggleSourceInsight(openSource)}
+                launcherButtonRef={launcherRef}
+            />
         </div>
     );
 }

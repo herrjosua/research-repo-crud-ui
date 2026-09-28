@@ -176,6 +176,62 @@ on `$surface`. The modal's own Carbon tertiary buttons sit on the plain
 modal layer, so they keep Carbon's defaults: 4.55:1 at rest in white
 (passes, narrowly), 6.38:1 hovered; 15.13 / 16.45:1 in g100.
 
+### Wiring additions (Carbon tokens re-exported, not custom colors)
+
+Wiring the Ask tab to `POST /api/ask` added two more plain re-exports to
+`_variables.scss`, again with no custom values:
+
+- `$link` / `$link-hover` → `theme.$link-primary` / `theme.$link-primary-hover`:
+  the inline `[n]` citation buttons in an answer (`chat/AssistantMessage`),
+  since a citation is a link to its source. The chip's border is
+  `$border-strong`, its hover fill `$background-hover`, its focus ring `$focus`.
+
+The citation chip is `label-01` text (small, so it needs 4.5:1) and sized
+24×24px for WCAG 2.2's target-size minimum. Measured with
+`getComputedStyle` and WCAG luminance math on its two real backgrounds —
+inside `ChatPanel` (`$surface`) and on the plain page (`$background`, the
+`AssistantMessage` stories) — text / border / focus ring against what's
+around it:
+
+| Theme | Background | At rest | Hover | Focus ring |
+|---|---|---|---|---|
+| White | `$surface` `#f4f4f4` | 4.55 / 3.02 | 6.34 / 3.02 | 4.55 |
+| White | `$background` `#ffffff` | 5.00 / 3.32 | 6.92 / 3.32 | 5.00 |
+| G100 | `$surface` `#262626` | 6.43 / 3.01 | 7.04 / 3.01 | 15.13 |
+| G100 | `$background` `#161616` | 7.68 / 3.60 | 8.54 / 3.60 | 18.10 |
+
+White on `$surface` passes narrowly (4.55:1, the same as Carbon's own
+tertiary buttons in the modal above); it's Carbon's link color on Carbon's
+layer, so it moves with Carbon if either changes.
+
+One Carbon override came with it, in `chat/Composer.module.scss`: Carbon
+greys a disabled `TextArea`'s helper text to `$text-disabled`, which axe
+flagged at about 3:1 in both themes. The composer's "Each question is
+answered on its own" hint matters most while the field is disabled
+(waiting for an answer, or asking unavailable), so it stays
+`$text-secondary`. It targets Carbon's `cds--form__helper-text--disabled`
+class (@carbon/react 1.116); re-check after an upgrade.
+
+### Project picker (Carbon `Dropdown`, no new tokens)
+
+The left rail's project picker is Carbon's own `Dropdown` (`size="sm"`),
+replacing a hand-built vertical list of buttons. It brings its own field,
+menu, selected and highlighted colors; the only thing this app styles is
+the per-item record count, which reuses `$text-secondary`. The field sits
+on the rail's `$background`, the level Carbon's `$field-01` is meant for.
+Measured in the running app at 1280×860 with the ten-project real list
+(WCAG math on `getComputedStyle()`, white / g100):
+
+| Element | Backdrop (white / g100) | White | G100 |
+|---|---|---|---|
+| "Project" label | `$background` `#ffffff` / `#161616` | 7.81 | 10.59 |
+| Selected value, closed | `$field-01` `#f4f4f4` / `#262626` | 16.45 | 13.76 |
+| Menu item label and count, at rest or highlighted | `$field-01` | 7.10 | 8.86 |
+| Selected item label | `$layer-selected` `#e0e0e0` / `#393939` | 13.71 | 10.50 |
+| Selected item count | `$layer-selected` | 5.92 | 6.76 |
+
+axe reports no violations on the rail, open or closed, in either theme.
+
 ## Spacing
 
 `docs/design-tokens/03-spacing.md` already documents the app's real spacing
@@ -225,7 +281,7 @@ ticket's ask):
 ## Folder structure
 
 New components live under `frontend/src/ask-the-repo/`, nested by concern
-(chat / rails / insights / sources / mock), mirroring how the
+(chat / rails / insights / sources / fixtures), mirroring how the
 Figma Make export was already decomposed
 (`docs/Build_Direction_B_v2_Design_decomposed/DECOMPOSITION_NOTES.md`) rather
 than the existing app's flat `src/*.jsx` convention — this feature is large
@@ -236,7 +292,7 @@ convention (`Name.jsx` + `Name.module.scss` + `Name.test.jsx`, default
 export, CSS Modules via `@use './styles/variables'`).
 
 `sources/` (`KindTag`), `shell/` (`BreadcrumbBar`), `rails/` (project
-switcher + conversation history), and now `chat/` (message list, composer,
+picker + conversation history), and now `chat/` (message list, composer,
 assistant responses) all exist. Planned shape for the remaining tickets:
 
 ```
@@ -247,14 +303,18 @@ frontend/src/ask-the-repo/
     BreadcrumbBar.jsx / .module.scss          # breadcrumb sub-header, built in the page-shell ticket
   chat/
     ChatPanel.jsx / .module.scss / .test.jsx / .stories.jsx        # built in this ticket
+    ChatPanel.stories.module.scss             # the chat column's real frame for the ChatPanel stories
     ChatMessage.jsx / .module.scss / .test.jsx / .stories.jsx      # built in this ticket
     AssistantMessage.jsx / .module.scss / .test.jsx / .stories.jsx # built in this ticket
     Composer.jsx / .module.scss / .test.jsx / .stories.jsx         # built in this ticket
     StarterQuestions.jsx / .module.scss / .test.jsx / .stories.jsx # built in this ticket
-    useConversationMessages.js                # per-conversation message store, lifted out of ChatPanel in Story 5
+    useAskRepo.js / .test.jsx                 # conversations, messages and POST /api/ask requests (replaced useConversationMessages when the tab was wired)
+    askCopy.js                                # loading, error and "not available" wording, shared by ChatPanel and useAskRepo
+    starters.js                               # starter questions checked against the real corpus
   rails/
     LeftRail.jsx / .module.scss / .test.jsx / .stories.jsx         # built in the left-rail ticket
-    ProjectSwitcher.jsx / .module.scss / .test.jsx / .stories.jsx  # built in the left-rail ticket
+    LeftRail.stories.module.scss              # the rail's real frame for the LeftRail and ProjectSwitcher stories
+    ProjectSwitcher.jsx / .module.scss / .test.jsx / .stories.jsx  # built in the left-rail ticket; a Carbon Dropdown since the rail redesign
     ConversationList.jsx / .module.scss / .test.jsx / .stories.jsx # built in the left-rail ticket
   insights/
     SavedInsightsView.jsx / .module.scss / .test.jsx / .stories.jsx # the Saved Insights tab — built in Story 6
@@ -265,11 +325,11 @@ frontend/src/ask-the-repo/
     SourceCard.jsx / .module.scss / .test.jsx / .stories.jsx        # built in Story 5
     SourceDetailModal.jsx / .module.scss / .test.jsx / .stories.jsx # built in Story 5
     KindTag.jsx / .module.scss / .test.jsx    # built in the token-mapping ticket
-  mock/
-    constants.js                              # PROJECTS — built in the left-rail ticket
+  fixtures/                                   # story/test data only (was mock/, the app's data source before the tab was wired)
+    constants.js                              # PROJECTS — built in the left-rail ticket; CONFIG_PROJECTS, the real corpus's list
     conversations.js                          # CONVERSATIONS — built in the left-rail ticket
     messages.js                               # INITIAL_MESSAGES_BY_CONVERSATION — built in Story 4; sources gained contextBefore/contextAfter in Story 5
-    starters.js                               # STARTERS — built in this ticket
+    starters.js                               # STARTERS — built in this ticket; the app's real list is chat/starters.js
     insights.js                               # SAMPLE_INSIGHTS story/test fixtures — Story 6 (the real tab starts empty)
 ```
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import SourceCard from './SourceCard';
-import { INITIAL_MESSAGES_BY_CONVERSATION } from '../mock/messages';
+import { INITIAL_MESSAGES_BY_CONVERSATION } from '../fixtures/messages';
+import { projectLabelFor } from '../fixtures/constants';
 import styles from './SourceCard.stories.module.scss';
 
 const SOURCES = INITIAL_MESSAGES_BY_CONVERSATION.c1[1].sources;
@@ -8,8 +9,8 @@ const SOURCES_BY_LABEL = Object.fromEntries(SOURCES.map((source) => [`${source.k
 
 // Grouped under Ask the Repo, next to KindTag. No PropTypes/TS on
 // SourceCard, so `argTypes` is given explicitly (same reasoning as
-// KindTag.stories.jsx). `source` is a closed set — the real mock sources
-// from mock/messages.js, one per kind except `doc` — so it's a `select`
+// KindTag.stories.jsx). `source` is a closed set — the fixture sources
+// from fixtures/messages.js, one per kind except `doc` — so it's a `select`
 // mapped to the real objects, not a free-form JSON editor.
 //
 // Every story wraps the card in `.rail`: SourceCard only ever renders on
@@ -43,7 +44,15 @@ export default {
 // primary-evidence kinds are pinnable, see kindMeta.js's PINNABLE_KINDS).
 function ToggleableSourceCard(args) {
   const [pinned, setPinned] = useState(args.pinned);
-  return <SourceCard {...args} pinned={pinned} onTogglePin={() => setPinned((v) => !v)} onOpen={() => {}} />;
+  return (
+    <SourceCard
+      {...args}
+      projectLabel={projectLabelFor(args.source.recordProject)}
+      pinned={pinned}
+      onTogglePin={() => setPinned((v) => !v)}
+      onOpen={() => {}}
+    />
+  );
 }
 
 export const Default = {
@@ -80,10 +89,40 @@ export const AllStates = {
         <div key={label}>
           <p className={styles.stateLabel}>{label}</p>
           <div className={forceHover ? styles.forceHover : undefined}>
-            <SourceCard source={source} selected={selected} pinned={pinned} onOpen={() => {}} onTogglePin={() => {}} />
+            <SourceCard
+              source={source}
+              projectLabel={projectLabelFor(source.recordProject)}
+              selected={selected}
+              pinned={pinned}
+              onOpen={() => {}}
+              onTogglePin={() => {}}
+            />
           </div>
         </div>
       ))}
+    </div>
+  ),
+};
+
+// Real sources can lack either half of the meta line: components carry no
+// date, and a record in a corpus without a project list has no project.
+// The card shows whichever exists, and drops the line when neither does.
+export const MissingDate = {
+  render: () => (
+    <div className={styles.states}>
+      <div>
+        <p className={styles.stateLabel}>Project, no date</p>
+        <SourceCard
+          source={{ ...SOURCES[3], date: null }}
+          projectLabel={projectLabelFor(SOURCES[3].recordProject)}
+          onOpen={() => {}}
+          onTogglePin={() => {}}
+        />
+      </div>
+      <div>
+        <p className={styles.stateLabel}>No project, no date</p>
+        <SourceCard source={{ ...SOURCES[0], date: null, recordProject: null }} onOpen={() => {}} onTogglePin={() => {}} />
+      </div>
     </div>
   ),
 };

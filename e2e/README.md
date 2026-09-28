@@ -46,6 +46,14 @@ against the real checkout `backend/.env` points at; `start-backend.js`
 checks the repo it built is actually a throwaway one before the server ever
 starts, on top of the backend's own `NODE_ENV=test` guard.
 
+Ask the Repo needs a language model, and CI has none. The regular config
+sets `LLM_PROVIDER=ollama`, and `start-backend.js` then starts the backend
+tests' fake Ollama (`backend/tests/helpers/fakeOllama.js`, a real HTTP
+server with Ollama's request and response shapes) and points the backend
+at it, so questions get a fixed, cited answer through the real retrieval
+code. The demo config sets `LLM_PROVIDER` empty, like the public demo, so
+Ask the Repo is off there.
+
 CI runs both, in Chromium, as the `e2e` job in
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). There it adds an
 HTML report and keeps traces of failed tests, uploaded as an artifact when a
@@ -93,6 +101,14 @@ run fails. The configs themselves are the same locally and in CI.
   mid-transition button colors and report a bogus, run-to-run-varying contrast
   failure.
 
+- **`ask-the-repo-smoke.spec.js`** — Ask the Repo is reachable from the
+  primary nav, its two tabs switch, and the theme toggle persists.
+- **`ask-the-repo-answer.spec.js`** — asking a question in the Ask tab: the
+  answer renders with its `[n]` citations, the sources rail and the new
+  conversation in the left rail; clicking `[1]` opens its source in the
+  detail modal; "Save as insight" puts it in the Saved Insights tab.
+  Accessibility scans of the answered page and the open modal.
+
 Each test uses a unique test username (`e2e-tester-<randomUUID()>`) rather
 than a fixed one, since the test-mode database persists across separate
 `npm test` runs (there's no per-run isolation the way Jest's
@@ -115,10 +131,14 @@ session rather than a hardcoded label), and a run at the 672px md floor
 confirms the disclaimer banner doesn't push either screen into horizontal
 scroll. Both the picker and the post-login dashboard get their own
 accessibility scan, since neither is reached by the suite above.
+[`ask-unavailable.spec.js`](./tests-demo/ask-unavailable.spec.js) checks
+Ask the Repo without a language model: `GET /api/ask/config` says so, the
+tab shows its "not available" notice before anyone asks, asking is
+disabled, `POST /api/ask` answers 503, and the page passes a scan.
 
 ## Real accessibility issues found and fixed
 
-Writing these tests surfaced three genuine WCAG 2 AA issues that had gone
+Writing these tests surfaced five genuine WCAG 2 AA issues that had gone
 unnoticed until an automated scan actually ran against the real rendered
 app — none were hypothetical or contrived to demonstrate the tooling:
 
@@ -144,3 +164,14 @@ app — none were hypothetical or contrived to demonstrate the tooling:
    Carbon's docs, this becomes the default behavior in their next major
    version (v12). Enabled globally in `frontend/src/main.jsx` via a
    `<FeatureFlags>` wrapper around the whole app.
+4. **Ask the Repo had no `<h1>` either** (`page-has-heading-one`), found by
+   the first scan of that page. Fixed with a visually hidden
+   `<h1>Ask the Repo</h1>` in `AskTheRepo.jsx`: the breadcrumb already shows
+   the name, and a visible heading would take height from the rail/chat row
+   that fills the viewport.
+5. **The chat thread couldn't be scrolled from the keyboard**
+   (`scrollable-region-focusable`), found by the demo scan: with asking
+   unavailable, the thread holds only a notice and disabled starter
+   questions, so nothing in the scrolling area could take focus. Fixed by
+   making the thread itself a focusable region named "Conversation", with a
+   visible focus ring.

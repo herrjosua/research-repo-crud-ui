@@ -42,7 +42,8 @@ function InsightGroup({ label, items, onRemove }) {
  * yet, and the empty state says where insights come from.
  *
  * `insights` (from `useSavedInsights`, lifted to `AskTheRepo.jsx`),
- * `projects` (`../mock/constants.js`'s `PROJECTS` shape), `onRemove(id)`.
+ * `projects` (GET /api/ask/config's `{ id, label }` list; see
+ * `../fixtures/constants.js`), `onRemove(id)`.
  */
 export default function SavedInsightsView({ insights, projects, onRemove }) {
     const { groups, ungrouped } = groupInsightsByProject(insights, projects);
