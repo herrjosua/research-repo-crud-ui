@@ -1,0 +1,11 @@
+[
+  { "id": "all-scribe-draft-trust", "question": "Why didn't physicians trust the ambient scribe's draft notes?", "project": null },
+  { "id": "all-documentation-burden", "question": "How much documentation burden do clinicians report?", "project": null },
+  { "id": "all-coders-billing-suggestions", "question": "What did coders think of the AI billing code suggestions?", "project": null },
+  { "id": "all-prior-auth-usability-tests", "question": "What did the prior auth usability tests find?", "project": null },
+  { "id": "scribe-draft-retention", "question": "How was the scribe's draft retention issue resolved?", "project": "project-ambient-scribe" },
+  { "id": "scribe-medication-flag", "question": "How did physicians react to the medication flag concept?", "project": "project-ambient-scribe" },
+  { "id": "prior-auth-draft-review", "question": "What made the prior auth drafts hard to review?", "project": "project-prior-auth" },
+  { "id": "prior-auth-time-savings", "question": "How much drafting time did the AI save on prior auth cases?", "project": "project-prior-auth" },
+  { "id": "onboarding-calendar-step", "question": "Why did new admins hesitate at the Connect calendar step?", "project": "project-onboarding" }
+]

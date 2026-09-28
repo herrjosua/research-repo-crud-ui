@@ -54,6 +54,10 @@ backend/node_modules.prev/
 # Stray venv, in case IntelliJ created one despite this being a Node project
 .venv/
 
+# The static demo capture script's scratch runs and review report
+# (backend/scripts/capture-static-answers.js); only answers.json is published.
+backend/ask/static/review/
+
 # Local curl testing artifacts (contains live session cookies)
 cookies.txt
 

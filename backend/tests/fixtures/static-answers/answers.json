@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "model": "gemma2:9b",
+    "embedModel": "nomic-embed-text",
+    "capturedAt": "2026-09-28T12:00:00.000Z",
+    "corpusCommit": "0123456789abcdef0123456789abcdef01234567",
+    "scriptVersion": 1
+  },
+  "questions": [
+    {
+      "id": "all-scribe-draft-trust",
+      "question": "Why didn't physicians trust the ambient scribe's draft notes?",
+      "project": null,
+      "answer": "Physicians read every line before accepting the draft [1].\n\nMedication dosages were garbled in 3 of 5 sessions [2][1].",
+      "sources": [
+        {
+          "id": "raw:2025-02-25-usability-test-ambient-scribe-v01#1",
+          "kind": "transcript",
+          "title": "Usability Test — Ambient AI Scribe Prototype v0.1",
+          "excerpt": "4 of 5 participants read every line of the draft before accepting it.",
+          "project": null,
+          "recordProject": "project-ambient-scribe",
+          "date": "Feb 25, 2025",
+          "contextBefore": "Moderated usability test with 5 physicians.",
+          "contextAfter": null,
+          "section": "Key Findings",
+          "recordId": "raw:2025-02-25-usability-test-ambient-scribe-v01",
+          "recordKind": "raw",
+          "recordType": "usability-test",
+          "score": 0.712
+        },
+        {
+          "id": "finding:ambient-scribe#0",
+          "kind": "synthesis",
+          "title": "Ambient scribe — trust in the draft",
+          "excerpt": "The scribe garbled medication dosages in 3 of 5 sessions.",
+          "project": null,
+          "recordProject": "project-ambient-scribe",
+          "date": "Mar 3, 2025",
+          "contextBefore": null,
+          "contextAfter": null,
+          "section": null,
+          "recordId": "finding:ambient-scribe",
+          "recordKind": "finding",
+          "recordType": "synthesis",
+          "score": 0.655
+        }
+      ],
+      "run": 2
+    },
+    {
+      "id": "onboarding-calendar-step",
+      "question": "Why did new admins hesitate at the Connect calendar step?",
+      "project": "project-onboarding",
+      "answer": "The records don't say.",
+      "sources": [],
+      "run": 1
+    }
+  ]
+}

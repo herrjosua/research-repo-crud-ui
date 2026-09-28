@@ -66,6 +66,7 @@ describe('GET /api/ask/config', () => {
         expect(res.status).toBe(200);
         expect(res.body).toEqual({
             enabled: true,
+            mode: 'live',
             projects: [
                 { id: 'project-onboarding', label: 'Onboarding', count: 4 },
                 { id: 'project-cross-cutting', label: 'Cross-cutting', count: 0 },

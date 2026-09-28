@@ -11,7 +11,7 @@ test('Ask the Repo says it isn\'t available without a language model, and passes
 
     // The server reports it up front...
     const config = await page.request.get('/api/ask/config');
-    expect(await config.json()).toEqual({ enabled: false, projects: [] });
+    expect(await config.json()).toEqual({ enabled: false, mode: null, projects: [] });
 
     // ...so the notice shows before anyone asks, asking is disabled, and
     // there are no starter questions to pick.

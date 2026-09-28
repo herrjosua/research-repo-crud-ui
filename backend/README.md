@@ -85,13 +85,91 @@ curl http://localhost:11434/api/tags
 ```
 Everything stays on this machine: no cloud calls, no API keys.
 `OLLAMA_BASE_URL`, `OLLAMA_EMBED_MODEL` and `OLLAMA_CHAT_MODEL` override the
-defaults. Any other `LLM_PROVIDER` value refuses to start. Leave
-`LLM_PROVIDER` unset in production; the endpoint then returns `503`.
+defaults. `LLM_PROVIDER=static` serves captured answers instead (next
+section); any other value refuses to start. Leave `LLM_PROVIDER` unset in
+production, or set it to `static` for the public demo; unset, the endpoint
+returns `503`.
 
 To check the setup against your real Ollama, run the live test (see
 [Testing](#testing)). The request and response format is under [Ask the Repo
 (v1.3.6)](#ask-the-repo-v136) below; for how the pieces fit together, see
 [`../docs/architecture.md`](../docs/architecture.md).
+
+#### Static answers for the public demo (`LLM_PROVIDER=static`)
+
+The public demo has no model. With `LLM_PROVIDER=static`, Ask the Repo offers
+a fixed list of questions, and each answer is a real, unedited output of the
+local model, captured ahead of time. Visitors pick a question; nothing can be
+typed, and a free-text `question` is rejected. The server never contacts
+Ollama in this mode and doesn't need it installed. Answers come back
+immediately, with no simulated delay. See [Ask the Repo](#ask-the-repo-v136)
+below for the request and response.
+
+The data lives in `ask/static/`:
+
+- **`questions.json`** — the curated list the capture script reads:
+  `[{ id, question, project }]`, where `project` is the `project-*` tag the
+  question is asked under, or `null` for all projects. Its order is the order
+  `GET /api/ask/config` lists them in.
+- **`answers.json`** — what the server serves, written only by the capture
+  script and checked in. `metadata` records the chat and embedding models,
+  `capturedAt`, the agentic-repo commit the answers were captured against
+  (`corpusCommit`) and the script's version. Each entry in `questions` has the
+  question's `id`, `question` and `project`, plus the pipeline's `answer` and
+  `sources` exactly as `POST /api/ask` returned them, and which capture `run`
+  it is. With `LLM_PROVIDER=static` the server validates it at startup and
+  refuses to start if it's missing or malformed; with `ollama` or unset it
+  never reads the file. `tests/staticAnswers.data.test.js` checks it too.
+  (`ASK_STATIC_ANSWERS_FILE` is **test-only**: under `NODE_ENV=test` it
+  points the server at a fixture instead, and it's ignored everywhere else.
+  Don't set it in any `.env`.)
+
+**Capturing.** `scripts/capture-static-answers.js` runs each question through
+the same pipeline as the live route (`ask/pipeline.js`), in process, against
+your local Ollama and the checkout at `AGENTIC_REPO_ROOT`, both read from
+`backend/.env`. The checkout must have no uncommitted changes, because its
+commit is stamped into the metadata. Capture against the agentic-repo commit
+the demo will serve.
+
+```bash
+cd backend
+node scripts/capture-static-answers.js capture        # every question, 3 runs each (--runs N)
+# read ask/static/review/report.md
+node scripts/capture-static-answers.js publish        # writes ask/static/answers.json
+```
+
+`capture` keeps every run, verbatim and with the model's raw reply, in
+`ask/static/review/runs.json` (git-ignored scratch). It also writes
+`ask/static/review/report.md`: each run's answer with its `[n]` markers, and
+under it each cited source's title, section, record id and excerpt, so you can
+check every claim against its evidence. The report flags answers with no
+citations, markers the model pointed at no source (the pipeline drops them
+from the answer), citations whose excerpt shares few words with the
+sentence citing it, numbers in the answer that no cited excerpt contains
+(digits, percentages and "one" to "twenty", so "four" matches "4"; this
+catches derived figures like "saved 10 minutes" from "15 to 5 minutes"), and
+"N of M" counts no cited excerpt states (so "4 of 4" cited to "4 of 5" is
+caught even though "4" appears). It also checks the citation-count bar (at least two
+records, including a raw session). Whether a cited record actually supports
+its claim is still for a person to judge.
+
+`publish` copies one run per question in `questions.json` into
+`answers.json`, unedited: by default the first run that meets the bar with no
+flags, or the run you choose with `--pick <id>=<run>`. To drop a question,
+remove it from `questions.json` before publishing. To redo a few questions,
+`capture --only id,id` recaptures them and keeps the rest, provided the
+corpus commit and models haven't changed. `report` rewrites the report from
+`runs.json`, re-running its checks (`--only id,id` limits the report to
+those questions); `publish --dry-run` shows which run each
+question would get without writing anything.
+
+**When to re-run it.** Answers cite records by id and quote their text, so
+recapture when the corpus the demo serves changes a lot: cited records are
+edited, renamed or deleted, or enough new research lands that the answers are
+out of date. Recapture after changing the prompt, retrieval, chat model or
+embedding model too. Small unrelated edits don't need a recapture; the
+answers stay true to the commit in `metadata.corpusCommit`. Commit
+`questions.json` and `answers.json` together.
 
 For a production deployment, see
 [`.env.production.example`](./.env.production.example) instead — it covers
@@ -128,9 +206,10 @@ availability from `GET /api/ask/config`. With `LLM_PROVIDER=ollama` it answers
 from the local model: the first question after a server start takes 10 to 20
 seconds while the corpus is embedded and the model loads (after about 5
 seconds the page says why), and later questions are faster. With
-`LLM_PROVIDER` unset, as in production and the public demo, the page says
-Ask the Repo isn't available in this environment and disables asking; the
-rest of the app works as usual.
+`LLM_PROVIDER` unset, the page says Ask the Repo isn't available in this
+environment and disables asking; the rest of the app works as usual.
+(`LLM_PROVIDER=static` is backend-only for now: the frontend doesn't show the
+question picker yet.)
 
 ## Testing
 
@@ -194,6 +273,16 @@ covers, not a count to keep in sync:
   cache, chunking, kind/date mapping, the plain-text sanitizer, and
   citation parsing.
 - **`tests/ask.disabled.test.js`** — `503` when `LLM_PROVIDER` is unset.
+- **`tests/ask.static.test.js`** — `LLM_PROVIDER=static` against a fixture
+  answers file: the config's `mode` and `questions`, answers by `questionId`
+  in the live shape, `400` for free text, `404` for an unknown id, `401`
+  when signed out, no request ever reaching a (fake) Ollama, and which
+  `LLM_PROVIDER` values start the server.
+- **`tests/staticAnswers.data.test.js`** — the checked-in
+  `ask/static/answers.json`: valid, consistent metadata, the same questions
+  as `questions.json`, and no `[n]` without a source.
+- **`tests/staticAnswers.test.js`** — the answers-file validator and the
+  capture script's review checks.
 - **`tests/ask.live.test.js`** — the same flow against a real local Ollama.
   Skipped unless `OLLAMA_LIVE=1` (`OLLAMA_LIVE=1 npx jest
   tests/ask.live.test.js`), so CI never needs Ollama.
@@ -236,12 +325,17 @@ backend/
 ├── projects.js         agentic-repo's project-tag rules (research/projects.yml): which project-* tags PUT keeps, and removing a deleted raw session's entry
 ├── validation.js       Input validation for POST /sessions and PUT /records/:id frontmatter, mirroring agentic-repo's own field rules
 ├── ask/                Ask the Repo's RAG pipeline (used by routes/ask.js)
-│   ├── config.js         LLM_PROVIDER switch
+│   ├── config.js         LLM_PROVIDER switch (ollama | static)
+│   ├── pipeline.js       One question end to end; shared by routes/ask.js and the capture script
+│   ├── staticAnswers.js  Loads and validates the static demo's captured answers
+│   ├── static/           questions.json (curated) and answers.json (captured) for LLM_PROVIDER=static
 │   ├── ollama.js         Plain-fetch client for Ollama's /api/embed and /api/chat
 │   ├── corpus.js         export_records.py records → passages; kind/date mapping for sources
 │   ├── retrieval.js      Cosine similarity, ranking, and the lazy in-memory embedding cache
 │   ├── answer.js         Prompt, citation renumbering, and the Source objects returned
 │   └── plainText.js      Flattens model output to plain text (no markdown/HTML passes through)
+├── scripts/
+│   └── capture-static-answers.js  Captures ask/static/answers.json from the local model, with a review report
 ├── middleware/
 │   ├── requireAuth.js    401 unless logged in; shared by records.js and ask.js
 │   ├── rateLimiter.js    In-memory, per-IP rate limiter factory; applied to /sessions and write routes on /records
@@ -250,7 +344,7 @@ backend/
 ├── routes/
 │   ├── health.js    GET /api/health — status, version, startedAt; polled by scripts/deploy.sh
 │   ├── auth.js      Signup / login / logout / me / demo-users / demo-login
-│   ├── ask.js       POST /api/ask — Ask the Repo (local Ollama RAG), gated by LLM_PROVIDER
+│   ├── ask.js       POST /api/ask — Ask the Repo (local Ollama RAG, or captured answers when static), gated by LLM_PROVIDER
 │   └── records.js   Sessions + file CRUD (shells out to agentic-repo's Python scripts); validates topicSlug/slug against a safe pattern before either reaches the Python scripts
 ├── tests/
 │   ├── auth.test.js           Auth flow, rate limiting, and demo mode tests
@@ -263,6 +357,9 @@ backend/
 │   ├── ask.test.js            POST /api/ask integration tests against a fake Ollama
 │   ├── ask.unit.test.js       Similarity, embedding cache, chunking, sanitizer, citation tests
 │   ├── ask.disabled.test.js   POST /api/ask with LLM_PROVIDER unset
+│   ├── ask.static.test.js     GET /api/ask/config and POST /api/ask with LLM_PROVIDER=static
+│   ├── staticAnswers.data.test.js  The checked-in static answers file (ask/static/answers.json)
+│   ├── staticAnswers.test.js  The static answers validator and the capture script's review checks
 │   ├── ask.live.test.js       POST /api/ask against a real local Ollama (OLLAMA_LIVE=1 only)
 │   └── helpers/
 │       ├── setupTestRepo.js   Creates/destroys the disposable fixture repo shared by every test file
@@ -310,13 +407,14 @@ otherwise).
 | Method | Path       | Body                                   | Notes |
 |--------|------------|----------------------------------------|-------|
 | GET    | `/api/ask/config` | — | What the Ask tab needs up front: whether asking works here, and the project list. Always `200` for a signed-in user (never `503`); `401` when signed out. |
-| POST   | `/api/ask` | `{ question: string, project?: string }` | RAG over every record, answered by a local Ollama. `503` unless `LLM_PROVIDER=ollama`; `502` if Ollama is unreachable or fails. |
+| POST   | `/api/ask` | `{ question: string, project?: string }`, or `{ questionId: string }` when static | RAG over every record, answered by a local Ollama; with `LLM_PROVIDER=static`, a captured answer. `503` when `LLM_PROVIDER` is unset; `502` if Ollama is unreachable or fails. |
 
 **`GET /api/ask/config`** responds:
 
 ```jsonc
 {
-  "enabled": true,  // true only when LLM_PROVIDER=ollama; false means POST /api/ask answers 503
+  "enabled": true,  // true when LLM_PROVIDER is ollama or static; false means POST /api/ask answers 503
+  "mode": "live",   // "live" (ollama), "static", or null when disabled
   "projects": [
     { "id": "project-onboarding", "label": "Onboarding", "count": 21 },
     …,
@@ -339,6 +437,19 @@ otherwise).
   corpora) has project tagging off, so `projects` is `[]`. The export isn't run
   at all in that case. An unreadable or malformed file is logged as a warning
   and also gives `[]`.
+- With `LLM_PROVIDER=static` the response also has `questions`, the captured
+  questions in `ask/static/questions.json` order:
+
+  ```jsonc
+  "questions": [
+    { "id": "scribe-session-lock", "question": "What happened when the session locked during dictation?", "project": "project-ambient-scribe" },
+    …
+  ]
+  ```
+
+  `project` is the `project-*` tag the question was captured under, or
+  `null` for all projects. `projects` is still listed. `questions` is absent
+  in the other modes.
 
 `question` is 1–2000 characters. `project` is optional: omitted, `null` or
 `"all"` searches the whole repo; anything else must be a tag slug
@@ -402,6 +513,19 @@ each record's best passage is kept, and the top 6 go to `gemma2:9b` with
 instructions to answer only from them and cite `[n]`. The reply is then
 flattened to plain text (`ask/plainText.js`), and its citations are
 renumbered to match `sources`.
+
+**Static mode (`LLM_PROVIDER=static`).** `POST /api/ask` takes
+`{ "questionId": "<id from config's questions>" }` and returns that
+question's captured answer in the same `{ answer, sources, model }` shape,
+with the same `Source` objects, byte for byte what the live pipeline
+returned at capture time (`model` is the capture's chat model). It needs a
+session like the live endpoint (`401` otherwise). A request with a
+`question` field is free text and gets `400`; a missing or non-string
+`questionId` gets `400`; an id that isn't in `answers.json` gets `404`. Any
+`project` is ignored, because each captured question carries its own. No
+model is called, so there's no `502`. See [Static answers for the public
+demo](#static-answers-for-the-public-demo-llm_providerstatic) for where the
+answers come from.
 
 ### Git attribution (v0.8)
 
