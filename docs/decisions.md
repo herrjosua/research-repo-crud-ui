@@ -113,8 +113,11 @@ requests because the Chromatic project wasn't linked to the GitHub
 repository. Linking it made UI Tests (and the non-required Storybook
 Publish) post on every pull request.
 
-**Status:** Proven against new stories. A change to an already-approved
-story is still to be tested.
+**Status:** Proven on a real pull request against new stories, against
+changes to already-approved stories, and against a rejected change, which
+turns UI Tests red and keeps the merge blocked. Accepting every change
+clears the gate on its own, with no job re-run, and a build with no
+changes posts UI Tests and passes on its own.
 
 ## 10. Styling follows Carbon; overrides go through the theme layer
 
