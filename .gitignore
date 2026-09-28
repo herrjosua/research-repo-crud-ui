@@ -16,7 +16,12 @@ backend/.env
 *.db-shm
 app.test.*.db
 
-docs
+# docs/ holds local design working files that should not be checked in;
+# only these published docs are tracked.
+docs/*
+!docs/architecture.md
+!docs/decisions.md
+!docs/deploy.md
 
 # Logs
 npm-debug.log*

@@ -18,7 +18,7 @@ Research Repo CRUD UI/
 ├── frontend/   React app — see frontend/README.md for setup and stack decisions
 ├── e2e/        Playwright + axe-core end-to-end and accessibility tests — see e2e/README.md
 ├── scripts/    deploy.sh (runs on the webhost), ssh-deploy-wrapper.sh and ssh-retry-classify.sh (used by the CD workflow to reach it), and their test harnesses — see docs/deploy.md
-├── docs/       deploy.md, the deploy runbook
+├── docs/       deploy.md (the deploy runbook), architecture.md (how the pieces fit together), and decisions.md (the decision log)
 ├── .github/workflows/   ci.yml (see CI below) and deploy.yml (tag-triggered CD, see docs/deploy.md)
 ├── LICENSE
 └── .gitignore
@@ -37,6 +37,12 @@ and `PYTHON_BIN` in `backend/.env` and refuses to start without
 `AGENTIC_REPO_ROOT`. The tests only read the Python scripts from it: they use
 `REAL_AGENTIC_REPO_ROOT` if set, otherwise an `agentic-repo` folder next to
 this repo.
+
+Ask the Repo runs on a local [Ollama](https://ollama.com); setting it up,
+along with the push-disabled dev clone of agentic-repo to point the backend
+at, is covered in [`backend/README.md`](./backend/README.md#ask-the-repo-local-ollama).
+For how the pieces fit together, see
+[`docs/architecture.md`](./docs/architecture.md).
 
 ## Demo mode
 
@@ -159,8 +165,7 @@ one-time run of v1.2.8's own script.
 ## Roadmap
 
 Continues the version numbering from the original research repo (v0.1–v0.5
-shipped there). Full roadmap tracked in Notion: **Version Milestone Roadmap —
-Research Repo CRUD UI**.
+shipped there).
 
 - [x] v0.6 — Backend Foundation (auth, sessions)
 - [x] v0.7 — File CRUD API (sessions, records)
