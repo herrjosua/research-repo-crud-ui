@@ -6,6 +6,7 @@ import LeftRail from './rails/LeftRail';
 import ChatPanel from './chat/ChatPanel';
 import { useAskRepo, latestAssistantMessage } from './chat/useAskRepo';
 import { startersFor } from './chat/starters';
+import { captureNote } from './chat/askCopy';
 import SourcesPanel from './sources/SourcesPanel';
 import SourceDetailModal from './sources/SourceDetailModal';
 import SavedInsightsView from './insights/SavedInsightsView';
@@ -74,6 +75,19 @@ export default function AskTheRepo() {
     const activeAssistantMessage = latestAssistantMessage(activeMessages);
     const unavailable = config.data?.enabled === false || ask.unavailable;
 
+    // Static mode (the public demo, config `mode: 'static'`): no model, so
+    // visitors pick from the captured questions instead of typing. The
+    // project picker filters them the way it filters live questions: "All
+    // projects" lists every one, a project only its own (an exact match).
+    // `null` in live mode, which leaves ChatPanel's composer as it was.
+    const isStatic = config.data?.mode === 'static';
+    const staticQuestions = useMemo(() => config.data?.questions ?? [], [config.data]);
+    const pickerQuestions = useMemo(() => {
+        if (!isStatic) return null;
+        if (activeProjectId === ALL_PROJECTS) return staticQuestions;
+        return staticQuestions.filter((question) => question.project === activeProjectId);
+    }, [isStatic, staticQuestions, activeProjectId]);
+
     // Lifted in Story 6: the sources modal saves insights and the Saved
     // Insights tab reads/removes them. Session-only until v1.3.7.
     const { insights, savedSourceIds, toggleSourceInsight, removeInsight } = useSavedInsights();
@@ -112,6 +126,12 @@ export default function AskTheRepo() {
     // project and opens it; asking inside one keeps its project.
     function handleSend(question) {
         const conversationId = ask.send(activeConversationId, activeProjectId, question);
+        if (!activeConversationId) setActiveConversationId(conversationId);
+    }
+
+    // Static mode: the same flow, asked by the captured question's id.
+    function handlePickQuestion(question) {
+        const conversationId = ask.send(activeConversationId, activeProjectId, question.question, { questionId: question.id });
         if (!activeConversationId) setActiveConversationId(conversationId);
     }
 
@@ -238,6 +258,9 @@ export default function AskTheRepo() {
                                             error={activeRequest?.error}
                                             unavailable={unavailable}
                                             announcement={ask.announcement}
+                                            pickerQuestions={pickerQuestions}
+                                            pickerNote={isStatic ? captureNote(config.data.capture) : ''}
+                                            onPickQuestion={handlePickQuestion}
                                             onSend={handleSend}
                                             onRetry={() => ask.retry(activeConversationId)}
                                             onSignIn={handleSignIn}

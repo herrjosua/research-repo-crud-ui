@@ -75,3 +75,28 @@
     max-inline-size: none;
     inline-size: 100%;
 }
+
+// Static mode's empty state: the question list (StarterQuestions, full
+// width as in live mode, centering its own 32rem column) or the
+// no-questions line, with the capture note under it in that same column.
+.pickerEmpty {
+    display: flex;
+    flex-direction: column;
+}
+
+.pickerNone {
+    @include type.type-style('body-compact-01');
+    margin: 0;
+    padding-block: 2rem 0.75rem;
+    color: vars.$text-secondary;
+    text-align: center;
+}
+
+.pickerNote {
+    @include type.type-style('helper-text-01');
+    align-self: center;
+    margin: 0;
+    inline-size: 100%;
+    max-inline-size: 32rem;
+    color: vars.$text-secondary;
+}

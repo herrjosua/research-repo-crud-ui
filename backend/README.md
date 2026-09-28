@@ -163,6 +163,30 @@ corpus commit and models haven't changed. `report` rewrites the report from
 those questions); `publish --dry-run` shows which run each
 question would get without writing anything.
 
+**Checking the answers still match a clone.** `verify` reads
+`answers.json` and, against the checkout at `AGENTIC_REPO_ROOT`, checks
+that every cited source's record still exists (by its record id) and that
+its excerpt still appears in that record's text (whitespace differences
+ignored). It prints one line per miss and exits `1` if there are any, `0`
+with an `OK:` line otherwise. It only runs `export_records.py` (read-only)
+and needs no Ollama, so it runs anywhere the backend does:
+
+```bash
+cd backend
+node scripts/capture-static-answers.js verify        # against the clone backend/.env points at
+AGENTIC_REPO_ROOT=/path/to/another/clone node scripts/capture-static-answers.js verify
+node scripts/capture-static-answers.js verify --answers path/to/answers.json   # another answers file
+```
+
+On the demo server, run the first form from the deployed checkout's
+`backend/` directory with the Node the app runs under (see
+[`../docs/deploy.md`](../docs/deploy.md)). Its `backend/.env` already
+points `AGENTIC_REPO_ROOT` and `PYTHON_BIN` at the demo's clone, and a
+variable set on the command line overrides it. Run it after the demo's
+corpus changes, and before a release that changes `answers.json`. A miss
+means an answer quotes text the demo no longer has: recapture, or drop
+that question.
+
 **When to re-run it.** Answers cite records by id and quote their text, so
 recapture when the corpus the demo serves changes a lot: cited records are
 edited, renamed or deleted, or enough new research lands that the answers are
@@ -448,8 +472,15 @@ otherwise).
   ```
 
   `project` is the `project-*` tag the question was captured under, or
-  `null` for all projects. `projects` is still listed. `questions` is absent
-  in the other modes.
+  `null` for all projects. `projects` is still listed. It also has
+  `capture`, from `answers.json`'s `metadata`: the chat model that produced
+  the answers and when, which the Ask tab shows under its question picker:
+
+  ```jsonc
+  "capture": { "model": "gemma2:9b", "capturedAt": "2026-09-28T17:36:53.970Z" }
+  ```
+
+  `questions` and `capture` are absent in the other modes.
 
 `question` is 1–2000 characters. `project` is optional: omitted, `null` or
 `"all"` searches the whole repo; anything else must be a tag slug

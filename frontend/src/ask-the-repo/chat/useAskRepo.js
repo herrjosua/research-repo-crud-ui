@@ -60,11 +60,14 @@ function sourcesPhrase(count) {
  *   (`'all'` or a project-* tag); every question in it uses that filter.
  * - `getMessages(id)` / `getRequest(id)`: a conversation's messages, and
  *   its in-flight request state `{ status: 'idle' | 'loading' | 'error',
- *   slow, error: { kind, question, project } | null }`.
- * - `send(conversationId, project, question)`: appends the question and
- *   asks it. With no `conversationId`, starts a new conversation. Returns
- *   the conversation's id. The reply lands in that conversation even if
- *   the user has opened another one in the meantime.
+ *   slow, error: { kind, question, project, questionId? } | null }`.
+ * - `send(conversationId, project, question, { questionId })`: appends the
+ *   question and asks it. With no `conversationId`, starts a new
+ *   conversation. Returns the conversation's id. The reply lands in that
+ *   conversation even if the user has opened another one in the meantime.
+ *   `questionId` (static mode) asks a captured question by its id; the
+ *   question text is still what the thread shows, and `slow` never turns
+ *   on.
  * - `retry(conversationId)`: re-asks a failed question without adding the
  *   question to the thread a second time.
  * - `unavailable`: true once the server has answered 503 (no language
@@ -108,17 +111,20 @@ export function useAskRepo({ ask = askRepo } = {}) {
         });
     }, []);
 
-    const request = useCallback(async (conversationId, question, project) => {
+    const request = useCallback(async (conversationId, question, project, questionId) => {
         const controller = new AbortController();
         controllers.current.add(controller);
         setRequest(conversationId, { status: 'loading', slow: false, error: null });
-        const timer = setTimeout(() => {
+        // A captured answer (questionId) is read from a file, never indexed,
+        // so it's never slow in the way the hint explains.
+        const timer = questionId ? null : setTimeout(() => {
             setRequest(conversationId, (current) => (current.status === 'loading' ? { ...current, slow: true } : current));
         }, SLOW_AFTER_MS);
-        timers.current.add(timer);
+        if (timer) timers.current.add(timer);
 
         try {
-            const { answer, sources, model } = await ask({ question, project }, { signal: controller.signal });
+            const body = questionId ? { question, project, questionId } : { question, project };
+            const { answer, sources, model } = await ask(body, { signal: controller.signal });
             const time = timestampNow();
             appendMessage(conversationId, {
                 id: makeId('m'),
@@ -142,7 +148,8 @@ export function useAskRepo({ ask = askRepo } = {}) {
                 return;
             }
             const kind = errorKind(err);
-            setRequest(conversationId, { status: 'error', slow: false, error: { kind, question, project } });
+            const error = questionId ? { kind, question, project, questionId } : { kind, question, project };
+            setRequest(conversationId, { status: 'error', slow: false, error });
             announce(`${ERROR_COPY[kind].title} ${ERROR_COPY[kind].subtitle}`);
         } finally {
             clearTimeout(timer);
@@ -151,7 +158,7 @@ export function useAskRepo({ ask = askRepo } = {}) {
         }
     }, [ask, announce, appendMessage, setRequest]);
 
-    const send = useCallback((conversationId, project, question) => {
+    const send = useCallback((conversationId, project, question, { questionId } = {}) => {
         const text = question.trim();
         let id = conversationId;
         if (!id) {
@@ -162,13 +169,13 @@ export function useAskRepo({ ask = askRepo } = {}) {
             ]);
         }
         appendMessage(id, { id: makeId('m'), role: 'user', content: text, timestamp: timestampNow() });
-        request(id, text, project);
+        request(id, text, project, questionId);
         return id;
     }, [appendMessage, request]);
 
     const retry = useCallback((conversationId) => {
         const error = requests[conversationId]?.error;
-        if (error) request(conversationId, error.question, error.project);
+        if (error) request(conversationId, error.question, error.project, error.questionId);
     }, [requests, request]);
 
     const getMessages = useCallback((conversationId) => messagesById[conversationId] ?? [], [messagesById]);

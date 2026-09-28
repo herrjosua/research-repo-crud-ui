@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, InlineLoading, InlineNotification } from '@carbon/react';
 import ChatMessage from './ChatMessage';
 import Composer from './Composer';
+import QuestionPicker from './QuestionPicker';
 import StarterQuestions from './StarterQuestions';
-import { ERROR_COPY, LOADING_TEXT, SLOW_TEXT, UNAVAILABLE_COPY } from './askCopy';
+import { ERROR_COPY, LOADING_TEXT, NO_PICKER_QUESTIONS, PICKER_LABEL, SLOW_TEXT, UNAVAILABLE_COPY } from './askCopy';
 import styles from './ChatPanel.module.scss';
 
 /**
@@ -23,8 +24,16 @@ import styles from './ChatPanel.module.scss';
  *   starters, which could only fill a composer that can't send.
  * - `announcement`: text for the polite live region (new answers and
  *   errors), from `useAskRepo`.
+ * - `pickerQuestions`: static mode (the public demo) when set, an array of
+ *   `{ id, question, project }` already filtered to the active project;
+ *   `null` (live mode) otherwise. Nothing can be typed: the empty state
+ *   lists the questions in the starter-question look, and once a
+ *   conversation has started a `QuestionPicker` dropdown takes the
+ *   composer's place. Either way, picking one calls `onPickQuestion`
+ *   straight away, and `pickerNote` (where the answers came from) sits
+ *   under the picker. An empty array says the project has none yet.
  * - `onSend(text)`, `onRetry()`, `onSignIn()`, `onOpenSource(source,
- *   event)` (an inline citation was clicked).
+ *   event)` (an inline citation was clicked), `onPickQuestion(question)`.
  *
  * Local state is only what nothing else reads: the composer's text and
  * which replies are toggled "Save as deliverable" (a preview).
@@ -41,10 +50,13 @@ export default function ChatPanel({
     error = null,
     unavailable = false,
     announcement = '',
+    pickerQuestions = null,
+    pickerNote = '',
     onSend,
     onRetry,
     onSignIn,
     onOpenSource,
+    onPickQuestion,
 }) {
     const [input, setInput] = useState('');
     const [savedMessageIds, setSavedMessageIds] = useState(() => new Set());
@@ -55,6 +67,9 @@ export default function ChatPanel({
     const bottomRef = useRef(null);
 
     const loading = status === 'loading';
+    // A 503 still wins: with no answers to give, the usual notice and
+    // disabled composer show instead.
+    const picking = pickerQuestions !== null && !unavailable;
     const errorCopy = status === 'error' && error ? ERROR_COPY[error.kind] ?? ERROR_COPY.unknown : null;
 
     // A failed question that can simply be asked again goes back into the
@@ -85,6 +100,12 @@ export default function ChatPanel({
     function handleSelectStarter(question) {
         setInput(question);
         composerRef.current?.focus();
+    }
+
+    // `question` is the picked `{ id, question, project }` itself, so two
+    // questions with the same wording still send their own ids.
+    function handlePickStarter(question) {
+        if (!loading) onPickQuestion(question);
     }
 
     function handleToggleSave(messageId) {
@@ -120,8 +141,22 @@ export default function ChatPanel({
                 scrollable-region-focusable. */}
             <div className={styles.messages} role="region" aria-label="Conversation" tabIndex={0}>
                 {messages.length === 0 && unavailableNotice}
+                {messages.length === 0 && picking && (
+                    <div className={styles.pickerEmpty}>
+                        {pickerQuestions.length > 0 ? (
+                            <StarterQuestions
+                                label={PICKER_LABEL}
+                                questions={pickerQuestions}
+                                onSelect={handlePickStarter}
+                            />
+                        ) : (
+                            <p className={styles.pickerNone}>{NO_PICKER_QUESTIONS}</p>
+                        )}
+                        {pickerNote && <p className={styles.pickerNote}>{pickerNote}</p>}
+                    </div>
+                )}
                 {messages.length === 0 ? (
-                    !unavailable && starters.length > 0 && (
+                    !unavailable && !picking && starters.length > 0 && (
                         <StarterQuestions questions={starters} onSelect={handleSelectStarter} />
                     )
                 ) : (
@@ -165,14 +200,23 @@ export default function ChatPanel({
                 {messages.length > 0 && unavailableNotice}
                 <div ref={bottomRef} />
             </div>
-            <Composer
-                ref={composerRef}
-                value={input}
-                onChange={setInput}
-                onSend={handleSend}
-                sending={loading}
-                disabled={unavailable}
-            />
+            {!picking ? (
+                <Composer
+                    ref={composerRef}
+                    value={input}
+                    onChange={setInput}
+                    onSend={handleSend}
+                    sending={loading}
+                    disabled={unavailable}
+                />
+            ) : messages.length > 0 && (
+                <QuestionPicker
+                    questions={pickerQuestions}
+                    disabled={loading}
+                    note={pickerNote}
+                    onPick={onPickQuestion}
+                />
+            )}
             <p className="cds--visually-hidden" aria-live="polite">{announcement}</p>
         </div>
     );

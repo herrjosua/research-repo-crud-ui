@@ -154,3 +154,22 @@ Cross-cutting records are searched under "All projects", or by picking
 project. Ranking keeps the top 6 records per question, so mixing them in
 would crowd out the project's own records. Including them would take a
 backend change (accept a list of tags and match any of them).
+
+## 13. The public demo uses pre-generated answers, picked from a list
+
+**Decision:** The public demo runs with `LLM_PROVIDER=static`. Visitors pick
+from a curated list of questions whose answers were captured ahead of time
+from the local model; nothing can be typed. The answers are unedited model
+output, and the page says when and with which model they were generated.
+
+**Why:** The demo server can't run a model, and a hosted model would add
+cost, a data path outside the machine, and abuse to guard against. A picker
+still shows the real product: citations, sources and insights work exactly
+as they do live. Matching typed questions to the nearest captured one was
+ruled out, because a near match answers a different question than the one
+asked. Pre-generated answers are only honest if they say so and have no
+fake delay or typing effect, so neither is simulated.
+
+**Consequence:** Answers can drift from the corpus they quote. The capture
+script's `verify` command checks every cited record and excerpt against a
+clone, and the answers are recaptured when the corpus changes a lot.

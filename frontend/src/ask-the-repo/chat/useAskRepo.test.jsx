@@ -101,6 +101,44 @@ describe('useAskRepo', () => {
         }
     });
 
+    it('asks a static-mode question by its id, showing its text, and never flags it slow', async () => {
+        vi.useFakeTimers();
+        try {
+            const { ask, calls } = deferredAsk();
+            const { result } = renderHook(() => useAskRepo({ ask }));
+            let id;
+            act(() => { id = result.current.send(null, 'project-prior-auth', 'What made the drafts hard to review?', { questionId: 'prior-auth-draft-review' }); });
+
+            expect(ask).toHaveBeenCalledWith(
+                { question: 'What made the drafts hard to review?', project: 'project-prior-auth', questionId: 'prior-auth-draft-review' },
+                { signal: expect.any(AbortSignal) },
+            );
+            expect(result.current.conversations[0]).toMatchObject({ title: 'What made the drafts hard to review?', project: 'project-prior-auth' });
+            expect(result.current.getMessages(id)).toEqual([expect.objectContaining({ role: 'user', content: 'What made the drafts hard to review?' })]);
+
+            act(() => { vi.advanceTimersByTime(SLOW_AFTER_MS * 2); });
+            expect(result.current.getRequest(id)).toEqual({ status: 'loading', slow: false, error: null });
+
+            await act(async () => calls[0].resolve(ANSWER));
+            expect(latestAssistantMessage(result.current.getMessages(id))).toMatchObject({ content: ANSWER.answer, sources: [SOURCE] });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('retries a failed static-mode question by its id', async () => {
+        const ask = vi.fn().mockRejectedValueOnce(httpError(500)).mockResolvedValueOnce(ANSWER);
+        const { result } = renderHook(() => useAskRepo({ ask }));
+
+        let id;
+        await act(async () => { id = result.current.send(null, 'all', 'Q?', { questionId: 'q-1' }); });
+        expect(result.current.getRequest(id).error).toEqual({ kind: 'unknown', question: 'Q?', project: 'all', questionId: 'q-1' });
+        await act(async () => { result.current.retry(id); });
+
+        expect(ask).toHaveBeenLastCalledWith({ question: 'Q?', project: 'all', questionId: 'q-1' }, expect.anything());
+        expect(result.current.getMessages(id).map((m) => m.role)).toEqual(['user', 'assistant']);
+    });
+
     it.each([
         [401, 'session', 'Your session has ended.'],
         [502, 'model', "Couldn't get an answer."],

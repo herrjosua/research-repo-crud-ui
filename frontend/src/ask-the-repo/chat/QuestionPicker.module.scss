@@ -1,0 +1,40 @@
+@use '@carbon/react/scss/type';
+@use '../../styles/variables' as vars;
+
+// The same row, padding, divider and `$background` as the Composer it
+// replaces (Composer.module.scss), so the panel keeps its shape in both
+// modes.
+.picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-block-start: 1px solid vars.$border-subtle;
+    background: vars.$background;
+}
+
+// Carbon's list box menu is one fixed-height, ellipsized line per option.
+// A question is the whole option, and at the md floor the column is too
+// narrow for most of them, so options wrap instead: the item grows with
+// its text and keeps Carbon's own vertical padding. Depends on the
+// `cds--list-box__menu-item` / `__option` classes and their fixed
+// `block-size` (@carbon/react 1.116); re-check after a Carbon upgrade.
+.picker :global(.cds--list-box__menu-item) {
+    block-size: auto;
+}
+
+.picker :global(.cds--list-box__menu-item__option) {
+    block-size: auto;
+    overflow: visible;
+    white-space: normal;
+    text-overflow: clip;
+}
+
+// Read while the field is disabled too (an answer is on its way), so it's
+// plain secondary text, not Carbon's helper text, which greys out with a
+// disabled field and fails 4.5:1.
+.note {
+    @include type.type-style('helper-text-01');
+    margin: 0;
+    color: vars.$text-secondary;
+}

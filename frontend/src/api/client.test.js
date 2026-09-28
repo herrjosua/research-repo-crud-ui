@@ -55,4 +55,13 @@ describe('askRepo', () => {
 
         expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ question: 'Q?', project: 'all' });
     });
+
+    it('posts only the questionId for a static-mode question', async () => {
+        const fetch = vi.fn(() => jsonResponse(200, { answer: 'a', sources: [], model: 'm' }));
+        vi.stubGlobal('fetch', fetch);
+
+        await askRepo({ question: 'Q?', project: 'project-x', questionId: 'q-1' });
+
+        expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ questionId: 'q-1' });
+    });
 });

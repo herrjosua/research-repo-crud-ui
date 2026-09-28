@@ -16,7 +16,8 @@ flowchart TD
 Every arrow works today. The Ask tab reads `GET /api/ask/config` for whether
 the server can answer and for the project list, and asks questions with
 `POST /api/ask`. Where `LLM_PROVIDER` is unset it says Ask the Repo isn't
-available and disables asking.
+available and disables asking. With `LLM_PROVIDER=static` (the public demo)
+there is no model at all: see [static mode](#the-ask-tab-in-static-mode-the-public-demo).
 
 ## Where things live
 
@@ -68,8 +69,9 @@ Details worth knowing:
   (labels from the corpus's `research/projects.yml`). A project matches its
   own tag only, so cross-cutting records are searched only under
   "Cross-cutting" or "All projects".
-- **Gate.** `LLM_PROVIDER=ollama` turns the endpoint on. Unset returns 503;
-  any other value stops the server from starting.
+- **Gate.** `LLM_PROVIDER=ollama` turns the endpoint on, and `static` serves
+  captured answers instead (below). Unset returns 503; any other value stops
+  the server from starting.
 - **Output.** The model's text is flattened to plain text on the server
   before it is returned. `[n]` always refers to `sources[n-1]`.
 - **Response shape.** Documented in
@@ -77,14 +79,54 @@ Details worth knowing:
 - **Failures.** Ollama errors are logged server-side and returned as a
   generic 502.
 
+## The Ask tab in static mode (the public demo)
+
+The public demo runs no model. With `LLM_PROVIDER=static`, the server answers
+from `backend/ask/static/answers.json`: a curated list of questions, each
+with a real, unedited answer from a local `gemma2:9b` run, captured ahead of
+time by `backend/scripts/capture-static-answers.js`.
+
+```mermaid
+sequenceDiagram
+  participant U as Ask tab
+  participant B as Backend /api/ask
+  U->>B: GET /api/ask/config
+  B-->>U: mode "static", questions, capture { model, capturedAt }
+  U->>B: POST { questionId }
+  B-->>U: the captured answer + sources + model, unchanged
+```
+
+- **No typing.** When the config says `mode: "static"`, the composer is
+  replaced by a question picker. The empty state lists the questions in the
+  starter-question style; once a conversation has started, a "Choose a
+  question" dropdown sits where the composer was. Picking one asks it at
+  once, by id. The server rejects free text with a 400.
+- **Project filter.** The project dropdown filters the list by each
+  question's own project, an exact match like the live filter. "All
+  projects" lists every question; a project with none says so.
+- **Honest about it.** A note under the picker says the answers were
+  generated ahead of time, naming the model and capture date from the
+  config, and that running the project locally lets you ask anything.
+  There's no simulated delay, typing effect or fake progress, and no "first
+  question is slow" hint.
+- **Everything else is live.** Answers go through the same `useAskRepo`
+  flow as live ones, so citations, the source modal, Save as insight, the
+  sources rail, the session-only history and the screen reader
+  announcements all work unchanged.
+- **Staying accurate.** Answers quote records by id, so they can drift
+  from the corpus. `capture-static-answers.js verify` checks every cited
+  record still exists and still contains its excerpt, against whichever
+  clone `AGENTIC_REPO_ROOT` points at, including the demo server's.
+
 ## Known gaps
 
-- Ask shows "not available" where `LLM_PROVIDER` is unset (production and
-  the public demo).
+- Ask shows "not available" where `LLM_PROVIDER` is unset. The public demo
+  shows it until its server sets `LLM_PROVIDER=static`.
 - Correction files in `raw/` aren't read by the export scripts, so
   retrieval can still cite a number that a correction has fixed.
 - Retrieval quality: numbered lists lose their numbers when chunked, the
   wrong passage is sometimes chosen, and the model occasionally states
   figures that aren't in the sources.
 - No rate limiting or quotas on `/api/ask`.
-- The public demo has no live LLM path yet; a static Q&A picker is planned.
+- The public demo can only answer its captured questions; typed questions
+  need the project running locally.

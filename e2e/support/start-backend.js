@@ -7,6 +7,11 @@
 // With LLM_PROVIDER=ollama (the main config), it also starts the backend
 // tests' fake Ollama and points the backend at it, so Ask the Repo answers
 // without a real model (CI has none).
+//
+// With LLM_PROVIDER=static (the demo config, like the public demo), it
+// layers fixtures/static-demo/ (a project list) over the corpus and serves
+// fixtures/static-answers.json, whose answers cite that corpus, through the
+// test-only ASK_STATIC_ANSWERS_FILE.
 const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
@@ -17,8 +22,11 @@ const { startFakeOllama } = require('../../backend/tests/helpers/fakeOllama');
 
 const BACKEND_DIR = path.resolve(__dirname, '../../backend');
 const CORPUS_DIR = path.resolve(__dirname, '../fixtures/corpus');
+const STATIC_DEMO_DIR = path.resolve(__dirname, '../fixtures/static-demo');
+const STATIC_ANSWERS_FILE = path.resolve(__dirname, '../fixtures/static-answers.json');
+const isStatic = process.env.LLM_PROVIDER === 'static';
 
-const repo = createTestRepo({ corpusDir: CORPUS_DIR });
+const repo = createTestRepo({ corpusDir: isStatic ? [CORPUS_DIR, STATIC_DEMO_DIR] : CORPUS_DIR });
 
 // The backend refuses a non-throwaway repo under NODE_ENV=test anyway; check
 // here too, before the server ever starts.
@@ -44,6 +52,11 @@ async function start() {
             OLLAMA_CHAT_MODEL: 'gemma2:9b',
         });
         console.log(`E2E backend using fake Ollama at ${fakeOllama.url}`);
+    }
+    if (isStatic) {
+        // Honoured only under NODE_ENV=test, which both configs set.
+        env.ASK_STATIC_ANSWERS_FILE = STATIC_ANSWERS_FILE;
+        console.log(`E2E backend serving static answers from ${STATIC_ANSWERS_FILE}`);
     }
 
     const server = spawn(process.execPath, ['server.js'], {

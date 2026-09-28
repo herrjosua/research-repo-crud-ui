@@ -29,3 +29,23 @@ export const ERROR_COPY = {
         retry: true,
     },
 };
+
+// Static mode (the public demo): visitors pick from captured questions.
+export const PICKER_LABEL = 'Choose a question';
+export const NO_PICKER_QUESTIONS = 'No pre-generated questions for this project yet.';
+
+// "Sep 28, 2026", the Ask tab's date format, in UTC so the capture date
+// doesn't shift with the visitor's time zone.
+function captureDate(capturedAt) {
+    const date = new Date(capturedAt);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+}
+
+// Where static answers came from, from GET /api/ask/config's `capture`
+// (`{ model, capturedAt }`). Leaves out whichever part is missing.
+export function captureNote(capture) {
+    const details = [capture?.model, capture?.capturedAt && captureDate(capture.capturedAt)].filter(Boolean);
+    const run = details.length > 0 ? `a local model run (${details.join(', ')})` : 'a local model run';
+    return `These answers were generated ahead of time from ${run} on sample data. Run the project locally to ask anything.`;
+}
