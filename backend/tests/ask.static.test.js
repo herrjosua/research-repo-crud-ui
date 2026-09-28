@@ -69,7 +69,7 @@ describe('GET /api/ask/config (static)', () => {
         expect(res.status).toBe(401);
     });
 
-    it('is enabled in static mode and lists the captured questions, keeping the project list', async () => {
+    it('is enabled in static mode and lists the captured questions and the capture, keeping the project list', async () => {
         const res = await agent.get('/api/ask/config');
 
         expect(res.status).toBe(200);
@@ -92,6 +92,7 @@ describe('GET /api/ask/config (static)', () => {
                     project: 'project-onboarding',
                 },
             ],
+            capture: { model: 'gemma2:9b', capturedAt: '2026-09-28T12:00:00.000Z' },
         });
     });
 });

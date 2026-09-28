@@ -9,6 +9,7 @@ vi.mock('../api/ask', () => ({ askRepo: vi.fn(), useAskConfig: vi.fn() }));
 
 const CONFIG = {
     enabled: true,
+    mode: 'live',
     projects: [
         { id: 'project-prior-auth', label: 'AI-Assisted Prior Authorization', count: 5 },
         { id: 'project-onboarding', label: 'Onboarding', count: 21 },
@@ -101,7 +102,7 @@ describe('AskTheRepo', () => {
 
     it('shows only "All projects", without a count, when the corpus has no project list', async () => {
         const user = userEvent.setup();
-        vi.mocked(useAskConfig).mockReturnValue({ data: { enabled: true, projects: [] } });
+        vi.mocked(useAskConfig).mockReturnValue({ data: { enabled: true, mode: 'live', projects: [] } });
         renderPage();
 
         expect(await projectOptions(user)).toEqual(['All projects']);
@@ -286,7 +287,7 @@ describe('AskTheRepo', () => {
     });
 
     it('shows "not available" up front when the config says so', () => {
-        vi.mocked(useAskConfig).mockReturnValue({ data: { enabled: false, projects: [] } });
+        vi.mocked(useAskConfig).mockReturnValue({ data: { enabled: false, mode: null, projects: [] } });
         renderPage();
 
         expect(screen.getByText("Ask the Repo isn't available here.")).toBeInTheDocument();
@@ -337,5 +338,195 @@ describe('AskTheRepo', () => {
         expect(await screen.findByRole('button', { name: `Source 1: ${V1.title}` })).toBeInTheDocument();
         expect(screen.queryByText("Couldn't get an answer.")).not.toBeInTheDocument();
         expect(screen.getAllByText('What made the drafts hard to review?', { selector: 'div' })).toHaveLength(1);
+    });
+});
+
+// Static mode (the public demo): GET /api/ask/config says `mode: 'static'`
+// and lists the captured questions; nothing can be typed.
+const STATIC_QUESTIONS = [
+    { id: 'all-prior-auth-tests', question: 'What did the prior auth usability tests find?', project: null },
+    { id: 'all-documentation-burden', question: 'How much documentation burden do clinicians report?', project: null },
+    { id: 'prior-auth-draft-review', question: 'What made the prior auth drafts hard to review?', project: 'project-prior-auth' },
+    { id: 'prior-auth-time-savings', question: 'How much drafting time did the AI save?', project: 'project-prior-auth' },
+    { id: 'cross-cutting-roadmap', question: 'What does the roadmap say about AI?', project: 'project-cross-cutting' },
+];
+const STATIC_CONFIG = {
+    ...CONFIG,
+    mode: 'static',
+    questions: STATIC_QUESTIONS,
+    capture: { model: 'llama3.1:8b', capturedAt: '2026-07-04T23:30:00.000Z' },
+};
+const STATIC_NOTE = 'These answers were generated ahead of time from a local model run (llama3.1:8b, Jul 4, 2026) on sample data. Run the project locally to ask anything.';
+
+describe('AskTheRepo in static mode', () => {
+    const questionList = () => screen.queryAllByRole('button', { name: /\?$/ })
+        .filter((button) => STATIC_QUESTIONS.some((q) => q.question === button.textContent))
+        .map((button) => button.textContent);
+    const questionDropdown = () => screen.getByRole('combobox', { name: 'Choose a question' });
+
+    beforeEach(() => {
+        vi.mocked(useAskConfig).mockReturnValue({ data: STATIC_CONFIG });
+    });
+
+    it('lists every captured question under "All projects", with no composer and the capture note from the config', () => {
+        renderPage();
+
+        expect(screen.getByText('Choose a question')).toBeInTheDocument();
+        expect(questionList()).toEqual(STATIC_QUESTIONS.map((q) => q.question));
+        expect(screen.getByText(STATIC_NOTE)).toBeInTheDocument();
+        expect(screen.queryByLabelText('Ask a question about the research')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Send' })).not.toBeInTheDocument();
+        expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
+        // The dropdown only replaces the composer once a conversation starts.
+        expect(screen.queryByRole('combobox', { name: 'Choose a question' })).not.toBeInTheDocument();
+    });
+
+    it('filters the questions to the picked project, by exact match', async () => {
+        const user = userEvent.setup();
+        renderPage();
+
+        await pickProject(user, /AI-Assisted Prior Authorization/);
+        expect(questionList()).toEqual([
+            'What made the prior auth drafts hard to review?',
+            'How much drafting time did the AI save?',
+        ]);
+
+        await pickProject(user, /Cross-cutting/);
+        expect(questionList()).toEqual(['What does the roadmap say about AI?']);
+
+        await pickProject(user, /All projects/);
+        expect(questionList()).toHaveLength(STATIC_QUESTIONS.length);
+    });
+
+    it('says so when a project has no questions yet, still showing the capture note', async () => {
+        const user = userEvent.setup();
+        renderPage();
+
+        await pickProject(user, /Onboarding/);
+
+        expect(screen.getByText('No pre-generated questions for this project yet.')).toBeInTheDocument();
+        expect(questionList()).toEqual([]);
+        expect(screen.getByText(STATIC_NOTE)).toBeInTheDocument();
+    });
+
+    it('asks a picked question by its id, and answers it like a live question', async () => {
+        const user = userEvent.setup();
+        askRepo.mockResolvedValueOnce(FIRST_ANSWER);
+        renderPage();
+        await pickProject(user, /AI-Assisted Prior Authorization/);
+
+        await user.click(screen.getByRole('button', { name: 'What made the prior auth drafts hard to review?' }));
+
+        expect(askRepo).toHaveBeenCalledTimes(1);
+        expect(askRepo.mock.calls[0][0]).toMatchObject({ questionId: 'prior-auth-draft-review' });
+        // The question is in the thread, and starts a conversation in the rail.
+        expect(screen.getByText('What made the prior auth drafts hard to review?', { selector: 'div' })).toBeInTheDocument();
+        expect(await screen.findByRole('button', { name: `Source 1: ${V1.title}` })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /What made the prior auth drafts hard to review\?.*Drafts cited outdated codes\./ })).toHaveAttribute('aria-current', 'true');
+        expect(within(rail()).getAllByRole('article')).toHaveLength(2);
+        expect(screen.getByText('Answer received, 2 sources cited.', { exact: false })).toBeInTheDocument();
+        // No slow-answer hint in static mode.
+        expect(screen.queryByText(/can take up to 20 seconds/)).not.toBeInTheDocument();
+
+        // The list is gone; the dropdown sits where the composer was, with
+        // the note under it.
+        expect(screen.queryByRole('button', { name: 'How much drafting time did the AI save?' })).not.toBeInTheDocument();
+        expect(questionDropdown()).toBeEnabled();
+        expect(screen.getByText(STATIC_NOTE)).toBeInTheDocument();
+        expect(screen.queryByLabelText('Ask a question about the research')).not.toBeInTheDocument();
+    });
+
+    it('asks by the clicked question\'s id when two captured questions share wording', async () => {
+        const user = userEvent.setup();
+        vi.mocked(useAskConfig).mockReturnValue({
+            data: {
+                ...STATIC_CONFIG,
+                questions: [
+                    { id: 'all-draft-review', question: 'What made the drafts hard to review?', project: null },
+                    { id: 'prior-auth-draft-review', question: 'What made the drafts hard to review?', project: 'project-prior-auth' },
+                ],
+            },
+        });
+        askRepo.mockResolvedValueOnce(FIRST_ANSWER);
+        renderPage();
+
+        await user.click(screen.getAllByRole('button', { name: 'What made the drafts hard to review?' })[1]);
+
+        expect(askRepo).toHaveBeenCalledTimes(1);
+        expect(askRepo.mock.calls[0][0]).toMatchObject({ questionId: 'prior-auth-draft-review' });
+        await screen.findByRole('button', { name: `Source 1: ${V1.title}` });
+    });
+
+    it('asks another question from the dropdown in the same conversation, which lists the project\'s questions', async () => {
+        const user = userEvent.setup();
+        askRepo.mockResolvedValueOnce(FIRST_ANSWER).mockResolvedValueOnce(SECOND_ANSWER);
+        renderPage();
+        await pickProject(user, /AI-Assisted Prior Authorization/);
+        await user.click(screen.getByRole('button', { name: 'What made the prior auth drafts hard to review?' }));
+        await screen.findByRole('button', { name: `Source 1: ${V1.title}` });
+
+        await user.click(questionDropdown());
+        expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
+            'What made the prior auth drafts hard to review?',
+            'How much drafting time did the AI save?',
+        ]);
+        await user.click(screen.getByRole('option', { name: 'How much drafting time did the AI save?' }));
+
+        expect(askRepo.mock.calls[1][0]).toMatchObject({ questionId: 'prior-auth-time-savings' });
+        expect(await screen.findByRole('button', { name: `Source 1: ${V2.title}` })).toBeInTheDocument();
+        // Both questions stayed in the one conversation, and the field
+        // is ready for the next pick.
+        expect(screen.getAllByText(/What made the prior auth|How much drafting time/, { selector: 'div' })).toHaveLength(2);
+        expect(screen.getAllByRole('button', { name: /What made the prior auth drafts hard to review\?/ }).filter((b) => b.getAttribute('aria-current'))).toHaveLength(1);
+        expect(questionDropdown()).toHaveTextContent('Choose a question');
+    });
+
+    it('opens a citation\'s source and saves it as an insight', async () => {
+        const user = userEvent.setup();
+        askRepo.mockResolvedValueOnce(FIRST_ANSWER);
+        renderPage();
+        await user.click(screen.getByRole('button', { name: 'What did the prior auth usability tests find?' }));
+
+        await user.click(await screen.findByRole('button', { name: `Source 1: ${V1.title}` }));
+        const dialog = screen.getByRole('dialog');
+        expect(within(dialog).getByRole('heading', { name: V1.title })).toBeInTheDocument();
+        await user.click(within(dialog).getByRole('button', { name: 'Save as insight' }));
+        await user.click(within(dialog).getByRole('button', { name: 'Close' }));
+
+        await user.click(screen.getByRole('tab', { name: 'Saved Insights' }));
+        const group = screen.getByRole('region', { name: 'AI-Assisted Prior Authorization' });
+        expect(within(group).getByRole('heading', { name: V1.title })).toBeInTheDocument();
+    });
+
+    it('goes back to the filtered list with New chat', async () => {
+        const user = userEvent.setup();
+        askRepo.mockResolvedValueOnce(FIRST_ANSWER);
+        renderPage();
+        await pickProject(user, /Cross-cutting/);
+        await user.click(screen.getByRole('button', { name: 'What does the roadmap say about AI?' }));
+        await screen.findByRole('button', { name: `Source 1: ${V1.title}` });
+
+        await user.click(screen.getByRole('button', { name: 'New chat' }));
+
+        expect(questionList()).toEqual(['What does the roadmap say about AI?']);
+        expect(screen.queryByRole('combobox', { name: 'Choose a question' })).not.toBeInTheDocument();
+    });
+
+    it('leaves the capture details out of the note when the config has none', () => {
+        vi.mocked(useAskConfig).mockReturnValue({ data: { ...STATIC_CONFIG, capture: undefined } });
+        renderPage();
+
+        expect(screen.getByText('These answers were generated ahead of time from a local model run on sample data. Run the project locally to ask anything.')).toBeInTheDocument();
+    });
+
+    it('keeps live mode unchanged, even if a config carries questions', () => {
+        vi.mocked(useAskConfig).mockReturnValue({ data: { ...STATIC_CONFIG, mode: 'live' } });
+        renderPage();
+
+        expect(composer()).toBeEnabled();
+        expect(screen.getByText('Try asking')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: STARTERS.all[0] })).toBeInTheDocument();
+        expect(screen.queryByText('Choose a question')).not.toBeInTheDocument();
+        expect(screen.queryByText(/generated ahead of time/)).not.toBeInTheDocument();
     });
 });

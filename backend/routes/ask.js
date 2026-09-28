@@ -126,6 +126,10 @@ router.use(requireAuth);
 //                        // static mode only: the captured questions, in
 //                        // curated order. project: the project-* tag the
 //                        // question was captured under, or null for all.
+//     capture?: { model, capturedAt },
+//                        // static mode only: the chat model that produced
+//                        // the answers and when (ISO timestamp), from the
+//                        // answers file's metadata.
 //     projects: [{ id, label, count }],
 //                        // id: the full project-* tag POST's `project` filter
 //                        // matches; label: from research/projects.yml;
@@ -153,6 +157,8 @@ router.get('/config', async (req, res) => {
   const body = { enabled: Boolean(provider), mode: MODES[provider] ?? null, projects };
   if (staticAnswers) {
     body.questions = staticAnswers.questions.map(({ id, question, project }) => ({ id, question, project }));
+    const { model, capturedAt } = staticAnswers.metadata;
+    body.capture = { model, capturedAt };
   }
   res.json(body);
 });

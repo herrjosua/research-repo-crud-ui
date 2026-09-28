@@ -4,6 +4,8 @@ import ChatPanel from './ChatPanel';
 import { useAskRepo } from './useAskRepo';
 import { STARTERS } from './starters';
 import { INITIAL_MESSAGES_BY_CONVERSATION } from '../fixtures/messages';
+import { STATIC_QUESTIONS, STATIC_CAPTURE } from '../fixtures/staticQuestions';
+import { captureNote } from './askCopy';
 import styles from './ChatPanel.stories.module.scss';
 
 const THREAD = INITIAL_MESSAGES_BY_CONVERSATION.c1;
@@ -142,5 +144,38 @@ export const NoSourcesAnswer = {
         timestamp: '10:20',
       },
     ],
+  },
+};
+
+// Static mode (the public demo): GET /api/ask/config said `mode:
+// 'static'`, so there's no composer. The empty state lists the captured
+// questions in the starter-question look, with where the answers came
+// from under them; picking one asks it straight away.
+export const StaticEmptyState = {
+  args: {
+    pickerQuestions: STATIC_QUESTIONS,
+    pickerNote: captureNote(STATIC_CAPTURE),
+    onPickQuestion: fn(),
+  },
+};
+
+// Static mode with a project picked that has no captured questions yet.
+export const StaticNoQuestionsForProject = {
+  args: {
+    pickerQuestions: [],
+    pickerNote: captureNote(STATIC_CAPTURE),
+    onPickQuestion: fn(),
+  },
+};
+
+// Static mode once a conversation has started: the "Choose a question"
+// dropdown and the note sit where the composer was, on the composer's
+// `$background` row.
+export const StaticConversation = {
+  args: {
+    messages: THREAD,
+    pickerQuestions: STATIC_QUESTIONS,
+    pickerNote: captureNote(STATIC_CAPTURE),
+    onPickQuestion: fn(),
   },
 };

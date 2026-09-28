@@ -34,7 +34,9 @@ const REAL_SCRIPTS_DIR = path.join(REAL_AGENTIC_REPO_ROOT, 'research', 'scripts'
  * absolute path.
  *
  * corpusDir, if given, is copied into the repo root before the initial commit
- * (E2E uses a fixed corpus; Jest tests start empty).
+ * (E2E uses a fixed corpus; Jest tests start empty). An array of directories
+ * is copied in order, so a later one can add or replace files (the E2E demo
+ * config layers a project list over the shared corpus).
  */
 function createTestRepo({ corpusDir } = {}) {
     if (!fs.existsSync(REAL_SCRIPTS_DIR)) {
@@ -63,8 +65,8 @@ function createTestRepo({ corpusDir } = {}) {
         fs.copyFileSync(path.join(REAL_SCRIPTS_DIR, file), path.join(scriptsDir, file));
     }
 
-    if (corpusDir) {
-        fs.cpSync(corpusDir, repoRoot, { recursive: true });
+    for (const dir of [].concat(corpusDir || [])) {
+        fs.cpSync(dir, repoRoot, { recursive: true });
     }
 
     execFileSync('git', ['init'], { cwd: repoRoot });

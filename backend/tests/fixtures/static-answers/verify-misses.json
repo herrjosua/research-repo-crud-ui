@@ -1,0 +1,118 @@
+{
+  "metadata": {
+    "model": "gemma2:9b",
+    "embedModel": "nomic-embed-text",
+    "capturedAt": "2026-09-28T12:00:00.000Z",
+    "corpusCommit": "0123456789abcdef0123456789abcdef01234567",
+    "scriptVersion": 1
+  },
+  "questions": [
+    {
+      "id": "calendar-step",
+      "question": "Where do admins stall?",
+      "project": "project-onboarding",
+      "answer": "At the calendar step [1], the largest drop-off [2].",
+      "sources": [
+        {
+          "id": "finding:onboarding#0",
+          "kind": "synthesis",
+          "title": "Onboarding",
+          "excerpt": "Admins stall at the calendar step.",
+          "project": "project-onboarding",
+          "recordProject": "project-onboarding",
+          "date": null,
+          "contextBefore": null,
+          "contextAfter": null,
+          "section": null,
+          "recordId": "finding:onboarding",
+          "recordKind": "finding",
+          "recordType": "synthesis",
+          "score": 0.59
+        },
+        {
+          "id": "analytics:onboarding-funnel#0",
+          "kind": "synthesis",
+          "title": "Onboarding funnel",
+          "excerpt": "Step 3 is the largest drop-off.",
+          "project": "project-onboarding",
+          "recordProject": "project-onboarding",
+          "date": null,
+          "contextBefore": null,
+          "contextAfter": null,
+          "section": null,
+          "recordId": "analytics:onboarding-funnel",
+          "recordKind": "analytics",
+          "recordType": "synthesis",
+          "score": 0.58
+        }
+      ],
+      "run": 1
+    },
+    {
+      "id": "edited-excerpt",
+      "question": "Do admins stall?",
+      "project": "project-onboarding",
+      "answer": "They breeze through it [1].",
+      "sources": [
+        {
+          "id": "finding:onboarding#0",
+          "kind": "synthesis",
+          "title": "Onboarding",
+          "excerpt": "Admins breeze through the calendar step.",
+          "project": "project-onboarding",
+          "recordProject": "project-onboarding",
+          "date": null,
+          "contextBefore": null,
+          "contextAfter": null,
+          "section": null,
+          "recordId": "finding:onboarding",
+          "recordKind": "finding",
+          "recordType": "synthesis",
+          "score": 0.59
+        }
+      ],
+      "run": 1
+    },
+    {
+      "id": "deleted-record",
+      "question": "What did the retired survey say?",
+      "project": "project-onboarding",
+      "answer": "Admins liked it [1], and it was the largest drop-off [2].",
+      "sources": [
+        {
+          "id": "raw:2026-01-02-retired-survey#0",
+          "kind": "survey",
+          "title": "Retired survey",
+          "excerpt": "Admins liked it.",
+          "project": "project-onboarding",
+          "recordProject": "project-onboarding",
+          "date": null,
+          "contextBefore": null,
+          "contextAfter": null,
+          "section": null,
+          "recordId": "raw:2026-01-02-retired-survey",
+          "recordKind": "raw",
+          "recordType": "survey",
+          "score": 0.57
+        },
+        {
+          "id": "analytics:onboarding-funnel#0",
+          "kind": "synthesis",
+          "title": "Onboarding funnel",
+          "excerpt": "Step 3 is the largest drop-off.",
+          "project": "project-onboarding",
+          "recordProject": "project-onboarding",
+          "date": null,
+          "contextBefore": null,
+          "contextAfter": null,
+          "section": null,
+          "recordId": "analytics:onboarding-funnel",
+          "recordKind": "analytics",
+          "recordType": "synthesis",
+          "score": 0.58
+        }
+      ],
+      "run": 1
+    }
+  ]
+}

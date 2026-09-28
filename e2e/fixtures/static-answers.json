@@ -1,0 +1,127 @@
+{
+  "metadata": {
+    "model": "gemma2:9b",
+    "embedModel": "nomic-embed-text",
+    "capturedAt": "2026-09-28T12:00:00.000Z",
+    "corpusCommit": "0123456789abcdef0123456789abcdef01234567",
+    "scriptVersion": 1
+  },
+  "questions": [
+    {
+      "id": "all-scribe-draft-trust",
+      "question": "Why didn't physicians trust the ambient scribe's draft notes?",
+      "project": null,
+      "answer": "Physicians read every line of the draft before accepting it, so none trusted it enough to skim [1].\n\nIn 2 of 5 sessions the draft transcript stayed editable after the encounter ended [2].",
+      "sources": [
+        {
+          "id": "raw:2025-02-25-usability-test-ambient-scribe-v01#3",
+          "kind": "transcript",
+          "title": "Usability Test — Ambient AI Scribe Prototype v0.1",
+          "excerpt": "[HIGH] (trust calibration) 4 of 5 participants read every line of AI-generated text before accepting it in this first exposure; none trusted it enough to skim, which undercuts the time-savings premise if that behavior persists post-adoption.\n[MEDIUM] (interaction) Participants were unsure how to correct a single wrong sentence without regenerating the whole note; the edit affordance wasn't discoverable.\n[MEDIUM] (workflow fit) The 'start listening' control required a manual click, which physicians said they would likely forget mid-conversation with a patient.",
+          "project": null,
+          "recordProject": "project-ambient-scribe",
+          "date": "Feb 25, 2025",
+          "contextBefore": "…encounter ended with no clear indication of where/how long it was stored — a potential PHI retention/audit gap that needs Security review before any real-patient pilot.\n[HIGH] (accuracy) The scribe correctly captured the chief complaint and HPI in all 5 sessions but missed or garbled medication dosages in 3 of 5 — physicians said this was disqualifying for direct sign-off without review.",
+          "contextAfter": "\"I love what it got right, but I have to read every word anyway right now, so where's the time savings? Ask me again in a month.\" — Physician, Internal Medicine, P09\n\"Wait — where did that draft just go when I closed the window? That's the kind of question Legal is going to ask me.\" — Physician, Family Medicine, P11",
+          "section": "Key Findings",
+          "recordId": "raw:2025-02-25-usability-test-ambient-scribe-v01",
+          "recordKind": "raw",
+          "recordType": "usability-test",
+          "score": 0.71
+        },
+        {
+          "id": "raw:2025-02-25-usability-test-ambient-scribe-v01#2",
+          "kind": "transcript",
+          "title": "Usability Test — Ambient AI Scribe Prototype v0.1",
+          "excerpt": "[CRITICAL] (phi-handling) In 2 of 5 sessions, the prototype's draft transcript persisted in an editable state after the simulated encounter ended with no clear indication of where/how long it was stored — a potential PHI retention/audit gap that needs Security review before any real-patient pilot.\n[HIGH] (accuracy) The scribe correctly captured the chief complaint and HPI in all 5 sessions but missed or garbled medication dosages in 3 of 5 — physicians said this was disqualifying for direct sign-off without review.",
+          "project": null,
+          "recordProject": "project-ambient-scribe",
+          "date": "Feb 25, 2025",
+          "contextBefore": "Method: Moderated usability test, simulated patient encounters, 45 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder",
+          "contextAfter": "[HIGH] (trust calibration) 4 of 5 participants read every line of AI-generated text before accepting it in this first exposure; none trusted it enough to skim, which undercuts the time-savings premise if that behavior persists post-adoption.\n[MEDIUM] (interaction) Participants were unsure how to correct a single wrong sentence without regenerating the whole note; the edit affordance wasn't…",
+          "section": "Key Findings",
+          "recordId": "raw:2025-02-25-usability-test-ambient-scribe-v01",
+          "recordKind": "raw",
+          "recordType": "usability-test",
+          "score": 0.66
+        }
+      ],
+      "run": 1
+    },
+    {
+      "id": "all-nursing-sentiment",
+      "question": "How do nurses feel about AI-generated documentation?",
+      "project": null,
+      "answer": "Most respondents were neutral to skeptical that AI-generated documentation would be accurate enough to sign off on without heavy editing [1].",
+      "sources": [
+        {
+          "id": "raw:2025-02-11-survey-nursing-attitudes-ai-documentation#2",
+          "kind": "survey",
+          "title": "Survey — Nursing Staff Attitudes Toward AI-Assisted Documentation",
+          "excerpt": "[MEDIUM] (sentiment) 61% of respondents were 'neutral to skeptical' about AI-generated documentation being accurate enough to sign off on without heavy editing; 24% were optimistic; 15% strongly opposed.\n[MEDIUM] (concern) The top volunteered concern (open-ended, coded from 89 responses) was 'losing my clinical narrative voice / it will sound robotic,' not accuracy or privacy as originally hypothesized.\n[LOW] (unit variance) ICU and ED nurses were notably more skeptical than Med-Surg and outpatient clinic nurses, likely correlated with documentation complexity/acuity.",
+          "project": null,
+          "recordProject": "project-cross-cutting",
+          "date": "Feb 11, 2025",
+          "contextBefore": "Method: Online survey, distributed via internal staff portal, 12 questions (Likert + 2 open-ended)\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder",
+          "contextAfter": "[LOW] (openness to pilot) 38% of respondents volunteered interest in being part of an early pilot group when asked directly.",
+          "section": "Key Findings",
+          "recordId": "raw:2025-02-11-survey-nursing-attitudes-ai-documentation",
+          "recordKind": "raw",
+          "recordType": "survey",
+          "score": 0.69
+        }
+      ],
+      "run": 1
+    },
+    {
+      "id": "prior-auth-time-savings",
+      "question": "How much drafting time did the AI save on prior auth cases?",
+      "project": "project-prior-auth",
+      "answer": "Participants estimated the draft cut initial drafting time from about 15 minutes to about 5 per straightforward case [1].",
+      "sources": [
+        {
+          "id": "raw:2025-04-08-usability-test-prior-auth-ai-v1#3",
+          "kind": "transcript",
+          "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v1)",
+          "excerpt": "[HIGH] (time savings (positive)) Despite the above, participants estimated the draft cut initial drafting time from ~15 minutes to ~5 minutes per straightforward case when the citation was correct, which was seen as a real win if accuracy improves.\n[MEDIUM] (transparency) Participants wanted to see which specific chart entries the AI pulled from, inline, rather than trusting a black-box summary — 'show your work' was mentioned unprompted by 3 of 4.",
+          "project": "project-prior-auth",
+          "recordProject": "project-prior-auth",
+          "date": "Apr 8, 2025",
+          "contextBefore": "…present elsewhere in the chart rather than the most recent/active ones, which participants said would likely cause a payer denial if submitted as-is.\n[HIGH] (liability concern) The supervisor was firm that nurses would still need to read every AI-drafted justification in full before submission, since a wrongly submitted prior auth can delay patient care by days — no shortcut is acceptable here.",
+          "contextAfter": "\"Five minutes saved is great until it's the case that gets denied and now I'm on the phone with the payer for 40 minutes instead. Show me where it got that info.\" — Utilization Review Nurse, P17\n\"I actually really liked this for the boring, obvious cases. Just don't let it near the complicated ones yet.\" — Utilization Review Nurse, P19",
+          "section": "Key Findings",
+          "recordId": "raw:2025-04-08-usability-test-prior-auth-ai-v1",
+          "recordKind": "raw",
+          "recordType": "usability-test",
+          "score": 0.74
+        }
+      ],
+      "run": 1
+    },
+    {
+      "id": "prior-auth-outdated-codes",
+      "question": "What went wrong in the prior auth drafts?",
+      "project": "project-prior-auth",
+      "answer": "In 2 of 4 cases the draft cited outdated diagnosis codes rather than the active ones [1].",
+      "sources": [
+        {
+          "id": "raw:2025-04-08-usability-test-prior-auth-ai-v1#2",
+          "kind": "transcript",
+          "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v1)",
+          "excerpt": "[HIGH] (accuracy) In 2 of 4 cases, the AI draft cited outdated diagnosis codes still present elsewhere in the chart rather than the most recent/active ones, which participants said would likely cause a payer denial if submitted as-is.\n[HIGH] (liability concern) The supervisor was firm that nurses would still need to read every AI-drafted justification in full before submission, since a wrongly submitted prior auth can delay patient care by days — no shortcut is acceptable here.",
+          "project": "project-prior-auth",
+          "recordProject": "project-prior-auth",
+          "date": "Apr 8, 2025",
+          "contextBefore": "Method: Moderated usability test, 4 realistic case scenarios, 60 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder",
+          "contextAfter": "[HIGH] (time savings (positive)) Despite the above, participants estimated the draft cut initial drafting time from ~15 minutes to ~5 minutes per straightforward case when the citation was correct, which was seen as a real win if accuracy improves.\n[MEDIUM] (transparency) Participants wanted to see which specific chart entries the AI pulled from, inline, rather than trusting a black-box summary —…",
+          "section": "Key Findings",
+          "recordId": "raw:2025-04-08-usability-test-prior-auth-ai-v1",
+          "recordKind": "raw",
+          "recordType": "usability-test",
+          "score": 0.72
+        }
+      ],
+      "run": 1
+    }
+  ]
+}

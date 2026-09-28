@@ -1,0 +1,25 @@
+# The demo config's project list (see ../../README.md): layered over
+# corpus/ so the static Ask tab has projects to filter its questions by.
+# Only two raw sessions are assigned; the other raw sessions fall under
+# project-cross-cutting, and the finding, component and persona in corpus/
+# carry no project tag.
+
+projects:
+  - id: project-ambient-scribe
+    label: Ambient AI Scribe
+    description: Ambient documentation for physicians.
+  - id: project-prior-auth
+    label: AI-Assisted Prior Authorization
+    description: AI-drafted prior authorization requests.
+  - id: project-onboarding
+    label: Onboarding
+    description: A project with no captured questions yet.
+  - id: project-cross-cutting
+    label: Cross-cutting
+    description: Program-level work that belongs to no single project.
+
+raw:
+  2025-02-25-usability-test-ambient-scribe-v01: project-ambient-scribe
+  2025-04-08-usability-test-prior-auth-ai-v1: project-prior-auth
+
+components: {}

@@ -195,3 +195,52 @@ describe('ChatPanel', () => {
         expect(screen.getByRole('region', { name: 'Conversation' })).toHaveAttribute('tabindex', '0');
     });
 });
+
+describe('ChatPanel with a question picker (static mode)', () => {
+    const PICKS = [
+        { id: 'q-1', question: 'What did the prior auth usability tests find?', project: null },
+        { id: 'q-2', question: 'How much documentation burden do clinicians report?', project: null },
+    ];
+    const NOTE = 'These answers were generated ahead of time.';
+    const renderPicker = (props = {}) => renderPanel({ pickerQuestions: PICKS, pickerNote: NOTE, onPickQuestion: () => {}, ...props });
+
+    it('sends a picked question from the empty state straight away', async () => {
+        const user = userEvent.setup();
+        const onPickQuestion = vi.fn();
+        renderPicker({ onPickQuestion });
+
+        await user.click(screen.getByRole('button', { name: PICKS[1].question }));
+
+        expect(onPickQuestion).toHaveBeenCalledWith(PICKS[1]);
+        expect(screen.queryByRole('button', { name: STARTERS[0] })).not.toBeInTheDocument();
+    });
+
+    it('sends the clicked question\'s own id when two share wording', async () => {
+        const user = userEvent.setup();
+        const onPickQuestion = vi.fn();
+        const twins = [
+            { id: 'all-billing', question: 'What did coders think?', project: null },
+            { id: 'rcm-billing', question: 'What did coders think?', project: 'project-rcm' },
+        ];
+        renderPicker({ pickerQuestions: twins, onPickQuestion });
+
+        await user.click(screen.getAllByRole('button', { name: 'What did coders think?' })[1]);
+
+        expect(onPickQuestion).toHaveBeenCalledExactlyOnceWith(twins[1]);
+    });
+
+    it('disables the dropdown while an answer is on its way, keeping the note readable', () => {
+        renderPicker({ messages: [{ id: 'm-q', role: 'user', content: QUESTION, timestamp: '10:14' }], status: 'loading' });
+
+        expect(screen.getByRole('combobox', { name: 'Choose a question' })).toBeDisabled();
+        expect(screen.getByText(NOTE)).toBeInTheDocument();
+    });
+
+    it('falls back to the unavailable notice and a disabled composer after a 503', () => {
+        renderPicker({ unavailable: true });
+
+        expect(screen.getByText("Ask the Repo isn't available here.")).toBeInTheDocument();
+        expect(composer()).toBeDisabled();
+        expect(screen.queryByRole('button', { name: PICKS[0].question })).not.toBeInTheDocument();
+    });
+});

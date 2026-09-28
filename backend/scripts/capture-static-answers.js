@@ -5,6 +5,7 @@
 //   node scripts/capture-static-answers.js capture [--runs 3] [--only id,id]
 //   node scripts/capture-static-answers.js report [--only id,id]
 //   node scripts/capture-static-answers.js publish [--pick id=2 ...] [--dry-run]
+//   node scripts/capture-static-answers.js verify [--answers path/to/answers.json]
 //
 // capture  Runs every question in ask/static/questions.json through the same
 //          pipeline as POST /api/ask (ask/pipeline.js), in process, against
@@ -20,6 +21,12 @@
 //          flags that meets the citation bar; --pick id=N chooses run N.
 //          Drop a question from questions.json to leave it out. --dry-run
 //          checks and lists the selection without writing anything.
+// verify   Checks the published answers still match the checkout at
+//          AGENTIC_REPO_ROOT: every cited record still exists, by record id,
+//          and its excerpt still appears in that record's text. Prints each
+//          miss and exits non-zero if there are any. Needs no Ollama, so it
+//          runs against any clone, including the demo server's. --answers
+//          checks another answers file instead.
 //
 // Nothing here edits an answer. The review directory is git-ignored.
 
@@ -28,12 +35,12 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const { createOllamaClient, OLLAMA_DEFAULTS } = require('../ask/ollama');
-const { loadRecords } = require('../ask/corpus');
+const { loadRecords, htmlToBlocks } = require('../ask/corpus');
 const { createEmbeddingIndex } = require('../ask/retrieval');
 const { createAskPipeline } = require('../ask/pipeline');
 const {
     STATIC_DIR, QUESTIONS_FILE, ANSWERS_FILE, CAPTURE_SCRIPT_VERSION,
-    citationMarkers, validateQuestionList, validateStaticAnswers,
+    citationMarkers, validateQuestionList, validateStaticAnswers, loadStaticAnswers,
 } = require('../ask/staticAnswers');
 
 const REVIEW_DIR = path.join(STATIC_DIR, 'review');
@@ -372,9 +379,66 @@ function publish({ picks, dryRun }) {
     for (const e of entries) console.log(`  ${e.id}: run ${e.run}`);
 }
 
+// ---------------------------------------------------------------------------
+// Verify: do the published answers still match a checkout?
+// ---------------------------------------------------------------------------
+
+function collapseWhitespace(text) {
+    return String(text).replace(/\s+/g, ' ').trim();
+}
+
+// A record's text as ask/corpus.js cuts passages from it: its blocks in
+// order, whitespace collapsed. An excerpt is a run of consecutive blocks, so
+// it's a substring of this while the record is unchanged. Collapsing
+// whitespace on both sides ignores line-wrapping differences only.
+function recordText(record) {
+    return collapseWhitespace(htmlToBlocks(record.html || '').map((block) => block.text).join('\n'));
+}
+
+// Every cited source whose record is gone, or whose excerpt its record no
+// longer contains, as `{ questionId, n, recordId, problem }` ([n] is the
+// source's citation number). [] when everything still matches. `records` is
+// export_records.py's output (loadRecords()).
+function verifyAnswers(data, records) {
+    const byId = new Map(records.map((record) => [record.id, record]));
+    const texts = new Map();
+    const misses = [];
+    for (const entry of data.questions) {
+        entry.sources.forEach((source, i) => {
+            const miss = (problem) => misses.push({ questionId: entry.id, n: i + 1, recordId: source.recordId, problem });
+            const record = byId.get(source.recordId);
+            if (!record) {
+                miss('record no longer exists');
+                return;
+            }
+            if (!texts.has(record.id)) texts.set(record.id, recordText(record));
+            if (!texts.get(record.id).includes(collapseWhitespace(source.excerpt))) {
+                miss('excerpt no longer appears in the record');
+            }
+        });
+    }
+    return misses;
+}
+
+async function verify({ answersFile }) {
+    const repoRoot = process.env.AGENTIC_REPO_ROOT;
+    if (!repoRoot) throw new Error('AGENTIC_REPO_ROOT is not set (backend/.env or the environment).');
+    const data = loadStaticAnswers(answersFile);
+    const misses = verifyAnswers(data, await loadRecords());
+    const sourceCount = data.questions.reduce((sum, entry) => sum + entry.sources.length, 0);
+    const where = `${path.relative(process.cwd(), answersFile) || answersFile} against ${repoRoot}`;
+    if (misses.length === 0) {
+        console.log(`OK: all ${sourceCount} cited source(s) in ${data.questions.length} answer(s) match (${where}).`);
+        return;
+    }
+    for (const m of misses) console.log(`MISS ${m.questionId} [${m.n}] ${m.recordId}: ${m.problem}`);
+    console.log(`${misses.length} of ${sourceCount} cited source(s) no longer match (${where}).`);
+    process.exitCode = 1;
+}
+
 function parseArgs(argv) {
     const [command, ...rest] = argv;
-    const options = { command, runs: 3, only: null, picks: new Map(), dryRun: false };
+    const options = { command, runs: 3, only: null, picks: new Map(), dryRun: false, answersFile: ANSWERS_FILE };
     for (let i = 0; i < rest.length; i += 1) {
         const arg = rest[i];
         const value = () => {
@@ -391,6 +455,8 @@ function parseArgs(argv) {
             const match = /^([a-z0-9-]+)=(\d+)$/.exec(value());
             if (!match) throw new Error('--pick takes id=N');
             options.picks.set(match[1], Number(match[2]));
+        } else if (arg === '--answers') {
+            options.answersFile = path.resolve(value());
         } else if (arg === '--dry-run') {
             options.dryRun = true;
         } else {
@@ -407,7 +473,8 @@ async function main() {
     if (options.command === 'capture') return capture(options);
     if (options.command === 'report') return report(options);
     if (options.command === 'publish') return publish(options);
-    throw new Error('usage: capture-static-answers.js capture [--runs N] [--only id,id] | report [--only id,id] | publish [--pick id=N ...] [--dry-run]');
+    if (options.command === 'verify') return verify(options);
+    throw new Error('usage: capture-static-answers.js capture [--runs N] [--only id,id] | report [--only id,id] | publish [--pick id=N ...] [--dry-run] | verify [--answers file]');
 }
 
 if (require.main === module) {
@@ -417,4 +484,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { reviewRun, citedSentences, contentWords, unsupportedNumbers, renderReport };
+module.exports = { reviewRun, citedSentences, contentWords, unsupportedNumbers, renderReport, verifyAnswers };

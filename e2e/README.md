@@ -51,8 +51,12 @@ sets `LLM_PROVIDER=ollama`, and `start-backend.js` then starts the backend
 tests' fake Ollama (`backend/tests/helpers/fakeOllama.js`, a real HTTP
 server with Ollama's request and response shapes) and points the backend
 at it, so questions get a fixed, cited answer through the real retrieval
-code. The demo config sets `LLM_PROVIDER` empty, like the public demo, so
-Ask the Repo is off there.
+code. The demo config sets `LLM_PROVIDER=static`, like the public demo:
+`start-backend.js` layers [`fixtures/static-demo/`](./fixtures/static-demo)
+(a project list) over the corpus and serves
+[`fixtures/static-answers.json`](./fixtures/static-answers.json), captured-style
+answers that cite the fixture corpus, through the test-only
+`ASK_STATIC_ANSWERS_FILE`. No model runs in either config.
 
 CI runs both, in Chromium, as the `e2e` job in
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). There it adds an
@@ -131,10 +135,19 @@ session rather than a hardcoded label), and a run at the 672px md floor
 confirms the disclaimer banner doesn't push either screen into horizontal
 scroll. Both the picker and the post-login dashboard get their own
 accessibility scan, since neither is reached by the suite above.
-[`ask-unavailable.spec.js`](./tests-demo/ask-unavailable.spec.js) checks
-Ask the Repo without a language model: `GET /api/ask/config` says so, the
-tab shows its "not available" notice before anyone asks, asking is
-disabled, `POST /api/ask` answers 503, and the page passes a scan.
+[`ask-static.spec.js`](./tests-demo/ask-static.spec.js) checks Ask the Repo
+in static mode: the question picker replaces the composer and shows the
+capture note, a typed question is refused, the project dropdown filters the
+questions (including a project with none), picking one sends only its
+`questionId` and renders the answer, `[1]` opens its source in the modal,
+Save as insight lands in the Saved Insights tab, and a second question
+comes from the "Choose a question" dropdown. It scans the empty state, the
+answered page and the open modal. A second test opens that dropdown at the
+672px md floor and checks every option shows its whole question (nothing
+clipped or ellipsized, the longest one wrapping onto more lines), with no
+horizontal page scroll, and that a wrapped option can still be picked. The "not available" state (no
+`LLM_PROVIDER`) is covered by unit tests and the ChatPanel `Unavailable`
+story instead.
 
 ## Real accessibility issues found and fixed
 
