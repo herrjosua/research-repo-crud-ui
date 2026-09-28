@@ -1,12 +1,16 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Grid, Column, Checkbox, Tag, ClickableTile, InlineNotification, Button, Modal, Search } from '@carbon/react';
+import { Grid, Column, Tag, ClickableTile, InlineNotification, Layer, Modal } from '@carbon/react';
 import CreateSessionForm from './CreateSessionForm';
 import { useRecords } from './api/records';
 import RecordDetail from './RecordDetail';
+import RecordsRail from './RecordsRail';
+import RecordKindTag from './RecordKindTag';
+import BreadcrumbBar from './ask-the-repo/shell/BreadcrumbBar';
+import { RECORD_KIND_IDS } from './recordKinds';
 
 import styles from './Dashboard.module.scss';
 
-const ALL_KINDS = ['raw', 'finding', 'component', 'analytics', 'deliverable'];
+const ALL_KINDS = RECORD_KIND_IDS;
 
 export default function Dashboard() {
   const records = useRecords();
@@ -107,89 +111,79 @@ export default function Dashboard() {
     );
   }
 
+  // Same page structure as AskTheRepo.jsx: BreadcrumbBar, then a full-width
+  // Grid/Column holding a `narrow` Grid with the rail (lg=4/md=2) beside the
+  // content — so the two pages' rails and content share one left edge.
   return (
-    <Grid>
-      <Column lg={4} md={2} sm={4}>
-        <Search
-            labelText="Search records"
-            placeholder="Search records"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onClear={() => setSearchQuery('')}
-        />
-        <fieldset className={styles.fieldset}>
-          <legend>Kind</legend>
-          {ALL_KINDS.map((kind) => (
-            <Checkbox
-              key={kind}
-              id={`kind-${kind}`}
-              labelText={kind}
-              checked={activeKinds.has(kind)}
-              onChange={() => toggleKind(kind)}
-            />
-          ))}
-        </fieldset>
-        <fieldset className={styles.fieldset}>
-          <legend>Tags{activeTags.size > 0 && ` (${activeTags.size} selected)`}</legend>
-          <Search
-              size="sm"
-              labelText="Filter tags"
-              placeholder="Filter tags"
-              value={tagQuery}
-              onChange={(e) => setTagQuery(e.target.value)}
-              onClear={() => setTagQuery('')}
-          />
-          <div className={styles.tagList}>
-            {visibleTags.map((tag) => (
-                <Checkbox
-                    key={tag}
-                    id={`tag-${tag}`}
-                    labelText={tag}
-                    checked={activeTags.has(tag)}
-                    onChange={() => toggleTag(tag)}
-                />
-            ))}
-          </div>
-        </fieldset>
-      </Column>
+    <div className={styles.page}>
+      <BreadcrumbBar
+        current="Research Records"
+        meta={`${filtered.length} of ${records.data.length} records`}
+      />
+      <Grid>
+        <Column sm={4} md={8} lg={16} className={styles.rowInset}>
+          <Grid narrow className={styles.row}>
+            <Column lg={4} md={2} sm={4}>
+              <RecordsRail
+                onNewSession={() => setShowCreateForm(true)}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                activeKinds={activeKinds}
+                onToggleKind={toggleKind}
+                tags={visibleTags}
+                activeTags={activeTags}
+                onToggleTag={toggleTag}
+                tagQuery={tagQuery}
+                onTagQueryChange={setTagQuery}
+              />
+            </Column>
 
-      <Column lg={12} md={6} sm={4}>
-        <h1 ref={headingRef} tabIndex={-1}>Research Records</h1>
-        {deleteWarning && (
-            <InlineNotification
-                kind="warning"
-                title="Deleted, but the index reported issues"
-                subtitle={deleteWarning}
-                lowContrast
-                onClose={() => setDeleteWarning(null)}
-            />
-        )}
-        <Button onClick={() => setShowCreateForm(true)}>New session</Button>
-        <p>{filtered.length} of {records.data.length} records</p>
-        {filtered.length === 0 && (
-            <InlineNotification
-                kind="info"
-                title="No matching records"
-                subtitle="Try unchecking a filter or clearing your search."
-                lowContrast
-            />
-        )}
-        {filtered.map((record) => (
-            <ClickableTile
-                key={record.id}
-                onClick={() => setSelectedId(record.id)}
-                className={styles.tile}
-            >
-              <h2>{highlightMatch(record.title, searchQuery)}</h2>
-              <p>{record.date} · {highlightMatch(record.type, searchQuery)}</p>
-            <div className={styles.tags}>
-              {record.tags.map((tag) => (
-                <Tag key={tag} type="blue">{tag}</Tag>
-              ))}
-            </div>
-          </ClickableTile>
-        ))}
-      </Column>
+            <Column lg={12} md={6} sm={4} className={styles.content}>
+              <h1 ref={headingRef} tabIndex={-1} className={styles.heading}>Research Records</h1>
+              {deleteWarning && (
+                  <InlineNotification
+                      kind="warning"
+                      title="Deleted, but the index reported issues"
+                      subtitle={deleteWarning}
+                      lowContrast
+                      onClose={() => setDeleteWarning(null)}
+                  />
+              )}
+              {filtered.length === 0 && (
+                  <InlineNotification
+                      kind="info"
+                      title="No matching records"
+                      subtitle="Try unchecking a filter or clearing your search."
+                      lowContrast
+                  />
+              )}
+              {/* The cards sit one layer above the content surface
+                  (`$layer-01`), so Carbon's Layer gives ClickableTile the
+                  next layer's background, hover and border tokens. */}
+              <Layer>
+                {filtered.map((record) => (
+                    <ClickableTile
+                        key={record.id}
+                        onClick={() => setSelectedId(record.id)}
+                        className={`${styles.tile} ${styles[record.kind] ?? ''}`}
+                    >
+                      <div className={styles.meta}>
+                        <RecordKindTag kind={record.kind} />
+                        <span>{record.date} · {highlightMatch(record.type, searchQuery)}</span>
+                      </div>
+                      <h2 className={styles.title}>{highlightMatch(record.title, searchQuery)}</h2>
+                      <div className={styles.tags}>
+                        {record.tags.map((tag) => (
+                          <Tag key={tag} type="gray" size="sm">{tag}</Tag>
+                        ))}
+                      </div>
+                    </ClickableTile>
+                ))}
+              </Layer>
+            </Column>
+          </Grid>
+        </Column>
+      </Grid>
 
       {showCreateForm && (
           <Modal
@@ -213,6 +207,6 @@ export default function Dashboard() {
           }}
         />
       )}
-    </Grid>
+    </div>
   );
 }

@@ -1,12 +1,89 @@
+@use '@carbon/react/scss/spacing';
+@use '@carbon/react/scss/type';
 @use './styles/variables' as vars;
 
-.tile {
-  margin-bottom: vars.$spacing-tile-gap;
+.page {
+  display: flex;
+  flex-direction: column;
+}
+
+// The rail/content row. Grid's own `align-items: stretch` makes the rail
+// run the full height of the content beside it.
+.row {
+  flex: 1;
+}
+
+// Ask the Repo's rail row sits inside a Carbon TabPanel, which insets it by
+// 1rem (Carbon's layout-density inline padding); this page has no tabs, so
+// the same inset is applied here — both pages' rails then start at the same
+// x as the breadcrumb text and have the same width at every breakpoint.
+.rowInset {
+  padding-inline: spacing.$spacing-05;
+}
+
+// The content surface: `$surface` (`$layer-01`), the same as Ask the Repo's
+// chat panel and Direction B v2's main area, so the cards (one Layer up)
+// read as white cards on gray in white and lift the same way in g100.
+.content {
+  padding: spacing.$spacing-06 spacing.$spacing-05;
+  background: vars.$surface;
+}
+
+.heading {
+  @include type.type-style('heading-04');
+
+  margin-block-end: spacing.$spacing-05;
+  color: vars.$text-primary;
 }
 
 .loading {
   text-align: center;
   margin-top: vars.$spacing-tile-gap;
+}
+
+// A record card: Carbon's ClickableTile (inside a Layer, so it's
+// `$layer-02` with that layer's hover), with Direction B v2's hairline
+// border and a 3px stripe in the record kind's color along its start edge.
+.tile {
+  margin-block-end: spacing.$spacing-03;
+  border: 1px solid vars.$border-subtle;
+  border-inline-start-width: 3px;
+
+  // Carbon draws a ClickableTile's ring from its `.cds--link` class — 1px,
+  // thinner than every other ring in the app. Same 2px inset ring as the
+  // app's other custom focus targets.
+  &:focus {
+    outline: 2px solid vars.$focus;
+    outline-offset: -2px;
+  }
+}
+
+@each $kind, $color in vars.$record-kind-colors {
+  .#{$kind} {
+    border-inline-start-color: $color;
+  }
+}
+
+.meta {
+  @include type.type-style('label-01');
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: spacing.$spacing-03;
+  margin-block-end: spacing.$spacing-02;
+  color: vars.$text-secondary;
+
+  // The Tag's own outer margin would offset it from the date beside it.
+  :global(.cds--tag) {
+    margin: 0;
+  }
+}
+
+.title {
+  @include type.type-style('heading-compact-01');
+
+  color: vars.$text-primary;
 }
 
 // Tags render back-to-back with no gap between them (Carbon zeroes the
@@ -17,23 +94,15 @@
   display: flex;
   flex-wrap: wrap;
   gap: vars.$spacing-action-gap;
-  margin-block: vars.$spacing-action-gap;
+  margin-block-start: spacing.$spacing-03;
+
+  :global(.cds--tag) {
+    margin: 0;
+  }
 }
 
 .highlight {
   background-color: vars.$highlight-background;
   color: vars.$highlight-text;
   font-weight: 600;
-}
-
-.tagList {
-  max-height: vars.$tag-list-max-height;
-  overflow-y: auto;
-}
-
-// A <fieldset> defaults to min-inline-size: min-content, so it refuses to
-// shrink with its Grid column and can poke past it (a few px at the 672px
-// md floor). Letting it shrink keeps it aligned with the Search box above.
-.fieldset {
-  min-inline-size: 0;
 }

@@ -1,0 +1,129 @@
+@use '@carbon/react/scss/type';
+@use './styles/variables' as vars;
+
+// Same shell as ask-the-repo/rails/LeftRail.module.scss: filling its Grid
+// Column (lg=4/md=2/sm=4 — see Dashboard.jsx), `$background` surface,
+// `$border-subtle` edge. Records' page grows with its content rather than
+// filling the viewport, so the rail simply stretches with the row (Grid's
+// own `align-items: stretch`) instead of scrolling internally.
+.rail {
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+    block-size: 100%;
+    background: vars.$background;
+    border-inline-end: 1px solid vars.$border-subtle;
+}
+
+// One inline inset for everything in the rail — LeftRail's "New chat" inset
+// — so the button, search and the sections below share a left and right
+// edge. 0.5rem, not Carbon Accordion's default 1rem: at the md floor this
+// rail is ~9rem wide, and every rem of inset comes out of the button.
+$inset: 0.5rem;
+
+.newSession {
+    padding: $inset $inset 0;
+    container-type: inline-size;
+
+    // Full width — Direction B v2's rail CTA — rather than Carbon's
+    // content-width button. Carbon caps buttons at `max-inline-size: 20rem`
+    // and reserves ~4rem of end padding for its 1rem icon (itself inset 1rem
+    // from the end); both are relaxed here — 2.5rem still clears the icon —
+    // so "New session" stays on one line at the md floor. Depends on
+    // Carbon's `.cds--btn` padding and max-width (verified against
+    // @carbon/react 1.116); re-check on upgrade.
+    :global(.cds--btn) {
+        inline-size: 100%;
+        max-inline-size: none;
+        padding-inline-end: 2.5rem;
+    }
+
+    // At the md floor the rail is ~9rem wide: too narrow for the label and
+    // Carbon's end-aligned icon side by side, so the "+" goes and the label
+    // keeps the width (it's a visual echo of the label, not information).
+    // Sized by the button's own container, not a viewport breakpoint, so it
+    // holds wherever the rail's width lands.
+    @container (inline-size < 10rem) {
+        :global(.cds--btn) {
+            padding-inline-end: 1rem;
+        }
+
+        :global(.cds--btn__icon) {
+            display: none;
+        }
+    }
+}
+
+.search {
+    padding: 0.75rem $inset;
+}
+
+.sections {
+    // Carbon's Accordion takes its heading, chevron and content inset from
+    // its layout-density variable; setting it here moves all three to the
+    // rail's inset together.
+    --cds-layout-density-padding-inline-local: #{$inset};
+
+    // It also reserves 25% (3rem at md) of inline-end padding in the content
+    // area for reading width — meant for prose in a full-width page, not a
+    // checkbox list in a narrow rail. Depends on Carbon's
+    // `.cds--accordion__content` padding (verified against @carbon/react
+    // 1.116); re-check on upgrade.
+    :global(.cds--accordion__content) {
+        padding-inline-end: $inset;
+    }
+}
+
+// Same type as LeftRail's `.sectionLabel` ("Recent").
+.sectionLabel {
+    @include type.type-style('label-01');
+
+    color: vars.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.sectionTitle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+// The selected-tag count sits in the heading, not after it: drop the Tag's
+// own outer margin so it lines up with the label.
+.count {
+    margin: 0;
+}
+
+// A <fieldset> defaults to min-inline-size: min-content, so it refuses to
+// shrink with its Grid column and can poke past it (a few px at the 672px
+// md floor). Letting it shrink keeps it aligned with the search above.
+.fieldset {
+    min-inline-size: 0;
+}
+
+.kindLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+// The kind's color, from the same Carbon tag token as its badge and its
+// card stripe (`$record-kind-colors` in _variables.scss).
+.swatch {
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+@each $kind, $color in vars.$record-kind-colors {
+    .#{$kind} {
+        background: $color;
+    }
+}
+
+.tagList {
+    max-block-size: vars.$tag-list-max-height;
+    margin-block-start: 0.5rem;
+    overflow-y: auto;
+}

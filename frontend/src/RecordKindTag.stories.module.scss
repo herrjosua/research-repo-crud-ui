@@ -1,0 +1,40 @@
+@use '@carbon/react/scss/spacing';
+@use './styles/variables' as vars;
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: spacing.$spacing-06;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: spacing.$spacing-03;
+}
+
+// Dashboard.module.scss's `.content` surface and `.tile` card, reduced to
+// what the kind colors depend on.
+.surface {
+    padding: spacing.$spacing-05;
+    background: vars.$surface;
+}
+
+.card {
+    display: flex;
+    align-items: center;
+    gap: spacing.$spacing-03;
+    margin-block-end: spacing.$spacing-03;
+    border: 1px solid vars.$border-subtle;
+    border-inline-start-width: 3px;
+}
+
+@each $kind, $color in vars.$record-kind-colors {
+    .#{$kind} {
+        border-inline-start-color: $color;
+    }
+}
+
+.cardText {
+    color: vars.$text-secondary;
+}

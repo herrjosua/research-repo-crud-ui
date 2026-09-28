@@ -1,0 +1,9 @@
+@use './styles/variables' as vars;
+
+// Create session + Cancel side by side, with the same gap as
+// RecordDetail's own button row.
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: vars.$spacing-action-gap;
+}

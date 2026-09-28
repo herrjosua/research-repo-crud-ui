@@ -38,4 +38,9 @@
         background: vars.$background-hover;
         color: vars.$text-primary;
     }
+
+    &:focus-visible {
+        outline: 2px solid vars.$focus;
+        outline-offset: 1px;
+    }
 }

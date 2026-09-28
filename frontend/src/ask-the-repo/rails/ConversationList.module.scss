@@ -23,6 +23,13 @@
     &:hover {
         background: vars.$background-hover;
     }
+
+    // The app's focus token, not the browser's default ring. Inset so the
+    // Recent scroll region doesn't clip it.
+    &:focus-visible {
+        outline: 2px solid vars.$focus;
+        outline-offset: -2px;
+    }
 }
 
 .active {

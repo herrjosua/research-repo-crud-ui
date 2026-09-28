@@ -1,7 +1,15 @@
 import { Breadcrumb, BreadcrumbItem, Grid, Column } from '@carbon/react';
 import styles from './BreadcrumbBar.module.scss';
 
-export default function BreadcrumbBar() {
+/**
+ * The bar under the header on both pages: "Research Repo / <current page>",
+ * with optional page-level status on the right (Research Records shows its
+ * "N of M records" count there, per Direction B v2).
+ *
+ * `current` (default `'Ask the Repo'`): the current page's crumb.
+ * `meta` (optional): right-aligned text beside the breadcrumb.
+ */
+export default function BreadcrumbBar({ current = 'Ask the Repo', meta }) {
     return (
         // Grid/Column, not a flat `padding-inline`: Dashboard.jsx gets its own
         // horizontal inset entirely from Carbon's Grid (a responsive margin,
@@ -13,12 +21,13 @@ export default function BreadcrumbBar() {
             <Column sm={4} md={8} lg={16} className={styles.content}>
                 {/* Neither crumb has an href: "Research Repo" isn't a link back
                     to the dashboard (that's what the primary nav is for) and
-                    "Ask the Repo" is the current page — both render as plain
-                    text. */}
+                    the current page is where you already are — both render as
+                    plain text. */}
                 <Breadcrumb noTrailingSlash aria-label="Breadcrumb">
                     <BreadcrumbItem>Research Repo</BreadcrumbItem>
-                    <BreadcrumbItem isCurrentPage>Ask the Repo</BreadcrumbItem>
+                    <BreadcrumbItem isCurrentPage>{current}</BreadcrumbItem>
                 </Breadcrumb>
+                {meta && <p className={styles.meta}>{meta}</p>}
             </Column>
         </Grid>
     );

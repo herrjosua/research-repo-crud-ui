@@ -1,3 +1,4 @@
+@use '@carbon/react/scss/type';
 @use '../../styles/variables' as vars;
 
 .bar {
@@ -9,4 +10,14 @@
     display: flex;
     align-items: center;
     block-size: 2.5rem;
+}
+
+// Page-level status on the right (Research Records' record count).
+.meta {
+    @include type.type-style('body-compact-01');
+
+    margin-inline-start: auto;
+    padding-inline-start: 1rem;
+    color: vars.$text-secondary;
+    white-space: nowrap;
 }

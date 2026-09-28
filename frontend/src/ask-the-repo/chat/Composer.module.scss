@@ -15,14 +15,6 @@
 .textarea {
     flex: 1;
 
-    // Carbon's TextArea focus ring is the generic interactive blue; this
-    // is the one interactive control in the chat surface, so it gets the
-    // chat accent instead — the same reasoning as $chat-accent's own
-    // comment in _variables.scss.
-    :global(.cds--text-area):focus {
-        outline-color: vars.$chat-accent;
-    }
-
     // Carbon greys a disabled field's helper text to `$text-disabled`,
     // which fails 4.5:1 (axe: about 3:1 in both themes). This hint still
     // matters while the field is disabled (waiting for an answer, or
