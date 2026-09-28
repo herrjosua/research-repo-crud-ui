@@ -42,7 +42,9 @@ test('Ask the Repo is reachable from primary nav, its tabs switch, and the theme
     // Real Saved Insights view (Story 6): its heading, the session-only
     // notice, and — since nothing was saved in this flow — the empty state.
     await expect(page.getByRole('heading', { name: 'Saved insights' })).toBeVisible();
-    await expect(page.getByText('Session only')).toBeVisible();
+    // Exact: the Ask tab's left rail (mounted, but hidden) has its own
+    // "Session only: conversations…" note.
+    await expect(page.getByText('Session only', { exact: true })).toBeVisible();
     await expect(page.getByText('No saved insights yet')).toBeVisible();
 
     // --- Nav back to Research Records leaves Ask the Repo ---

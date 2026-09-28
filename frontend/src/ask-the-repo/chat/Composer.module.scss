@@ -2,7 +2,9 @@
 
 .composer {
     display: flex;
-    align-items: flex-end;
+    // Top-aligned: the helper text under the field would otherwise pull
+    // the send button below the textarea's own bottom edge.
+    align-items: flex-start;
     flex-shrink: 0;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
@@ -19,5 +21,15 @@
     // comment in _variables.scss.
     :global(.cds--text-area):focus {
         outline-color: vars.$chat-accent;
+    }
+
+    // Carbon greys a disabled field's helper text to `$text-disabled`,
+    // which fails 4.5:1 (axe: about 3:1 in both themes). This hint still
+    // matters while the field is disabled (waiting for an answer, or
+    // asking unavailable), so it keeps the readable secondary color.
+    // Depends on Carbon's `cds--form__helper-text--disabled` class
+    // (@carbon/react 1.116); re-check after a Carbon upgrade.
+    :global(.cds--form__helper-text--disabled) {
+        color: vars.$text-secondary;
     }
 }

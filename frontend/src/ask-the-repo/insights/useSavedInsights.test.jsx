@@ -1,13 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
 import { useSavedInsights, groupInsightsByProject, insightFromSource } from './useSavedInsights';
-import { PROJECTS } from '../mock/constants';
-import { SAMPLE_INSIGHTS } from '../mock/insights';
-import { INITIAL_MESSAGES_BY_CONVERSATION } from '../mock/messages';
+import { PROJECTS } from '../fixtures/constants';
+import { SAMPLE_INSIGHTS } from '../fixtures/insights';
+import { INITIAL_MESSAGES_BY_CONVERSATION } from '../fixtures/messages';
 
 const [interview, survey] = INITIAL_MESSAGES_BY_CONVERSATION.c1[1].sources;
 
 describe('insightFromSource', () => {
-    it('resolves the source\'s project label to its PROJECTS id', () => {
+    it('takes the project from the source\'s recordProject', () => {
         expect(insightFromSource(interview)).toMatchObject({
             id: `ins-${interview.id}`,
             title: interview.title,
@@ -19,8 +19,15 @@ describe('insightFromSource', () => {
         });
     });
 
-    it('keeps an unmatched project label as-is, so it lands ungrouped', () => {
-        expect(insightFromSource({ ...interview, project: 'Nowhere' }).project).toBe('Nowhere');
+    it('ignores source.project, which only echoes the question\'s filter', () => {
+        expect(insightFromSource({ ...interview, project: 'project-onboarding' }).project).toBe('checkout');
+    });
+
+    it('has no project when the record has none, so it lands ungrouped', () => {
+        const insight = insightFromSource({ ...interview, recordProject: null });
+
+        expect(insight.project).toBeNull();
+        expect(groupInsightsByProject([insight], PROJECTS).ungrouped).toEqual([insight]);
     });
 });
 

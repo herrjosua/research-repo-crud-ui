@@ -1,3 +1,4 @@
+@use '@carbon/react/scss/type';
 @use '../../styles/variables' as vars;
 
 // This panel's real height is `block-size: 100%`, resolving against the
@@ -38,10 +39,39 @@
     gap: 1.25rem;
     overflow-y: auto;
     padding: 1rem;
+
+    // Keyboard focus lands here so the thread can be scrolled (see
+    // ChatPanel.jsx); same ring as the app's other custom focus targets.
+    &:focus-visible {
+        outline: 2px solid vars.$focus;
+        outline-offset: -2px;
+    }
 }
 
-.sendingIndicator {
+.loading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.slow {
+    @include type.type-style('label-01');
     margin: 0;
     color: vars.$text-secondary;
-    font-size: 0.75rem;
+}
+
+.requestError {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+// Carbon's InlineNotification has an 18rem minimum width, wider than this
+// column at the 672px floor (about 17rem, less padding). Let it fill the
+// column instead, at every width.
+.notification {
+    min-inline-size: 0;
+    max-inline-size: none;
+    inline-size: 100%;
 }

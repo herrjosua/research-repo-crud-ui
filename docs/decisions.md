@@ -42,9 +42,14 @@ cache is lost on restart.
 
 **Decision:** `/api/ask` filters by tag, not by a project field.
 
-**Why:** Records don't have a project field. The frontend's mock project
-ids mostly don't exist as tags, so real tags need to be normalized before
-the Ask tab's project filter can be wired to the endpoint.
+**Why:** Records don't have a project field. agentic-repo gives every
+record exactly one `project-*` tag (listed in its `research/projects.yml`),
+so a tag is a real, single-valued grouping.
+
+**Now:** The Ask tab's project picker lists those tags from
+`GET /api/ask/config`, with their labels and record counts, after an
+"All projects" entry that searches everything. Picking one sends its full
+tag as the filter.
 
 ## 5. Raw sessions are append-only; corrections are new files
 
@@ -67,8 +72,8 @@ stays a separate pipeline.
 assistant reply headed for a draft/final review. Keeping them
 separate keeps that distinction clear.
 
-**Consequence:** "Show more" on long insights can't trigger in the app
-until longer real content exists; Storybook and tests cover it.
+**Consequence:** Insights hold real cited passages (up to about 600
+characters), so long ones collapse behind "Show more".
 
 ## 7. Model output is rendered as plain text
 
@@ -122,3 +127,27 @@ contrast checks.
 **Why:** Keeps the UI upgradeable and accessible. Where a custom component
 compensates for Carbon internals (for example small-button padding), it's
 commented and should be re-checked after any Carbon upgrade.
+
+## 11. Conversation history is session-only
+
+**Decision:** The Ask tab starts with no conversations. Asking from the
+empty state starts one, titled by its first question; conversations live in
+the page's state and are gone when the user leaves the page.
+
+**Why:** Nothing stores conversations yet, and showing seeded examples
+would suggest otherwise. This matches Saved Insights, and the rail says
+"Session only" in the same words.
+
+**Consequence:** Each question is also answered on its own (the endpoint
+has no memory of earlier ones), and the composer says so.
+
+## 12. Picking a project doesn't include cross-cutting records
+
+**Decision:** A project filter matches that project's own tag only.
+Cross-cutting records are searched under "All projects", or by picking
+"Cross-cutting", which is listed as a project of its own.
+
+**Why:** There are 25 cross-cutting records against 3 to 21 for each
+project. Ranking keeps the top 6 records per question, so mixing them in
+would crowd out the project's own records. Including them would take a
+backend change (accept a list of tags and match any of them).

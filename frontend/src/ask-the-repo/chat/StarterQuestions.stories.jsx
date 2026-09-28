@@ -1,10 +1,10 @@
 import StarterQuestions from './StarterQuestions';
-import { STARTERS } from '../mock/starters';
+import { STARTERS } from '../fixtures/starters';
 
 // Grouped under Ask the Repo, alongside the rest of the chat panel. No
 // PropTypes/TS on StarterQuestions, so `argTypes` is given explicitly
 // (same reasoning as sources/KindTag.stories.jsx); `questions` is a
-// closed choice of one of the mock `STARTERS` lists, so `select` (keyed
+// closed choice of one of the fixture `STARTERS` lists, so `select` (keyed
 // by project id) is the real control, not a free-text array.
 export default {
   title: 'Ask the Repo/StarterQuestions',
@@ -26,5 +26,14 @@ export default {
 export const Default = {
   args: {
     questions: 'checkout',
+  },
+};
+
+// While a question is being answered, or when asking isn't available here,
+// the starters can't be picked.
+export const Disabled = {
+  args: {
+    questions: 'checkout',
+    disabled: true,
   },
 };

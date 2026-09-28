@@ -123,11 +123,14 @@ npm run dev
 ```
 Open `http://localhost:5173` and sign in.
 
-The Ask the Repo page's chat still shows mock replies; wiring it to
-`POST /api/ask` is a separate ticket. To exercise the real endpoint now, use
-the live test (see [Testing](#testing)). With `LLM_PROVIDER=ollama`, the
-first question takes 10 to 20 seconds while the corpus is embedded and the
-model loads; later questions are faster.
+The Ask the Repo page asks `POST /api/ask` and reads its project list and
+availability from `GET /api/ask/config`. With `LLM_PROVIDER=ollama` it answers
+from the local model: the first question after a server start takes 10 to 20
+seconds while the corpus is embedded and the model loads (after about 5
+seconds the page says why), and later questions are faster. With
+`LLM_PROVIDER` unset, as in production and the public demo, the page says
+Ask the Repo isn't available in this environment and disables asking; the
+rest of the app works as usual.
 
 ## Testing
 
@@ -361,9 +364,9 @@ record has the tag, the answer says so and the model isn't called.)
   order. It is `[]` when the answer cites nothing, e.g. when the repo
   doesn't cover the question.
 
-`Source` is the frontend's mock source shape
-(`frontend/src/ask-the-repo/mock/messages.js`), plus fields identifying the
-real record:
+`Source` is the shape the Ask tab's sources rail and detail modal render
+(examples in `frontend/src/ask-the-repo/fixtures/messages.js`), plus fields
+identifying the real record:
 
 | Field           | Type             | Notes |
 |-----------------|------------------|-------|
@@ -373,7 +376,7 @@ real record:
 | `excerpt`       | string           | The cited passage, verbatim from the record (≤ ~600 chars, may contain `\n`). |
 | `project`       | string \| null   | The request's `project` filter, echoed back, or `null` when unfiltered. The same on every source in a response. |
 | `recordProject` | string \| null   | The cited record's own `project-*` tag (e.g. `project-onboarding`), or `null` if it has none (a checkout without `projects.yml`). Use this, not `project`, to say which project a source belongs to: under an unfiltered question `project` is always `null`. |
-| `date`          | string \| null   | `"Jan 14, 2025"`, the mock's format; `null` if the record has no date. |
+| `date`          | string \| null   | `"Jan 14, 2025"`, the format the Ask tab shows; `null` if the record has no date. |
 | `contextBefore` | string \| null   | The record text just before the excerpt (≤ ~400 chars, `…`-clipped). |
 | `contextAfter`  | string \| null   | The record text just after it. |
 | `section`       | string \| null   | The heading the excerpt sits under. |
@@ -382,8 +385,8 @@ real record:
 | `recordType`    | string \| null   | e.g. `usability-test`, `personas`. |
 | `score`         | number           | Cosine similarity of the passage to the question. |
 
-The mock's `page` is never set (markdown records have no pages), which
-`SourceCard` already handles.
+There is no `page` field (markdown records have no pages); the design's
+fixtures have one, and `SourceCard` shows it only when present.
 
 **How it works.** Every question re-reads the corpus through
 `export_records.py` (about 0.1s), like `GET /api/records`, splits each record

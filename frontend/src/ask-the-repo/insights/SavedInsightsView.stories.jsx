@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import SavedInsightsView from './SavedInsightsView';
-import { SAMPLE_INSIGHTS } from '../mock/insights';
-import { PROJECTS } from '../mock/constants';
+import { SAMPLE_INSIGHTS } from '../fixtures/insights';
+import { PROJECTS } from '../fixtures/constants';
 import styles from './SavedInsightsView.stories.module.scss';
 
 // The view's data is a list, so Controls offers a closed set of real
-// cases (mapped to real fixture arrays from mock/insights.js) rather than
+// cases (mapped to real fixture arrays from fixtures/insights.js) rather than
 // a free-form JSON editor.
 const INSIGHT_SETS = {
   'Two projects + Other': SAMPLE_INSIGHTS,

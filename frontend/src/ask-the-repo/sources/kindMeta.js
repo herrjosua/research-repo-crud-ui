@@ -15,6 +15,6 @@ export const KIND_META = {
 // which never offer the pin for `synthesis`/`doc` sources (those are
 // already secondary write-ups, not findings in their own right). The
 // reference additionally requires a title match against its mock finding
-// records; that lookup belongs to real citation data (Story 8), so the
-// kind rule is the whole rule here.
+// records. Real sources from POST /api/ask carry no such flag, so the kind
+// rule is the whole rule here.
 export const PINNABLE_KINDS = new Set(['interview', 'survey', 'transcript']);

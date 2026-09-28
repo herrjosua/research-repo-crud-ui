@@ -63,4 +63,23 @@ describe('Composer', () => {
         expect(screen.getByLabelText('Ask a question about the research')).toBeDisabled();
         expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
     });
+
+    it('disables the field and button when asking is unavailable', () => {
+        render(<Composer value="hello" onChange={() => {}} onSend={() => {}} sending={false} disabled />);
+
+        expect(screen.getByLabelText('Ask a question about the research')).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+    });
+
+    it('limits a question to the endpoint\'s 2000 characters', () => {
+        render(<Composer value="" onChange={() => {}} onSend={() => {}} sending={false} />);
+
+        expect(screen.getByLabelText('Ask a question about the research')).toHaveAttribute('maxlength', '2000');
+    });
+
+    it('says each question is answered on its own', () => {
+        render(<Composer value="" onChange={() => {}} onSend={() => {}} sending={false} />);
+
+        expect(screen.getByText('Each question is answered on its own, without earlier ones as context.')).toBeInTheDocument();
+    });
 });

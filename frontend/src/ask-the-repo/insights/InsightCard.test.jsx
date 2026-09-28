@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import InsightCard, { PREVIEW_LENGTH } from './InsightCard';
-import { SAMPLE_INSIGHTS } from '../mock/insights';
+import { SAMPLE_INSIGHTS } from '../fixtures/insights';
 
 const SHORT = SAMPLE_INSIGHTS[0];
 const LONG = SAMPLE_INSIGHTS.find((insight) => insight.content.length > PREVIEW_LENGTH);

@@ -11,12 +11,13 @@ import styles from './ChatMessage.module.scss';
  * content itself; this component only decides which branch to render and
  * draws the shared header/bubble chrome around it.
  *
- * `message` (a `Message` from `../mock/messages.js`'s shape), `saved`/
+ * `message` (a `Message` from `../fixtures/messages.js`'s shape), `saved`/
  * `onToggleSave()` — passed straight through to `AssistantMessage` for
  * user messages, which have nothing to save, `saved`/`onToggleSave` are
- * simply unused.
+ * simply unused. `onOpenSource(source, event)`: an inline citation was
+ * clicked (see `AssistantMessage`).
  */
-export default function ChatMessage({ message, saved, onToggleSave }) {
+export default function ChatMessage({ message, saved, onToggleSave, onOpenSource }) {
     if (message.role === 'user') {
         return (
             <div className={styles.userRow}>
@@ -35,7 +36,7 @@ export default function ChatMessage({ message, saved, onToggleSave }) {
                 <span className={styles.assistantLabel}>Ask the Repo</span>
                 <span className={styles.timestamp}>{message.timestamp}</span>
             </div>
-            <AssistantMessage message={message} saved={saved} onToggleSave={onToggleSave} />
+            <AssistantMessage message={message} saved={saved} onToggleSave={onToggleSave} onOpenSource={onOpenSource} />
         </div>
     );
 }

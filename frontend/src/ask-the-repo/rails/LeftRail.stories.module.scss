@@ -1,0 +1,17 @@
+@use '../../styles/variables' as vars;
+
+// The left rail's real frame, shared with ProjectSwitcher.stories.jsx: its
+// width and height at 1280x860 with the demo banner showing (measured in
+// the running app), on the rail's own `$background` (LeftRail.module.scss's
+// `.rail`). The fixed height is what lets Recent scroll in a story.
+.rail {
+    inline-size: 288px;
+    block-size: 551px;
+    background: vars.$background;
+}
+
+// The same rail at the md floor (672px viewport), where its column is
+// 136px wide.
+.narrow {
+    inline-size: 136px;
+}

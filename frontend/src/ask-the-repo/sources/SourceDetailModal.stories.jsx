@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import SourceDetailModal from './SourceDetailModal';
-import { INITIAL_MESSAGES_BY_CONVERSATION } from '../mock/messages';
+import { INITIAL_MESSAGES_BY_CONVERSATION } from '../fixtures/messages';
+import { projectLabelFor } from '../fixtures/constants';
 
 const SOURCES = INITIAL_MESSAGES_BY_CONVERSATION.c1[1].sources;
 const SOURCES_BY_LABEL = Object.fromEntries(SOURCES.map((source) => [`${source.kind} — ${source.title}`, source]));
 
 // Grouped under Ask the Repo, next to the rest of the sources rail. No
 // PropTypes/TS, so `argTypes` is explicit (same reasoning as
-// KindTag.stories.jsx); `source` is a `select` over the real mock sources
+// KindTag.stories.jsx); `source` is a `select` over the fixture sources
 // (one per kind except `doc`), mapped to the real objects.
 //
 // `docs.story.inline: false`: Carbon's Modal is `position: fixed` over the
@@ -49,6 +50,7 @@ function InteractiveModal(args) {
       )}
       <SourceDetailModal
         {...args}
+        projectLabel={projectLabelFor(args.source?.recordProject)}
         open={open}
         onClose={() => setOpen(false)}
         pinned={pinned}

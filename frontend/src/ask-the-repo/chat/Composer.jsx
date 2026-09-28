@@ -3,6 +3,9 @@ import { TextArea, IconButton } from '@carbon/react';
 import { Send } from '@carbon/icons-react';
 import styles from './Composer.module.scss';
 
+// POST /api/ask's own limit on a question's length.
+export const MAX_QUESTION_CHARS = 2000;
+
 /**
  * The chat input row: a textarea plus a send button, pinned below the
  * message list (see `ChatPanel.jsx`). Enter sends; Shift+Enter inserts a
@@ -17,11 +20,18 @@ import styles from './Composer.module.scss';
  * triggered it.
  *
  * `value`/`onChange(value)` (controlled input text), `onSend()`, `sending`
- * (bool — disables the field and button while a mock reply is pending).
- * Forwards `ref` to the underlying `<textarea>` so `ChatPanel` can focus it
- * after a starter question fills the field.
+ * (bool — disables the field and button while an answer is pending),
+ * `disabled` (bool — asking isn't available at all). Forwards `ref` to the
+ * underlying `<textarea>` so `ChatPanel` can focus it after a starter
+ * question fills the field.
+ *
+ * `maxLength` matches POST /api/ask's 2000-character limit, so an
+ * over-long question can't be typed rather than failing with a 400. The
+ * helper text says each question is answered on its own, because the
+ * endpoint has no memory of earlier ones: a follow-up like "and in v2?"
+ * needs to name what it's about.
  */
-const Composer = forwardRef(function Composer({ value, onChange, onSend, sending }, ref) {
+const Composer = forwardRef(function Composer({ value, onChange, onSend, sending, disabled = false }, ref) {
     function handleKeyDown(event) {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -29,7 +39,7 @@ const Composer = forwardRef(function Composer({ value, onChange, onSend, sending
         }
     }
 
-    const canSend = value.trim().length > 0 && !sending;
+    const canSend = value.trim().length > 0 && !sending && !disabled;
 
     return (
         <div className={styles.composer}>
@@ -39,11 +49,13 @@ const Composer = forwardRef(function Composer({ value, onChange, onSend, sending
                 labelText="Ask a question about the research"
                 hideLabel
                 placeholder="Ask a question about the research…"
+                helperText="Each question is answered on its own, without earlier ones as context."
                 rows={2}
+                maxLength={MAX_QUESTION_CHARS}
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 onKeyDown={handleKeyDown}
-                disabled={sending}
+                disabled={sending || disabled}
                 className={styles.textarea}
             />
             <IconButton

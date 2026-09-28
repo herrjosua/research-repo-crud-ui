@@ -8,10 +8,11 @@ import styles from './StarterQuestions.module.scss';
  * the question immediately on click; here, clicking one only fills the
  * composer (`onSelect`) so the user can review or edit it before sending.
  *
- * `questions` (array of question strings, e.g. `../mock/starters.js`'s
- * `STARTERS[projectId]`), `onSelect(question)`.
+ * `questions` (array of question strings, from `./starters.js`'s
+ * `startersFor(projectId)`), `onSelect(question)`, `disabled` (bool — while
+ * a question is being answered, or when asking isn't available).
  */
-export default function StarterQuestions({ questions, onSelect }) {
+export default function StarterQuestions({ questions, onSelect, disabled = false }) {
     return (
         <div className={styles.wrapper}>
             <p className={styles.label}>Try asking</p>
@@ -21,6 +22,7 @@ export default function StarterQuestions({ questions, onSelect }) {
                         key={question}
                         type="button"
                         className={styles.question}
+                        disabled={disabled}
                         onClick={() => onSelect(question)}
                     >
                         {question}

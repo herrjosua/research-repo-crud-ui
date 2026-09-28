@@ -10,6 +10,7 @@ export default {
   argTypes: {
     value: { control: 'text' },
     sending: { control: 'boolean' },
+    disabled: { control: 'boolean' },
   },
 };
 

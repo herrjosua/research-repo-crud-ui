@@ -1,110 +1,84 @@
 import { useEffect, useRef, useState } from 'react';
+import { Button, InlineLoading, InlineNotification } from '@carbon/react';
 import ChatMessage from './ChatMessage';
 import Composer from './Composer';
 import StarterQuestions from './StarterQuestions';
-import { STARTERS } from '../mock/starters';
+import { ERROR_COPY, LOADING_TEXT, SLOW_TEXT, UNAVAILABLE_COPY } from './askCopy';
 import styles from './ChatPanel.module.scss';
 
-function timestampNow() {
-    return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-}
-
-// Real LLM responses are a separate ticket — this stands in for one, in
-// INITIAL_MESSAGES's own shape, so swapping a real call in later only
-// means replacing this function's body with the actual request. Carries
-// one cited source (the same one AskView.tsx's mock reply cites) so the
-// sources rail visibly switches to each new reply as it lands.
-function mockReplyTo(projectId) {
-    const now = Date.now();
-    return {
-        id: `m-${now}`,
-        role: 'assistant',
-        content: `This is a mock reply scoped to the **${projectId}** project — real answers are a separate ticket. In the meantime, this shows the assistant message layout: **bold** emphasis, and the "Save as deliverable" action below.`,
-        sources: [
-            {
-                id: `rs-${now}`,
-                kind: 'doc',
-                title: 'Research Plan — Checkout Q3',
-                excerpt: 'Primary goal: identify top 3 friction points preventing task completion in the purchase funnel.',
-                project: 'Checkout Redesign',
-                date: 'Jul 28, 2026',
-                page: 2,
-                contextBefore: 'This plan covers the Q3 checkout research program: a moderated usability study (two waves), a post-purchase survey, and a review of funnel analytics. Stakeholders from Payments, Growth, and Design signed off on scope at kickoff.',
-                contextAfter: 'Secondary goals are to benchmark checkout completion time against the Q1 baseline and to validate whether guest checkout reduces first-visit abandonment. Methods and recruiting criteria follow in section 2.',
-            },
-        ],
-        timestamp: timestampNow(),
-    };
-}
-
 /**
- * The Ask the Repo chat surface: message list (or the starter-question
- * empty state, when the active conversation has none yet) plus the
- * composer pinned below it. Reimplements
- * `docs/Build_Direction_B_v2_Design_decomposed`'s `AskView.tsx` chat
- * column on Carbon/SCSS — no project-home view and no real backend call
- * (separate tickets). The right-rail source panel is a sibling component
- * (`../sources/SourcesPanel.jsx`), not part of this one.
+ * The Ask the Repo chat surface: the open conversation's messages (or the
+ * starter-question empty state), the request's loading or error state
+ * after them, and the composer pinned below. Presentational: asking,
+ * conversations and request state all live in `useAskRepo`
+ * (`./useAskRepo.js`), owned by `AskTheRepo.jsx`, which passes the active
+ * conversation's slice of it down here.
  *
- * `projectId`/`conversationId`: the state `AskTheRepo.jsx` already lifted
- * in Story 3 (left rail).
+ * - `messages`, `starters` (question strings; may be empty).
+ * - `status` (`'idle' | 'loading' | 'error'`), `slow` (the answer is
+ *   taking long enough to explain why), `error` (`{ kind, question }` when
+ *   `status` is `'error'`; `kind` keys `./askCopy.js`'s `ERROR_COPY`).
+ * - `unavailable`: the server has no language model. Shows the "not
+ *   available here" notice and disables the composer and starters.
+ * - `announcement`: text for the polite live region (new answers and
+ *   errors), from `useAskRepo`.
+ * - `onSend(text)`, `onRetry()`, `onSignIn()`, `onOpenSource(source,
+ *   event)` (an inline citation was clicked).
  *
- * `messages` / `onAppendMessage(conversationId, message)`: the active
- * conversation's messages and the way to add one, from
- * `useConversationMessages` (`./useConversationMessages.js`) — lifted out
- * of this component in Story 5 because the sources rail now reads the
- * same messages. The composer's text, whether a reply is pending, and
- * which messages are toggled "saved" stay local: nothing outside this
- * panel reads those.
+ * Local state is only what nothing else reads: the composer's text and
+ * which replies are toggled "Save as deliverable" (a preview).
  *
  * This panel's height comes entirely from `.panel`'s own `block-size:
  * 100%` (ChatPanel.module.scss) resolving against the real, non-auto
- * height the CSS chain in AskTheRepo.jsx/.scss now gives its Column —
- * no measurement prop needed.
+ * height the CSS chain in AskTheRepo.jsx/.scss gives its Column.
  */
-export default function ChatPanel({ projectId, conversationId, messages, onAppendMessage }) {
+export default function ChatPanel({
+    messages,
+    starters = [],
+    status = 'idle',
+    slow = false,
+    error = null,
+    unavailable = false,
+    announcement = '',
+    onSend,
+    onRetry,
+    onSignIn,
+    onOpenSource,
+}) {
     const [input, setInput] = useState('');
-    const [sending, setSending] = useState(false);
     const [savedMessageIds, setSavedMessageIds] = useState(() => new Set());
+    // The error whose question was last put back in the composer, so each
+    // failure restores it once (see below).
+    const [restoredError, setRestoredError] = useState(null);
     const composerRef = useRef(null);
     const bottomRef = useRef(null);
-    const replyTimeoutRef = useRef(null);
 
-    // Falls back to `all`'s starters for any project id without its own
-    // entry — the defensive lookup the reference was missing (one of the
-    // two pre-existing bugs this ticket calls out to fix: AskView.tsx
-    // indexes a couple of these Records with a possibly-null project id
-    // and no fallback).
-    const starters = STARTERS[projectId] ?? STARTERS.all;
+    const loading = status === 'loading';
+    const errorCopy = status === 'error' && error ? ERROR_COPY[error.kind] ?? ERROR_COPY.unknown : null;
+
+    // A failed question that can simply be asked again goes back into the
+    // composer, so the user can edit or resend it. Adjusted during render
+    // (React's pattern for state derived from a changed prop) rather than
+    // in an effect, once per error.
+    if (error !== restoredError) {
+        setRestoredError(error);
+        if (errorCopy?.retry) setInput(error.question);
+    }
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages.length]);
-
-    // A reply can still be in flight when the user navigates away from
-    // Ask the Repo entirely (App.jsx unmounts it — Carbon's Tabs, by
-    // contrast, keeps inactive TabPanels mounted, so switching tabs alone
-    // doesn't hit this). Without this, the pending setTimeout would call
-    // setState on an unmounted component.
-    useEffect(() => () => clearTimeout(replyTimeoutRef.current), []);
+    }, [messages.length, status, unavailable]);
 
     function handleSend() {
         const text = input.trim();
-        if (!text || sending) return;
-
-        // Captured now, not read inside the timeout: the reply belongs to
-        // the conversation it was asked in, even if the user has opened a
-        // different one by the time it lands.
-        const askedIn = conversationId;
-        const userMessage = { id: `m-${Date.now()}`, role: 'user', content: text, timestamp: timestampNow() };
-        onAppendMessage(askedIn, userMessage);
+        if (!text || loading || unavailable) return;
+        onSend(text);
         setInput('');
-        setSending(true);
+    }
 
-        replyTimeoutRef.current = setTimeout(() => {
-            onAppendMessage(askedIn, mockReplyTo(projectId));
-            setSending(false);
-        }, 900);
+    function handleRetry() {
+        setInput('');
+        onRetry();
     }
 
     function handleSelectStarter(question) {
@@ -124,11 +98,34 @@ export default function ChatPanel({ projectId, conversationId, messages, onAppen
         });
     }
 
+    // First thing in an empty conversation (config said so up front); after
+    // the thread, where the user is looking, when a question just got a 503.
+    const unavailableNotice = unavailable && (
+        <InlineNotification
+            kind="info"
+            title={UNAVAILABLE_COPY.title}
+            subtitle={UNAVAILABLE_COPY.subtitle}
+            lowContrast
+            hideCloseButton
+            className={styles.notification}
+        />
+    );
+
     return (
         <div className={styles.panel}>
-            <div className={styles.messages}>
+            {/* Focusable so the thread can be scrolled from the keyboard even
+                when nothing inside it is focusable (starters disabled while
+                loading or unavailable) — axe's scrollable-region-focusable. */}
+            <div className={styles.messages} role="region" aria-label="Conversation" tabIndex={0}>
+                {messages.length === 0 && unavailableNotice}
                 {messages.length === 0 ? (
-                    <StarterQuestions questions={starters} onSelect={handleSelectStarter} />
+                    starters.length > 0 && (
+                        <StarterQuestions
+                            questions={starters}
+                            onSelect={handleSelectStarter}
+                            disabled={loading || unavailable}
+                        />
+                    )
                 ) : (
                     messages.map((message) => (
                         <ChatMessage
@@ -136,13 +133,49 @@ export default function ChatPanel({ projectId, conversationId, messages, onAppen
                             message={message}
                             saved={savedMessageIds.has(message.id)}
                             onToggleSave={() => handleToggleSave(message.id)}
+                            onOpenSource={onOpenSource}
                         />
                     ))
                 )}
-                {sending && <p className={styles.sendingIndicator}>Searching corpus…</p>}
+                {loading && (
+                    // One polite region for both lines, so the slow-answer
+                    // line is read out when it appears; InlineLoading's own
+                    // (assertive by default) region is turned off.
+                    <div className={styles.loading} aria-live="polite">
+                        <InlineLoading description={LOADING_TEXT} aria-live="off" />
+                        {slow && <p className={styles.slow}>{SLOW_TEXT}</p>}
+                    </div>
+                )}
+                {errorCopy && (
+                    <div className={styles.requestError}>
+                        <InlineNotification
+                            kind="error"
+                            title={errorCopy.title}
+                            subtitle={errorCopy.subtitle}
+                            lowContrast
+                            hideCloseButton
+                            className={styles.notification}
+                        />
+                        {errorCopy.retry && (
+                            <Button kind="tertiary" size="sm" onClick={handleRetry}>Try again</Button>
+                        )}
+                        {error.kind === 'session' && (
+                            <Button kind="tertiary" size="sm" onClick={() => onSignIn()}>Sign in again</Button>
+                        )}
+                    </div>
+                )}
+                {messages.length > 0 && unavailableNotice}
                 <div ref={bottomRef} />
             </div>
-            <Composer ref={composerRef} value={input} onChange={setInput} onSend={handleSend} sending={sending} />
+            <Composer
+                ref={composerRef}
+                value={input}
+                onChange={setInput}
+                onSend={handleSend}
+                sending={loading}
+                disabled={unavailable}
+            />
+            <p className="cds--visually-hidden" aria-live="polite">{announcement}</p>
         </div>
     );
 }

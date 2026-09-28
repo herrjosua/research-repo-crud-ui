@@ -1,6 +1,6 @@
 # Architecture
 
-How the UX Research Repo app fits together. Current as of 2026-09-27; the
+How the UX Research Repo app fits together. Current as of 2026-09-28; the
 "Known gaps" section at the bottom lists what isn't finished yet.
 
 ## The pieces
@@ -8,14 +8,15 @@ How the UX Research Repo app fits together. Current as of 2026-09-27; the
 ```mermaid
 flowchart TD
   UI["React UI<br/>Vite + Carbon"] -->|records| BE["Node / Express backend<br/>auth, records, /api/ask"]
-  UI -.->|"Ask tab (not wired yet)"| BE
+  UI -->|"Ask tab: /api/ask"| BE
   BE -->|"runs export_records.py and other scripts"| CORPUS["agentic-repo<br/>Markdown corpus + Python scripts"]
   BE -->|"embeddings + chat"| OLLAMA["Ollama (local)<br/>gemma2:9b, nomic-embed-text"]
 ```
 
-Solid arrows work today. The dashed arrow is the Ask tab talking to
-`/api/ask`; the endpoint exists, but the tab still shows mock data until
-it is wired up.
+Every arrow works today. The Ask tab reads `GET /api/ask/config` for whether
+the server can answer and for the project list, and asks questions with
+`POST /api/ask`. Where `LLM_PROVIDER` is unset it says Ask the Repo isn't
+available and disables asking.
 
 ## Where things live
 
@@ -63,6 +64,10 @@ Details worth knowing:
 - **Retrieval.** Brute-force cosine similarity, keeping each record's best
   passage. No vector database at this corpus size.
 - **Project filter.** Matches by tag, because records have no project field.
+  The Ask tab's picker lists the `project-*` tags from `GET /api/ask/config`
+  (labels from the corpus's `research/projects.yml`). A project matches its
+  own tag only, so cross-cutting records are searched only under
+  "Cross-cutting" or "All projects".
 - **Gate.** `LLM_PROVIDER=ollama` turns the endpoint on. Unset returns 503;
   any other value stops the server from starting.
 - **Output.** The model's text is flattened to plain text on the server
@@ -74,7 +79,8 @@ Details worth knowing:
 
 ## Known gaps
 
-- The Ask tab isn't wired to `/api/ask` yet.
+- Ask shows "not available" where `LLM_PROVIDER` is unset (production and
+  the public demo).
 - Correction files in `raw/` aren't read by the export scripts, so
   retrieval can still cite a number that a correction has fixed.
 - Retrieval quality: numbered lists lose their numbers when chunked, the

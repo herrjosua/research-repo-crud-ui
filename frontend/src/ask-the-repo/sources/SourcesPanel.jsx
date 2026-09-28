@@ -1,60 +1,41 @@
-import { useRef, useState } from 'react';
 import { Information } from '@carbon/icons-react';
 import SourceCard from './SourceCard';
-import SourceDetailModal from './SourceDetailModal';
 import styles from './SourcesPanel.module.scss';
-
-function toggleIn(set, id) {
-    const next = new Set(set);
-    if (next.has(id)) {
-        next.delete(id);
-    } else {
-        next.add(id);
-    }
-    return next;
-}
 
 /**
  * Right rail of the Ask the Repo chat surface: the sources cited by the
  * chat panel's active assistant message (`AskTheRepo.jsx` derives which
- * one via `latestAssistantMessage`), as `SourceCard`s, plus the
- * `SourceDetailModal` a card opens into. Reimplements the right rail of
- * the Direction B v2 reference's `AskView.tsx` on Carbon/SCSS, scoped to
- * this ticket: no kind-filter chips, no project stats footer, no collapse
- * toggle.
+ * one via `latestAssistantMessage`), as `SourceCard`s. Reimplements the
+ * right rail of the Direction B v2 reference's `AskView.tsx` on
+ * Carbon/SCSS, scoped down: no kind-filter chips, no project stats footer,
+ * no collapse toggle.
  *
- * Owns the session-only UI state nothing outside the rail reads: which
- * source's modal is open, which source was opened last (the card's
- * "selected" state — kept after the modal closes, so the card focus
- * returns to is also the one highlighted), and which sources are pinned.
- * Which sources are *saved as insights* is not local: the Saved Insights
- * tab reads it too, so it lives in `useSavedInsights`
- * (`../insights/useSavedInsights.js`), lifted to `AskTheRepo.jsx` in
- * Story 6, and arrives here as `savedSourceIds` / `onToggleSaveSource`.
- * Neither pins nor insights persist until v1.3.7 — the footer note and the
- * modal's notification say so.
+ * Controlled: the source detail modal a card opens, which source was
+ * opened last (the card's "selected" state, kept after the modal closes so
+ * the card focus returns to is also the one highlighted) and which sources
+ * are pinned all live in `AskTheRepo.jsx`, because an answer's inline
+ * citations open the same modal. Neither pins nor insights persist until
+ * v1.3.7 — the footer note and the modal's notification say so.
  *
- * `message`: the active assistant message (`../mock/messages.js`'s
- * message shape), or `null` when the conversation has no reply yet.
- * `savedSourceIds` (`Set` of source ids saved as insights),
- * `onToggleSaveSource(source)`.
+ * `message`: the active assistant message (see `../fixtures/messages.js`),
+ * or `null` when the conversation has no reply yet. `selectedSourceId`,
+ * `onOpenSource(source, event)`, `pinnedIds` (`Set` of source ids),
+ * `onTogglePin(source)`, `projectLabelFor(recordProject)` (display name of
+ * a project tag, or null).
  */
-export default function SourcesPanel({ message, savedSourceIds, onToggleSaveSource }) {
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selectedSourceId, setSelectedSourceId] = useState(null);
-    const [pinnedIds, setPinnedIds] = useState(() => new Set());
-    const launcherRef = useRef(null);
-
+export default function SourcesPanel({
+    message,
+    selectedSourceId = null,
+    onOpenSource,
+    pinnedIds = new Set(),
+    onTogglePin,
+    projectLabelFor = () => null,
+}) {
     const sources = message?.sources ?? [];
-    // Looked up in the current list, so switching to a message that
-    // doesn't cite the last-opened source simply clears the highlight.
-    const selectedSource = sources.find((source) => source.id === selectedSourceId) ?? null;
 
-    function handleOpen(source, event) {
-        launcherRef.current = event.currentTarget;
-        setSelectedSourceId(source.id);
-        setModalOpen(true);
-    }
+    let empty = null;
+    if (!message) empty = 'Sources will appear here as the conversation references them.';
+    else if (sources.length === 0) empty = "This reply didn't cite any sources.";
 
     return (
         <aside className={styles.panel} aria-label="Sources">
@@ -64,8 +45,8 @@ export default function SourcesPanel({ message, savedSourceIds, onToggleSaveSour
             </div>
 
             <div className={styles.body}>
-                {sources.length === 0 ? (
-                    <p className={styles.empty}>Sources will appear here as the conversation references them.</p>
+                {empty ? (
+                    <p className={styles.empty}>{empty}</p>
                 ) : (
                     <>
                     {/* In the scrolling body, not the header: the header
@@ -78,10 +59,11 @@ export default function SourcesPanel({ message, savedSourceIds, onToggleSaveSour
                             <li key={source.id}>
                                 <SourceCard
                                     source={source}
-                                    selected={source.id === selectedSource?.id}
-                                    onOpen={(event) => handleOpen(source, event)}
+                                    projectLabel={projectLabelFor(source.recordProject)}
+                                    selected={source.id === selectedSourceId}
+                                    onOpen={(event) => onOpenSource(source, event)}
                                     pinned={pinnedIds.has(source.id)}
-                                    onTogglePin={() => setPinnedIds((prev) => toggleIn(prev, source.id))}
+                                    onTogglePin={() => onTogglePin(source)}
                                 />
                             </li>
                         ))}
@@ -96,17 +78,6 @@ export default function SourcesPanel({ message, savedSourceIds, onToggleSaveSour
                     Pins and saved insights are a preview — nothing is stored yet.
                 </p>
             )}
-
-            <SourceDetailModal
-                open={modalOpen && selectedSource !== null}
-                source={selectedSource}
-                onClose={() => setModalOpen(false)}
-                pinned={selectedSource ? pinnedIds.has(selectedSource.id) : false}
-                onTogglePin={() => setPinnedIds((prev) => toggleIn(prev, selectedSource.id))}
-                saved={selectedSource ? savedSourceIds.has(selectedSource.id) : false}
-                onToggleSave={() => onToggleSaveSource(selectedSource)}
-                launcherButtonRef={launcherRef}
-            />
         </aside>
     );
 }

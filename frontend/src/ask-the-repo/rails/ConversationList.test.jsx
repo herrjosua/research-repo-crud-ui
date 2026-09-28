@@ -35,7 +35,7 @@ describe('ConversationList', () => {
     it('shows an empty state when there are no conversations', () => {
         render(<ConversationList conversations={[]} activeConversationId={null} onSelectConversation={() => {}} />);
 
-        expect(screen.getByText('No conversations yet.')).toBeInTheDocument();
+        expect(screen.getByText('Questions you ask will appear here.')).toBeInTheDocument();
         expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
 });

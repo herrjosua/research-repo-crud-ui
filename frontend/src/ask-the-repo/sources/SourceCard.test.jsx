@@ -1,20 +1,34 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SourceCard from './SourceCard';
-import { INITIAL_MESSAGES_BY_CONVERSATION } from '../mock/messages';
+import { INITIAL_MESSAGES_BY_CONVERSATION } from '../fixtures/messages';
 import styles from './SourceCard.module.scss';
 
 const [interview, , , synthesis] = INITIAL_MESSAGES_BY_CONVERSATION.c1[1].sources;
 
 describe('SourceCard', () => {
     it('renders the kind tag, page, title, excerpt, and project/date', () => {
-        render(<SourceCard source={interview} onOpen={() => {}} onTogglePin={() => {}} />);
+        render(<SourceCard source={interview} projectLabel="Checkout Redesign" onOpen={() => {}} onTogglePin={() => {}} />);
 
         expect(screen.getByText('Interview')).toBeInTheDocument();
         expect(screen.getByText('p. 7')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: interview.title })).toBeInTheDocument();
         expect(screen.getByText(`“${interview.excerpt}”`)).toBeInTheDocument();
-        expect(screen.getByText(`${interview.project} · ${interview.date}`)).toBeInTheDocument();
+        expect(screen.getByText(`Checkout Redesign · ${interview.date}`)).toBeInTheDocument();
+    });
+
+    it('shows only what exists of project and date', () => {
+        const { rerender, container } = render(
+            <SourceCard source={{ ...interview, date: null }} projectLabel="Checkout Redesign" onOpen={() => {}} onTogglePin={() => {}} />
+        );
+        expect(screen.getByText('Checkout Redesign')).toBeInTheDocument();
+
+        rerender(<SourceCard source={interview} projectLabel={null} onOpen={() => {}} onTogglePin={() => {}} />);
+        expect(screen.getByText(interview.date)).toBeInTheDocument();
+
+        rerender(<SourceCard source={{ ...interview, date: null }} projectLabel={null} onOpen={() => {}} onTogglePin={() => {}} />);
+        expect(container.querySelector(`.${styles.meta}`)).toBeNull();
+        expect(screen.queryByText(/·/)).not.toBeInTheDocument();
     });
 
     it('opens via its title button', async () => {

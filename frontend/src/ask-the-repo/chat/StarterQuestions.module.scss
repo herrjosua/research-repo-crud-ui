@@ -33,9 +33,14 @@
     text-align: left;
     cursor: pointer;
 
-    &:hover {
+    &:hover:not(:disabled) {
         border-color: vars.$chat-accent;
         background: vars.$background-hover;
         color: vars.$text-primary;
+    }
+
+    &:disabled {
+        color: vars.$text-disabled;
+        cursor: not-allowed;
     }
 }

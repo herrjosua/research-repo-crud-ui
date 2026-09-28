@@ -1,6 +1,6 @@
 import { within, userEvent } from 'storybook/test';
 import InsightCard from './InsightCard';
-import { SAMPLE_INSIGHTS } from '../mock/insights';
+import { SAMPLE_INSIGHTS } from '../fixtures/insights';
 import styles from './InsightCard.stories.module.scss';
 
 const INSIGHTS_BY_LABEL = Object.fromEntries(
@@ -11,7 +11,7 @@ const LONG_INSIGHT = SAMPLE_INSIGHTS.find((insight) => insight.content.length > 
 // Grouped under Ask the Repo, next to the rest of the Saved Insights tab.
 // No PropTypes/TS, so `argTypes` is explicit (same reasoning as
 // sources/KindTag.stories.jsx); `insight` is a `select` over the real
-// fixtures in mock/insights.js, mapped to the real objects.
+// fixtures in fixtures/insights.js, mapped to the real objects.
 //
 // Every story renders on `.page` — the tab's own `$background`, which is
 // the only backdrop this card (a Carbon `Tile`, one layer up) sits on — so
