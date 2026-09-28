@@ -29,6 +29,9 @@ Opens at `http://localhost:5173` by default. The Vite dev server proxies
 session cookies work correctly across the frontend/backend origin split in
 dev without needing CORS config on the Express side.
 
+Ask the Repo's local Ollama setup is backend-only — see
+[`../backend/README.md`](../backend/README.md#ask-the-repo-local-ollama).
+
 ## Testing
 
 ```bash
@@ -234,9 +237,9 @@ Shipped. What changed for the frontend:
   (terminated at Cloudflare's edge) are all live, not just prepped.
 - **Signup screen**: still not built. `useSignup()` exists in `api/auth.js`
   but has no screen — the public deploy uses closed signup with seeded demo
-  accounts instead, per the Notion Decision Log.
+  accounts instead (see the root README's [Demo mode](../README.md#demo-mode)).
 
-See the Version Milestone Roadmap in Notion for what's next (v1.3, v1.4) and
-full decision rationale, including three real bugs found and fixed during
-v1.0 (a silent git-commit-loss bug, a `build_index.py` crash, and its root
-cause in how `gray-matter` handles frontmatter dates).
+What's next (v1.3, v1.4) is in the root README's
+[Roadmap](../README.md#roadmap). v1.0 also found and fixed three real bugs:
+a silent git-commit-loss bug, a `build_index.py` crash, and its root cause
+in how `gray-matter` handles frontmatter dates.

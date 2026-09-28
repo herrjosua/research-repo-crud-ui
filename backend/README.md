@@ -10,8 +10,9 @@ remain the source of truth for research content), `express-session` +
 `bcrypt` for auth, `gray-matter` for frontmatter parsing, Jest + supertest
 for testing.
 
-v0.6–v1.2 are complete (backend foundation through deploy). See the Version
-Milestone Roadmap in Notion for full detail and decision rationale.
+v0.6–v1.2 are complete (backend foundation through deploy). See the root
+[Roadmap](../README.md#roadmap) for milestones and
+[`../docs/decisions.md`](../docs/decisions.md) for recent design decisions.
 
 ## Setup
 
@@ -50,16 +51,47 @@ DEMO_MODE=false
 **Never commit `.env`** — it's already covered by `.gitignore`. The server
 refuses to start (`routes/records.js`) if `AGENTIC_REPO_ROOT` is unset.
 
+**For local development, point `AGENTIC_REPO_ROOT` at a separate,
+push-disabled clone of agentic-repo, not your real checkout.** Creating,
+editing or deleting records in the app makes real commits in whatever repo
+it points at (see [`../docs/decisions.md`](../docs/decisions.md) for the
+incident that led to this):
+```bash
+git clone https://github.com/herrjosua/agentic-repo.git agentic-repo-dev
+git -C agentic-repo-dev remote set-url --push origin no-push
+```
+`PYTHON_BIN` can keep pointing at your existing venv — the scripts run from
+the clone, the venv only supplies the interpreter and its packages. To reset
+the clone:
+```bash
+git -C agentic-repo-dev fetch && git -C agentic-repo-dev reset --hard origin/main
+```
+
+#### Ask the Repo (local Ollama)
+
 **Ask the Repo** (`POST /api/ask`) is off unless `LLM_PROVIDER=ollama` is
 set. It then needs a local [Ollama](https://ollama.com) at
-`http://localhost:11434` with both models pulled:
+`http://localhost:11434` with both models pulled. Install Ollama from
+ollama.com and open it; if it offers to create an account, choose "No
+thanks, I'll use Ollama locally". Then pull the models (about 5.7 GB in
+total):
 ```bash
 ollama pull nomic-embed-text   # embeddings
 ollama pull gemma2:9b          # answers
 ```
+Check the Ollama server is up — this should list both models:
+```bash
+curl http://localhost:11434/api/tags
+```
 Everything stays on this machine: no cloud calls, no API keys.
 `OLLAMA_BASE_URL`, `OLLAMA_EMBED_MODEL` and `OLLAMA_CHAT_MODEL` override the
-defaults. Any other `LLM_PROVIDER` value refuses to start.
+defaults. Any other `LLM_PROVIDER` value refuses to start. Leave
+`LLM_PROVIDER` unset in production; the endpoint then returns `503`.
+
+To check the setup against your real Ollama, run the live test (see
+[Testing](#testing)). The request and response format is under [Ask the Repo
+(v1.3.6)](#ask-the-repo-v136) below; for how the pieces fit together, see
+[`../docs/architecture.md`](../docs/architecture.md).
 
 For a production deployment, see
 [`.env.production.example`](./.env.production.example) instead — it covers
@@ -80,6 +112,22 @@ automatically at startup.
 
 > **Note:** `server.js` lives in `backend/`, not the repo root. Running
 > `node server.js` from anywhere else will fail with `MODULE_NOT_FOUND`.
+
+### 4. Start the frontend
+With the backend from step 3 still running, start the frontend in a second
+terminal (run `npm install` there first if you haven't — see
+[`../frontend/README.md`](../frontend/README.md)):
+```bash
+cd frontend
+npm run dev
+```
+Open `http://localhost:5173` and sign in.
+
+The Ask the Repo page's chat still shows mock replies; wiring it to
+`POST /api/ask` is a separate ticket. To exercise the real endpoint now, use
+the live test (see [Testing](#testing)). With `LLM_PROVIDER=ollama`, the
+first question takes 10 to 20 seconds while the corpus is embedded and the
+model loads; later questions are faster.
 
 ## Testing
 
@@ -121,8 +169,8 @@ covers, not a count to keep in sync:
   (path traversal; an XSS gap in the agentic-repo's markdown renderer) and
   one information-leak bug found along the way (a generic Express error
   handler was missing, so any error — not just an oversized body — leaked a
-  full stack trace including server file paths). See the Decision Log for
-  the full writeup.
+  full stack trace including server file paths). See
+  [Security notes](#security-notes) for the fixes.
 - **`tests/health.test.js`** — `GET /api/health`: status, the
   `package.json` version, `startedAt`, `no-store`, and nothing else in the
   body.
@@ -148,7 +196,7 @@ Python scripts (`new_research_session.py`, `export_records.py`,
 agentic-repo — so tests always exercise the current real script logic,
 never a stale duplicate, with zero risk to real research content or git
 history. This mirrors the same isolation principle as the public demo's
-separate-repo strategy (see the Decision Log), just scoped down to a local,
+separate-repo strategy, just scoped down to a local,
 throwaway fixture instead of a persistent synced GitHub repo.
 
 **Test/dev database separation.** `db.js` and `app.js` both branch on

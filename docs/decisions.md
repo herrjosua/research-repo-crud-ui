@@ -1,0 +1,120 @@
+# Decision log
+
+Short notes on why the project works the way it does. Newest decisions are
+at the bottom. Status as of 2026-09-27.
+
+## 1. Run the LLM locally with Ollama first
+
+**Decision:** Ask the Repo runs on Ollama on the developer's machine:
+`gemma2:9b` for answers and `nomic-embed-text` for embeddings. Ollama was
+installed without creating an Ollama account.
+
+**Why:** No cost, no research data leaving the machine, and it works
+offline. `gemma2:9b` was chosen over the larger Qwen 2.5 14B because the
+corpus is English-only (so the multilingual strength isn't needed) and the
+smaller model answers faster on ordinary hardware.
+
+**Kept open:** AWS Bedrock as a later option for a hosted demo. The
+`LLM_PROVIDER` switch is in place, but only the `ollama` branch exists.
+
+## 2. Brute-force similarity search, no vector database
+
+**Decision:** Compare the question against every passage with cosine
+similarity.
+
+**Why:** The corpus is about 500 passages; a vector database would add
+infrastructure for no visible benefit. Revisit if the corpus grows by
+orders of magnitude.
+
+## 3. Embeddings cached in memory, keyed by passage text
+
+**Decision:** No work at startup. Embeddings are built on the first
+question and reused, keyed by a hash of each passage's text.
+
+**Why:** The server starts instantly and doesn't need Ollama running until
+someone asks a question. Edited records re-embed only their changed
+passages, with no cache-clearing code.
+
+**Tradeoff:** The first question is slow (about 9 seconds cold), and the
+cache is lost on restart.
+
+## 4. Project filter works by tag
+
+**Decision:** `/api/ask` filters by tag, not by a project field.
+
+**Why:** Records don't have a project field. The frontend's mock project
+ids mostly don't exist as tags, so real tags need to be normalized before
+the Ask tab's project filter can be wired to the endpoint.
+
+## 5. Raw sessions are append-only; corrections are new files
+
+**Decision:** A wrong fact in a raw session is fixed by adding a
+`correction-*.md` file next to it, never by editing `session-notes.md`.
+
+**Why:** Raw notes are the tie-breaker when other records disagree. Editing
+them would weaken the rule every other fix relies on.
+
+**Known gap:** The export scripts don't read correction files, so retrieval
+can still surface the uncorrected fact.
+
+## 6. Saved insights come from cited sources only
+
+**Decision:** The Saved Insights tab is fed only by "Save as insight" on a
+cited source. The existing "Save as deliverable" action on a whole reply
+stays a separate pipeline.
+
+**Why:** An insight is one pinned, cited source. A deliverable is a whole
+assistant reply headed for a draft/final review. Keeping them
+separate keeps that distinction clear.
+
+**Consequence:** "Show more" on long insights can't trigger in the app
+until longer real content exists; Storybook and tests cover it.
+
+## 7. Model output is rendered as plain text
+
+**Decision:** The backend strips HTML and unwraps markdown before returning
+an answer, and the frontend shows it as text.
+
+**Why:** Model output is untrusted. This was cheap to do now; the fuller
+output-safety work stays on the roadmap.
+
+## 8. The corpus is fictional, so problems are fixed by authoring
+
+**Decision:** When demo records contradict each other or leave a gap, we
+write the correction directly instead of deferring to a real person. Edits
+happen in the real `agentic-repo` checkout.
+
+**How we found problems:** We asked `/api/ask` 51 questions across three
+rounds and read the citations for blended or conflicting sources, using the
+raw session notes as the tie-breaker. The log is
+`docs/ask-audit-2026-09-27.md` in agentic-repo.
+
+**Why the dev clone exists:** On 2026-09-22, local Playwright runs deleted
+seven demo sessions from the real checkout. E2E now runs against a throwaway
+repo, and local app use points at a push-disabled clone,
+`agentic-repo-dev`.
+
+## 9. The Chromatic check blocks on unreviewed visual diffs
+
+**Decision:** The required `chromatic` CI job fails while any snapshot is
+unreviewed or denied. After accepting changes in Chromatic, re-run the job.
+
+**Why:** It was originally set to pass on any successful build
+(`exitZeroOnChanges: true`), so it never blocked anything. Chromatic's own
+GitHub statuses weren't reaching pull requests, so the fix lives in the CI
+job.
+
+**Status:** New stories don't block. The blocking path hasn't yet been
+tested against a change to an already-approved story.
+
+## 10. Styling follows Carbon; overrides go through the theme layer
+
+**Decision:** Use core Carbon theme values. Any override goes through the
+theme SCSS layer (for example the teal primary), not hardcoded in a
+component. Prefer out-of-the-box Carbon components, and build any custom
+component so it survives a Carbon upgrade. Everything must pass color
+contrast checks.
+
+**Why:** Keeps the UI upgradeable and accessible. Where a custom component
+compensates for Carbon internals (for example small-button padding), it's
+commented and should be re-checked after any Carbon upgrade.
