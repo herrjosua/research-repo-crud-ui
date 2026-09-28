@@ -70,18 +70,13 @@ jobs:
       - run: scripts/tests/deploy.test.sh
       - run: scripts/tests/ssh-retry-classify.test.sh
 
-  # Publishes Storybook to Chromatic for visual review. fetch-depth: 0 gives
+  # Builds and publishes Storybook to Chromatic. fetch-depth: 0 gives
   # Chromatic full git history, which it needs for baseline detection and is
   # a prerequisite if we later turn on TurboSnap/onlyChanged as usage
   # approaches the free tier's 5,000 snapshot/month limit.
   #
-  # No exitZeroOnChanges: this job is a required check in the main-protection
-  # ruleset, and it's the only Chromatic signal GitHub sees (the Chromatic
-  # app's own UI Tests status isn't set up), so it has to fail while any
-  # visual change is unreviewed or denied — otherwise a PR with an
-  # unreviewed diff could merge. After accepting in Chromatic, re-run this
-  # job; accepted snapshots are the branch's new baseline, so it passes.
-  # See CONTRIBUTING.md.
+  # This job isn't the merge gate: Chromatic's own UI Tests check is,
+  # required in the main-protection ruleset. See CONTRIBUTING.md.
   chromatic:
     runs-on: ubuntu-latest
     defaults:
