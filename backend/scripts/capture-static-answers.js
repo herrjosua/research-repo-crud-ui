@@ -2,7 +2,7 @@
 // Captures the static demo's answers (LLM_PROVIDER=static) from the real
 // local model. See backend/README.md, "Static answers for the public demo".
 //
-//   node scripts/capture-static-answers.js capture [--runs 3] [--only id,id]
+//   node scripts/capture-static-answers.js capture [--runs 3] [--only id,id] [--seed N] [--temperature T]
 //   node scripts/capture-static-answers.js report [--only id,id]
 //   node scripts/capture-static-answers.js publish [--pick id=2 ...] [--dry-run]
 //   node scripts/capture-static-answers.js verify [--answers path/to/answers.json]
@@ -13,7 +13,11 @@
 //          from backend/.env like the server). Keeps every run, unedited, in
 //          the scratch file ask/static/review/runs.json, and writes
 //          ask/static/review/report.md for a person to check. --only
-//          recaptures just those ids and keeps every other run.
+//          recaptures just those ids and keeps every other run. --seed and
+//          --temperature override the chat options for this capture only
+//          (the defaults are the pipeline's: no seed, temperature 0.2); the
+//          runs file and report record both, with Ollama's version and the
+//          models' digests.
 // report   Re-runs the checks on runs.json and rewrites report.md. --only
 //          limits the report to those ids.
 // publish  Writes ask/static/answers.json: one run per question in
@@ -37,7 +41,7 @@ const { execFileSync } = require('child_process');
 const { createOllamaClient, OLLAMA_DEFAULTS } = require('../ask/ollama');
 const { loadRecords, htmlToBlocks } = require('../ask/corpus');
 const { createEmbeddingIndex } = require('../ask/retrieval');
-const { createAskPipeline } = require('../ask/pipeline');
+const { createAskPipeline, CHAT_OPTIONS } = require('../ask/pipeline');
 const {
     STATIC_DIR, QUESTIONS_FILE, ANSWERS_FILE, CAPTURE_SCRIPT_VERSION,
     citationMarkers, validateQuestionList, validateStaticAnswers, loadStaticAnswers,
@@ -174,6 +178,17 @@ function reviewRun({ answer, sources, raw }, shownCount) {
 // Report
 // ---------------------------------------------------------------------------
 
+// Captures made before --seed/--temperature existed didn't record these; they
+// ran with the pipeline's defaults but on an unrecorded Ollama and digest.
+function runSettingsLine(metadata) {
+    if (!('temperature' in metadata)) {
+        return 'Ollama version, model digest, seed and temperature not recorded (captured before --seed/--temperature: unseeded, pipeline defaults).';
+    }
+    const digest = metadata.modelDigest ? metadata.modelDigest.slice(0, 12) : 'not recorded';
+    return `Ollama ${metadata.ollamaVersion || 'version not recorded'}, model digest ${digest}, `
+        + `seed ${metadata.seed === null ? 'none' : metadata.seed}, temperature ${metadata.temperature}.`;
+}
+
 function quote(text) {
     return String(text).split('\n').map((line) => `> ${line}`).join('\n');
 }
@@ -185,6 +200,7 @@ function renderReport(runsFile) {
         '',
         `Captured ${metadata.capturedAt} with ${metadata.model} (embeddings: ${metadata.embedModel}),`,
         `corpus ${metadata.corpusCommit}, script v${metadata.scriptVersion}.`,
+        runSettingsLine(metadata),
         '',
         'The bar: every run cites at least 2 records, including a raw session, and each',
         'cited record really supports the claim. Only the first half is automatic; read',
@@ -255,7 +271,43 @@ function corpusCommit(repoRoot) {
     return git('rev-parse', 'HEAD');
 }
 
-async function capture({ runs, only }) {
+// Ollama's version and the digest of each named model, so a report says
+// exactly what produced it: a seed only reproduces an answer on the same
+// Ollama build and model weights.
+async function ollamaInfo(baseUrl, models) {
+    const get = async (endpoint) => {
+        const res = await fetch(`${baseUrl}${endpoint}`, { signal: AbortSignal.timeout(5_000) });
+        if (!res.ok) throw new Error(`Ollama ${endpoint} returned ${res.status}`);
+        return res.json();
+    };
+    const [{ version }, { models: pulled = [] }] = await Promise.all([get('/api/version'), get('/api/tags')]);
+    const withTag = (name) => (name.includes(':') ? name : `${name}:latest`);
+    const digests = models.map((name) => {
+        const model = pulled.find((m) => withTag(String(m.name)) === withTag(name));
+        if (!model) throw new Error(`Ollama doesn't have ${name}`);
+        return model.digest;
+    });
+    return { version, digests };
+}
+
+// An ask/ollama.js client whose chat() applies `overrides` on top of the
+// options the pipeline passes, so a capture can fix the seed or temperature
+// without touching the pipeline's CHAT_OPTIONS. With no overrides it's the
+// client unchanged.
+function withChatOptions(ollama, overrides) {
+    if (Object.keys(overrides).length === 0) return ollama;
+    return { ...ollama, chat: (messages, options = {}) => ollama.chat(messages, { ...options, ...overrides }) };
+}
+
+// --seed / --temperature as chat-option overrides (only the ones given).
+function chatOverrides({ seed, temperature }) {
+    const overrides = {};
+    if (seed !== null) overrides.seed = seed;
+    if (temperature !== null) overrides.temperature = temperature;
+    return overrides;
+}
+
+async function capture({ runs, only, seed, temperature }) {
     const repoRoot = process.env.AGENTIC_REPO_ROOT;
     if (!repoRoot) throw new Error('AGENTIC_REPO_ROOT is not set (backend/.env or the environment).');
     const questions = readQuestions().filter((q) => !only || only.includes(q.id));
@@ -269,7 +321,12 @@ async function capture({ runs, only }) {
         embedModel: process.env.OLLAMA_EMBED_MODEL || OLLAMA_DEFAULTS.embedModel,
         chatModel: process.env.OLLAMA_CHAT_MODEL || OLLAMA_DEFAULTS.chatModel,
     });
-    const pipeline = createAskPipeline({ ollama, index: createEmbeddingIndex({ embed: ollama.embed, loadRecords }) });
+    const overrides = chatOverrides({ seed, temperature });
+    const pipeline = createAskPipeline({
+        ollama: withChatOptions(ollama, overrides),
+        index: createEmbeddingIndex({ embed: ollama.embed, loadRecords }),
+    });
+    const info = await ollamaInfo(ollama.baseUrl, [ollama.chatModel, ollama.embedModel]);
 
     const metadata = {
         model: ollama.chatModel,
@@ -277,8 +334,14 @@ async function capture({ runs, only }) {
         capturedAt: new Date().toISOString(),
         corpusCommit: corpusCommit(repoRoot),
         scriptVersion: CAPTURE_SCRIPT_VERSION,
+        ollamaVersion: info.version,
+        modelDigest: info.digests[0],
+        embedModelDigest: info.digests[1],
+        seed,
+        temperature: temperature ?? CHAT_OPTIONS.temperature,
     };
     console.log(`Capturing ${questions.length} question(s) × ${runs} run(s) against ${repoRoot} @ ${metadata.corpusCommit.slice(0, 7)} with ${metadata.model}`);
+    console.log(runSettingsLine(metadata));
 
     const captured = [];
     for (const q of questions) {
@@ -295,12 +358,15 @@ async function capture({ runs, only }) {
     }
 
     // --only merges into the previous capture, which must share its corpus
-    // commit and models so the published file's metadata is true of every
-    // answer in it.
+    // commit, models and chat settings so the published file's metadata (and
+    // the report's) is true of every answer in it. A capture from before
+    // --seed/--temperature ran unseeded at the pipeline's temperature.
     let questionsOut = captured;
     if (only && fs.existsSync(RUNS_FILE)) {
         const previous = readJson(RUNS_FILE);
-        for (const key of ['model', 'embedModel', 'corpusCommit']) {
+        previous.metadata.seed = previous.metadata.seed ?? null;
+        previous.metadata.temperature = previous.metadata.temperature ?? CHAT_OPTIONS.temperature;
+        for (const key of ['model', 'embedModel', 'corpusCommit', 'seed', 'temperature']) {
             if (previous.metadata[key] !== metadata[key]) {
                 throw new Error(`--only: the previous capture's ${key} (${previous.metadata[key]}) differs from this one's (${metadata[key]}); recapture everything instead.`);
             }
@@ -438,7 +504,9 @@ async function verify({ answersFile }) {
 
 function parseArgs(argv) {
     const [command, ...rest] = argv;
-    const options = { command, runs: 3, only: null, picks: new Map(), dryRun: false, answersFile: ANSWERS_FILE };
+    const options = {
+        command, runs: 3, only: null, picks: new Map(), dryRun: false, answersFile: ANSWERS_FILE, seed: null, temperature: null,
+    };
     for (let i = 0; i < rest.length; i += 1) {
         const arg = rest[i];
         const value = () => {
@@ -457,6 +525,12 @@ function parseArgs(argv) {
             options.picks.set(match[1], Number(match[2]));
         } else if (arg === '--answers') {
             options.answersFile = path.resolve(value());
+        } else if (arg === '--seed') {
+            options.seed = Number(value());
+            if (!Number.isInteger(options.seed)) throw new Error('--seed must be an integer');
+        } else if (arg === '--temperature') {
+            options.temperature = Number(value());
+            if (!Number.isFinite(options.temperature) || options.temperature < 0) throw new Error('--temperature must be a number ≥ 0');
         } else if (arg === '--dry-run') {
             options.dryRun = true;
         } else {
@@ -470,11 +544,14 @@ async function main() {
     // Same settings as the server (AGENTIC_REPO_ROOT, PYTHON_BIN, OLLAMA_*).
     require('dotenv').config({ path: path.join(__dirname, '..', '.env'), quiet: true });
     const options = parseArgs(process.argv.slice(2));
+    if (options.command !== 'capture' && (options.seed !== null || options.temperature !== null)) {
+        throw new Error('--seed and --temperature only apply to capture');
+    }
     if (options.command === 'capture') return capture(options);
     if (options.command === 'report') return report(options);
     if (options.command === 'publish') return publish(options);
     if (options.command === 'verify') return verify(options);
-    throw new Error('usage: capture-static-answers.js capture [--runs N] [--only id,id] | report [--only id,id] | publish [--pick id=N ...] [--dry-run] | verify [--answers file]');
+    throw new Error('usage: capture-static-answers.js capture [--runs N] [--only id,id] [--seed N] [--temperature T] | report [--only id,id] | publish [--pick id=N ...] [--dry-run] | verify [--answers file]');
 }
 
 if (require.main === module) {
@@ -484,4 +561,7 @@ if (require.main === module) {
     });
 }
 
-module.exports = { reviewRun, citedSentences, contentWords, unsupportedNumbers, renderReport, verifyAnswers };
+module.exports = {
+    reviewRun, citedSentences, contentWords, unsupportedNumbers, numbersIn, countPairsIn, renderReport, verifyAnswers,
+    corpusCommit, ollamaInfo, withChatOptions, chatOverrides,
+};

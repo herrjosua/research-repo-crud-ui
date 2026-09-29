@@ -195,6 +195,15 @@ caught even though "4" appears). It also checks the citation-count bar (at least
 records, including a raw session). Whether a cited record actually supports
 its claim is still for a person to judge.
 
+`capture --seed N --temperature T` fixes the chat model's seed and temperature
+for that capture only; the pipeline's own options (no seed, temperature 0.2)
+are unchanged, and so are the defaults. Every capture records the Ollama
+version, both models' digests, the seed and the temperature in `runs.json`
+and at the top of the report, because a seed only reproduces an answer on
+the same Ollama build and model weights. `capture --only` refuses to merge
+runs captured with a different seed or temperature. These settings aren't
+copied into `answers.json`.
+
 `publish` copies one run per question in `questions.json` into
 `answers.json`, unedited: by default the first run that meets the bar with no
 flags, or the run you choose with `--pick <id>=<run>`. To drop a question,
@@ -236,6 +245,71 @@ out of date. Recapture after changing the prompt, retrieval, chat model or
 embedding model too. Small unrelated edits don't need a recapture; the
 answers stay true to the commit in `metadata.corpusCommit`. Commit
 `questions.json` and `answers.json` together.
+
+#### Evaluating answers (`scripts/eval-ask.js`)
+
+A before/after harness for changes to chunking, retrieval or prompting
+(RR-98, RR-103). It asks a fixed gold set of questions through the same
+pipeline as the live route and judges each answer against what the corpus
+says a correct answer cites and claims. **It's a manual report, not a CI
+check**: it needs a real Ollama with the chat and embedding models pulled,
+the agentic-repo clone at `AGENTIC_REPO_ROOT` with no uncommitted changes,
+and `PYTHON_BIN` pointing at a Python with python-frontmatter (all read from
+`backend/.env`, as for the server). Jest only checks the gold file's schema
+and the pass/fail rules (`tests/askEval.test.js`).
+
+```bash
+cd backend
+node scripts/eval-ask.js run --label baseline          # seed 42, temperature 0.2, 3 seeded + 3 unseeded runs
+node scripts/eval-ask.js run --label after-chunking     # after a change, same corpus commit and seed
+node scripts/eval-ask.js report baseline after-chunking # ask/eval/results/baseline-vs-after-chunking.md
+```
+
+`run` writes the runs to `ask/eval/results/<label>.json` and a report to
+`ask/eval/results/<label>.md`. A full run of the 10 questions takes about
+two minutes with the model loaded. `--seed`, `--temperature`,
+`--seeded-runs`, `--unseeded-runs` and `--only id,id` change the defaults.
+`report` re-judges stored runs against the current gold file, so editing
+the gold set needs no re-run. With two labels it puts them side by side,
+and it refuses unless both share the harness version, corpus commit, seed and
+temperature. It warns when the Ollama version or a model digest differs.
+
+**The gold set** is `ask/eval/gold.json`, kept apart from `questions.json`.
+Each entry has the question and project, the records that support a correct
+answer (`supportingRecords`), the raw session it must cite if one holds the
+answer (`requiredRawRecord`, or `null`), claims that must and must not
+appear (case-insensitive regular expressions matched against the answer
+without its `[n]` markers), and the evidence for all of these. An entry for a
+question the corpus can't answer can set `acceptDecline: true` (see below). An entry is
+`"draft"` until a person has reviewed it and set it to `"reviewed"`; the
+report says how many are still drafts.
+
+**Pass or fail** is judged on the first seeded run. A run passes when:
+
+- every sentence has a citation, except declines ("the sources don't say…"),
+  list intros ending in ":", and list items cited as a group (a marker line
+  after the list, or a cited intro);
+- every figure and "N of M" count appears in the excerpts *that sentence*
+  cites, not just somewhere in the answer (a decline may repeat the
+  question's own figures);
+- it cites at least one supporting record, and the required raw session if
+  there is one. On an `acceptDecline` entry, an answer that only declines and
+  cites nothing is excused from the supporting-record rule, and only that one:
+  its must and must-not claims (and any required raw session) still apply;
+- every must-claim matches and no must-not claim does.
+
+Per question, the report shows the records shown to the model and where the
+first raw session ranks among all in-scope records, the records cited and
+whether a raw session is among them, uncited sentences, sentences stacking
+three or more citations, unsupported figures, the gold verdict and why,
+whether the seeded runs were identical, how many distinct answers the
+unseeded runs gave, median latency, the capture script's review flags, and
+the answer text, with the cited excerpts underneath. Stacks and unseeded
+variation are reported but don't decide pass or fail.
+
+`ask/eval/results/baseline.md` is the checked-in baseline for the pipeline
+as of v1.3.6.22. Re-run it rather than comparing across machines: identical
+seeded answers are only expected on the same Ollama build and model digests.
 
 For a production deployment, see
 [`.env.production.example`](./.env.production.example) instead — it covers
@@ -360,6 +434,10 @@ covers, not a count to keep in sync:
   as `questions.json`, and no `[n]` without a source.
 - **`tests/staticAnswers.test.js`** — the answers-file validator and the
   capture script's review checks.
+- **`tests/askEval.test.js`** — the evaluation gold set's schema (including
+  the checked-in `ask/eval/gold.json`), the harness's pass/fail rules, and
+  the seed/temperature override. The harness itself needs Ollama and isn't run
+  by Jest.
 - **`tests/ask.live.test.js`** — the same flow against a real local Ollama.
   Skipped unless `OLLAMA_LIVE=1` (`OLLAMA_LIVE=1 npx jest
   tests/ask.live.test.js`), so CI never needs Ollama.
@@ -408,13 +486,15 @@ backend/
 │   ├── pipeline.js       One question end to end; shared by routes/ask.js and the capture script
 │   ├── staticAnswers.js  Loads and validates the static demo's captured answers
 │   ├── static/           questions.json (curated) and answers.json (captured) for LLM_PROVIDER=static
+│   ├── eval/             The evaluation gold set (gold.json, validated by gold.js) and checked-in results/ reports
 │   ├── ollama.js         Plain-fetch client for Ollama's /api/embed and /api/chat, plus a readiness check (/api/tags)
 │   ├── corpus.js         export_records.py records → passages; kind/date mapping for sources
 │   ├── retrieval.js      Cosine similarity, ranking, and the lazy in-memory embedding cache
 │   ├── answer.js         Prompt, citation renumbering, and the Source objects returned
 │   └── plainText.js      Flattens model output to plain text (no markdown/HTML passes through)
 ├── scripts/
-│   └── capture-static-answers.js  Captures ask/static/answers.json from the local model, with a review report
+│   ├── capture-static-answers.js  Captures ask/static/answers.json from the local model, with a review report
+│   └── eval-ask.js                Evaluation harness: the gold set through the real pipeline, before/after reports (manual, needs Ollama)
 ├── middleware/
 │   ├── requireAuth.js    401 unless logged in; shared by records.js and ask.js
 │   ├── rateLimiter.js    In-memory, per-IP rate limiter factory; applied to /sessions and write routes on /records
@@ -442,6 +522,7 @@ backend/
 │   ├── ask.static.test.js     GET /api/ask/config and POST /api/ask with LLM_PROVIDER=static
 │   ├── staticAnswers.data.test.js  The checked-in static answers file (ask/static/answers.json)
 │   ├── staticAnswers.test.js  The static answers validator and the capture script's review checks
+│   ├── askEval.test.js        The eval gold set's schema and the harness's pass/fail rules
 │   ├── ask.live.test.js       POST /api/ask against a real local Ollama (OLLAMA_LIVE=1 only)
 │   └── helpers/
 │       ├── setupTestRepo.js   Creates/destroys the disposable fixture repo shared by every test file

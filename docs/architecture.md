@@ -137,6 +137,8 @@ sequenceDiagram
 - Retrieval quality: numbered lists lose their numbers when chunked, the
   wrong passage is sometimes chosen, and the model occasionally states
   figures that aren't in the sources.
+  `backend/scripts/eval-ask.js` measures this against a gold set; the
+  baseline is `backend/ask/eval/results/baseline.md`.
 - No rate limiting or quotas on `/api/ask`.
 - The public demo can only answer its captured questions; typed questions
   need the project running locally.
