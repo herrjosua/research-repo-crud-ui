@@ -22,9 +22,16 @@ test('Ask the Repo offers only captured questions, filters them by project, and 
     ]) {
         await expect(questionButton(question)).toBeVisible();
     }
-    await expect(page.getByText(
-        'These answers were generated ahead of time from a local model run (gemma2:9b, Sep 28, 2026) on sample data. Run the project locally to ask anything.',
-    )).toBeVisible();
+    // The pre-generated banner, built from the capture's model and date.
+    const banner = page.locator('.cds--actionable-notification', { hasText: 'Answers are pre-generated' });
+    await expect(banner).toBeVisible();
+    await expect(banner).toContainText(
+        'Captured from a local model run (gemma2:9b, Sep 28, 2026) on sample data. To ask your own questions, run the project locally',
+    );
+    const readmeLink = banner.getByRole('link', { name: 'run the project locally (opens in a new tab)', exact: true });
+    await expect(readmeLink).toHaveAttribute('href', 'https://github.com/herrjosua/research-repo-crud-ui#getting-started');
+    await expect(readmeLink).toHaveAttribute('target', '_blank');
+    await expect(readmeLink).toHaveAttribute('rel', 'noopener noreferrer');
     await expect(page.getByRole('textbox', { name: 'Ask a question about the research' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Send' })).toHaveCount(0);
 
@@ -66,9 +73,10 @@ test('Ask the Repo offers only captured questions, filters them by project, and 
     await expect(page.getByRole('complementary', { name: 'Sources' }).getByRole('article')).toHaveCount(2);
     await expect(page.getByText(/can take up to 20 seconds/)).toHaveCount(0);
 
-    // The dropdown now sits where the composer was.
+    // The dropdown now sits where the composer was, and the banner stays.
     const questionDropdown = page.getByRole('combobox', { name: 'Choose a question' });
     await expect(questionDropdown).toBeVisible();
+    await expect(banner).toBeInViewport({ ratio: 1 });
 
     // Accessibility scan of the answered state, with the dropdown.
     results = await new AxeBuilder({ page }).analyze();
@@ -175,3 +183,38 @@ test('at 672px the question dropdown wraps long questions instead of clipping th
     await options.nth(questions.indexOf('How much drafting time did the AI save on prior auth cases?')).click();
     await expect(page.locator('p', { hasText: 'drafting time from about 15 minutes to about 5' })).toBeVisible();
 });
+
+// The pre-generated banner is the chat panel's first row, outside the
+// scrolling thread: at 1280px and at the 672px md floor (see
+// tests/responsive.spec.js) it must be wholly on screen without scrolling,
+// before a question is picked and after one is answered, and not push the
+// page into horizontal scroll.
+for (const width of [1280, 672]) {
+    test(`at ${width}px the pre-generated banner is in view before and after a question`, async ({ page }) => {
+        async function expectNoHorizontalOverflow() {
+            const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+                scrollWidth: document.documentElement.scrollWidth,
+                clientWidth: document.documentElement.clientWidth,
+            }));
+            expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+        }
+
+        // The header's primary nav collapses below lg, so reach Ask the
+        // Repo first, then set the window size.
+        await page.goto('/');
+        await page.getByRole('button', { name: /Priya Patel/ }).click();
+        await page.getByRole('link', { name: 'Ask the Repo' }).click();
+        await page.setViewportSize({ width, height: 800 });
+
+        const banner = page.locator('.cds--actionable-notification', { hasText: 'Answers are pre-generated' });
+        await expect(page.getByText('Choose a question', { exact: true })).toBeVisible();
+        await expect(banner).toBeInViewport({ ratio: 1 });
+        await expectNoHorizontalOverflow();
+
+        const question = page.getByRole('button', { name: "Why didn't physicians trust the ambient scribe's draft notes?", exact: true });
+        await question.click();
+        await expect(page.locator('p', { hasText: 'Physicians read every line of the draft before accepting it' })).toBeVisible();
+        await expect(banner).toBeInViewport({ ratio: 1 });
+        await expectNoHorizontalOverflow();
+    });
+}

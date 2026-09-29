@@ -390,7 +390,8 @@ const STATIC_CONFIG = {
     questions: STATIC_QUESTIONS,
     capture: { model: 'llama3.1:8b', capturedAt: '2026-07-04T23:30:00.000Z' },
 };
-const STATIC_NOTE = 'These answers were generated ahead of time from a local model run (llama3.1:8b, Jul 4, 2026) on sample data. Run the project locally to ask anything.';
+const STATIC_NOTE = 'Captured from a local model run (llama3.1:8b, Jul 4, 2026) on sample data.';
+const staticBanner = () => screen.queryByText('Answers are pre-generated')?.closest('.cds--actionable-notification') ?? null;
 
 describe('AskTheRepo in static mode', () => {
     const questionList = () => screen.queryAllByRole('button', { name: /\?$/ })
@@ -402,12 +403,12 @@ describe('AskTheRepo in static mode', () => {
         vi.mocked(useAskConfig).mockReturnValue({ data: STATIC_CONFIG });
     });
 
-    it('lists every captured question under "All projects", with no composer and the capture note from the config', () => {
+    it('lists every captured question under "All projects", with no composer and the pre-generated banner built from the config capture', () => {
         renderPage();
 
         expect(screen.getByText('Choose a question')).toBeInTheDocument();
         expect(questionList()).toEqual(STATIC_QUESTIONS.map((q) => q.question));
-        expect(screen.getByText(STATIC_NOTE)).toBeInTheDocument();
+        expect(staticBanner()).toHaveTextContent(STATIC_NOTE);
         expect(screen.queryByLabelText('Ask a question about the research')).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'Send' })).not.toBeInTheDocument();
         expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
@@ -453,13 +454,13 @@ describe('AskTheRepo in static mode', () => {
         expect(await projectOptions(user)).toEqual(['All projects, 51 records51']);
     });
 
-    it('says so when there are no questions at all, still showing the capture note', () => {
+    it('says so when there are no questions at all, still showing the pre-generated banner', () => {
         vi.mocked(useAskConfig).mockReturnValue({ data: { ...STATIC_CONFIG, questions: [] } });
         renderPage();
 
         expect(screen.getByText('No pre-generated questions for this project yet.')).toBeInTheDocument();
         expect(questionList()).toEqual([]);
-        expect(screen.getByText(STATIC_NOTE)).toBeInTheDocument();
+        expect(staticBanner()).toHaveTextContent(STATIC_NOTE);
     });
 
     it('asks a picked question by its id, and answers it like a live question', async () => {
@@ -481,11 +482,11 @@ describe('AskTheRepo in static mode', () => {
         // No slow-answer hint in static mode.
         expect(screen.queryByText(/can take up to 20 seconds/)).not.toBeInTheDocument();
 
-        // The list is gone; the dropdown sits where the composer was, with
-        // the note under it.
+        // The list is gone; the dropdown sits where the composer was, and
+        // the banner stays above the thread.
         expect(screen.queryByRole('button', { name: 'How much drafting time did the AI save?' })).not.toBeInTheDocument();
         expect(questionDropdown()).toBeEnabled();
-        expect(screen.getByText(STATIC_NOTE)).toBeInTheDocument();
+        expect(staticBanner()).toHaveTextContent(STATIC_NOTE);
         expect(screen.queryByLabelText('Ask a question about the research')).not.toBeInTheDocument();
     });
 
@@ -565,11 +566,11 @@ describe('AskTheRepo in static mode', () => {
         expect(screen.queryByRole('combobox', { name: 'Choose a question' })).not.toBeInTheDocument();
     });
 
-    it('leaves the capture details out of the note when the config has none', () => {
+    it('leaves the capture details out of the banner when the config has none', () => {
         vi.mocked(useAskConfig).mockReturnValue({ data: { ...STATIC_CONFIG, capture: undefined } });
         renderPage();
 
-        expect(screen.getByText('These answers were generated ahead of time from a local model run on sample data. Run the project locally to ask anything.')).toBeInTheDocument();
+        expect(staticBanner()).toHaveTextContent('Captured from a local model run on sample data. To ask your own questions, run the project locally');
     });
 
     it('keeps live mode unchanged, even if a config carries questions', () => {
@@ -580,6 +581,6 @@ describe('AskTheRepo in static mode', () => {
         expect(screen.getByText('Try asking')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: STARTERS.all[0] })).toBeInTheDocument();
         expect(screen.queryByText('Choose a question')).not.toBeInTheDocument();
-        expect(screen.queryByText(/generated ahead of time/)).not.toBeInTheDocument();
+        expect(staticBanner()).toBeNull();
     });
 });

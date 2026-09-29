@@ -6,16 +6,14 @@ import styles from './QuestionPicker.module.scss';
 /**
  * Static mode's (the public demo's) stand-in for the Composer, pinned in
  * the same row below the thread once a conversation has started: a Carbon
- * Dropdown of the captured questions, then the note saying where the
- * answers came from. Picking a question asks it (`onPick(question)`)
+ * Dropdown of the captured questions. Picking a question asks it (`onPick(question)`)
  * straight away; the field then shows its placeholder again, so any
  * question, the same one included, can be picked next.
  *
  * `questions` (`[{ id, question, project }]`, already filtered to the
- * active project), `disabled` (an answer is on its way), `note`,
- * `onPick(question)`.
+ * active project), `disabled` (an answer is on its way), `onPick(question)`.
  */
-export default function QuestionPicker({ questions, disabled = false, note, onPick }) {
+export default function QuestionPicker({ questions, disabled = false, onPick }) {
     // Unique per instance: autodocs renders several stories on one page.
     const id = useId();
 
@@ -39,7 +37,6 @@ export default function QuestionPicker({ questions, disabled = false, note, onPi
                     if (selectedItem) onPick(selectedItem);
                 }}
             />
-            {note && <p className={styles.note}>{note}</p>}
         </div>
     );
 }

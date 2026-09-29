@@ -25,6 +25,26 @@
     // it only ever fills the height *within* that column.
 }
 
+// Static mode (ChatPanel's `picking`): the "Answers are pre-generated"
+// banner takes a natural-height first row, outside the scrolling thread,
+// so it stays put however far the thread scrolls.
+.panelWithBanner {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+// Carbon caps a Callout's root (.cds--actionable-notification) at a
+// per-breakpoint max-inline-size; lift it so the banner spans the panel,
+// as DemoDisclaimer.module.scss does. Its 18rem minimum is also wider than
+// the panel at the 672px floor (see `.notification`), so drop that too.
+// Inset by the thread's own padding so it lines up with the questions and
+// messages below it.
+.staticBanner:global(.cds--actionable-notification) {
+    min-inline-size: 0;
+    max-inline-size: none;
+    inline-size: auto;
+    margin: 1rem 1rem 0;
+}
+
 // The scrolling middle pane: sized by `.panel`'s `minmax(0, 1fr)` row
 // (see the comment there), and `overflow-y: auto` is what makes that
 // claimed space scroll instead of pushing the composer down and off the
@@ -91,7 +111,7 @@
 
 // Static mode's empty state: the question list (StarterQuestions, full
 // width as in live mode, centering its own 32rem column) or the
-// no-questions line, with the capture note under it in that same column.
+// no-questions line.
 .pickerEmpty {
     display: flex;
     flex-direction: column;
@@ -103,13 +123,4 @@
     padding-block: 2rem 0.75rem;
     color: vars.$text-secondary;
     text-align: center;
-}
-
-.pickerNote {
-    @include type.type-style('helper-text-01');
-    align-self: center;
-    margin: 0;
-    inline-size: 100%;
-    max-inline-size: 32rem;
-    color: vars.$text-secondary;
 }

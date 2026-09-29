@@ -232,8 +232,41 @@ describe('ChatPanel with a question picker (static mode)', () => {
         { id: 'q-1', question: 'What did the prior auth usability tests find?', project: null },
         { id: 'q-2', question: 'How much documentation burden do clinicians report?', project: null },
     ];
-    const NOTE = 'These answers were generated ahead of time.';
-    const renderPicker = (props = {}) => renderPanel({ pickerQuestions: PICKS, pickerNote: NOTE, onPickQuestion: () => {}, ...props });
+    const NOTE = 'Captured from a local model run on sample data.';
+    const renderPicker = (props = {}) => renderPanel({ pickerQuestions: PICKS, captureNote: NOTE, onPickQuestion: () => {}, ...props });
+    const banner = () => screen.queryByText('Answers are pre-generated')?.closest('.cds--actionable-notification') ?? null;
+
+    it('shows the "Answers are pre-generated" banner above the thread, linking to the README in a new tab', () => {
+        renderPicker();
+
+        expect(banner()).toBeInTheDocument();
+        expect(banner()).toHaveTextContent(`${NOTE} To ask your own questions, run the project locally (opens in a new tab).`);
+        // Permanent content, not an event: no live region, no close button.
+        expect(banner()).not.toHaveAttribute('role');
+        expect(banner().querySelector('[aria-live]')).toBeNull();
+        expect(screen.queryByRole('button', { name: /close/i })).not.toBeInTheDocument();
+
+        // jsdom's name computation drops the no-break space the browser keeps
+        // (e2e checks the exact name), so allow for either.
+        const link = screen.getByRole('link', { name: /^run the project locally\s?\(opens in a new tab\)$/ });
+        expect(link).toHaveAttribute('href', 'https://github.com/herrjosua/research-repo-crud-ui#getting-started');
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+        expect(link).toHaveAccessibleDescription('Answers are pre-generated');
+
+        // Its own row, before (outside) the scrolling thread.
+        const thread = screen.getByRole('region', { name: 'Conversation' });
+        expect(thread).not.toContainElement(banner());
+        expect(banner().nextElementSibling).toBe(thread);
+    });
+
+    it('keeps the banner above the thread once a conversation has started', () => {
+        renderPicker({ messages: THREAD });
+
+        const thread = screen.getByRole('region', { name: 'Conversation' });
+        expect(banner().nextElementSibling).toBe(thread);
+        expect(screen.getByRole('combobox', { name: 'Choose a question' })).toBeInTheDocument();
+    });
 
     it('sends a picked question from the empty state straight away', async () => {
         const user = userEvent.setup();
@@ -267,11 +300,17 @@ describe('ChatPanel with a question picker (static mode)', () => {
         expect(onPickQuestion).toHaveBeenCalledExactlyOnceWith(twins[1]);
     });
 
-    it('disables the dropdown while an answer is on its way, keeping the note readable', () => {
+    it('disables the dropdown while an answer is on its way, keeping the banner', () => {
         renderPicker({ messages: [{ id: 'm-q', role: 'user', content: QUESTION, timestamp: '10:14' }], status: 'loading' });
 
         expect(screen.getByRole('combobox', { name: 'Choose a question' })).toBeDisabled();
-        expect(screen.getByText(NOTE)).toBeInTheDocument();
+        expect(banner()).toHaveTextContent(NOTE);
+    });
+
+    it('shows no banner in live mode', () => {
+        renderPanel({ captureNote: NOTE });
+
+        expect(banner()).toBeNull();
     });
 
     it('falls back to the unavailable notice and a disabled composer after a 503', () => {
@@ -280,5 +319,6 @@ describe('ChatPanel with a question picker (static mode)', () => {
         expect(screen.getByText("Ask the Repo isn't available here.")).toBeInTheDocument();
         expect(composer()).toBeDisabled();
         expect(screen.queryByRole('button', { name: PICKS[0].question })).not.toBeInTheDocument();
+        expect(banner()).toBeNull();
     });
 });

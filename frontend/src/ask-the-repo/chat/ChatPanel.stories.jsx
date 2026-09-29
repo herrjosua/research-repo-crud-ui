@@ -148,13 +148,13 @@ export const NoSourcesAnswer = {
 };
 
 // Static mode (the public demo): GET /api/ask/config said `mode:
-// 'static'`, so there's no composer. The empty state lists the captured
-// questions in the starter-question look, with where the answers came
-// from under them; picking one asks it straight away.
+// 'static'`, so there's no composer. The "Answers are pre-generated"
+// banner sits above the thread, and the empty state lists the captured
+// questions in the starter-question look; picking one asks it straight away.
 export const StaticEmptyState = {
   args: {
     pickerQuestions: STATIC_QUESTIONS,
-    pickerNote: captureNote(STATIC_CAPTURE),
+    captureNote: captureNote(STATIC_CAPTURE),
     onPickQuestion: fn(),
   },
 };
@@ -163,19 +163,19 @@ export const StaticEmptyState = {
 export const StaticNoQuestionsForProject = {
   args: {
     pickerQuestions: [],
-    pickerNote: captureNote(STATIC_CAPTURE),
+    captureNote: captureNote(STATIC_CAPTURE),
     onPickQuestion: fn(),
   },
 };
 
-// Static mode once a conversation has started: the "Choose a question"
-// dropdown and the note sit where the composer was, on the composer's
-// `$background` row.
+// Static mode once a conversation has started: the banner stays above the
+// thread, and the "Choose a question" dropdown sits where the composer
+// was, on the composer's `$background` row.
 export const StaticConversation = {
   args: {
     messages: THREAD,
     pickerQuestions: STATIC_QUESTIONS,
-    pickerNote: captureNote(STATIC_CAPTURE),
+    captureNote: captureNote(STATIC_CAPTURE),
     onPickQuestion: fn(),
   },
 };

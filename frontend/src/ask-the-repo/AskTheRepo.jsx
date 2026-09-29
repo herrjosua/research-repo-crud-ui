@@ -268,7 +268,7 @@ export default function AskTheRepo() {
                                             configLoading={config.isPending}
                                             announcement={ask.announcement}
                                             pickerQuestions={pickerQuestions}
-                                            pickerNote={isStatic ? captureNote(config.data.capture) : ''}
+                                            captureNote={isStatic ? captureNote(config.data.capture) : ''}
                                             onPickQuestion={handlePickQuestion}
                                             onSend={handleSend}
                                             onRetry={() => ask.retry(activeConversationId)}
