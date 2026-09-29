@@ -8,7 +8,8 @@ const config = {
   // itself in v10 — no addon install needed for those. Docs (the autodocs
   // page + props table) and a11y (a real axe scan per story) don't, so
   // they're listed explicitly. Pseudo-states forces :hover/:focus/:active
-  // per element (Shared/Core/Button) so Chromatic snapshots those states.
+  // per element (Shared/Core/Button, Shared/Core/Link) so Chromatic
+  // snapshots those states.
   addons: ['@storybook/addon-docs', '@storybook/addon-a11y', 'storybook-addon-pseudo-states'],
   framework: {
     name: '@storybook/react-vite',
