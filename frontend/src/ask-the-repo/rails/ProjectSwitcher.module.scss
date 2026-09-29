@@ -1,29 +1,22 @@
-@use '@carbon/react/scss/type';
-@use '../../styles/variables' as vars;
+// Below this width (the md floor's 136px rail leaves 111px for the field;
+// the narrowest lg rail, at 1056px, leaves 207px), the helper text's record
+// count can wrap: "Searches 5 records" takes one line, "Searches 21
+// records" two. Same threshold as SourcesPanel.module.scss's.
+$narrow-rail: 12rem;
 
 .switcher {
     padding: 0.75rem 0.75rem 0.5rem;
     flex-shrink: 0;
-}
+    container-type: inline-size;
 
-// One menu row: the label truncates so the count always stays visible,
-// even at the md floor's 136px rail.
-.option {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    min-inline-size: 0;
-}
-
-.label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.count {
-    flex-shrink: 0;
-    @include type.type-style('label-01');
-    color: vars.$text-secondary;
+    // Two lines' height whichever project is selected, so Recent below
+    // doesn't move when switching. Only when the helper text is there
+    // (live mode, once the config loads), so static mode reserves nothing.
+    // Depends on Carbon's Dropdown (v1.116) rendering `helperText` in a
+    // `cds--form__helper-text` div; recheck on a Carbon upgrade.
+    :global(.cds--form__helper-text) {
+        @container (max-width: #{$narrow-rail}) {
+            min-block-size: 2lh;
+        }
+    }
 }

@@ -46,10 +46,12 @@ cache is lost on restart.
 record exactly one `project-*` tag (listed in its `research/projects.yml`),
 so a tag is a real, single-valued grouping.
 
-**Now:** The Ask tab's project picker lists those tags from
-`GET /api/ask/config`, with their labels and record counts, after an
-"All projects" entry that searches everything. Picking one sends its full
-tag as the filter.
+**Now:** The Ask tab's project picker lists those tags by label from
+`GET /api/ask/config`, after an "All projects" entry that searches
+everything. Picking one sends its full tag as the filter. In live mode,
+helper text under the picker gives the selected project's record count
+("Searches 21 records"). Static mode shows no count, because nothing is
+searched there.
 
 ## 5. Raw sessions are append-only; corrections are new files
 

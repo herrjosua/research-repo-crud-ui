@@ -5,20 +5,32 @@ import styles from './ProjectSwitcher.module.scss';
 /**
  * Project picker for the Ask the Repo left rail: a Carbon Dropdown,
  * labelled "Project", pinned under "New chat". Its items are the synthetic
- * "All projects" entry, then GET /api/ask/config's list, each showing its
- * record count when there is one; the closed field shows the selected
- * project's label. Selecting one sets the active project context that the
- * conversation list below it (`ConversationList`, via `LeftRail`) filters
- * against, and that new questions are scoped to.
+ * "All projects" entry, then GET /api/ask/config's list, by label only
+ * (Carbon truncates a long one, with the full label on hover); the closed
+ * field shows the selected project's label. Selecting one sets the active
+ * project context that the conversation list below it
+ * (`ConversationList`, via `LeftRail`) filters against, and that new
+ * questions are scoped to.
  *
- * A dropdown rather than a list so the project count (ten in the real
- * corpus) can't take height away from Recent, and so the rail doesn't
+ * When the selected project has a record count, helper text under the
+ * field says how many records a question searches ("Searches 21
+ * records"). Carbon points the field's aria-describedby at it, so screen
+ * readers hear it with the field. At the md floor it can wrap, so it
+ * keeps two lines' height there (see ProjectSwitcher.module.scss). The
+ * rows don't show counts: at the md floor's 136px rail a count left about
+ * four characters of each label.
+ *
+ * A dropdown rather than a list so the number of projects (ten in the
+ * real corpus) can't take height away from Recent, and so the rail doesn't
  * jump when the config loads: the closed field is the same height whether
  * there is one project or ten.
  *
  * `projects` (array of `{ id, label, count? }` — array order is display
- * order; see `../fixtures/constants.js`),
- * `activeProjectId` (the selected project's `id`), `onSelectProject(id)`.
+ * order; see `../fixtures/constants.js`. `count` is how many records a
+ * question in that project searches; left out, e.g. in static mode, there
+ * is no helper text. The id "all" is the no-filter entry, as in POST
+ * /api/ask's `project`), `activeProjectId` (the selected project's `id`),
+ * `onSelectProject(id)`.
  */
 export default function ProjectSwitcher({ projects, activeProjectId, onSelectProject }) {
     // Unique per instance: autodocs renders several stories on one page.
@@ -36,8 +48,8 @@ export default function ProjectSwitcher({ projects, activeProjectId, onSelectPro
                 size="sm"
                 items={projects}
                 selectedItem={selectedProject}
+                helperText={searchScope(selectedProject)}
                 itemToString={(project) => project?.label ?? ''}
-                itemToElement={renderOption}
                 onChange={({ selectedItem }) => {
                     if (selectedItem) onSelectProject(selectedItem.id);
                 }}
@@ -46,18 +58,10 @@ export default function ProjectSwitcher({ projects, activeProjectId, onSelectPro
     );
 }
 
-// The count is visual shorthand; screen readers get it spelled out
-// ("Onboarding, 21 records") rather than run into the label ("Onboarding21").
-function renderOption(project) {
-    return (
-        <span className={styles.option} title={project.label}>
-            <span className={styles.label}>{project.label}</span>
-            {project.count != null && (
-                <>
-                    <span className="cds--visually-hidden">, {project.count} records</span>
-                    <span className={styles.count} aria-hidden="true">{project.count}</span>
-                </>
-            )}
-        </span>
-    );
+function searchScope(project) {
+    if (project?.count == null) return undefined;
+    const records = project.count === 1 ? 'record' : 'records';
+    return project.id === 'all'
+        ? `Searches all ${project.count} ${records}`
+        : `Searches ${project.count} ${records}`;
 }

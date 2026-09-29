@@ -21,18 +21,33 @@ describe('ProjectSwitcher', () => {
         expect(screen.getByRole('combobox', { name: /Project/ })).toHaveTextContent('Checkout Redesign');
     });
 
-    it('lists every project with its count, spelled out for screen readers', async () => {
+    it('lists every project by label alone, without its count', async () => {
         const user = userEvent.setup();
         render(<ProjectSwitcher projects={PROJECTS} activeProjectId="all" onSelectProject={() => {}} />);
 
         await user.click(screen.getByRole('combobox', { name: /Project/ }));
 
         expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
-            'All Projects, 247 records247',
-            'Checkout Redesign, 84 records84',
+            'All Projects',
+            'Checkout Redesign',
         ]);
-        expect(screen.getByRole('option', { name: /All Projects/ })).toHaveAttribute('aria-selected', 'true');
-        expect(screen.getByRole('option', { name: /Checkout Redesign/ })).toHaveAttribute('aria-selected', 'false');
+        expect(screen.getByRole('option', { name: 'All Projects' })).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getByRole('option', { name: 'Checkout Redesign' })).toHaveAttribute('aria-selected', 'false');
+    });
+
+    it('says under the field how many records the selected project searches, as the field\'s description', () => {
+        render(<ProjectSwitcher projects={PROJECTS} activeProjectId="checkout" onSelectProject={() => {}} />);
+
+        expect(screen.getByText('Searches 84 records')).toBeInTheDocument();
+        expect(screen.getByRole('combobox', { name: /Project/ })).toHaveAccessibleDescription('Searches 84 records');
+    });
+
+    it('says "all" for the no-filter entry, and "record" for a count of one', () => {
+        const { rerender } = render(<ProjectSwitcher projects={PROJECTS} activeProjectId="all" onSelectProject={() => {}} />);
+        expect(screen.getByRole('combobox', { name: /Project/ })).toHaveAccessibleDescription('Searches all 247 records');
+
+        rerender(<ProjectSwitcher projects={[{ id: 'solo', label: 'Solo', count: 1 }]} activeProjectId="solo" onSelectProject={() => {}} />);
+        expect(screen.getByRole('combobox', { name: /Project/ })).toHaveAccessibleDescription('Searches 1 record');
     });
 
     it('calls onSelectProject with the chosen project id', async () => {
@@ -58,12 +73,10 @@ describe('ProjectSwitcher', () => {
         expect(onSelectProject).toHaveBeenCalledWith('checkout');
     });
 
-    it('leaves out the count for a project without one', async () => {
-        const user = userEvent.setup();
+    it('shows no helper text when the selected project has no count', () => {
         render(<ProjectSwitcher projects={[{ id: 'all', label: 'All projects' }]} activeProjectId="all" onSelectProject={() => {}} />);
 
-        await user.click(screen.getByRole('combobox', { name: /Project/ }));
-
-        expect(screen.getByRole('option')).toHaveTextContent(/^All projects$/);
+        expect(screen.queryByText(/Searches/)).not.toBeInTheDocument();
+        expect(screen.getByRole('combobox', { name: /Project/ })).not.toHaveAttribute('aria-describedby');
     });
 });

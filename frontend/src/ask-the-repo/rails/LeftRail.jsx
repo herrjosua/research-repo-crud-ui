@@ -36,7 +36,10 @@ import styles from './LeftRail.module.scss';
  * "New chat", the project dropdown under it and the session-only footer
  * are pinned; Recent is the one scroll region between them. The dropdown
  * is one field tall however many projects there are (ten in the real
- * corpus), so Recent keeps the rest of the rail's height.
+ * corpus), plus its record-count helper text in live mode (one line, and
+ * two lines' height at the md floor whatever the count, so switching
+ * projects doesn't move Recent), so Recent keeps the rest of the rail's
+ * height.
  *
  * Conversations only last until the page is left, and the footer says so
  * in the Saved Insights tab's words. It's plain text with an icon, like

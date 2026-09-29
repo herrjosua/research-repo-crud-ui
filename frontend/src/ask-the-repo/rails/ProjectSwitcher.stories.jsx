@@ -36,8 +36,9 @@ async function openMenu({ canvasElement }) {
 }
 
 // Live-editable playground: flip `activeProjectId` in Controls to change
-// the project the closed dropdown shows, and watch onSelectProject calls
-// land in the Actions panel when choosing a different project.
+// the project the closed dropdown shows (and the record count in the
+// helper text under it), and watch onSelectProject calls land in the
+// Actions panel when choosing a different project.
 export const Default = {
   args: {
     projects: PROJECTS,
@@ -45,8 +46,9 @@ export const Default = {
   },
 };
 
-// The real corpus's ten projects, open: each with its record count, the
-// selected one checked, and long labels truncated ahead of their counts.
+// The real corpus's ten projects, open: labels only, the selected one
+// checked, and long labels truncated. The helper text under the field
+// ("Searches all 97 records") sits behind the open menu.
 export const Open = {
   args: {
     projects: CONFIG_PROJECTS,
@@ -58,7 +60,29 @@ export const Open = {
   play: openMenu,
 };
 
-// The same, at the md floor's 136px rail.
+// Closed at the md floor's 136px rail, on a project with a one-digit
+// count: the field truncates the label, and "Searches 5 records" fits on
+// one line but keeps two lines' height, so Recent below doesn't move when
+// switching to a project whose count wraps (OpenNarrow's "Searches all 97
+// records" shows the wrapped case).
+export const Narrow = {
+  args: {
+    projects: CONFIG_PROJECTS,
+    activeProjectId: 'project-prior-auth',
+  },
+  argTypes: {
+    activeProjectId: { options: CONFIG_PROJECTS.map((project) => project.id) },
+  },
+  decorators: [
+    (Story) => (
+      <div className={styles.narrow}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+// Open, at the md floor's 136px rail: each label gets the whole row.
 export const OpenNarrow = {
   ...Open,
   decorators: [
@@ -71,10 +95,12 @@ export const OpenNarrow = {
 };
 
 // A corpus with no project list (GET /api/ask/config returns
-// `projects: []`, e.g. the e2e and test corpora), and the picker before the
-// config loads: only the no-filter entry, and no count, since there are no
-// project counts to total. The closed field is the same height as with ten
-// projects, so the rail doesn't move when the list arrives.
+// `projects: []`, e.g. the e2e and test corpora), the picker before the
+// config loads, and static mode: only the no-filter entry, and no helper
+// text, since there's no record count to give. (Static mode lists its
+// projects too, also without counts.) Without helper text the field is
+// the same height with one project or ten; live mode's helper text arrives
+// with the config, one line lower at 1280px, two at 672px.
 export const AllOnly = {
   args: {
     projects: [{ id: 'all', label: 'All projects' }],

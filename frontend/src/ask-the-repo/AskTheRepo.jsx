@@ -55,17 +55,31 @@ export default function AskTheRepo() {
     // project picker filters them the way it filters live questions: "All
     // projects" lists every one, a project only its own (an exact match).
     // A project with no captured questions would have nothing to click, so
-    // the picker leaves it out; "All projects" (and its count, which is the
-    // whole corpus it searches) stays. Live mode lists every project, since
-    // anything can be typed.
+    // the picker leaves it out; "All projects" stays. Live mode lists every
+    // project, since anything can be typed.
+    //
+    // Record counts (the picker's "Searches 21 records") are live mode
+    // only: static mode searches nothing, and its answers were captured
+    // from an earlier copy of the corpus. "All projects" is the sum of the
+    // project counts, so it counts tagged records only, while an
+    // all-projects search covers every record. The two differ only if some
+    // records have no project tag, which agentic-repo doesn't allow.
     const isStatic = config.data?.mode === 'static';
     const staticQuestions = useMemo(() => config.data?.questions ?? [], [config.data]);
     const projects = useMemo(() => {
+        if (isStatic) {
+            const withQuestions = new Set(staticQuestions.map((question) => question.project));
+            return [
+                { id: ALL_PROJECTS, label: 'All projects' },
+                ...configProjects
+                    .filter((project) => withQuestions.has(project.id))
+                    .map(({ id, label }) => ({ id, label })),
+            ];
+        }
         const total = configProjects.reduce((sum, project) => sum + project.count, 0);
-        const withQuestions = new Set(staticQuestions.map((question) => question.project));
         return [
             { id: ALL_PROJECTS, label: 'All projects', count: configProjects.length > 0 ? total : undefined },
-            ...(isStatic ? configProjects.filter((project) => withQuestions.has(project.id)) : configProjects),
+            ...configProjects,
         ];
     }, [configProjects, isStatic, staticQuestions]);
     const labelsById = useMemo(

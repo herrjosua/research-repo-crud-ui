@@ -66,9 +66,12 @@ Details worth knowing:
   passage. No vector database at this corpus size.
 - **Project filter.** Matches by tag, because records have no project field.
   The Ask tab's picker lists the `project-*` tags from `GET /api/ask/config`
-  (labels from the corpus's `research/projects.yml`). A project matches its
-  own tag only, so cross-cutting records are searched only under
-  "Cross-cutting" or "All projects".
+  (labels from the corpus's `research/projects.yml`), with the selected
+  one's record count as helper text under it. A project matches its own tag
+  only, so cross-cutting records are searched only under "Cross-cutting" or
+  "All projects". The "All projects" count adds up the project counts, so
+  it leaves out any record without a project tag, which an all-projects
+  search still covers. agentic-repo requires the tag, so the two agree.
 - **Gate.** `LLM_PROVIDER=ollama` turns the endpoint on, and `static` serves
   captured answers instead (below). Unset returns 503; any other value stops
   the server from starting.
@@ -103,7 +106,8 @@ sequenceDiagram
   once, by id. The server rejects free text with a 400.
 - **Project filter.** The project dropdown filters the list by each
   question's own project, an exact match like the live filter. "All
-  projects" lists every question; a project with none says so.
+  projects" lists every question; a project with none isn't offered. The
+  picker shows no record counts, since nothing is searched.
 - **Honest about it.** An "Answers are pre-generated" info banner (a
   Carbon `Callout`, so no live region) is the chat panel's first row, above
   the scrolling thread, so it stays in view before and after a question is
