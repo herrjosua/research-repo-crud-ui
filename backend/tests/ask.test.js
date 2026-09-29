@@ -1,6 +1,7 @@
 const path = require('path');
 const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
 const { startFakeOllama } = require('./helpers/fakeOllama');
+const { TOP_K } = require('../ask/pipeline');
 
 // Integration test for POST /api/ask: the real app, the real
 // export_records.py over E2E's fixed corpus (real repo content), and a fake
@@ -10,14 +11,14 @@ const { startFakeOllama } = require('./helpers/fakeOllama');
 const CORPUS_DIR = path.join(__dirname, '..', '..', 'e2e', 'fixtures', 'corpus');
 
 // What the fake model "says": markdown and HTML the server must flatten, and
-// citations out of order plus one ([9]) pointing past the six sources given.
+// citations out of order plus one ([99]) pointing past every source given.
 const MODEL_REPLY = [
     '## Summary',
     '',
     'Physicians **did not trust** the draft enough to skim it [2]. Medication dosages were',
     'garbled in 3 of 5 sessions [1][2], see [the notes](https://example.com/x).',
     '',
-    '<script>alert("x")</script>* Edit affordance was hard to find [9]',
+    '<script>alert("x")</script>* Edit affordance was hard to find [99]',
 ].join('\n');
 
 // For the checks test: an invented figure, stacked on three sources.
@@ -76,16 +77,35 @@ beforeEach(() => {
     fakeOllama.reset();
 });
 
-// The "[n] Title — Section (type, date)" header line of each source in the
-// sources block the backend sent to the model, keyed by n. Titles can contain
-// " — " themselves, so tests match a header by its title prefix.
-function promptSourceHeaders(chatRequest) {
+// Each source's label line in the sources block the backend sent to the
+// model ("[n] RAW SESSION · usability test · Feb 25, 2025 — Title — Section",
+// see ask/answer.js), keyed by n, without the class, method and date: just
+// "Title — Section". Titles can contain " — " themselves, so tests match a
+// header by its title with isHeaderFor().
+const LABEL_RE = /^\[(\d+)\] (RAW SESSION|SYNTHESIS|DOC)((?: · [^·—\n]+)*) — (.+)$/gm;
+
+function promptSourceLabels(chatRequest) {
     const userContent = chatRequest.body.messages.find((m) => m.role === 'user').content;
-    const headers = {};
-    for (const match of userContent.matchAll(/^\[(\d+)\] (.+)$/gm)) {
-        headers[match[1]] = match[2];
-    }
-    return headers;
+    return [...userContent.matchAll(LABEL_RE)].map((m) => ({
+        n: Number(m[1]), cls: m[2], meta: m[3].split(' · ').filter(Boolean), header: m[4],
+    }));
+}
+
+function promptSourceHeaders(chatRequest) {
+    return Object.fromEntries(promptSourceLabels(chatRequest).map((l) => [l.n, l.header]));
+}
+
+function isHeaderFor(header, title) {
+    return header === title || header.startsWith(`${title} — `);
+}
+
+// The distinct records behind a prompt's sources (a raw session can have two
+// passages, ask/pipeline.js RETRIEVAL.passagesPerRaw), by their titles.
+function shownRecordTitles(chatRequest, records) {
+    const titles = Object.values(promptSourceHeaders(chatRequest))
+        // The longest matching title, since one title can prefix another.
+        .map((h) => records.map((r) => r.title).filter((t) => isHeaderFor(h, t)).sort((a, b) => b.length - a.length)[0]);
+    return [...new Set(titles)];
 }
 
 describe('POST /api/ask', () => {
@@ -117,7 +137,7 @@ describe('POST /api/ask', () => {
         expect(res.body.model).toBe('gemma2:9b');
 
         // Plain text: no markdown or HTML survives, the link keeps its text,
-        // the bullet is normalized, and the out-of-range [9] is dropped.
+        // the bullet is normalized, and the out-of-range [99] is dropped.
         expect(res.body.answer).toBe([
             'Summary',
             '',
@@ -150,13 +170,14 @@ describe('POST /api/ask', () => {
         // sources[] holds exactly the cited passages, in new-number order:
         // the model's [2] became [1], its [1] became [2].
         const headers = promptSourceHeaders(chat);
-        expect(Object.keys(headers)).toHaveLength(6);
+        const records = (await agent.get('/api/records?summary=true')).body;
+        expect(shownRecordTitles(chat, records)).toHaveLength(TOP_K);
         expect(res.body.sources).toHaveLength(2);
-        expect(headers[2].startsWith(`${res.body.sources[0].title} `)).toBe(true);
-        expect(headers[1].startsWith(`${res.body.sources[1].title} `)).toBe(true);
+        expect(isHeaderFor(headers[2], res.body.sources[0].title)).toBe(true);
+        expect(isHeaderFor(headers[1], res.body.sources[1].title)).toBe(true);
 
         // The retrieval really found the relevant session.
-        expect(Object.values(headers).some((h) => h.startsWith('Usability Test — Ambient AI Scribe Prototype v0.1 '))).toBe(true);
+        expect(Object.values(headers).some((h) => isHeaderFor(h, 'Usability Test — Ambient AI Scribe Prototype v0.1'))).toBe(true);
 
         const userContent = chat.body.messages[1].content;
         for (const source of res.body.sources) {
@@ -172,6 +193,8 @@ describe('POST /api/ask', () => {
                 contextBefore: source.contextBefore === null ? null : expect.any(String),
                 contextAfter: source.contextAfter === null ? null : expect.any(String),
                 section: source.section === null ? null : expect.any(String),
+                // A raw session's roster line; null for every other record.
+                participants: source.recordKind === 'raw' ? expect.stringMatching(/^Participants: /) : null,
                 recordId: expect.stringMatching(/^(raw|finding|component|analytics|deliverable):/),
                 recordKind: expect.any(String),
                 recordType: source.recordType === null ? null : expect.any(String),
@@ -205,7 +228,7 @@ describe('POST /api/ask', () => {
         const headers = promptSourceHeaders(fakeOllama.requestsTo('/api/chat')[0]);
         // The fake reply cites [2] then [1], so the top-ranked passage — the
         // usability test's Key Findings — comes back as sources[1].
-        expect(headers[1]).toMatch(/^Usability Test — Ambient AI Scribe Prototype v0\.1 — Key Findings \(/);
+        expect(headers[1]).toBe('Usability Test — Ambient AI Scribe Prototype v0.1 — Key Findings');
         const source = res.body.sources[1];
         expect(source).toMatchObject({
             kind: 'transcript',
@@ -217,6 +240,51 @@ describe('POST /api/ask', () => {
         expect(source.excerpt).toMatch(/garbled medication dosages in 3 of 5/);
         expect(source.contextBefore).toMatch(/Moderated usability test/);
         expect(source.contextAfter).toMatch(/4 of 5 participants read every line/);
+    });
+
+    it('labels each source for the model as a raw session, synthesis or doc', async () => {
+        await agent.post('/api/ask').send({
+            question: 'medication dosages garbled scribe sessions physicians disqualifying sign-off',
+        });
+        const [chat] = fakeOllama.requestsTo('/api/chat');
+        const userContent = chat.body.messages[1].content;
+        const labels = promptSourceLabels(chat);
+
+        // Every source has a label, and every label is one of the three forms.
+        expect(labels).toHaveLength((userContent.match(/^\[\d+\] /gm) || []).length);
+        expect(labels[0]).toEqual({
+            n: 1,
+            cls: 'RAW SESSION',
+            meta: ['usability test', 'Feb 25, 2025'],
+            header: 'Usability Test — Ambient AI Scribe Prototype v0.1 — Key Findings',
+        });
+        const records = (await agent.get('/api/records?summary=true')).body;
+        for (const label of labels) {
+            const record = records.find((r) => isHeaderFor(label.header, r.title));
+            const expected = { raw: 'RAW SESSION', finding: 'SYNTHESIS', analytics: 'SYNTHESIS' }[record.kind] || 'DOC';
+            expect(label.cls).toBe(expected);
+        }
+        // The rules that go with the labels.
+        expect(chat.body.messages[0].content).toMatch(/prefer RAW SESSION sources/);
+        expect(chat.body.messages[0].content).toMatch(/one or two sources/);
+    });
+
+    it("never retrieves rosters or link lists, and heads a raw session's sources with its roster", async () => {
+        await agent.post('/api/ask').send({ question: 'Who were the participants? Care coordinator roles, researcher, recruitment' });
+        const [chat] = fakeOllama.requestsTo('/api/chat');
+        const userContent = chat.body.messages[1].content;
+        const labels = promptSourceLabels(chat);
+
+        expect(labels.some((l) => /— (Participants — .*|Related|Evidence Trail|Related Findings)$/.test(l.header))).toBe(false);
+        expect(userContent).not.toMatch(/Recruitment note|Synthesized into/);
+        // Every raw session's source is followed by its roster line.
+        const raws = labels.filter((l) => l.cls === 'RAW SESSION');
+        expect(raws.length).toBeGreaterThan(0);
+        for (const l of raws) {
+            const block = userContent.split(`[${l.n}] `)[1].split('\n');
+            expect(block[1]).toMatch(/^Participants: \d+ — \S/);
+        }
+        expect(userContent).toContain('Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1');
     });
 
     it('embeds the corpus once and only embeds the question on later requests', async () => {
@@ -263,10 +331,18 @@ describe('POST /api/ask', () => {
         expect(tagged.length).toBeGreaterThan(0);
         expect(untaggedCount).toBeGreaterThan(0);
 
-        // One passage per tagged record reaches the model, and nothing else.
-        const headers = Object.values(promptSourceHeaders(fakeOllama.requestsTo('/api/chat')[0]));
-        expect(headers).toHaveLength(tagged.length);
-        expect(headers.every((h) => tagged.some((title) => h.startsWith(`${title} `)))).toBe(true);
+        // Every tagged record reaches the model (a raw session with up to two
+        // passages, anything else with one), and nothing else.
+        const chat = fakeOllama.requestsTo('/api/chat')[0];
+        const records = (await agent.get('/api/records?summary=true')).body;
+        const headers = Object.values(promptSourceHeaders(chat));
+        expect(shownRecordTitles(chat, records).sort()).toEqual([...tagged].sort());
+        expect(headers.every((h) => tagged.some((title) => isHeaderFor(h, title)))).toBe(true);
+        const kindOf = (title) => records.find((r) => r.title === title).kind;
+        for (const title of tagged) {
+            const count = headers.filter((h) => isHeaderFor(h, title)).length;
+            expect(count).toBeLessThanOrEqual(kindOf(title) === 'raw' ? 2 : 1);
+        }
         expect(res.body.sources.length).toBeGreaterThan(0);
         expect(res.body.sources.every((s) => s.project === 'governance')).toBe(true);
     });
@@ -275,7 +351,8 @@ describe('POST /api/ask', () => {
         const res = await agent.post('/api/ask').send({ question: 'ambient scribe trust', project: 'all' });
 
         expect(res.status).toBe(200);
-        expect(Object.keys(promptSourceHeaders(fakeOllama.requestsTo('/api/chat')[0]))).toHaveLength(6);
+        const records = (await agent.get('/api/records?summary=true')).body;
+        expect(shownRecordTitles(fakeOllama.requestsTo('/api/chat')[0], records)).toHaveLength(TOP_K);
         expect(res.body.sources.every((s) => s.project === null)).toBe(true);
     });
 

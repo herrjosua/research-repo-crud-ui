@@ -1,5 +1,7 @@
 const crypto = require('crypto');
-const { chunkRecord, embeddingText, queryEmbeddingText } = require('./corpus');
+const {
+    chunkRecord, embeddingText, queryEmbeddingText, isMetadataPassage, participantsHeader,
+} = require('./corpus');
 
 function cosineSimilarity(a, b) {
     if (a.length !== b.length) {
@@ -17,22 +19,29 @@ function cosineSimilarity(a, b) {
     return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// Brute-force nearest records: scores every passage against the query, keeps
-// each record's single best passage (so one long record can't crowd out the
-// rest), and returns the top `k` records, best first. At ~80 records / a few
-// hundred passages this is well under a millisecond; no vector DB needed.
-function rankPassages(queryVector, passages, k) {
-    const bestByRecord = new Map();
+// Brute-force nearest records: scores every passage against the query and
+// ranks records by their single best passage (so one long record can't crowd
+// out the rest), best first. Each entry is { record, score, passages }, its
+// passages as { passage, score }, best first. At ~100 records / a few hundred
+// passages this is well under a millisecond; no vector DB needed.
+function rankRecords(queryVector, passages) {
+    const byRecord = new Map();
     for (const passage of passages) {
         const score = cosineSimilarity(queryVector, passage.vector);
-        const best = bestByRecord.get(passage.record.id);
-        if (!best || score > best.score) {
-            bestByRecord.set(passage.record.id, { passage, score });
-        }
+        if (!byRecord.has(passage.record.id)) byRecord.set(passage.record.id, { record: passage.record, passages: [] });
+        byRecord.get(passage.record.id).passages.push({ passage, score });
     }
-    return [...bestByRecord.values()]
-        .sort((a, b) => b.score - a.score)
-        .slice(0, k);
+    const ranked = [...byRecord.values()];
+    for (const r of ranked) {
+        r.passages.sort((a, b) => b.score - a.score);
+        r.score = r.passages[0].score;
+    }
+    return ranked.sort((a, b) => b.score - a.score);
+}
+
+// The top `k` records' best passages, best first.
+function rankPassages(queryVector, passages, k) {
+    return rankRecords(queryVector, passages).slice(0, k).map((r) => r.passages[0]);
 }
 
 function hashText(text) {
@@ -50,6 +59,13 @@ function hashText(text) {
 // CRUD routes gets re-embedded on the next question without any
 // invalidation hook. Entries for passages no longer in the corpus are
 // dropped, so the cache never outgrows the repo.
+//
+// Metadata sections (rosters, link lists; corpus.js isMetadataPassage) are
+// chunked like everything else but neither embedded nor returned in
+// `passages`; `records` still holds every record whole, for the provenance
+// links (ask/provenance.js). A cited passage's contextBefore/After are its
+// real neighbours in the record, metadata or not. Each passage of a raw
+// session carries `participants`, its roster as one line (or null).
 function createEmbeddingIndex({ embed, loadRecords, batchSize = 64 }) {
     const vectorsByHash = new Map();
     // Refreshes run one at a time, so two questions arriving together don't
@@ -61,13 +77,16 @@ function createEmbeddingIndex({ embed, loadRecords, batchSize = 64 }) {
         const passages = [];
         for (const record of records) {
             const chunks = chunkRecord(record);
+            const participants = participantsHeader(record);
             chunks.forEach((chunk, i) => {
+                if (isMetadataPassage(record, chunk)) return;
                 const text = embeddingText(record, chunk);
                 passages.push({
                     record,
                     chunk,
                     previous: chunks[i - 1] || null,
                     next: chunks[i + 1] || null,
+                    participants,
                     text,
                     hash: hashText(text),
                 });
@@ -89,7 +108,7 @@ function createEmbeddingIndex({ embed, loadRecords, batchSize = 64 }) {
         }
 
         for (const passage of passages) passage.vector = vectorsByHash.get(passage.hash);
-        return { passages, embedded: missing.length };
+        return { passages, records, embedded: missing.length };
     }
 
     return {
@@ -110,4 +129,6 @@ function createEmbeddingIndex({ embed, loadRecords, batchSize = 64 }) {
     };
 }
 
-module.exports = { cosineSimilarity, rankPassages, createEmbeddingIndex, hashText };
+module.exports = {
+    cosineSimilarity, rankRecords, rankPassages, createEmbeddingIndex, hashText,
+};

@@ -49,8 +49,8 @@ sequenceDiagram
   B->>B: read corpus, split into passages
   B->>E: embed new or changed passages, and the question
   E-->>B: vectors
-  B->>B: cosine similarity, best passage per record, top 6
-  B->>G: prompt with the question and those passages
+  B->>B: cosine similarity over non-metadata passages, best passage per record, top 6
+  B->>G: prompt with the question and those passages, labelled raw / synthesis / doc
   G-->>B: answer with [n] citations
   B->>B: strip HTML and markdown, renumber citations
   B-->>U: answer + sources + model
@@ -62,12 +62,17 @@ Details worth knowing:
   characters that never cross a heading, so each citation can show real text
   before and after the excerpt.
 - **Caching.** Nothing happens at startup. The first question embeds the
-  whole corpus (about 500 passages; roughly 9 seconds cold in testing).
+  whole corpus (431 retrievable passages of 548; 3–4 seconds with the
+  model loaded, more if Ollama has to load it).
   Embeddings are kept in memory, keyed by a hash of each passage's text, so
   later questions only embed the question plus anything that changed. The
   cache resets when the server restarts.
 - **Retrieval.** Brute-force cosine similarity, keeping each record's best
-  passage. No vector database at this corpus size.
+  passage. No vector database at this corpus size. Rosters and link lists
+  are never retrieved; a raw session's roster rides along as a one-line
+  header on its sources. Each source is labelled `RAW SESSION`, `SYNTHESIS`
+  or `DOC` for the model. See `backend/README.md`, "Retrieval", and
+  [decision 15](./decisions.md#15-retrieval-changes-for-raw-session-evidence-rr-103).
 - **Project filter.** Matches by tag, because records have no project field.
   The Ask tab's picker lists the `project-*` tags from `GET /api/ask/config`
   (labels from the corpus's `research/projects.yml`), with the selected
@@ -134,11 +139,31 @@ sequenceDiagram
   shows it until its server sets `LLM_PROVIDER=static`.
 - Correction files in `raw/` aren't read by the export scripts, so
   retrieval can still cite a number that a correction has fixed.
-- Retrieval quality: numbered lists lose their numbers when chunked, the
-  wrong passage is sometimes chosen, and the model occasionally states
-  figures that aren't in the sources.
+- Retrieval quality: numbered lists lose their numbers when chunked, and
+  the model occasionally states figures that aren't in the sources.
   `backend/scripts/eval-ask.js` measures this against a gold set; the
-  baseline is `backend/ask/eval/results/baseline.md`.
+  baseline is `backend/ask/eval/results/baseline.md`, the current state
+  `v1.3.6.7-step5.md` (6 of 10 regression, 0 of 7 scenario).
+- The wrong passage of the right record is still sometimes shown. A raw
+  session shows its two best-scoring passages, and the evidence can be in a
+  third section: the GA adoption window's "4 weeks" is in the dashboard
+  review's Method, and the prior-auth "show your work" is in the Key
+  Findings passage that isn't shown.
+- The provenance slot (`ask/provenance.js`) is off: it adds a whole
+  record, not the passage with the evidence, and it cost a passing answer
+  (decision 15). Some required sessions aren't shown at all: the onboarding
+  session for the two invite questions, and scribe v0.2 for the scribe-trust
+  question.
+- Where the evidence is shown, the model sometimes still doesn't use it: the
+  burnout survey's "52% of physicians" is in the prompt, and the answer
+  neither states it nor cites the survey.
+- The answer checks (`backend/ask/checks.js`) read a list whose one
+  citation sits on its last item as uncited items, which failed a correct
+  answer at k = 8. The broader decline rule ("not", "cannot" or "no" with
+  "sources") could also excuse an uncited claim that happens to mention the
+  sources; none has turned up in the stored runs.
+- Topics the retrieval changes don't reach: follow-up and open questions,
+  premise checks, and declining with evidence (RR-103 PR C).
 - No rate limiting or quotas on `/api/ask`.
 - The public demo can only answer its captured questions; typed questions
   need the project running locally.

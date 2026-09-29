@@ -53,6 +53,13 @@ describe('checkAnswer', () => {
         expect(checkAnswer(answer, [AI_READINESS], 'How aware were staff of the Compass AI initiatives?')).toEqual(CLEAN);
     });
 
+    it("counts a raw session's roster line as evidence, since the model is shown it", () => {
+        const answer = 'The dosage errors came up across the 287 respondents [1].';
+        const withRoster = { ...BURNOUT_SURVEY, participants: 'Participants: 287 — Physician, Nurse Practitioner' };
+        expect(checkAnswer(answer, [withRoster]).unsupportedFigures).toEqual([]);
+        expect(checkAnswer(answer, [BURNOUT_SURVEY]).unsupportedFigures).toEqual(['287']);
+    });
+
     describe('the invented "52% report burnout"', () => {
         const question = 'What percentage of clinicians report burnout?';
 
@@ -117,6 +124,50 @@ describe('checkAnswer', () => {
             unsupportedFigures: ['5'],
             stacked: [],
         });
+    });
+
+    // Declines the stored runs gave that DECLINE_RE's word order missed.
+    it.each([
+        'The question cannot be answered from the provided sources.',
+        'The remaining steps are not explicitly stated as required or optional in the provided sources.',
+        'There is no information about this in the sources.',
+    ])('counts a negation with "sources" anywhere as a decline: %s', (sentence) => {
+        expect(analyseAnswer(sentence, [])[0].exempt).toBe('decline');
+        expect(checkAnswer(sentence, [])).toEqual(CLEAN);
+    });
+
+    it('still holds a decline’s figures to its sources or the question, and needs the word "sources"', () => {
+        const sentence = 'Steps 1, 2, 4, 5, and 6 are not explicitly labeled as required or optional in the provided sources.';
+        expect(checkAnswer(sentence, [], 'Which onboarding steps are required?')).toEqual({
+            uncited: [], unsupportedFigures: ['1', '2', '4', '5', '6'], stacked: [],
+        });
+        // No "sources": a negated claim, not a decline.
+        expect(checkAnswer('Admins did not know when invites were sent.', []).uncited).toEqual(['Admins did not know when invites were sent.']);
+    });
+
+    it('gives a sentence that opens with a marker ("[1] mentions…") its own citation', () => {
+        const answer = 'Nothing is listed as unlearned. [1] mentions that three sessions said not to build some features.';
+        const sentences = analyseAnswer(answer, [READOUT]);
+        expect(sentences.map((x) => [x.text, x.cites])).toEqual([
+            ['Nothing is listed as unlearned.', []],
+            ['mentions that three sessions said not to build some features.', [1]],
+        ]);
+        expect(sentences[0].uncited).toBe(true);
+        expect(sentences[1].uncited).toBe(false);
+    });
+
+    it('keeps a marker after the period with the sentence before when a capital follows', () => {
+        const answer = 'Step 3 read as optional. [1] The readout recommends a clearer label [1].';
+        expect(analyseAnswer(answer, [READOUT]).map((x) => [x.text, x.cites])).toEqual([
+            ['Step 3 read as optional.', [1]],
+            ['The readout recommends a clearer label.', [1]],
+        ]);
+    });
+
+    it('leaves a list cited only on its last item uncited above that item (unchanged)', () => {
+        const answer = '- Step 1 — Signup\n- Step 2 — Basics\n- Step 3 — Connect calendar [1]';
+        const flow = source('deliverable:user-flows/onboarding-flow', 'Onboarding Flow — v2', 'Steps', 'Step 1 — Signup\nStep 2 — Basics\nStep 3 — Connect calendar');
+        expect(checkAnswer(answer, [flow]).uncited).toEqual(['Step 1 — Signup', 'Step 2 — Basics']);
     });
 
     it('counts a figure found only in a cited source’s title or section as supported', () => {

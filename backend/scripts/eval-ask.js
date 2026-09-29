@@ -34,7 +34,7 @@ const { execFileSync } = require('child_process');
 const { createOllamaClient, OLLAMA_DEFAULTS } = require('../ask/ollama');
 const { loadRecords } = require('../ask/corpus');
 const { createEmbeddingIndex } = require('../ask/retrieval');
-const { createAskPipeline, CHAT_OPTIONS, TOP_K } = require('../ask/pipeline');
+const { createAskPipeline, CHAT_OPTIONS, RETRIEVAL } = require('../ask/pipeline');
 const { analyseAnswer, summariseSentences, MARKER_RE } = require('../ask/checks');
 const { loadGold, GOLD_FILE, GOLD_SETS } = require('../ask/eval/gold');
 const {
@@ -47,7 +47,11 @@ const RESULTS_DIR = path.join(__dirname, '..', 'ask', 'eval', 'results');
 // stored with its runs (the report reads it from the gold file), so adding
 // sets didn't change it. Nor did v1.3.6.7: the checks moving to
 // ask/checks.js are re-applied by `report`, cold latency is the stored first
-// seeded run, and the pipeline's rank() is the same ranking as before.
+// seeded run, and the pipeline's rank() is the same ranking as before. Nor
+// did RR-103's retrieval changes: runs now also store `promptChars`, the
+// metadata `retrieval`, a source's `participants` line and a shown
+// record's `passage` id, all optional, and the report shows "—" for results
+// stored without them, so older results still compare.
 const EVAL_HARNESS_VERSION = 1;
 
 // ---------------------------------------------------------------------------
@@ -125,8 +129,10 @@ function appCommit() {
 // What a stored run keeps of a source: enough to re-judge it and to read the
 // excerpt it was cited for.
 function storedSource(source) {
-    const { id, recordId, recordKind, recordType, title, section, excerpt, score } = source;
-    return { id, recordId, recordKind, recordType, title, section, excerpt, score };
+    const {
+        id, recordId, recordKind, recordType, title, section, participants, excerpt, score,
+    } = source;
+    return { id, recordId, recordKind, recordType, title, section, participants, excerpt, score };
 }
 
 async function run({ label, seed, temperature, seededRuns, unseededRuns, set, only }) {
@@ -165,7 +171,8 @@ async function run({ label, seed, temperature, seededRuns, unseededRuns, set, on
         seed,
         temperature,
         chatOptions: { ...CHAT_OPTIONS, temperature },
-        topK: TOP_K,
+        topK: RETRIEVAL.topK,
+        retrieval: RETRIEVAL,
         seededRuns,
         unseededRuns,
     };
@@ -193,7 +200,10 @@ async function run({ label, seed, temperature, seededRuns, unseededRuns, set, on
                 secs: Math.round((Date.now() - started) / 100) / 10,
                 answer: result.answer,
                 sources: result.sources.map(storedSource),
-                shown: result.ranked.map(({ passage }, i) => ({ n: i + 1, recordId: passage.record.id, kind: passage.record.kind })),
+                promptChars: result.promptChars,
+                shown: result.ranked.map(({ passage }, i) => ({
+                    n: i + 1, recordId: passage.record.id, kind: passage.record.kind, passage: `${passage.record.id}#${passage.chunk.index}`,
+                })),
             };
         };
         const q = { id: entry.id, question: entry.question, project: entry.project, ranking, seeded: [], unseeded: [] };
@@ -256,6 +266,19 @@ function summarise(q, entry) {
     };
 }
 
+// "mean / max" of a list of numbers, or "—" when there are none.
+function meanMax(values, decimals = 0) {
+    if (values.length === 0) return '—';
+    const round = (n) => Math.round(n * 10 ** decimals) / 10 ** decimals;
+    return `${round(values.reduce((a, b) => a + b, 0) / values.length)} / ${round(Math.max(...values))}`;
+}
+
+// Results stored before runs recorded their prompt size have none.
+function promptSize(summaries) {
+    const sizes = summaries.map((x) => x.first.promptChars);
+    return sizes.every((n) => typeof n === 'number') ? meanMax(sizes) : '—';
+}
+
 function firstRawText(s) {
     if (!s.firstRaw) return 'none in scope';
     return `#${s.firstRaw.rank} of ${s.firstRaw.of}${s.firstRaw.rank <= s.shown.length ? ' (shown)' : ''}`;
@@ -280,6 +303,7 @@ function settingsRows(sets) {
         row('Seed / temperature', (x) => `${x.seed} / ${x.temperature}`),
         row('Chat options', (x) => JSON.stringify(x.chatOptions)),
         row('Top k', (x) => x.topK),
+        row('Retrieval', (x) => (x.retrieval ? JSON.stringify(x.retrieval) : '—')),
         row('Runs per question', (x) => `${x.seededRuns} seeded, ${x.unseededRuns} unseeded`),
     ];
 }
@@ -340,7 +364,10 @@ function renderReport(sets, gold) {
             `- Uncited sentences: ${join((s) => of(s).reduce((n, x) => n + x.verdict.uncited.length, 0))}`,
             `- Sentences with 3+ stacked citations: ${join((s) => of(s).reduce((n, x) => n + x.verdict.stacks.length, 0))}`,
             `- Unsupported figures: ${join((s) => of(s).reduce((n, x) => n + x.verdict.unsupported.length, 0))}`,
+            `- Sentences with unsupported figures: ${join((s) => of(s).reduce((n, x) => n + x.verdict.sentences.filter((y) => y.unsupported.length > 0).length, 0))}`,
             `- Questions whose seeded runs weren't identical: ${join((s) => count(of(s), (x) => !x.seededIdentical))}`,
+            `- Prompt size, mean / max (chars): ${join((s) => promptSize(of(s)))}`,
+            `- Cold latency, mean / max (s): ${join((s) => meanMax(of(s).map((x) => x.coldLatency), 1))}`,
             '',
             '### Per question',
             '',
@@ -384,6 +411,7 @@ function renderReport(sets, gold) {
             row('Exempt sentences', (s) => s.verdict.sentences.filter((x) => x.exempt).map((x) => `${x.exempt}: ${x.text}`).join('\n') || '—'),
             row('Seeded runs identical', (s) => (s.seededIdentical ? 'yes' : 'NO')),
             row('Distinct unseeded answers', (s) => `${s.distinctUnseeded} of ${sets[per.indexOf(s)].metadata.unseededRuns}`),
+            row('Prompt (chars)', (s) => s.first.promptChars ?? '—'),
             row('Latency (s)', (s) => `${s.coldLatency} cold (first seeded run), ${s.latency} seeded median, ${s.unseededLatency ?? '—'} unseeded median`),
             row('Review flags (capture script)', (s) => s.reviewFlags.join('\n') || '—'),
             row('Answer', (s) => s.first.answer),

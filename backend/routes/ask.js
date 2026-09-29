@@ -40,8 +40,8 @@ const { readProjectList, recordProjectTag } = require('../projects');
 //       retried: false,   // always false for now: nothing is regenerated
 //       uncited: string[],            // sentences needing a citation that have none
 //       unsupportedFigures: string[], // figures / "N of M" counts not in their
-//                                     // sentence's cited sources (title, section
-//                                     // or excerpt), once per sentence
+//                                     // sentence's cited sources (title, section,
+//                                     // participants or excerpt), once per sentence
 //       stacked: string[],            // sentences citing 3+ distinct sources
 //     },
 //   }
@@ -59,6 +59,9 @@ const { readProjectList, recordProjectTag } = require('../projects');
 //     contextBefore: string | null,// text preceding the excerpt in the record (≤ ~400 chars)
 //     contextAfter: string | null, // text following it (≤ ~400 chars)
 //     section: string | null,      // the heading the excerpt sits under
+//     participants: string | null, // a raw session's roster, one line, as the model
+//                                  // was shown it ("Participants: 3 — Care
+//                                  // Coordinator ×2, …"); null for other records
 //     recordId: string,            // e.g. "raw:2025-01-14-…", for GET /api/records/:id
 //     recordKind: string,          // raw | finding | component | analytics | deliverable
 //     recordType: string | null,   // e.g. "usability-test", "personas"

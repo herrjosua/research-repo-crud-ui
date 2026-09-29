@@ -312,9 +312,15 @@ report says how many are still drafts.
 
 **Pass or fail** is judged on the first seeded run. A run passes when:
 
-- every sentence has a citation, except declines ("the sources don't say…"),
-  list intros ending in ":", and list items cited as a group (a marker line
-  after the list, or a cited intro);
+- every sentence has a citation, except declines, list intros ending in
+  ":", and list items cited as a group (a marker line after the list, or a
+  cited intro; a list whose one citation is on its last item still leaves
+  the items above it uncited). A decline is "the sources don't say…", or any
+  sentence with "not", "cannot" or "no" and the word "sources" ("The
+  question cannot be answered from the provided sources."). Markers after a
+  sentence's full stop belong to it ("…sessions. [1]"), unless a lowercase
+  word follows them, when they open the next sentence ("…. [1] mentions
+  that…");
 - every figure and "N of M" count appears in the sources *that sentence*
   cites, not just somewhere in the answer. A cited source's title and
   section count as well as its excerpt, since the model is shown all three
@@ -334,8 +340,9 @@ so `report` re-applies them to stored runs.
 
 Per question, the report shows the records shown to the model and where the
 first raw session ranks among all in-scope records (ranked by the pipeline's
-own `rank()` with no cut-off, so it always matches what the model was shown),
-the records cited and
+own `rank()` with no cut-off: the plain similarity ranking, which matches
+what the model was shown unless the provenance slot is on), the records
+cited and
 whether a raw session is among them, uncited sentences, sentences stacking
 three or more citations, unsupported figures, the gold verdict and why,
 whether the seeded runs were identical, how many distinct answers the
@@ -349,6 +356,12 @@ served largely from its prompt cache and often run several times faster than
 the first; the cold figure is the one closer to what a person asking a new
 question waits. (Cold is computed from the stored runs, so older results show
 it too.)
+
+Each set's totals also give the prompt size (system plus user message, in
+characters) and cold latency as mean / max, and the sentences with unsupported
+figures as well as the figures. Runs store their prompt size, each shown
+record's passage id and each source's `participants` line, and results store
+the `RETRIEVAL` settings; results from before these were recorded show "—".
 
 `ask/eval/results/baseline.md` is the checked-in regression baseline for the
 pipeline as of v1.3.6.22 (5 of 10 pass). `ask/eval/results/baseline-scenarios.md`
@@ -549,9 +562,10 @@ backend/
 │   ├── static/           questions.json (curated) and answers.json (captured) for LLM_PROVIDER=static
 │   ├── eval/             The evaluation gold set (gold.json, validated by gold.js) and checked-in results/ reports
 │   ├── ollama.js         Plain-fetch client for Ollama's /api/embed and /api/chat, plus a readiness check (/api/tags)
-│   ├── corpus.js         export_records.py records → passages; kind/date mapping for sources
+│   ├── corpus.js         export_records.py records → passages; kind/date mapping; metadata sections and roster headers
 │   ├── retrieval.js      Cosine similarity, ranking, and the lazy in-memory embedding cache
-│   ├── answer.js         Prompt, citation renumbering, and the Source objects returned
+│   ├── provenance.js     Which raw sessions a synthesis or doc record was built from, and the (off by default) provenance slot
+│   ├── answer.js         Prompt and source labels, citation renumbering, and the Source objects returned
 │   └── plainText.js      Flattens model output to plain text (no markdown/HTML passes through)
 ├── scripts/
 │   ├── capture-static-answers.js  Captures ask/static/answers.json from the local model, with a review report
@@ -718,8 +732,9 @@ record has the tag, the answer says so and the model isn't called.)
   by (see [Evaluating answers](#evaluating-answers-scriptseval-askjs)):
   - `retried`: always `false` for now; nothing is regenerated.
   - `uncited`: sentences that need a citation and have none. Declines ("the
-    sources don't say…"), list intros ending in ":" and list items cited as
-    a group are exempt.
+    sources don't say…", or "not", "cannot" or "no" with the word
+    "sources"), list intros ending in ":" and list items cited as a group are
+    exempt.
   - `unsupportedFigures`: numbers and "N of M" counts (as `"3 of 5"`) that
     the sources *their own sentence* cites don't contain, in title, section
     or excerpt; one entry per sentence a figure appears in. A decline may
@@ -749,6 +764,7 @@ identifying the real record:
 | `contextBefore` | string \| null   | The record text just before the excerpt (≤ ~400 chars, `…`-clipped). |
 | `contextAfter`  | string \| null   | The record text just after it. |
 | `section`       | string \| null   | The heading the excerpt sits under. |
+| `participants`  | string \| null   | A raw session's roster as one line, exactly as the model was shown it, e.g. `"Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1"`; `null` for every other record and for a session without a roster. |
 | `recordId`      | string           | For `GET /api/records/:id`, e.g. `raw:2025-02-25-usability-test-…`. |
 | `recordKind`    | string           | `raw` \| `finding` \| `component` \| `analytics` \| `deliverable`. |
 | `recordType`    | string \| null   | e.g. `usability-test`, `personas`. |
@@ -766,11 +782,68 @@ corpus (a few seconds warm, plus the model's load time if Ollama evicted it)
 and later questions embed only the question. A record edited through the
 CRUD routes is re-embedded on the next question, just the passages that
 changed, with no invalidation hook. Deleted passages leave the cache. The
-question is scored against every passage by brute-force cosine similarity,
-each record's best passage is kept, and the top 6 go to `gemma2:9b` with
-instructions to answer only from them and cite `[n]`. The reply is then
-flattened to plain text (`ask/plainText.js`), and its citations are
+reply is flattened to plain text (`ask/plainText.js`), and its citations are
 renumbered to match `sources`.
+
+**Retrieval.** The settings are `RETRIEVAL` in `ask/pipeline.js`, and the
+evaluation harness records them with every result:
+
+- **Metadata sections are never retrieved.** Sections that describe a record
+  rather than hold its evidence are split into passages but not embedded or
+  ranked (`ask/corpus.js`, `METADATA_SECTIONS`): a raw session's
+  `Participants — <title>` roster and `Related` list, a finding's
+  `Evidence Trail` and `Related Findings`, a component's `Code mapping` and
+  `Related Research Findings`, and a raw session's heading-less one-line
+  `Researcher: …` passage. They match questions on names and titles alone,
+  so they used to outrank real evidence. That's 117 of the corpus's 548
+  passages, so the first question embeds 431. They stay in the record for
+  a cited passage's surrounding context and for the provenance links below.
+  The onboarding session's own `Participants` section, which is prose
+  evidence, stays retrievable.
+- **Rosters become a header.** Each passage of a raw session carries its
+  roster as one line (`Participants: 3 — Care Coordinator ×2, Care
+  Coordinator (float pool) ×1`), shown to the model under the source's label
+  and returned as the source's `participants`. Roles get a `×n` count only
+  when the roster lists one line per participant; otherwise the roles are
+  listed without counts, since most rosters list each role once whatever the
+  head count.
+- **Top k.** The question is scored against every retrievable passage by
+  brute-force cosine similarity, records are ranked by their best passage,
+  and the top 6 records go to `gemma2:9b`: two passages for a raw session,
+  one for anything else (below).
+- **Labels.** Each source reaches the model as
+  `[n] RAW SESSION · <method> · <date> — <title> — <section>`, or
+  `SYNTHESIS · <date> — …` (findings, analytics) or `DOC · <type> · <date> — …`
+  (deliverables, components), with parts a record lacks left out. The prompt
+  tells the model to prefer raw sessions for quotes and counts, and to cite
+  one or two sources per sentence.
+- **Off by default: the provenance slot** (`provenanceSlot`). When on, and
+  none of the top k is a raw session that a shown synthesis or doc record
+  was built from, the best-ranked such session from below the cut-off
+  replaces the lowest-ranked non-raw record and is shown last. It never
+  replaces the only shown record linking to the session it adds. The links
+  (`ask/provenance.js`) are a raw session's `Synthesized into: <slug>.md`, a
+  `raw/<date-slug>` path in a record's text or links, a raw session's exact
+  title in a finding's Evidence Trail, and a raw session's
+  `related_components`. It's off because it cost a passing answer and gained
+  none; see [decision 15](../docs/decisions.md#15-retrieval-changes-for-raw-session-evidence-rr-103).
+- **Two passages per raw session** (`passagesPerRaw: 2`). Each raw session
+  in the top k shows its two best-scoring passages, in the order they
+  appear in the record; synthesis and doc records show one. A session's
+  best-scoring passage is often its Objective or Recommendations while the
+  counts or quotes sit elsewhere. In the evaluation it lost no answer and
+  gained one, `scribe-sound-alike-names`, but that gain is incidental: the
+  second passage was the session's Method, not the Key Findings holding
+  its counts, and the answer passed because its rewording cited the
+  session's Objective. The real effect is that the gold evidence came into
+  view for four failing entries (the burnout survey's quotes, the prior-auth
+  v1 "inline source citations" recommendation, the chart-review quote, the
+  onboarding sessions 4–6), and the model still doesn't use it. It makes the
+  prompt about 20–25% longer (mean 4,837 regression and 5,521 scenario
+  characters, max 7,378). See decision 15.
+
+The final defaults are **k = 6, metadata sections excluded, provenance slot
+off, `passagesPerRaw: 2`**.
 
 **Static mode (`LLM_PROVIDER=static`).** `POST /api/ask` takes
 `{ "questionId": "<id from config's questions>" }` and returns that

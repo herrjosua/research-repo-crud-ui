@@ -1,9 +1,10 @@
 const { cosineSimilarity, rankPassages, createEmbeddingIndex } = require('../ask/retrieval');
 const {
     MAX_PASSAGE_CHARS, sourceKind, formatDate, decodeEntities, htmlToBlocks, chunkRecord, clip,
+    isMetadataPassage, participantsHeader,
 } = require('../ask/corpus');
 const { toPlainText } = require('../ask/plainText');
-const { renumberCitations } = require('../ask/answer');
+const { renumberCitations, sourceLabel, sourceClass } = require('../ask/answer');
 const { resolveProvider } = require('../ask/config');
 
 describe('cosineSimilarity', () => {
@@ -126,6 +127,22 @@ describe('createEmbeddingIndex', () => {
         await expect(index.refresh()).resolves.toMatchObject({ embedded: 1 });
     });
 
+    it('never embeds or returns metadata passages, but keeps them in the record for provenance', async () => {
+        const session = rawSession();
+        const { index, embed } = setup([session]);
+
+        const { passages, records, embedded } = await index.refresh();
+
+        expect(embedded).toBe(1);
+        expect(passages.map((p) => p.chunk.heading)).toEqual(['Key Findings']);
+        expect(embed.mock.calls.flat(2).some((t) => /Participants|Synthesized into/.test(t))).toBe(false);
+        expect(records[0].html).toMatch(/Synthesized into/);
+        // The roster rides on the session's passages instead, and a passage's
+        // context is its real neighbour in the record.
+        expect(passages[0].participants).toBe('Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1');
+        expect(passages[0].next.heading).toBe('Related');
+    });
+
     it('embeds questions with the query prefix', async () => {
         const { index, embed } = setup([]);
         await index.embedQuery('why?');
@@ -163,6 +180,74 @@ describe('htmlToBlocks / chunkRecord', () => {
     });
 });
 
+// A raw session as export_records.py renders it: session notes, then the
+// participants file (its own h1), as in the real corpus.
+function rawSession({ count = '3', roles = ['Care Coordinator', 'Care Coordinator', 'Care Coordinator (float pool)'] } = {}) {
+    return {
+        id: 'raw:2025-01-29-chart-review',
+        kind: 'raw',
+        type: 'contextual-inquiry',
+        title: 'Chart Review Baseline',
+        html: [
+            '<h1>Chart Review Baseline</h1>',
+            '<h2>Key Findings</h2><ul><li>3 of 3 coordinators cross-referenced four systems.</li></ul>',
+            '<h2>Related</h2><ul><li>Synthesized into: <a href="../../findings/care-coordination-triage.md">care-coordination-triage.md</a></li></ul>',
+            '<h1>Participants — Chart Review Baseline</h1>',
+            `<p><strong>Count:</strong> ${count}</p>`,
+            '<p><strong>Roles:</strong></p>',
+            `<ul>${roles.map((r) => `<li>${r}</li>`).join('')}</ul>`,
+            '<p><strong>Researcher:</strong> Priya Patel</p>',
+            '<p><strong>Recruitment note:</strong> Participants recruited via internal contacts.</p>',
+        ].join('\n'),
+    };
+}
+
+describe('isMetadataPassage', () => {
+    const meta = (record) => chunkRecord(record).filter((p) => isMetadataPassage(record, p)).map((p) => p.heading);
+
+    it("keeps a raw session's roster and Related list out, and its evidence in", () => {
+        const record = rawSession();
+        expect(meta(record)).toEqual(['Related', 'Participants — Chart Review Baseline']);
+        expect(chunkRecord(record).filter((p) => !isMetadataPassage(record, p)).map((p) => p.heading)).toEqual(['Key Findings']);
+    });
+
+    it('excludes each kind\'s own link and mapping sections only', () => {
+        const html = ['Overview', 'Evidence Trail', 'Related Findings', 'Code mapping', 'Related Research Findings']
+            .map((h) => `<h2>${h}</h2><p>${h} text</p>`).join('');
+        expect(meta({ kind: 'finding', html })).toEqual(['Evidence Trail', 'Related Findings']);
+        expect(meta({ kind: 'component', html })).toEqual(['Code mapping', 'Related Research Findings']);
+        // A deliverable's "Related Findings" isn't in the list: it stays retrievable.
+        expect(meta({ kind: 'deliverable', html })).toEqual([]);
+    });
+
+    it("excludes a raw session's heading-less Researcher line but keeps a plain Participants section", () => {
+        const record = {
+            kind: 'raw',
+            html: '<p>Researcher: Priya Patel</p><h2>Participants</h2><p>6 participants, all first-time workspace admins.</p>',
+        };
+        expect(meta(record)).toEqual([null]);
+        expect(chunkRecord(record).filter((p) => !isMetadataPassage(record, p)).map((p) => p.text))
+            .toEqual(['6 participants, all first-time workspace admins.']);
+    });
+});
+
+describe('participantsHeader', () => {
+    it('counts each role when the roster lists one line per participant', () => {
+        expect(participantsHeader(rawSession())).toBe('Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1');
+    });
+
+    it('lists roles without counts when they do not add up to the head count', () => {
+        expect(participantsHeader(rawSession({ count: '6', roles: ['Physician', 'Physician', 'Nurse Practitioner'] })))
+            .toBe('Participants: 6 — Physician, Nurse Practitioner');
+    });
+
+    it('keeps a count that is not a number as written, and is null without a roster', () => {
+        expect(participantsHeader(rawSession({ count: 'N/A', roles: [] }))).toBe('Participants: N/A');
+        expect(participantsHeader({ kind: 'raw', html: '<h2>Key Findings</h2><p>x</p>' })).toBeNull();
+        expect(participantsHeader({ ...rawSession(), kind: 'finding' })).toBeNull();
+    });
+});
+
 describe('sourceKind', () => {
     it.each([
         [{ kind: 'raw', type: 'interview' }, 'interview'],
@@ -175,6 +260,30 @@ describe('sourceKind', () => {
         [{ kind: 'component', type: 'component' }, 'doc'],
     ])('maps %j to %s', (record, kind) => {
         expect(sourceKind(record)).toBe(kind);
+    });
+});
+
+describe('sourceLabel', () => {
+    it.each([
+        [{ kind: 'raw', type: 'usability-test', date: '2025-02-25', title: 'Scribe v0.1' }, { heading: 'Key Findings' },
+            'RAW SESSION · usability test · Feb 25, 2025 — Scribe v0.1 — Key Findings'],
+        [{ kind: 'raw', type: 'interview', date: '2025-01-14', title: 'Kickoff' }, { heading: 'Kickoff' },
+            'RAW SESSION · interview · Jan 14, 2025 — Kickoff'],
+        [{ kind: 'finding', type: 'synthesis', date: '2026-02-17', title: 'Ambient AI Scribe' }, { heading: 'Overview' },
+            'SYNTHESIS · Feb 17, 2026 — Ambient AI Scribe — Overview'],
+        [{ kind: 'analytics', type: 'synthesis', date: '2026-01-27', title: 'Funnel' }, { heading: null },
+            'SYNTHESIS · Jan 27, 2026 — Funnel'],
+        [{ kind: 'deliverable', type: 'user-flows', date: '2026-01-20', title: 'Onboarding flow' }, { heading: 'Steps' },
+            'DOC · user flows · Jan 20, 2026 — Onboarding flow — Steps'],
+        [{ kind: 'component', type: 'component', date: 'Figma (via sync_figma_tokens.py)', title: 'Alert Badge' }, { heading: 'States' },
+            'DOC · component — Alert Badge — States'],
+    ])('labels %j as its class, method and date, title and section', (record, chunk, label) => {
+        expect(sourceLabel(record, chunk)).toBe(label);
+    });
+
+    it('classes raw sessions, synthesis and docs', () => {
+        expect(['raw', 'finding', 'analytics', 'deliverable', 'component'].map((kind) => sourceClass({ kind })))
+            .toEqual(['RAW SESSION', 'SYNTHESIS', 'SYNTHESIS', 'DOC', 'DOC']);
     });
 });
 
