@@ -20,12 +20,18 @@ const MODEL_REPLY = [
     '<script>alert("x")</script>* Edit affordance was hard to find [9]',
 ].join('\n');
 
+// For the checks test: an invented figure, stacked on three sources.
+const INVENTED_QUESTION = 'What share of physicians abandoned the scribe?';
+const INVENTED_REPLY = '97% of physicians abandoned the scribe [1][2][3].';
+
 let testRepoPath;
 let fakeOllama;
 let app, sessionDb, clearSessionInterval, db, server, request, agent;
 
 beforeAll(async () => {
-    fakeOllama = await startFakeOllama({ chatReply: () => MODEL_REPLY });
+    fakeOllama = await startFakeOllama({
+        chatReply: (body) => (body.messages.at(-1).content.endsWith(`Question: ${INVENTED_QUESTION}`) ? INVENTED_REPLY : MODEL_REPLY),
+    });
     testRepoPath = createTestRepo({ corpusDir: CORPUS_DIR });
     process.env.AGENTIC_REPO_ROOT = testRepoPath;
     process.env.LLM_PROVIDER = 'ollama';
@@ -121,6 +127,16 @@ describe('POST /api/ask', () => {
             '- Edit affordance was hard to find',
         ].join('\n'));
 
+        // Flags on the answer as returned (ask/checks.js), which is left as
+        // the model wrote it. The hard line break splits "Medication dosages
+        // were" from its citation, so it counts as uncited.
+        expect(res.body.checks).toEqual({
+            retried: false,
+            uncited: ['Summary', 'Medication dosages were', 'Edit affordance was hard to find'],
+            unsupportedFigures: [],
+            stacked: [],
+        });
+
         // What was sent to Ollama.
         const [chat] = fakeOllama.requestsTo('/api/chat');
         expect(chat.body).toMatchObject({ model: 'gemma2:9b', stream: false });
@@ -166,6 +182,20 @@ describe('POST /api/ask', () => {
             expect(source.score).toBeGreaterThan(0);
             expect(source.score).toBeLessThanOrEqual(1);
         }
+    });
+
+    it('flags an invented figure and a citation stack without changing the answer', async () => {
+        const res = await agent.post('/api/ask').send({ question: INVENTED_QUESTION });
+
+        expect(res.status).toBe(200);
+        expect(res.body.answer).toBe(INVENTED_REPLY);
+        expect(res.body.sources).toHaveLength(3);
+        expect(res.body.checks).toEqual({
+            retried: false,
+            uncited: [],
+            unsupportedFigures: ['97'],
+            stacked: ['97% of physicians abandoned the scribe.'],
+        });
     });
 
     it('maps a raw usability-test record to the transcript kind with real surrounding context', async () => {
@@ -257,6 +287,8 @@ describe('POST /api/ask', () => {
             answer: 'No records in the repo are tagged "checkout", so there\'s nothing to answer from.',
             sources: [],
             model: 'gemma2:9b',
+            // The model wrote nothing, so there is nothing to flag.
+            checks: { retried: false, uncited: [], unsupportedFigures: [], stacked: [] },
         });
         expect(fakeOllama.requestsTo('/api/chat')).toHaveLength(0);
     });

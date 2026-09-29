@@ -256,7 +256,8 @@ check**: it needs a real Ollama with the chat and embedding models pulled,
 the agentic-repo clone at `AGENTIC_REPO_ROOT` with no uncommitted changes,
 and `PYTHON_BIN` pointing at a Python with python-frontmatter (all read from
 `backend/.env`, as for the server). Jest only checks the gold file's schema
-and the pass/fail rules (`tests/askEval.test.js`).
+and the pass/fail rules (`tests/askEval.test.js`), and the per-sentence
+checks they rest on (`tests/askChecks.test.js`).
 
 ```bash
 cd backend
@@ -314,30 +315,54 @@ report says how many are still drafts.
 - every sentence has a citation, except declines ("the sources don't say…"),
   list intros ending in ":", and list items cited as a group (a marker line
   after the list, or a cited intro);
-- every figure and "N of M" count appears in the excerpts *that sentence*
-  cites, not just somewhere in the answer (a decline may repeat the
-  question's own figures);
+- every figure and "N of M" count appears in the sources *that sentence*
+  cites, not just somewhere in the answer. A cited source's title and
+  section count as well as its excerpt, since the model is shown all three
+  ("Participant in session 1…" citing a source under "Session 1 — Jan 19" is
+  supported). A decline may repeat the question's own figures;
 - it cites at least one supporting record, and the required raw session if
   there is one. On an `acceptDecline` entry, an answer that only declines and
   cites nothing is excused from the supporting-record rule, and only that one:
   its must and must-not claims (and any required raw session) still apply;
 - every must-claim matches and no must-not claim does.
 
+The first two rules (and the stack count below) are `ask/checks.js`, the same
+checks the live route reports as `checks` (see [Ask the
+Repo](#ask-the-repo-v136)); the capture script's figure flag uses its figure
+rule too. They're pure functions of the answer, its sources and the question,
+so `report` re-applies them to stored runs.
+
 Per question, the report shows the records shown to the model and where the
-first raw session ranks among all in-scope records, the records cited and
+first raw session ranks among all in-scope records (ranked by the pipeline's
+own `rank()` with no cut-off, so it always matches what the model was shown),
+the records cited and
 whether a raw session is among them, uncited sentences, sentences stacking
 three or more citations, unsupported figures, the gold verdict and why,
 whether the seeded runs were identical, how many distinct answers the
-unseeded runs gave, median latency, the capture script's review flags, and
-the answer text, with the cited excerpts underneath. Stacks and unseeded
+unseeded runs gave, latency, the capture script's review flags, and the
+answer text, with the cited excerpts underneath. Stacks and unseeded
 variation are reported but don't decide pass or fail.
+
+Latency is reported twice: **cold**, the first seeded run, and the **median**
+of the seeded runs. The seeded reruns send Ollama the same prompt, so they're
+served largely from its prompt cache and often run several times faster than
+the first; the cold figure is the one closer to what a person asking a new
+question waits. (Cold is computed from the stored runs, so older results show
+it too.)
 
 `ask/eval/results/baseline.md` is the checked-in regression baseline for the
 pipeline as of v1.3.6.22 (5 of 10 pass). `ask/eval/results/baseline-scenarios.md`
 is the scenario baseline as of v1.3.6.26 (0 of 7 pass; the premise-check and
 open-questions entries were written to fail on the answers of that time).
 Adding the `set` field changed neither the harness version nor what `report`
-compares, since a run doesn't store its entries' sets. Re-run them rather
+compares, since a run doesn't store its entries' sets.
+`ask/eval/results/v1.3.6.7-checks` and `v1.3.6.7-checks-scenarios` (with
+their `baseline-vs-…` reports) re-ran both sets after the checks moved to
+`ask/checks.js`: every seeded answer and every ranking is identical to the
+baselines, and the pass counts are unchanged. One count moved on the same
+answer: `scenario-calendar-premise`'s unsupported figures went from 1 to 0,
+because "Participant in session 1…" cites a source whose section is
+"Session 1 — Jan 19" (it still fails, on its other rules). Re-run them rather
 than comparing across machines: identical seeded answers are only expected on
 the same Ollama build and model digests.
 
@@ -438,7 +463,12 @@ covers, not a count to keep in sync:
   speaks Ollama's real HTTP API (`tests/helpers/fakeOllama.js`): the
   response contract, plain-text output, citation renumbering, the
   embedding cache (embed once, re-embed only an edited passage), the
-  project filter, and the generic `502` when Ollama fails.
+  project filter, the `checks` flags, and the generic `502` when Ollama
+  fails.
+- **`tests/askChecks.test.js`** — `ask/checks.js` on answers the corpus
+  audit and the baselines logged as wrong: invented figures, an uncited
+  claim, a citation stack, a group-cited list, a decline repeating the
+  question's figure, and a figure found only in a source's title or section.
 - **`tests/ask.unit.test.js`** — cosine similarity, ranking, the embedding
   cache, chunking, kind/date mapping, the plain-text sanitizer, and
   citation parsing.
@@ -514,6 +544,7 @@ backend/
 │   ├── config.js         LLM_PROVIDER switch (ollama | static)
 │   ├── activeProvider.js The provider in use now: starts as LLM_PROVIDER, switchable on a dev server (routes/dev.js)
 │   ├── pipeline.js       One question end to end; shared by routes/ask.js and the capture script
+│   ├── checks.js         Citation and figure checks on an answer; the live response's `checks` and the eval harness's rules
 │   ├── staticAnswers.js  Loads and validates the static demo's captured answers
 │   ├── static/           questions.json (curated) and answers.json (captured) for LLM_PROVIDER=static
 │   ├── eval/             The evaluation gold set (gold.json, validated by gold.js) and checked-in results/ reports
@@ -553,6 +584,7 @@ backend/
 │   ├── staticAnswers.data.test.js  The checked-in static answers file (ask/static/answers.json)
 │   ├── staticAnswers.test.js  The static answers validator and the capture script's review checks
 │   ├── askEval.test.js        The eval gold set's schema and the harness's pass/fail rules
+│   ├── askChecks.test.js      ask/checks.js on the audit's bad answers
 │   ├── ask.live.test.js       POST /api/ask against a real local Ollama (OLLAMA_LIVE=1 only)
 │   └── helpers/
 │       ├── setupTestRepo.js   Creates/destroys the disposable fixture repo shared by every test file
@@ -663,7 +695,13 @@ record has the tag, the answer says so and the model isn't called.)
 {
   "answer": "Physicians read every line before accepting it [1]. …",
   "sources": [Source, …],
-  "model": "gemma2:9b"
+  "model": "gemma2:9b",
+  "checks": {                // live mode only (v1.3.6.7); additive
+    "retried": false,
+    "uncited": [],
+    "unsupportedFigures": [],
+    "stacked": []
+  }
 }
 ```
 
@@ -674,6 +712,26 @@ record has the tag, the answer says so and the model isn't called.)
 - `sources` holds **only the passages the answer cites**, in `[1]`, `[2]`, …
   order. It is `[]` when the answer cites nothing, e.g. when the repo
   doesn't cover the question.
+- `checks` flags problems in the answer; it never changes the answer. It's
+  additive: a client that ignores it is unaffected, and the frontend does.
+  Computed by `ask/checks.js`, the same rules the evaluation harness judges
+  by (see [Evaluating answers](#evaluating-answers-scriptseval-askjs)):
+  - `retried`: always `false` for now; nothing is regenerated.
+  - `uncited`: sentences that need a citation and have none. Declines ("the
+    sources don't say…"), list intros ending in ":" and list items cited as
+    a group are exempt.
+  - `unsupportedFigures`: numbers and "N of M" counts (as `"3 of 5"`) that
+    the sources *their own sentence* cites don't contain, in title, section
+    or excerpt; one entry per sentence a figure appears in. A decline may
+    repeat the question's figures.
+  - `stacked`: sentences citing three or more distinct sources.
+
+  Each list is `[]` when there's nothing to flag, including when the model
+  wasn't called (no record has the project tag) or returned nothing. A
+  figure the cited source does contain but in another sense (52% of
+  physicians ranking documentation first, restated as "52% report burnout")
+  isn't caught. **Static mode doesn't add `checks`**: it returns the
+  captured `{ answer, sources, model }` exactly.
 
 `Source` is the shape the Ask tab's sources rail and detail modal render
 (examples in `frontend/src/ask-the-repo/fixtures/messages.js`), plus fields
