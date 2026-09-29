@@ -9,7 +9,12 @@ import AxeBuilder from '@axe-core/playwright';
 test('Ask the Repo offers only captured questions, filters them by project, and answers one with working citations', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /Priya Patel/ }).click();
+    // Under `vite dev` the page probes for the dev-only provider toggle's
+    // route; like the public demo, this backend has no dev tools.
+    const devProbe = page.waitForResponse((res) => new URL(res.url()).pathname === '/api/dev/provider');
     await page.getByRole('link', { name: 'Ask the Repo' }).click();
+    expect((await devProbe).status()).toBe(404);
+    await expect(page.getByRole('tablist', { name: 'Ask the Repo provider (dev only)' })).toHaveCount(0);
 
     // --- The picker replaces the composer ---
     const questionButton = (name) => page.getByRole('button', { name, exact: true });

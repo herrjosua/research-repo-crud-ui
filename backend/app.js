@@ -32,6 +32,7 @@ const healthRoutes = require('./routes/health');
 const authRoutes = require('./routes/auth');
 const recordRoutes = require('./routes/records');
 const askRoutes = require('./routes/ask');
+const { mountDevTools } = require('./devTools');
 const httpsRedirect = require('./middleware/httpsRedirect');
 const hostCheck = require('./middleware/hostCheck');
 const { trustProxySetting } = require('./proxyTrust');
@@ -95,6 +96,10 @@ app.use(session({
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/ask', askRoutes);
+
+// Dev-only routes (routes/dev.js), mounted here or not at all: only with
+// DEV_TOOLS_ENABLED=true and NODE_ENV development or test (devTools.js).
+mountDevTools(app, process.env);
 app.use('/api', recordRoutes);
 
 // Unmatched /api paths get a JSON 404, never the frontend's index.html below.

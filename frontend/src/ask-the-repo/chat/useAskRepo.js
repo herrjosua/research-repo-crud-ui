@@ -74,6 +74,11 @@ function sourcesPhrase(count) {
  *   model), which disables asking for the rest of the session.
  * - `announcement`: text for the chat's polite live region, set when an
  *   answer or error lands.
+ * - `reset()`: aborts every in-flight request and forgets every
+ *   conversation, `unavailable` and the announcement: back to how the page
+ *   started. For the
+ *   dev-only provider switch (AskTheRepo.jsx), after which old threads
+ *   and their retries belong to a mode the server has left.
  *
  * In-flight requests are aborted when the page unmounts. `ask` is the
  * request function, injectable for tests.
@@ -125,6 +130,8 @@ export function useAskRepo({ ask = askRepo } = {}) {
         try {
             const body = questionId ? { question, project, questionId } : { question, project };
             const { answer, sources, model } = await ask(body, { signal: controller.signal });
+            // Reset while the answer was on its way: its conversation is gone.
+            if (controller.signal.aborted) return;
             const time = timestampNow();
             appendMessage(conversationId, {
                 id: makeId('m'),
@@ -178,6 +185,21 @@ export function useAskRepo({ ask = askRepo } = {}) {
         if (error) request(conversationId, error.question, error.project, error.questionId);
     }, [requests, request]);
 
+    const reset = useCallback(() => {
+        controllers.current.forEach((controller) => controller.abort());
+        controllers.current.clear();
+        timers.current.forEach((timer) => clearTimeout(timer));
+        timers.current.clear();
+        setConversations([]);
+        setMessagesById({});
+        setRequests({});
+        setUnavailable(false);
+        // Empty, so the remounted chat's live region doesn't come back
+        // holding the last answer's announcement: the switch that caused
+        // the reset announces itself.
+        setAnnouncement({ text: '', count: 0 });
+    }, []);
+
     const getMessages = useCallback((conversationId) => messagesById[conversationId] ?? [], [messagesById]);
     const getRequest = useCallback((conversationId) => requests[conversationId] ?? IDLE, [requests]);
 
@@ -185,7 +207,7 @@ export function useAskRepo({ ask = askRepo } = {}) {
     // text twice in a row still changes the live region and is re-read.
     const announcementText = announcement.text + (announcement.count % 2 ? ' ' : '');
 
-    return { conversations, getMessages, getRequest, send, retry, unavailable, announcement: announcementText };
+    return { conversations, getMessages, getRequest, send, retry, reset, unavailable, announcement: announcementText };
 }
 
 /**

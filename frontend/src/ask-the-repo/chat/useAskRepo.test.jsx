@@ -204,6 +204,44 @@ describe('useAskRepo', () => {
         await act(async () => calls[0].reject(new DOMException('Aborted', 'AbortError')));
     });
 
+    it('reset() aborts in-flight requests, forgets every conversation, and ignores a late answer', async () => {
+        const { ask, calls } = deferredAsk();
+        const { result } = renderHook(() => useAskRepo({ ask }));
+        let first, second;
+        act(() => { first = result.current.send(null, 'all', 'One?'); });
+        await act(async () => calls[0].resolve(ANSWER));
+        act(() => { second = result.current.send(null, 'project-prior-auth', 'Two?'); });
+        expect(result.current.conversations).toHaveLength(2);
+
+        act(() => { result.current.reset(); });
+
+        expect(calls[1].signal.aborted).toBe(true);
+        expect(result.current.conversations).toEqual([]);
+        expect(result.current.getMessages(first)).toEqual([]);
+        expect(result.current.getRequest(second)).toEqual({ status: 'idle', slow: false, error: null });
+        expect(result.current.announcement).toBe('');
+
+        // An answer that lands anyway (a stubbed ask that ignores its signal)
+        // doesn't bring the conversation back.
+        await act(async () => calls[1].resolve(ANSWER));
+        expect(result.current.conversations).toEqual([]);
+        expect(result.current.getMessages(second)).toEqual([]);
+    });
+
+    it('reset() clears unavailable, so a switched-on server can be asked again', async () => {
+        const ask = vi.fn().mockRejectedValueOnce(httpError(503)).mockResolvedValueOnce(ANSWER);
+        const { result } = renderHook(() => useAskRepo({ ask }));
+        await act(async () => { result.current.send(null, 'all', 'One?'); });
+        expect(result.current.unavailable).toBe(true);
+
+        act(() => { result.current.reset(); });
+
+        expect(result.current.unavailable).toBe(false);
+        let id;
+        await act(async () => { id = result.current.send(null, 'all', 'Two?'); });
+        expect(latestAssistantMessage(result.current.getMessages(id))).toMatchObject({ content: ANSWER.answer });
+    });
+
     it('changes the announcement even when the text repeats', async () => {
         const ask = vi.fn().mockResolvedValue(ANSWER);
         const { result } = renderHook(() => useAskRepo({ ask }));

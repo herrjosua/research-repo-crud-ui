@@ -36,6 +36,16 @@ To run Storybook (`http://localhost:6006`) alongside the dev server, use
 Ask the Repo's local Ollama setup is backend-only — see
 [`../backend/README.md`](../backend/README.md#ask-the-repo-local-ollama).
 
+**Dev-only provider toggle.** With the backend started with
+`DEV_TOOLS_ENABLED=true` (and `NODE_ENV=development`), the Ask page shows a
+"Dev" toggle at the right of its breadcrumb bar that switches Ask the Repo
+between static and live (Ollama) answers without restarting the backend
+([details](../backend/README.md#switching-providers-without-a-restart-dev-only)).
+It's loaded only under `import.meta.env.DEV` (`src/ask-the-repo/AskTheRepo.jsx`),
+so `npm run build` leaves it out entirely; CI fails the build if its endpoint
+path or label shows up in `dist/`. Against a backend without dev tools it
+renders nothing. It has no Storybook story, so it has no Chromatic baseline.
+
 ## Testing
 
 ```bash

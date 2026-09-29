@@ -1,11 +1,17 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AskTheRepo from './AskTheRepo';
 import { askRepo, useAskConfig } from '../api/ask';
+import { useDevProvider, useSetDevProvider } from '../api/dev';
 import { STARTERS } from './chat/starters';
+import { TOGGLE_LABEL } from './dev/devProviderCopy';
 
 vi.mock('../api/ask', () => ({ askRepo: vi.fn(), useAskConfig: vi.fn() }));
+// The dev-only provider toggle. Vitest runs with import.meta.env.DEV true,
+// so AskTheRepo loads it; by default the backend has no dev routes (a 404),
+// so it renders nothing, as in e2e and on any server without DEV_TOOLS_ENABLED.
+vi.mock('../api/dev', () => ({ useDevProvider: vi.fn(), useSetDevProvider: vi.fn() }));
 
 const CONFIG = {
     enabled: true,
@@ -75,6 +81,8 @@ beforeAll(() => {
 beforeEach(() => {
     vi.mocked(useAskConfig).mockReturnValue({ data: CONFIG });
     vi.mocked(askRepo).mockReset();
+    vi.mocked(useDevProvider).mockReturnValue({ data: undefined, isError: true });
+    vi.mocked(useSetDevProvider).mockReturnValue({ mutateAsync: vi.fn() });
 });
 
 describe('AskTheRepo', () => {
@@ -604,5 +612,79 @@ describe('AskTheRepo in static mode', () => {
         expect(screen.getByRole('button', { name: STARTERS.all[0] })).toBeInTheDocument();
         expect(screen.queryByText('Choose a question')).not.toBeInTheDocument();
         expect(staticBanner()).toBeNull();
+    });
+
+});
+
+describe('dev provider toggle', () => {
+    const toggle = () => screen.findByRole('tablist', { name: TOGGLE_LABEL });
+
+    it('is absent when the backend has no dev routes', async () => {
+        renderPage();
+        // Give the lazy import time to resolve before asserting absence.
+        await screen.findByRole('button', { name: STARTERS.all[0] });
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        expect(screen.queryByRole('tablist', { name: TOGGLE_LABEL })).not.toBeInTheDocument();
+    });
+
+    it('on a switch, clears the conversations and resets the project, keeping saved insights', async () => {
+        const user = userEvent.setup();
+        vi.mocked(useDevProvider).mockReturnValue({ data: { provider: 'ollama' } });
+        const mutateAsync = vi.fn().mockImplementation(async () => {
+            vi.mocked(useDevProvider).mockReturnValue({ data: { provider: 'static' } });
+            return { provider: 'static' };
+        });
+        vi.mocked(useSetDevProvider).mockReturnValue({ mutateAsync });
+        askRepo.mockResolvedValueOnce(FIRST_ANSWER);
+        renderPage();
+
+        await pickProject(user, /AI-Assisted Prior Authorization/);
+        await ask(user, 'What made the drafts hard to review?');
+        await user.click(await screen.findByRole('button', { name: `Source 1: ${V1.title}` }));
+        await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save as insight' }));
+        await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }));
+        await user.type(composer(), 'half-typed');
+
+        await toggle();
+        await user.click(screen.getByRole('tab', { name: 'Static' }));
+
+        await screen.findByText(/Switched to pre-generated answers \(static\)\./);
+        // The switch is the one thing announced: the chat's own live region
+        // comes back empty rather than repeating the last answer's.
+        const announcing = [...document.querySelectorAll('[aria-live="polite"], [aria-live="assertive"]')]
+            .filter((el) => el.textContent.trim());
+        expect(announcing).toHaveLength(1);
+        expect(announcing[0]).toHaveTextContent('Switched to pre-generated answers (static). Conversations were cleared.');
+        expect(mutateAsync).toHaveBeenCalledWith('static');
+        expect(screen.getByText('Questions you ask will appear here.')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /What made the drafts/ })).not.toBeInTheDocument();
+        expect(projectPicker()).toHaveTextContent('All projects');
+        expect(screen.getByRole('button', { name: STARTERS.all[0] })).toBeInTheDocument();
+        expect(composer()).toHaveValue('');
+        expect(within(rail()).queryAllByRole('article')).toHaveLength(0);
+
+        await user.click(screen.getByRole('tab', { name: 'Saved Insights' }));
+        const group = screen.getByRole('region', { name: 'AI-Assisted Prior Authorization' });
+        expect(within(group).getByRole('heading', { name: V1.title })).toBeInTheDocument();
+    });
+
+    it('keeps the conversation when the switch fails', async () => {
+        const user = userEvent.setup();
+        vi.mocked(useDevProvider).mockReturnValue({ data: { provider: 'static' } });
+        vi.mocked(useSetDevProvider).mockReturnValue({
+            mutateAsync: vi.fn().mockRejectedValue(Object.assign(new Error("Ollama isn't reachable at http://localhost:11434"), { status: 502 })),
+        });
+        askRepo.mockResolvedValueOnce(FIRST_ANSWER);
+        renderPage();
+        await ask(user, 'What made the drafts hard to review?');
+        await screen.findByRole('button', { name: `Source 1: ${V1.title}` });
+
+        await toggle();
+        await user.click(screen.getByRole('tab', { name: 'Live (Ollama)' }));
+
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent("Couldn't switch to live answers (Ollama)."));
+        expect(screen.getByText('Provider not switched')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: `Source 1: ${V1.title}` })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /What made the drafts hard to review\?/ })).toBeInTheDocument();
     });
 });

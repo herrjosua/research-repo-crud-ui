@@ -58,6 +58,14 @@ code. The demo config sets `LLM_PROVIDER=static`, like the public demo:
 answers that cite the fixture corpus, through the test-only
 `ASK_STATIC_ANSWERS_FILE`. No model runs in either config.
 
+Both configs also set `DEV_TOOLS_ENABLED=false`, so a `DEV_TOOLS_ENABLED=true`
+in `backend/.env` can't leak in (dotenv never overrides a variable that's
+already set). The frontend runs under `vite dev`, where the Ask page does
+load the dev-only provider toggle's code, so both suites check its route
+answers `404` and the toggle isn't on the page. The toggle itself is covered
+by its unit tests (`frontend/src/ask-the-repo/dev/`) and the backend's
+`devTools.test.js` and `devProvider.test.js`, not by e2e.
+
 CI runs both, in Chromium, as the `e2e` job in
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). There it adds an
 HTML report and keeps traces of failed tests, uploaded as an artifact when a

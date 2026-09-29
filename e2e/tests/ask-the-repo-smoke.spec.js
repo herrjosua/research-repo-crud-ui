@@ -21,6 +21,9 @@ test('Ask the Repo is reachable from primary nav, its tabs switch, and the theme
     await expect(page.getByRole('button', { name: 'New session' })).toBeVisible();
 
     // --- Reach Ask the Repo via the real primary nav, not a direct URL ---
+    // Under `vite dev` the page probes for the dev-only provider toggle's
+    // route; this backend runs without DEV_TOOLS_ENABLED, so it isn't there.
+    const devProbe = page.waitForResponse((res) => new URL(res.url()).pathname === '/api/dev/provider');
     await page.getByRole('link', { name: 'Ask the Repo' }).click();
     await expect(page.getByRole('button', { name: 'New session' })).toHaveCount(0);
     const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
@@ -35,6 +38,10 @@ test('Ask the Repo is reachable from primary nav, its tabs switch, and the theme
     // the composer itself — not just "the placeholder text is gone".
     await expect(page.getByText('Try asking')).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Ask a question about the research' })).toBeVisible();
+
+    // --- No dev-only provider toggle: its route answered 404 ---
+    expect((await devProbe).status()).toBe(404);
+    await expect(page.getByRole('tablist', { name: 'Ask the Repo provider (dev only)' })).toHaveCount(0);
 
     // --- Tabs switch views ---
     await insightsTab.click();

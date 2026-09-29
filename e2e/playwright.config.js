@@ -19,8 +19,9 @@ export default defineConfig({
             url: 'http://localhost:3001/api/auth/me',
             // Explicit, independent of whatever's in backend/.env. LLM_PROVIDER
             // turns Ask the Repo on, answered by a fake Ollama that
-            // start-backend.js starts (CI has no real one).
-            env: { NODE_ENV: 'test', DEMO_MODE: 'false', LLM_PROVIDER: 'ollama' },
+            // start-backend.js starts (CI has no real one). DEV_TOOLS_ENABLED
+            // false: no dev-only provider toggle, even if backend/.env sets it.
+            env: { NODE_ENV: 'test', DEMO_MODE: 'false', LLM_PROVIDER: 'ollama', DEV_TOOLS_ENABLED: 'false' },
             reuseExistingServer: false,
             // Lets start-backend.js delete the throwaway repo on the way out.
             gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 },
