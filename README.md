@@ -30,6 +30,8 @@ This is a two-part app — the backend must be running before the frontend can
 do anything useful (it proxies all `/api` calls to it in dev). Start with
 [`backend/README.md`](./backend/README.md) for setup, then
 [`frontend/README.md`](./frontend/README.md).
+Storybook, for working on components without the backend, is covered in
+[`frontend/README.md`](./frontend/README.md#storybook).
 
 You also need a checkout of the agentic-repo with its Python environment
 (`requirements.txt`, Python 3.13). The backend requires `AGENTIC_REPO_ROOT`

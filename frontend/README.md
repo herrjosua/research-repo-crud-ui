@@ -95,6 +95,75 @@ Real browser end-to-end tests and automated WCAG 2 AA accessibility scans
 [`../e2e/`](../e2e/README.md) folder, since they drive this app and the
 backend together rather than testing either in isolation.
 
+## Storybook
+
+```bash
+npm run storybook          # dev server at http://localhost:6006
+npm run build-storybook    # static build into storybook-static/ (gitignored)
+```
+
+`npm run dev:all` runs it next to the app dev server (see [Setup](#setup)).
+Config lives in `.storybook/` in this folder: `main.js` picks up every
+`src/**/*.stories.@(js|jsx)` file and reuses `vite.config.js`'s `resolve`
+and `define`, so components resolve the same way they do under `vite dev`;
+`preview.js` loads the same `src/index.scss` the app does.
+
+Storybook is where a component's visual states and every background it
+renders on get checked, in both themes, without a backend. Stories sit next
+to their component, and a `*.stories.module.scss` beside a story supplies
+the real frame or background the component sits in inside the app (the
+rail, the chat column, a modal's `$layer-01`). The sidebar has three
+groups:
+
+- **Shared/Core**: components every feature renders — Carbon's own
+  `Button` (every kind the app uses × default/hover/focus/active/disabled,
+  on the page and in a modal or panel), links in each context they appear,
+  `DemoDisclaimer`, and `BreadcrumbBar`.
+- **Records**: `RecordKindTag`, `RecordsRail` and `EditRecordForm`, each
+  with dark-theme variants, and `RecordsRail` also at the `md` floor width.
+- **Ask the Repo**: the chat, rails, sources and saved-insights components,
+  with a story per meaningful state — for example `ChatPanel`'s loading,
+  unavailable, model-error, session-expired and static-mode states,
+  `SourcesPanel` at the `md` floor width, and `KindTag` and `SourceCard`
+  rendered against every background they appear on.
+
+**Themes.** The toolbar's **Theme** control switches between White and
+G100 (dark). It toggles the `cds--g100` class on `<body>`, the same class
+the header's theme toggle sets through `src/useTheme.js`, so a story
+re-themes exactly the way the app does (see
+[`TOKEN_MAPPING.md`](./src/ask-the-repo/TOKEN_MAPPING.md#darklight-mode)).
+Storybook remembers the toolbar choice itself; `useTheme`'s `localStorage`
+key isn't involved. A story pinned to dark with
+`globals: { theme: 'g100' }` (the `…Dark` stories) is snapshotted in dark
+regardless of the toolbar. On a Docs page the class still lands on
+`<body>`, but the canvas backdrop stays white.
+
+**Addons:**
+
+- **`@storybook/addon-docs`**: every story gets an autodocs page with a
+  props table by default (`tags: ['autodocs']` in `preview.js`); opt a
+  story out with `tags: ['!autodocs']`.
+- **`@storybook/addon-a11y`**: runs an axe scan on each story in the
+  Accessibility panel, in whichever theme is selected. Chromatic runs the
+  same kind of check on every build, which is how the ghost button's
+  pressed-state contrast failure was found (see
+  [`TOKEN_MAPPING.md`](./src/ask-the-repo/TOKEN_MAPPING.md#links-decision-2026-09-28)).
+- **`storybook-addon-pseudo-states`**: forces `:hover`, `:focus` and
+  `:active` on specific elements through a story's `pseudo` parameter, so
+  Chromatic snapshots those states and not just the resting one. The
+  `Shared/Core/Button` and `Shared/Core/Link` stories use it.
+
+Controls, Actions and Interactions come with the `storybook` package itself
+in v10, so they need no addon.
+
+**Chromatic.** Storybook is what Chromatic snapshots: the `chromatic` job in
+[`../.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs
+`build-storybook` and publishes the result on every push and pull request.
+Every story, including each dark variant, is a baseline that later changes
+are compared against. How changes are reviewed, what gates the merge, and
+which components need a story are in
+[`../CONTRIBUTING.md`](../CONTRIBUTING.md#storybook-stories).
+
 ## Why Carbon, not Tailwind
 
 The project started with Tailwind, then switched to Carbon mid-setup.
