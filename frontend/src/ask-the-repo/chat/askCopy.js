@@ -5,6 +5,10 @@
 export const LOADING_TEXT = 'Searching the repo…';
 export const SLOW_TEXT = 'The first question after a server restart can take up to 20 seconds while the repo is indexed.';
 
+// Live mode: the empty state for a project with no checked starters
+// (see ./starters.js). The composer still works, so point to it.
+export const NO_STARTERS = 'No starter questions for this project yet. Ask anything below.';
+
 export const UNAVAILABLE_COPY = {
     title: "Ask the Repo isn't available here.",
     subtitle: "Answers need a language model, and this environment doesn't run one. You can still browse everything under Research Records.",

@@ -47,10 +47,10 @@ test('Ask the Repo offers only captured questions, filters them by project, and 
     await expect(questionButton('What went wrong in the prior auth drafts?')).toBeVisible();
     await expect(questionButton("Why didn't physicians trust the ambient scribe's draft notes?")).toHaveCount(0);
 
-    await pickProject(/Onboarding/);
-    await expect(page.getByText('No pre-generated questions for this project yet.')).toBeVisible();
-
-    await pickProject(/All projects/);
+    // A project with no captured questions isn't offered at all.
+    await projects.click();
+    await expect(page.getByRole('option', { name: /Onboarding/ })).toHaveCount(0);
+    await page.getByRole('option', { name: /All projects/ }).click();
     await expect(questionButton("Why didn't physicians trust the ambient scribe's draft notes?")).toBeVisible();
 
     // --- Pick a question: it's asked by id and answered at once ---

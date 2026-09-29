@@ -48,13 +48,25 @@ export default function AskTheRepo() {
     // "not available".
     const config = useAskConfig();
     const configProjects = useMemo(() => config.data?.projects ?? [], [config.data]);
+
+    // Static mode (the public demo, config `mode: 'static'`): no model, so
+    // visitors pick from the captured questions instead of typing. The
+    // project picker filters them the way it filters live questions: "All
+    // projects" lists every one, a project only its own (an exact match).
+    // A project with no captured questions would have nothing to click, so
+    // the picker leaves it out; "All projects" (and its count, which is the
+    // whole corpus it searches) stays. Live mode lists every project, since
+    // anything can be typed.
+    const isStatic = config.data?.mode === 'static';
+    const staticQuestions = useMemo(() => config.data?.questions ?? [], [config.data]);
     const projects = useMemo(() => {
         const total = configProjects.reduce((sum, project) => sum + project.count, 0);
+        const withQuestions = new Set(staticQuestions.map((question) => question.project));
         return [
             { id: ALL_PROJECTS, label: 'All projects', count: configProjects.length > 0 ? total : undefined },
-            ...configProjects,
+            ...(isStatic ? configProjects.filter((project) => withQuestions.has(project.id)) : configProjects),
         ];
-    }, [configProjects]);
+    }, [configProjects, isStatic, staticQuestions]);
     const labelsById = useMemo(
         () => new Map(configProjects.map((project) => [project.id, project.label])),
         [configProjects]
@@ -75,13 +87,8 @@ export default function AskTheRepo() {
     const activeAssistantMessage = latestAssistantMessage(activeMessages);
     const unavailable = config.data?.enabled === false || ask.unavailable;
 
-    // Static mode (the public demo, config `mode: 'static'`): no model, so
-    // visitors pick from the captured questions instead of typing. The
-    // project picker filters them the way it filters live questions: "All
-    // projects" lists every one, a project only its own (an exact match).
+    // The active project's captured questions (static mode; see above).
     // `null` in live mode, which leaves ChatPanel's composer as it was.
-    const isStatic = config.data?.mode === 'static';
-    const staticQuestions = useMemo(() => config.data?.questions ?? [], [config.data]);
     const pickerQuestions = useMemo(() => {
         if (!isStatic) return null;
         if (activeProjectId === ALL_PROJECTS) return staticQuestions;

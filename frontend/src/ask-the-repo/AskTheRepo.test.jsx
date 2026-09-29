@@ -260,13 +260,17 @@ describe('AskTheRepo', () => {
         expect(askRepo).toHaveBeenCalledWith({ question: 'What made the drafts hard to review?', project: 'project-prior-auth' }, expect.anything());
     });
 
-    it('shows no starters for a project without checked ones', async () => {
+    it('points to the composer for a project without checked starters, which stays selectable', async () => {
         const user = userEvent.setup();
+        askRepo.mockResolvedValueOnce(FIRST_ANSWER);
         renderPage();
 
         await pickProject(user, /Onboarding/);
 
         expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
+        expect(screen.getByText('No starter questions for this project yet. Ask anything below.')).toBeInTheDocument();
+        await ask(user, 'Where do new users drop off?');
+        expect(askRepo).toHaveBeenCalledWith({ question: 'Where do new users drop off?', project: 'project-onboarding' }, expect.anything());
     });
 
     it('goes back to the empty state with New chat, and reopens a conversation (and its project) from the rail', async () => {
@@ -398,11 +402,30 @@ describe('AskTheRepo in static mode', () => {
         expect(questionList()).toHaveLength(STATIC_QUESTIONS.length);
     });
 
-    it('says so when a project has no questions yet, still showing the capture note', async () => {
+    it('leaves projects with no captured questions out of the picker, keeping "All projects" and its full count', async () => {
         const user = userEvent.setup();
         renderPage();
 
-        await pickProject(user, /Onboarding/);
+        expect(await projectOptions(user)).toEqual([
+            'All projects, 51 records51',
+            'AI-Assisted Prior Authorization, 5 records5',
+            'Cross-cutting, 25 records25',
+        ]);
+    });
+
+    it('keeps "All projects" alone when no captured question names a project', async () => {
+        const user = userEvent.setup();
+        vi.mocked(useAskConfig).mockReturnValue({
+            data: { ...STATIC_CONFIG, questions: STATIC_QUESTIONS.filter((q) => q.project === null) },
+        });
+        renderPage();
+
+        expect(await projectOptions(user)).toEqual(['All projects, 51 records51']);
+    });
+
+    it('says so when there are no questions at all, still showing the capture note', () => {
+        vi.mocked(useAskConfig).mockReturnValue({ data: { ...STATIC_CONFIG, questions: [] } });
+        renderPage();
 
         expect(screen.getByText('No pre-generated questions for this project yet.')).toBeInTheDocument();
         expect(questionList()).toEqual([]);

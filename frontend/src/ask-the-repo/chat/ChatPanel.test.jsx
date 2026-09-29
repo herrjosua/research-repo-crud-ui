@@ -44,11 +44,18 @@ describe('ChatPanel', () => {
         expect(screen.getByRole('button', { name: STARTERS[0] })).toBeEnabled();
     });
 
-    it('shows no starter list when there are none for the project', () => {
+    it('points to the composer instead of a starter list when there are none for the project', () => {
         renderPanel({ starters: [] });
 
         expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
+        expect(screen.getByText('No starter questions for this project yet. Ask anything below.')).toBeInTheDocument();
         expect(composer()).toBeEnabled();
+    });
+
+    it('leaves out the no-starters line once the conversation has messages', () => {
+        renderPanel({ starters: [], messages: THREAD });
+
+        expect(screen.queryByText(/No starter questions/)).not.toBeInTheDocument();
     });
 
     it('fills the composer instead of sending when a starter question is clicked', async () => {
@@ -127,6 +134,12 @@ describe('ChatPanel', () => {
             expect(composer()).toBeDisabled();
             expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
             expect(screen.queryByRole('button', { name: STARTERS[0] })).not.toBeInTheDocument();
+        });
+
+        it('doesn\'t point to the disabled composer when there are no starters either', () => {
+            renderPanel({ unavailable: true, starters: [] });
+
+            expect(screen.queryByText(/No starter questions/)).not.toBeInTheDocument();
         });
 
         it('shows the notice after the thread when it follows a question', () => {
@@ -213,6 +226,13 @@ describe('ChatPanel with a question picker (static mode)', () => {
 
         expect(onPickQuestion).toHaveBeenCalledWith(PICKS[1]);
         expect(screen.queryByRole('button', { name: STARTERS[0] })).not.toBeInTheDocument();
+    });
+
+    it('says there are no questions, not "ask anything below", when the list is empty', () => {
+        renderPicker({ pickerQuestions: [], starters: [] });
+
+        expect(screen.getByText('No pre-generated questions for this project yet.')).toBeInTheDocument();
+        expect(screen.queryByText(/No starter questions/)).not.toBeInTheDocument();
     });
 
     it('sends the clicked question\'s own id when two share wording', async () => {
