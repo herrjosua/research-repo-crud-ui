@@ -6,6 +6,9 @@
 //     version: 1,
 //     entries: [{
 //       id, question, project,  // as in questions.json; project is a project-* tag or null
+//       set,                    // "regression" (questions the pipeline has got wrong before, to catch
+//                               // them coming back) or "scenario" (realistic researcher questions,
+//                               // including ones that test new behaviors); reports count each apart
 //       status,                 // "draft" until a person has reviewed the entry, then "reviewed"
 //       supportingRecords,      // record ids that support a correct answer; a passing run cites one
 //       requiredRawRecord,      // the raw session a passing run must cite, or null when no raw
@@ -28,6 +31,7 @@ const { SAFE_SLUG_RE } = require('../../validation');
 
 const GOLD_FILE = path.join(__dirname, 'gold.json');
 const GOLD_STATUSES = ['draft', 'reviewed'];
+const GOLD_SETS = ['regression', 'scenario'];
 // ask/corpus.js record ids: "<kind>:<path or slug>".
 const RECORD_ID_RE = /^(raw|finding|component|analytics|deliverable):[a-z0-9][a-z0-9/._-]*$/;
 
@@ -81,6 +85,7 @@ function validateGold(data) {
         }
         if (!nonEmptyString(entry.question)) problems.push(`${at}: question must be a non-empty string`);
         if (!isProjectOrNull(entry.project)) problems.push(`${at}: project must be a project-* tag or null`);
+        if (!GOLD_SETS.includes(entry.set)) problems.push(`${at}: set must be one of ${GOLD_SETS.join(', ')}`);
         if (!GOLD_STATUSES.includes(entry.status)) problems.push(`${at}: status must be one of ${GOLD_STATUSES.join(', ')}`);
         if (!nonEmptyString(entry.evidence)) problems.push(`${at}: evidence must be a non-empty string`);
 
@@ -123,4 +128,4 @@ function loadGold(file = GOLD_FILE) {
     return data;
 }
 
-module.exports = { GOLD_FILE, GOLD_STATUSES, validateGold, loadGold };
+module.exports = { GOLD_FILE, GOLD_STATUSES, GOLD_SETS, validateGold, loadGold };

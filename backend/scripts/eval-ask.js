@@ -6,7 +6,8 @@
 // clone. See backend/README.md, "Evaluating answers".
 //
 //   node scripts/eval-ask.js run --label NAME [--seed 42] [--temperature 0.2]
-//                                [--seeded-runs 3] [--unseeded-runs 3] [--only id,id]
+//                                [--seeded-runs 3] [--unseeded-runs 3]
+//                                [--set regression|scenario] [--only id,id]
 //   node scripts/eval-ask.js report BEFORE [AFTER]
 //
 // run     Asks every gold question --seeded-runs times with the fixed seed and
@@ -15,12 +16,16 @@
 //         this process only). Writes the runs to ask/eval/results/NAME.json
 //         and the report to ask/eval/results/NAME.md. Pass or fail is decided
 //         on the first seeded run; the unseeded runs only count distinct
-//         answers.
+//         answers. --set asks only one gold set's questions, --only only the
+//         ids given (within --set, if both are given).
 // report  Re-judges stored runs against the current gold file (so editing
 //         the gold set needs no re-run) and rewrites the report. With two
 //         names it writes a before/after report to ask/eval/results/
 //         BEFORE-vs-AFTER.md, and refuses unless both share the harness
 //         version, corpus commit, seed and temperature.
+//
+// Both report each gold set (regression, scenario) in its own section with
+// its own pass counts, taking an entry's set from the current gold file.
 
 const fs = require('fs');
 const path = require('path');
@@ -30,14 +35,16 @@ const { createOllamaClient, OLLAMA_DEFAULTS } = require('../ask/ollama');
 const { loadRecords } = require('../ask/corpus');
 const { createEmbeddingIndex, rankPassages } = require('../ask/retrieval');
 const { createAskPipeline, CHAT_OPTIONS, TOP_K } = require('../ask/pipeline');
-const { loadGold, GOLD_FILE } = require('../ask/eval/gold');
+const { loadGold, GOLD_FILE, GOLD_SETS } = require('../ask/eval/gold');
 const {
     reviewRun, numbersIn, countPairsIn, corpusCommit, ollamaInfo, withChatOptions,
 } = require('./capture-static-answers');
 
 const RESULTS_DIR = path.join(__dirname, '..', 'ask', 'eval', 'results');
 // Bump when what `run` stores or how it runs the pipeline changes; `report`
-// only compares results from the same version.
+// only compares results from the same version. An entry's gold set isn't
+// stored with its runs (the report reads it from the gold file), so adding
+// sets didn't change it.
 const EVAL_HARNESS_VERSION = 1;
 
 // ---------------------------------------------------------------------------
@@ -212,15 +219,16 @@ function storedSource(source) {
     return { id, recordId, recordKind, recordType, title, section, excerpt, score };
 }
 
-async function run({ label, seed, temperature, seededRuns, unseededRuns, only }) {
+async function run({ label, seed, temperature, seededRuns, unseededRuns, set, only }) {
     if (!label) throw new Error('run needs --label NAME');
     const repoRoot = process.env.AGENTIC_REPO_ROOT;
     if (!repoRoot) throw new Error('AGENTIC_REPO_ROOT is not set (backend/.env or the environment).');
     const gold = loadGold();
-    const entries = gold.entries.filter((e) => !only || only.includes(e.id));
+    const inSet = gold.entries.filter((e) => !set || e.set === set);
+    const entries = inSet.filter((e) => !only || only.includes(e.id));
     if (only) {
         const unknown = only.filter((id) => !entries.some((e) => e.id === id));
-        if (unknown.length > 0) throw new Error(`--only: no gold entry ${unknown.join(', ')}`);
+        if (unknown.length > 0) throw new Error(`--only: no gold entry ${unknown.join(', ')}${set ? ` in the ${set} set` : ''}`);
     }
 
     const ollama = createOllamaClient({
@@ -379,14 +387,18 @@ function renderReport(sets, gold) {
     const ids = sets[0].questions.map((q) => q.id);
     for (const set of sets.slice(1)) {
         const other = set.questions.map((q) => q.id);
-        if (other.join() !== ids.join()) throw new Error('the result sets ask different questions; run both with the same --only');
+        if (other.join() !== ids.join()) throw new Error('the result sets ask different questions; run both with the same --set and --only');
     }
     const summaries = sets.map((set) => set.questions.map((q) => summarise(q, entryFor({ ...q, label: set.metadata.label }))));
     const before = sets.length === 2;
     const title = before ? `\`${sets[0].metadata.label}\` → \`${sets[1].metadata.label}\`` : `\`${sets[0].metadata.label}\``;
     const join = (f) => summaries.map((s) => f(s)).join(' → ');
     const count = (list, f) => list.filter(f).length;
-    const drafts = gold.entries.filter((e) => ids.includes(e.id) && e.status === 'draft').length;
+    const goldSetOf = (id) => gold.entries.find((e) => e.id === id).set;
+    // Each gold set these results ask, as the indexes of its questions.
+    const goldSets = GOLD_SETS
+        .map((name) => ({ name, indexes: ids.map((_, i) => i).filter((i) => goldSetOf(ids[i]) === name) }))
+        .filter((g) => g.indexes.length > 0);
 
     const lines = [
         `# Ask the Repo eval — ${title}`,
@@ -398,31 +410,40 @@ function renderReport(sets, gold) {
         ...settingsRows(sets),
         '',
     ];
-    if (drafts > 0) lines.push(`**${drafts} of ${ids.length} gold entries are still drafts**: a person hasn't reviewed them, so treat pass/fail as provisional.`, '');
     const drift = ['ollamaVersion', 'modelDigest', 'embedModelDigest', 'model', 'embedModel']
         .filter((key) => before && sets[0].metadata[key] !== sets[1].metadata[key]);
     if (drift.length > 0) lines.push(`⚠ The two sets differ in ${drift.join(', ')}, so the same seed may not give the same answer; differences aren't all the pipeline's.`, '');
 
-    lines.push(
-        '## Totals',
-        '',
-        `- Gold pass: ${join((s) => `${count(s, (x) => x.verdict.pass)} of ${s.length}`)}`,
-        `- Raw session cited: ${join((s) => `${count(s, (x) => x.verdict.citesRaw)} of ${s.length}`)}`,
-        `- Uncited sentences: ${join((s) => s.reduce((n, x) => n + x.verdict.uncited.length, 0))}`,
-        `- Sentences with 3+ stacked citations: ${join((s) => s.reduce((n, x) => n + x.verdict.stacks.length, 0))}`,
-        `- Unsupported figures: ${join((s) => s.reduce((n, x) => n + x.verdict.unsupported.length, 0))}`,
-        `- Questions whose seeded runs weren't identical: ${join((s) => count(s, (x) => !x.seededIdentical))}`,
-        '',
-        '## Per question',
-        '',
-        '| Question | Gold | Shown | First raw | Cited | Raw cited | Uncited | Stacks 3+ | Unsupported figures | Distinct unseeded | Latency (s) |',
-        '|---|---|---|---|---|---|---|---|---|---|---|',
-    );
-    ids.forEach((id, i) => {
-        const per = summaries.map((s) => s[i]);
-        const col = (f) => per.map(f).join(' → ');
-        lines.push(`| \`${id}\` | ${col((s) => (s.verdict.pass ? 'PASS' : '**FAIL**'))} | ${col((s) => s.shown.length)} | ${col(firstRawText)} | ${col((s) => s.verdict.cited.length)} | ${col((s) => (s.verdict.citesRaw ? 'yes' : 'no'))} | ${col((s) => s.verdict.uncited.length)} | ${col((s) => s.verdict.stacks.length)} | ${col((s) => s.verdict.unsupported.length)} | ${col((s) => `${s.distinctUnseeded}/${sets[per.indexOf(s)].metadata.unseededRuns}`)} | ${col((s) => s.latency)} |`);
-    });
+    // Each gold set gets its own totals and table: a regression pass count and
+    // a scenario one mean different things, so they're never added together.
+    for (const { name, indexes } of goldSets) {
+        const of = (s) => indexes.map((i) => s[i]);
+        const drafts = indexes.filter((i) => gold.entries.find((e) => e.id === ids[i]).status === 'draft').length;
+        lines.push(`## ${name[0].toUpperCase()}${name.slice(1)} set (${indexes.length} question${indexes.length === 1 ? '' : 's'})`, '');
+        if (drafts > 0) lines.push(`**${drafts} of ${indexes.length} ${name} entries are still drafts**: a person hasn't reviewed them, so treat pass/fail as provisional.`, '');
+        lines.push(
+            '### Totals',
+            '',
+            `- Gold pass: ${join((s) => `${count(of(s), (x) => x.verdict.pass)} of ${indexes.length}`)}`,
+            `- Raw session cited: ${join((s) => `${count(of(s), (x) => x.verdict.citesRaw)} of ${indexes.length}`)}`,
+            `- Uncited sentences: ${join((s) => of(s).reduce((n, x) => n + x.verdict.uncited.length, 0))}`,
+            `- Sentences with 3+ stacked citations: ${join((s) => of(s).reduce((n, x) => n + x.verdict.stacks.length, 0))}`,
+            `- Unsupported figures: ${join((s) => of(s).reduce((n, x) => n + x.verdict.unsupported.length, 0))}`,
+            `- Questions whose seeded runs weren't identical: ${join((s) => count(of(s), (x) => !x.seededIdentical))}`,
+            '',
+            '### Per question',
+            '',
+            '| Question | Gold | Shown | First raw | Cited | Raw cited | Uncited | Stacks 3+ | Unsupported figures | Distinct unseeded | Latency (s) |',
+            '|---|---|---|---|---|---|---|---|---|---|---|',
+        );
+        for (const i of indexes) {
+            const per = summaries.map((s) => s[i]);
+            const col = (f) => per.map(f).join(' → ');
+            lines.push(`| \`${ids[i]}\` | ${col((s) => (s.verdict.pass ? 'PASS' : '**FAIL**'))} | ${col((s) => s.shown.length)} | ${col(firstRawText)} | ${col((s) => s.verdict.cited.length)} | ${col((s) => (s.verdict.citesRaw ? 'yes' : 'no'))} | ${col((s) => s.verdict.uncited.length)} | ${col((s) => s.verdict.stacks.length)} | ${col((s) => s.verdict.unsupported.length)} | ${col((s) => `${s.distinctUnseeded}/${sets[per.indexOf(s)].metadata.unseededRuns}`)} | ${col((s) => s.latency)} |`);
+        }
+        lines.push('');
+    }
+    lines.push('## Questions');
 
     ids.forEach((id, i) => {
         const per = summaries.map((s) => s[i]);
@@ -433,7 +454,7 @@ function renderReport(sets, gold) {
             '',
             '---',
             '',
-            `### \`${id}\`${entry.status === 'draft' ? ' (draft gold)' : ''}`,
+            `### \`${id}\` (${entry.set}${entry.status === 'draft' ? ', draft gold' : ''})`,
             '',
             `**${q.question}** (${q.project || 'all projects'})`,
             '',
@@ -494,7 +515,7 @@ function report({ labels }) {
 function parseArgs(argv) {
     const [command, ...rest] = argv;
     const options = {
-        command, label: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, only: null, labels: [],
+        command, label: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, labels: [],
     };
     const count = (arg, raw, min) => {
         const n = Number(raw);
@@ -520,6 +541,9 @@ function parseArgs(argv) {
             options.seededRuns = count(arg, value(), 1);
         } else if (arg === '--unseeded-runs') {
             options.unseededRuns = count(arg, value(), 0);
+        } else if (arg === '--set') {
+            options.set = value();
+            if (!GOLD_SETS.includes(options.set)) throw new Error(`--set must be one of ${GOLD_SETS.join(', ')}`);
         } else if (arg === '--only') {
             options.only = value().split(',').map((id) => id.trim()).filter(Boolean);
         } else if (!arg.startsWith('--') && command === 'report') {
@@ -537,7 +561,7 @@ async function main() {
     const options = parseArgs(process.argv.slice(2));
     if (options.command === 'run') return run(options);
     if (options.command === 'report') return report(options);
-    throw new Error('usage: eval-ask.js run --label NAME [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--only id,id] | report BEFORE [AFTER]');
+    throw new Error('usage: eval-ask.js run --label NAME [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] | report BEFORE [AFTER]');
 }
 
 if (require.main === module) {

@@ -17,7 +17,9 @@ runs only count distinct answers. See backend/README.md, "Evaluating answers".
 | Top k | 6 |
 | Runs per question | 3 seeded, 3 unseeded |
 
-## Totals
+## Regression set (10 questions)
+
+### Totals
 
 - Gold pass: 5 of 10
 - Raw session cited: 4 of 10
@@ -26,7 +28,7 @@ runs only count distinct answers. See backend/README.md, "Evaluating answers".
 - Unsupported figures: 1
 - Questions whose seeded runs weren't identical: 0
 
-## Per question
+### Per question
 
 | Question | Gold | Shown | First raw | Cited | Raw cited | Uncited | Stacks 3+ | Unsupported figures | Distinct unseeded | Latency (s) |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -41,9 +43,11 @@ runs only count distinct answers. See backend/README.md, "Evaluating answers".
 | `audit-burnout-share` | **FAIL** | 6 | #1 of 97 (shown) | 0 | no | 0 | 0 | 0 | 2/3 | 0.7 |
 | `audit-ai-readiness` | PASS | 6 | #1 of 97 (shown) | 1 | yes | 0 | 0 | 0 | 1/3 | 1.1 |
 
+## Questions
+
 ---
 
-### `onboarding-invite-worry`
+### `onboarding-invite-worry` (regression)
 
 **What were new admins worried about at the Invite your team step?** (project-onboarding)
 
@@ -86,7 +90,7 @@ Gold: supporting `raw:2026-01-19-onboarding-usability-test`, `finding:onboarding
 
 ---
 
-### `onboarding-required-steps`
+### `onboarding-required-steps` (regression)
 
 **Which onboarding steps are required, and which can be skipped?** (project-onboarding)
 
@@ -133,7 +137,7 @@ Gold: supporting `d:user-flows/onboarding-flow`, `finding:onboarding`, `raw:2026
 
 ---
 
-### `prior-auth-citations`
+### `prior-auth-citations` (regression)
 
 **What did nurses want from the citations in the prior auth drafts?** (project-prior-auth)
 
@@ -171,7 +175,7 @@ Gold: supporting `raw:2025-04-08-usability-test-prior-auth-ai-v1`, `raw:2025-11-
 
 ---
 
-### `scribe-sound-alike-names`
+### `scribe-sound-alike-names` (regression)
 
 **How were sound-alike medication names handled?** (project-ambient-scribe)
 
@@ -212,7 +216,7 @@ Gold: supporting `raw:2026-02-10-ambient-scribe-medication-flag-concept`, `raw:2
 
 ---
 
-### `audit-onboarding-steps-order`
+### `audit-onboarding-steps-order` (regression)
 
 **List the onboarding steps in order.** (project-onboarding)
 
@@ -255,7 +259,7 @@ Gold: supporting `d:user-flows/onboarding-flow`, `finding:onboarding`, `d:journe
 
 ---
 
-### `audit-step3-wireframe`
+### `audit-step3-wireframe` (regression)
 
 **What does the step 3 wireframe show?** (all projects)
 
@@ -280,7 +284,7 @@ Gold: supporting `d:wireframes/workspace-setup-step4-invite-team`, `d:user-flows
 
 ---
 
-### `audit-session-timeout`
+### `audit-session-timeout` (regression)
 
 **What is the current session timeout?** (all projects)
 
@@ -325,7 +329,7 @@ Gold: supporting `raw:2026-02-17-session-lock-during-dictation`, `finding:ambien
 
 ---
 
-### `audit-adoption-window`
+### `audit-adoption-window` (regression)
 
 **What time period does the ambient scribe GA adoption data cover?** (project-ambient-scribe)
 
@@ -360,7 +364,7 @@ Gold: supporting `d:topline-summaries/ambient-scribe-ga-adoption-first-4-weeks`,
 
 ---
 
-### `audit-burnout-share`
+### `audit-burnout-share` (regression)
 
 **What percentage of clinicians report burnout?** (all projects)
 
@@ -385,7 +389,7 @@ Gold: supporting `raw:2025-09-09-survey-clinician-burnout-documentation-burden-b
 
 ---
 
-### `audit-ai-readiness`
+### `audit-ai-readiness` (regression)
 
 **How aware were staff of the Compass AI initiatives?** (all projects)
 

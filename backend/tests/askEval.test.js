@@ -1,5 +1,5 @@
 const { GOLD_FILE, loadGold, validateGold } = require('../ask/eval/gold');
-const { answerSentences, analyseAnswer, judgeRun, claimText } = require('../scripts/eval-ask');
+const { answerSentences, analyseAnswer, judgeRun, claimText, renderReport } = require('../scripts/eval-ask');
 const { withChatOptions, chatOverrides } = require('../scripts/capture-static-answers');
 
 // The evaluation gold set (ask/eval/gold.json) and the harness's pass/fail
@@ -15,6 +15,7 @@ describe('gold set', () => {
         version: 1,
         entries: [{
             id: 'q',
+            set: 'regression',
             status: 'draft',
             question: 'Q?',
             project: null,
@@ -44,6 +45,8 @@ describe('gold set', () => {
         ['a duplicate id', (d) => { d.entries.push({ ...d.entries[0] }); }, /duplicate id/],
         ['a bad id', (d) => { d.entries[0].id = 'Q 1'; }, /id must match/],
         ['an unknown status', (d) => { d.entries[0].status = 'approved'; }, /status must be one of draft, reviewed/],
+        ['a missing set', (d) => { delete d.entries[0].set; }, /set must be one of regression, scenario/],
+        ['an unknown set', (d) => { d.entries[0].set = 'smoke'; }, /set must be one of regression, scenario/],
         ['an empty question', (d) => { d.entries[0].question = ' '; }, /question must be a non-empty string/],
         ['a bad project', (d) => { d.entries[0].project = 'onboarding'; }, /project must be a project-\* tag or null/],
         ['no supporting records', (d) => { d.entries[0].supportingRecords = []; }, /supportingRecords must be a non-empty array/],
@@ -73,7 +76,14 @@ describe('gold claim patterns', () => {
     const anyForbidden = (id, answer) => entry(id).mustNotClaims.filter((claim) => matches(claim, answer)).map((c) => c.description);
 
     it('has every entry reviewed', () => {
+        expect(gold.entries.filter((e) => e.set === 'regression')).toHaveLength(10);
+        expect(gold.entries.filter((e) => e.set === 'scenario')).toHaveLength(7);
         expect(gold.entries.filter((e) => e.status !== 'reviewed').map((e) => e.id)).toEqual([]);
+    });
+
+    // The open-questions entries: a decline must fail, so none may accept one.
+    it('accepts no decline on a scenario entry', () => {
+        expect(gold.entries.filter((e) => e.set === 'scenario' && e.acceptDecline).map((e) => e.id)).toEqual([]);
     });
 
     describe('onboarding-invite-worry', () => {
@@ -140,6 +150,89 @@ describe('gold claim patterns', () => {
 
         it('accepts just “Review” as the last step', () => {
             expect(matches(order, steps('Review'))).toBe(true);
+        });
+    });
+
+    describe('scenario-documentation-pain-points', () => {
+        const [afterHours, beyond] = entry('scenario-documentation-pain-points').mustClaims;
+
+        it('doesn’t count cross-referencing several systems as a documentation pain point', () => {
+            const answer = 'Physicians finish notes after clinic hours [1]. Coordinators cross-reference several systems before each call [2].';
+            expect(matches(afterHours, answer)).toBe(true);
+            expect(matches(beyond, answer)).toBe(false);
+        });
+
+        it('counts re-entering the same fields and the underlying EHR problems', () => {
+            expect(matches(beyond, 'Clerks re-type the same sixteen fields [1].')).toBe(true);
+            expect(matches(beyond, 'One asked not to skip fixing the actual EHR problems [1].')).toBe(true);
+        });
+    });
+
+    describe('scenario-calendar-premise', () => {
+        const [already, noRecord] = entry('scenario-calendar-premise').mustClaims;
+
+        it('accepts a premise check that says the step is already required and nothing argues for it', () => {
+            const answer = 'The calendar step is already required [1]. No record argues for making it required: the skip attempts support labeling it clearly [2].';
+            expect(matches(already, answer)).toBe(true);
+            expect(matches(noRecord, answer)).toBe(true);
+            expect(anyForbidden('scenario-calendar-premise', answer)).toEqual([]);
+        });
+
+        it('doesn’t count “even though it’s required” as the premise check', () => {
+            expect(matches(already, '2 of 3 tried to skip step 3, assuming it was optional even though it’s required [1].')).toBe(false);
+        });
+
+        it('forbids presenting skip attempts as support for requiring it', () => {
+            expect(anyForbidden('scenario-calendar-premise', 'The evidence supporting making the calendar step required includes skip attempts [1].')).toHaveLength(1);
+            expect(anyForbidden('scenario-calendar-premise', 'Participants tried to skip it, which shows why it needs to be required [1].')).toHaveLength(1);
+            expect(anyForbidden('scenario-calendar-premise', 'The skip attempts support clearer labeling, not making it required [1].')).toEqual([]);
+        });
+    });
+
+    describe('scenario-care-coordinator-gaps', () => {
+        const gaps = entry('scenario-care-coordinator-gaps');
+        const sources = [{ recordId: 'raw:2025-01-29-contextual-inquiry-chart-review-baseline', recordKind: 'raw', excerpt: 'Revisit with float-pool coordinators. Quantify how often the AVS tool has missed medication changes. Coordinators manually cross-reference 3-4 systems.' }];
+
+        it('fails a bare decline', () => {
+            const verdict = judgeRun(gaps, { answer: 'The sources do not say what hasn’t been learned about care coordinators.', sources: [] });
+            expect(verdict.pass).toBe(false);
+            expect(verdict.failures).toEqual(expect.arrayContaining(['cites no supporting record', expect.stringMatching(/^forbidden: Declines/)]));
+        });
+
+        it('passes the open items with citations and what the data shows', () => {
+            const answer = 'Open questions remain: how float-pool coordinators differ, and how often the AVS tool has missed medication changes [1]. What the data shows: coordinators cross-reference 3-4 systems before each call [1].';
+            expect(judgeRun(gaps, { answer, sources })).toMatchObject({ pass: true, failures: [] });
+        });
+    });
+
+    describe('scenario-session-timeout-open', () => {
+        const [dispute, badge] = entry('scenario-session-timeout-open').mustClaims;
+
+        it('needs the dispute named, not just “this dispute”', () => {
+            expect(matches(dispute, 'The raw notes don’t say whether the 10-minute idle timeout settles this dispute [1].')).toBe(false);
+            expect(matches(dispute, 'Security wanted 15 minutes and clinical ops wanted 4 hours; the records don’t say who won [1].')).toBe(true);
+            expect(matches(dispute, 'Nothing records how the disagreement with clinical ops ended; it is unresolved [1].')).toBe(true);
+        });
+
+        it('keys badge-tap on the topic', () => {
+            expect(matches(badge, 'Nobody confirmed the MFA plan works with badge-tap hardware [1].')).toBe(true);
+        });
+
+        it('forbids a decline', () => {
+            expect(anyForbidden('scenario-session-timeout-open', 'The sources don’t say what is unresolved about the session timeout.')).toHaveLength(1);
+        });
+    });
+
+    describe('scenario-invite-expectation', () => {
+        it('forbids generalizing session 3’s worry to every participant', () => {
+            expect(anyForbidden('scenario-invite-expectation', 'All participants worried the invites would email the team immediately [1].')).toHaveLength(1);
+            expect(anyForbidden('scenario-invite-expectation', 'One admin worried the invites would email the whole team before they were ready [1].')).toEqual([]);
+        });
+    });
+
+    describe('scenario-scribe-trust', () => {
+        it('forbids saying the accuracy fixes restored trust, across a version number', () => {
+            expect(anyForbidden('scenario-scribe-trust', 'Accuracy fixes in v0.2 restored trust [1].')).toHaveLength(1);
         });
     });
 });
@@ -264,5 +357,36 @@ describe('capture/eval chat option overrides', () => {
         await withChatOptions(ollama, chatOverrides({ seed: 42, temperature: null })).chat([], { temperature: 0.2, num_ctx: 8192 });
         await withChatOptions(ollama, chatOverrides({ seed: null, temperature: 0 })).chat([], { temperature: 0.2, num_ctx: 8192 });
         expect(calls).toEqual([{ temperature: 0.2, num_ctx: 8192, seed: 42 }, { temperature: 0, num_ctx: 8192 }]);
+    });
+});
+
+describe('eval report', () => {
+    const entry = (id, set) => ({
+        id, set, status: set === 'scenario' ? 'draft' : 'reviewed', question: `${id}?`, project: null,
+        supportingRecords: ['finding:a'], requiredRawRecord: null,
+        mustClaims: [{ description: 'says yes', pattern: 'yes' }], mustNotClaims: [], evidence: 'e',
+    });
+    const gold = { version: 1, entries: [entry('r1', 'regression'), entry('r2', 'regression'), entry('s1', 'scenario')] };
+    const run = (answer) => ({ secs: 1, answer, sources: [{ id: 'finding:a#0', recordId: 'finding:a', recordKind: 'finding', title: 'A', section: null, excerpt: 'yes' }], shown: [{ n: 1, recordId: 'finding:a', kind: 'finding' }] });
+    const question = (id, answer) => ({ id, question: `${id}?`, project: null, ranking: [], seeded: [run(answer)], unseeded: [] });
+    const metadata = {
+        harnessVersion: 1, label: 'x', createdAt: 't', corpusCommit: 'c', appCommit: 'a', model: 'm', embedModel: 'e',
+        ollamaVersion: 'o', modelDigest: 'd', embedModelDigest: 'd', seed: 42, temperature: 0.2, chatOptions: {}, topK: 6, seededRuns: 1, unseededRuns: 0,
+    };
+
+    it('reports each gold set in its own section with its own pass count', () => {
+        const report = renderReport([{ metadata, questions: [question('r1', 'yes [1].'), question('r2', 'no [1].'), question('s1', 'yes [1].')] }], gold);
+        const section = (name) => report.slice(report.indexOf(`## ${name} set`), report.indexOf('\n## ', report.indexOf(`## ${name} set`) + 1));
+        expect(section('Regression')).toContain('## Regression set (2 questions)');
+        expect(section('Regression')).toContain('- Gold pass: 1 of 2');
+        expect(section('Regression')).not.toContain('`s1`');
+        expect(section('Scenario')).toContain('**1 of 1 scenario entries are still drafts**');
+        expect(section('Scenario')).toContain('- Gold pass: 1 of 1');
+    });
+
+    it('leaves out a set the results don’t ask', () => {
+        const report = renderReport([{ metadata, questions: [question('s1', 'yes [1].')] }], gold);
+        expect(report).not.toContain('## Regression set');
+        expect(report).toContain('## Scenario set (1 question)');
     });
 });
