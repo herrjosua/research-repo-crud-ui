@@ -4,7 +4,7 @@ import ChatMessage from './ChatMessage';
 import Composer from './Composer';
 import QuestionPicker from './QuestionPicker';
 import StarterQuestions from './StarterQuestions';
-import { ERROR_COPY, LOADING_TEXT, NO_PICKER_QUESTIONS, PICKER_LABEL, SLOW_TEXT, UNAVAILABLE_COPY } from './askCopy';
+import { ERROR_COPY, LOADING_TEXT, NO_PICKER_QUESTIONS, NO_STARTERS, PICKER_LABEL, SLOW_TEXT, UNAVAILABLE_COPY } from './askCopy';
 import styles from './ChatPanel.module.scss';
 
 /**
@@ -15,7 +15,8 @@ import styles from './ChatPanel.module.scss';
  * (`./useAskRepo.js`), owned by `AskTheRepo.jsx`, which passes the active
  * conversation's slice of it down here.
  *
- * - `messages`, `starters` (question strings; may be empty).
+ * - `messages`, `starters` (question strings; may be empty, which shows
+ *   a line pointing to the composer instead).
  * - `status` (`'idle' | 'loading' | 'error'`), `slow` (the answer is
  *   taking long enough to explain why), `error` (`{ kind, question }` when
  *   `status` is `'error'`; `kind` keys `./askCopy.js`'s `ERROR_COPY`).
@@ -31,7 +32,8 @@ import styles from './ChatPanel.module.scss';
  *   conversation has started a `QuestionPicker` dropdown takes the
  *   composer's place. Either way, picking one calls `onPickQuestion`
  *   straight away, and `pickerNote` (where the answers came from) sits
- *   under the picker. An empty array says the project has none yet.
+ *   under the picker. An empty array says the project has none yet
+ *   (a safety net: AskTheRepo only lists projects that have some).
  * - `onSend(text)`, `onRetry()`, `onSignIn()`, `onOpenSource(source,
  *   event)` (an inline citation was clicked), `onPickQuestion(question)`.
  *
@@ -156,8 +158,12 @@ export default function ChatPanel({
                     </div>
                 )}
                 {messages.length === 0 ? (
-                    !unavailable && !picking && starters.length > 0 && (
-                        <StarterQuestions questions={starters} onSelect={handleSelectStarter} />
+                    !unavailable && !picking && (
+                        starters.length > 0 ? (
+                            <StarterQuestions questions={starters} onSelect={handleSelectStarter} />
+                        ) : (
+                            <p className={styles.pickerNone}>{NO_STARTERS}</p>
+                        )
                     )
                 ) : (
                     messages.map((message) => (
