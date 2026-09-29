@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
-import { Button, InlineLoading, InlineNotification } from '@carbon/react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Button, Callout, InlineLoading, InlineNotification, Link } from '@carbon/react';
 import ChatMessage from './ChatMessage';
 import Composer from './Composer';
 import QuestionPicker from './QuestionPicker';
 import StarterQuestions from './StarterQuestions';
-import { CONFIG_LOADING_TEXT, ERROR_COPY, LOADING_TEXT, NO_PICKER_QUESTIONS, NO_STARTERS, PICKER_LABEL, SLOW_TEXT, UNAVAILABLE_COPY } from './askCopy';
+import {
+    CONFIG_LOADING_TEXT, ERROR_COPY, LOADING_TEXT, NO_PICKER_QUESTIONS, NO_STARTERS, PICKER_LABEL,
+    RUN_LOCALLY_LEAD, RUN_LOCALLY_LINK, RUN_LOCALLY_URL, SLOW_TEXT, STATIC_BANNER_TITLE, UNAVAILABLE_COPY,
+} from './askCopy';
 import styles from './ChatPanel.module.scss';
 
 /**
@@ -37,9 +40,12 @@ import styles from './ChatPanel.module.scss';
  *   lists the questions in the starter-question look, and once a
  *   conversation has started a `QuestionPicker` dropdown takes the
  *   composer's place. Either way, picking one calls `onPickQuestion`
- *   straight away, and `pickerNote` (where the answers came from) sits
- *   under the picker. An empty array says the project has none yet
- *   (a safety net: AskTheRepo only lists projects that have some).
+ *   straight away. An empty array says the project has none yet (a
+ *   safety net: AskTheRepo only lists projects that have some).
+ * - `captureNote`: static mode's "Answers are pre-generated" banner body
+ *   (where the answers came from, `./askCopy.js`'s `captureNote`). The
+ *   banner is the panel's first row, above the scrolling thread, whenever
+ *   the questions are offered (so never in live mode or after a 503).
  * - `onSend(text)`, `onRetry()`, `onSignIn()`, `onOpenSource(source,
  *   event)` (an inline citation was clicked), `onPickQuestion(question)`.
  *
@@ -60,7 +66,7 @@ export default function ChatPanel({
     configLoading = false,
     announcement = '',
     pickerQuestions = null,
-    pickerNote = '',
+    captureNote = '',
     onSend,
     onRetry,
     onSignIn,
@@ -79,6 +85,7 @@ export default function ChatPanel({
     // A 503 still wins: with no answers to give, the usual notice and
     // disabled composer show instead.
     const picking = pickerQuestions !== null && !unavailable;
+    const bannerTitleId = useId();
     const errorCopy = status === 'error' && error ? ERROR_COPY[error.kind] ?? ERROR_COPY.unknown : null;
 
     // A failed question that can simply be asked again goes back into the
@@ -143,7 +150,39 @@ export default function ChatPanel({
     );
 
     return (
-        <div className={styles.panel}>
+        <div className={picking ? `${styles.panel} ${styles.panelWithBanner}` : styles.panel}>
+            {/* Static mode's disclosure, in its own row above the thread so
+                it stays in view before and after a question is picked
+                (the thread scrolls to its end after each answer). A Callout,
+                like DemoDisclaimer: permanent content with no live region,
+                read in order rather than announced on each visit. Carbon
+                requires links inside it to be described by its title. */}
+            {picking && (
+                <Callout
+                    kind="info"
+                    lowContrast
+                    title={STATIC_BANNER_TITLE}
+                    titleId={bannerTitleId}
+                    subtitle={(
+                        <>
+                            {captureNote} {RUN_LOCALLY_LEAD}
+                            <Link
+                                href={RUN_LOCALLY_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                inline
+                                aria-describedby={bannerTitleId}
+                            >
+                                {RUN_LOCALLY_LINK}
+                                {/* The no-break space keeps the underline off
+                                    a trailing space before the period. */}
+                                <span className="cds--visually-hidden">&nbsp;(opens in a new tab)</span>
+                            </Link>.
+                        </>
+                    )}
+                    className={styles.staticBanner}
+                />
+            )}
             {/* Focusable so the thread can be scrolled from the keyboard even
                 when nothing inside it is focusable (an empty conversation
                 while unavailable has no starters) — axe's
@@ -169,7 +208,6 @@ export default function ChatPanel({
                         ) : (
                             <p className={styles.pickerNone}>{NO_PICKER_QUESTIONS}</p>
                         )}
-                        {pickerNote && <p className={styles.pickerNote}>{pickerNote}</p>}
                     </div>
                 )}
                 {messages.length === 0 ? (
@@ -234,7 +272,6 @@ export default function ChatPanel({
                 <QuestionPicker
                     questions={pickerQuestions}
                     disabled={loading}
-                    note={pickerNote}
                     onPick={onPickQuestion}
                 />
             )}

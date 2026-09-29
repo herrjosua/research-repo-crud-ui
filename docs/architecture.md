@@ -104,9 +104,11 @@ sequenceDiagram
 - **Project filter.** The project dropdown filters the list by each
   question's own project, an exact match like the live filter. "All
   projects" lists every question; a project with none says so.
-- **Honest about it.** A note under the picker says the answers were
-  generated ahead of time, naming the model and capture date from the
-  config, and that running the project locally lets you ask anything.
+- **Honest about it.** An "Answers are pre-generated" info banner (a
+  Carbon `Callout`, so no live region) is the chat panel's first row, above
+  the scrolling thread, so it stays in view before and after a question is
+  picked. It names the model and capture date from the config and links
+  "run the project locally" to the README's Getting started section.
   There's no simulated delay, typing effect or fake progress, and no "first
   question is slow" hint.
 - **Everything else is live.** Answers go through the same `useAskRepo`

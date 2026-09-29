@@ -49,10 +49,19 @@ function captureDate(capturedAt) {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
+// Static mode's banner at the top of the chat panel (ChatPanel), saying
+// the answers were captured ahead of time and pointing to where running
+// the project is explained. RUN_LOCALLY_LINK is the linked phrase.
+export const STATIC_BANNER_TITLE = 'Answers are pre-generated';
+export const RUN_LOCALLY_LEAD = 'To ask your own questions, ';
+export const RUN_LOCALLY_LINK = 'run the project locally';
+export const RUN_LOCALLY_URL = 'https://github.com/herrjosua/research-repo-crud-ui#getting-started';
+
 // Where static answers came from, from GET /api/ask/config's `capture`
-// (`{ model, capturedAt }`). Leaves out whichever part is missing.
+// (`{ model, capturedAt }`): the banner body's first sentence. Leaves out
+// whichever part is missing.
 export function captureNote(capture) {
     const details = [capture?.model, capture?.capturedAt && captureDate(capture.capturedAt)].filter(Boolean);
     const run = details.length > 0 ? `a local model run (${details.join(', ')})` : 'a local model run';
-    return `These answers were generated ahead of time from ${run} on sample data. Run the project locally to ask anything.`;
+    return `Captured from ${run} on sample data.`;
 }
