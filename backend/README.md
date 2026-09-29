@@ -260,21 +260,46 @@ and the pass/fail rules (`tests/askEval.test.js`).
 
 ```bash
 cd backend
-node scripts/eval-ask.js run --label baseline          # seed 42, temperature 0.2, 3 seeded + 3 unseeded runs
-node scripts/eval-ask.js run --label after-chunking     # after a change, same corpus commit and seed
-node scripts/eval-ask.js report baseline after-chunking # ask/eval/results/baseline-vs-after-chunking.md
+node scripts/eval-ask.js run --label after-chunking --set regression  # seed 42, temperature 0.2, 3 seeded + 3 unseeded runs
+node scripts/eval-ask.js report baseline after-chunking                # ask/eval/results/baseline-vs-after-chunking.md
+node scripts/eval-ask.js run --label after-chunking-scenarios --set scenario
+node scripts/eval-ask.js report baseline-scenarios after-chunking-scenarios
 ```
 
 `run` writes the runs to `ask/eval/results/<label>.json` and a report to
-`ask/eval/results/<label>.md`. A full run of the 10 questions takes about
-two minutes with the model loaded. `--seed`, `--temperature`,
+`ask/eval/results/<label>.md`. A run of all 17 questions takes three to four
+minutes with the model loaded. `--set regression|scenario` asks one
+gold set's questions (all of them without it); `--seed`, `--temperature`,
 `--seeded-runs`, `--unseeded-runs` and `--only id,id` change the defaults.
 `report` re-judges stored runs against the current gold file, so editing
 the gold set needs no re-run. With two labels it puts them side by side,
-and it refuses unless both share the harness version, corpus commit, seed and
-temperature. It warns when the Ollama version or a model digest differs.
+and it refuses unless both ask the same questions and share the harness
+version, corpus commit, seed and temperature, so compare a `--set
+regression` run with `baseline` and a `--set scenario` run with
+`baseline-scenarios`. It warns when the Ollama version or a model digest
+differs.
 
 **The gold set** is `ask/eval/gold.json`, kept apart from `questions.json`.
+It holds two sets, named by each entry's `set`:
+
+- `regression` (10 questions): questions the pipeline has answered wrongly
+  before (mostly from the corpus audit), kept to catch the errors coming back.
+- `scenario` (7 questions, v1.3.6.26): questions a researcher or designer
+  would ask, taken from the corpus coverage report. They are unscoped, cover
+  documentation pain points, why physicians didn't trust the scribe's drafts,
+  what nurses wanted from citations, how new admins expected the invite step
+  to work, and two new behaviors. The premise check
+  (`scenario-calendar-premise`) asks for evidence for making the calendar step
+  required, and a correct answer says it already is required and that no
+  record argues for requiring it. The open-questions entries
+  (`scenario-care-coordinator-gaps`, `scenario-session-timeout-open`) ask what
+  is still unknown; the raw notes list open items, so a correct answer lists
+  them with citations and says what the data does show, and a decline fails
+  (neither sets `acceptDecline`).
+
+The report gives each set its own section, with its own pass counts; the two
+are never added together.
+
 Each entry has the question and project, the records that support a correct
 answer (`supportingRecords`), the raw session it must cite if one holds the
 answer (`requiredRawRecord`, or `null`), claims that must and must not
@@ -307,9 +332,14 @@ unseeded runs gave, median latency, the capture script's review flags, and
 the answer text, with the cited excerpts underneath. Stacks and unseeded
 variation are reported but don't decide pass or fail.
 
-`ask/eval/results/baseline.md` is the checked-in baseline for the pipeline
-as of v1.3.6.22. Re-run it rather than comparing across machines: identical
-seeded answers are only expected on the same Ollama build and model digests.
+`ask/eval/results/baseline.md` is the checked-in regression baseline for the
+pipeline as of v1.3.6.22 (5 of 10 pass). `ask/eval/results/baseline-scenarios.md`
+is the scenario baseline as of v1.3.6.26 (0 of 7 pass; the premise-check and
+open-questions entries were written to fail on the answers of that time).
+Adding the `set` field changed neither the harness version nor what `report`
+compares, since a run doesn't store its entries' sets. Re-run them rather
+than comparing across machines: identical seeded answers are only expected on
+the same Ollama build and model digests.
 
 For a production deployment, see
 [`.env.production.example`](./.env.production.example) instead — it covers
