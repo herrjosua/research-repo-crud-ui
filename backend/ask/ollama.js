@@ -10,7 +10,16 @@ const DEFAULTS = {
     // Generation on a 9B model is seconds-to-a-minute locally, and the very
     // first call after the model is evicted also pays its load time.
     timeoutMs: 180_000,
+    // checkReady() only asks Ollama for its model list, so a short wait
+    // tells a stopped Ollama apart from a slow one quickly.
+    readyTimeoutMs: 3_000,
 };
+
+// Ollama names a model without a tag as ":latest", so "nomic-embed-text"
+// and "nomic-embed-text:latest" are the same model.
+function withTag(name) {
+    return name.includes(':') ? name : `${name}:latest`;
+}
 
 // Thrown for anything that goes wrong talking to Ollama (unreachable, non-2xx,
 // malformed JSON, timeout). routes/ask.js turns it into a generic 502 and
@@ -28,6 +37,7 @@ function createOllamaClient({
     embedModel = DEFAULTS.embedModel,
     chatModel = DEFAULTS.chatModel,
     timeoutMs = DEFAULTS.timeoutMs,
+    readyTimeoutMs = DEFAULTS.readyTimeoutMs,
 } = {}) {
     const root = baseUrl.replace(/\/+$/, '');
 
@@ -55,8 +65,35 @@ function createOllamaClient({
     }
 
     return {
+        baseUrl: root,
         embedModel,
         chatModel,
+
+        // Resolves when Ollama answers and has both models pulled; rejects
+        // with an OllamaError whose message says which of those failed.
+        // GET /api/tags lists the pulled models without loading any.
+        async checkReady() {
+            let res;
+            try {
+                res = await fetch(`${root}/api/tags`, { signal: AbortSignal.timeout(readyTimeoutMs) });
+            } catch (err) {
+                throw new OllamaError(`Ollama isn't reachable at ${root}`, err.message);
+            }
+            if (!res.ok) {
+                throw new OllamaError(`Ollama at ${root} answered ${res.status}`, (await res.text()).slice(0, 500));
+            }
+            let data;
+            try {
+                data = await res.json();
+            } catch (err) {
+                throw new OllamaError(`Ollama at ${root} returned invalid JSON`, err.message);
+            }
+            const pulled = new Set((Array.isArray(data.models) ? data.models : []).map((model) => withTag(String(model.name))));
+            const missing = [chatModel, embedModel].filter((name) => !pulled.has(withTag(name)));
+            if (missing.length > 0) {
+                throw new OllamaError(`Ollama at ${root} doesn't have ${missing.join(' or ')} (run: ollama pull ${missing.join(' && ollama pull ')})`);
+            }
+        },
 
         // One vector per input string, in order. Ollama's /api/embed takes the
         // whole batch in one request.

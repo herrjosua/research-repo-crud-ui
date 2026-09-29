@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Grid, Column, Tabs, TabList, Tab, TabPanels, TabPanel } from '@carbon/react';
 import { useQueryClient } from '@tanstack/react-query';
 import BreadcrumbBar from './shell/BreadcrumbBar';
@@ -13,6 +13,14 @@ import SavedInsightsView from './insights/SavedInsightsView';
 import { useSavedInsights } from './insights/useSavedInsights';
 import { useAskConfig } from '../api/ask';
 import styles from './AskTheRepo.module.scss';
+
+// Dev only: the provider toggle (dev/DevProviderToggle.jsx). Vite replaces
+// import.meta.env.DEV with false in a production build, so this branch and
+// the dynamic import inside it are dropped: the toggle, its API calls
+// (api/dev.js) and its styles aren't in the build at all. CI checks dist/
+// for them. Under `vite dev` (which e2e also runs) it's loaded, but renders
+// nothing unless the backend has its dev routes (DEV_TOOLS_ENABLED=true).
+const DevProviderToggle = import.meta.env.DEV ? lazy(() => import('./dev/DevProviderToggle')) : null;
 
 // Order here drives both the Tab/TabPanel pairing (Carbon's Tabs matches
 // them up by index) and Tabs' own controlled `selectedIndex`.
@@ -40,6 +48,10 @@ export default function AskTheRepo() {
     // be local-only to the rail.
     const [activeProjectId, setActiveProjectId] = useState(ALL_PROJECTS);
     const [activeConversationId, setActiveConversationId] = useState(null);
+    // Bumped by a dev provider switch, to remount ChatPanel: its local state
+    // (the composer's text, "Save as deliverable" toggles) goes with the
+    // conversations.
+    const [chatGeneration, setChatGeneration] = useState(0);
 
     // GET /api/ask/config: whether this server can answer at all, and the
     // real project list (project-* tags with labels and record counts).
@@ -157,6 +169,20 @@ export default function AskTheRepo() {
         if (!activeConversationId) setActiveConversationId(conversationId);
     }
 
+    // Dev only: the backend's provider was just switched. Everything asked
+    // so far belongs to the other mode, whose threads can't tell the two
+    // apart and whose retries the new mode rejects, so start clean: close
+    // the conversation, forget the list, and go back to "All projects" (the
+    // project list differs by mode). Saved insights and pins are sources,
+    // valid in either mode, so they stay. The config reloads meanwhile
+    // (api/dev.js), which shows its loading state until the new mode is known.
+    function handleProviderSwitched() {
+        ask.reset();
+        setActiveConversationId(null);
+        setActiveProjectId(ALL_PROJECTS);
+        setChatGeneration((n) => n + 1);
+    }
+
     // A 401 means the session is gone. Refetching "me" gets the same 401,
     // which switches App to the login form.
     function handleSignIn() {
@@ -206,7 +232,13 @@ export default function AskTheRepo() {
                 visible heading would take height from the rail/chat row,
                 which fills the viewport. */}
             <h1 className="cds--visually-hidden">Ask the Repo</h1>
-            <BreadcrumbBar />
+            <BreadcrumbBar
+                actions={DevProviderToggle && (
+                    <Suspense fallback={null}>
+                        <DevProviderToggle onSwitched={handleProviderSwitched} />
+                    </Suspense>
+                )}
+            />
             {/* Same Grid/Column Dashboard.jsx wraps its whole page in (a full-
                 width Column: sm=4/md=8/lg=16) — Carbon's Grid is what supplies
                 the outer page margin there, and BreadcrumbBar wraps itself the
@@ -273,6 +305,7 @@ export default function AskTheRepo() {
                                     </Column>
                                     <Column lg={8} md={4} sm={4}>
                                         <ChatPanel
+                                            key={chatGeneration}
                                             messages={activeMessages}
                                             starters={startersFor(activeProjectId)}
                                             status={activeRequest?.status}

@@ -47,7 +47,10 @@ SESSION_SECRET=<paste the generated value here>
 AGENTIC_REPO_ROOT=/absolute/path/to/your/agentic-repo
 PYTHON_BIN=/absolute/path/to/your/agentic-repo/.venv/bin/python3
 DEMO_MODE=false
+DEV_TOOLS_ENABLED=false
 ```
+(`DEV_TOOLS_ENABLED=true` adds the dev-only provider toggle; see [Switching
+providers without a restart](#switching-providers-without-a-restart-dev-only).)
 **Never commit `.env`** — it's already covered by `.gitignore`. The server
 refuses to start (`routes/records.js`) if `AGENTIC_REPO_ROOT` is unset.
 
@@ -94,6 +97,45 @@ To check the setup against your real Ollama, run the live test (see
 [Testing](#testing)). The request and response format is under [Ask the Repo
 (v1.3.6)](#ask-the-repo-v136) below; for how the pieces fit together, see
 [`../docs/architecture.md`](../docs/architecture.md).
+
+#### Switching providers without a restart (dev only)
+
+`LLM_PROVIDER` sets the provider Ask the Repo starts with. On a dev server
+you can switch between `static` and `ollama` while it runs, from the **Dev**
+toggle at the right of the Ask page's breadcrumb bar, or with
+`POST /api/dev/provider` (see [Dev tools](#dev-tools-dev-only)). Set both in
+`backend/.env`:
+
+```
+NODE_ENV=development
+DEV_TOOLS_ENABLED=true
+```
+
+- **Where it works.** The `/api/dev` routes are registered only when
+  `DEV_TOOLS_ENABLED` is exactly `true` **and** `NODE_ENV` is `development`
+  or `test` (`devTools.js`). Anywhere else, including `NODE_ENV=production`
+  or `NODE_ENV` unset, they're never registered, whatever the flag says, and
+  the server logs why it ignored the flag. Never set `DEV_TOOLS_ENABLED` in
+  production.
+- **What a switch does.** The provider lives in the server process's memory
+  (`ask/activeProvider.js`); a restart goes back to `LLM_PROVIDER`. `GET
+  /api/ask/config` and `POST /api/ask` follow a switch immediately. A
+  question already being answered finishes with the provider it started on.
+  The static answers and the Ollama client are each loaded the first time
+  they're needed and then kept, so switching back to `ollama` reuses the
+  embeddings already computed.
+- **Turning Ask on.** With `LLM_PROVIDER` unset, Ask the Repo starts off,
+  and the toggle can turn it on (`static` or `ollama`). It can't turn it off
+  again: the endpoint only accepts those two values. Restart without
+  `LLM_PROVIDER` to turn it off.
+- **Checks before switching.** To `ollama`: Ollama must answer
+  `GET /api/tags` within 3 seconds and have both models pulled, or the switch
+  fails with `502` saying which, and the provider doesn't change. To
+  `static`: the answers file must be valid, or it fails with `500`.
+- **In the browser.** The toggle is in the frontend only under `vite dev`
+  (see `frontend/README.md`). A successful switch clears the Ask tab's
+  conversations and resets the project to "All projects"; saved insights and
+  pins stay.
 
 #### Static answers for the public demo (`LLM_PROVIDER=static`)
 
@@ -232,8 +274,8 @@ seconds while the corpus is embedded and the model loads (after about 5
 seconds the page says why), and later questions are faster. With
 `LLM_PROVIDER` unset, the page says Ask the Repo isn't available in this
 environment and disables asking; the rest of the app works as usual.
-(`LLM_PROVIDER=static` is backend-only for now: the frontend doesn't show the
-question picker yet.)
+With `LLM_PROVIDER=static` it offers the captured questions to pick from
+instead of a composer.
 
 ## Testing
 
@@ -297,6 +339,17 @@ covers, not a count to keep in sync:
   cache, chunking, kind/date mapping, the plain-text sanitizer, and
   citation parsing.
 - **`tests/ask.disabled.test.js`** — `503` when `LLM_PROVIDER` is unset.
+- **`tests/devTools.test.js`** — the dev-tools gate: registered only with
+  `DEV_TOOLS_ENABLED=true` and `NODE_ENV` development or test; never under
+  production or an unset `NODE_ENV` (a plain `404`), and the warning that
+  says why a set flag was ignored.
+- **`tests/devProvider.test.js`** — `POST /api/dev/provider` end to end:
+  `401` signed out, `400` for anything but `"static"` or `"ollama"`
+  (including a `text/plain` or form body), turning Ask on from unset, config
+  and `POST /api/ask` following each switch, `502` naming why Ollama isn't
+  usable (unreachable, an error, a missing model) with the provider
+  unchanged, `500` for a bad answers file, a question in flight finishing on
+  its own provider, and the embeddings kept across switches.
 - **`tests/ask.static.test.js`** — `LLM_PROVIDER=static` against a fixture
   answers file: the config's `mode` and `questions`, answers by `questionId`
   in the live shape, `400` for free text, `404` for an unknown id, `401`
@@ -347,13 +400,15 @@ backend/
 ├── proxyTrust.js       Cloudflare's published IP ranges plus the host proxy's own address, for Express's trust-proxy setting in production
 ├── throwawayRepo.js    Marks/detects a disposable agentic-repo checkout made by tests/helpers/setupTestRepo.js
 ├── projects.js         agentic-repo's project-tag rules (research/projects.yml): which project-* tags PUT keeps, and removing a deleted raw session's entry
+├── devTools.js         The dev-tools gate (DEV_TOOLS_ENABLED=true and NODE_ENV development|test) and mountDevTools, which app.js calls
 ├── validation.js       Input validation for POST /sessions and PUT /records/:id frontmatter, mirroring agentic-repo's own field rules
 ├── ask/                Ask the Repo's RAG pipeline (used by routes/ask.js)
 │   ├── config.js         LLM_PROVIDER switch (ollama | static)
+│   ├── activeProvider.js The provider in use now: starts as LLM_PROVIDER, switchable on a dev server (routes/dev.js)
 │   ├── pipeline.js       One question end to end; shared by routes/ask.js and the capture script
 │   ├── staticAnswers.js  Loads and validates the static demo's captured answers
 │   ├── static/           questions.json (curated) and answers.json (captured) for LLM_PROVIDER=static
-│   ├── ollama.js         Plain-fetch client for Ollama's /api/embed and /api/chat
+│   ├── ollama.js         Plain-fetch client for Ollama's /api/embed and /api/chat, plus a readiness check (/api/tags)
 │   ├── corpus.js         export_records.py records → passages; kind/date mapping for sources
 │   ├── retrieval.js      Cosine similarity, ranking, and the lazy in-memory embedding cache
 │   ├── answer.js         Prompt, citation renumbering, and the Source objects returned
@@ -369,6 +424,7 @@ backend/
 │   ├── health.js    GET /api/health — status, version, startedAt; polled by scripts/deploy.sh
 │   ├── auth.js      Signup / login / logout / me / demo-users / demo-login
 │   ├── ask.js       POST /api/ask — Ask the Repo (local Ollama RAG, or captured answers when static), gated by LLM_PROVIDER
+│   ├── dev.js       GET/POST /api/dev/provider — dev-only provider switch; mounted only when devTools.js allows
 │   └── records.js   Sessions + file CRUD (shells out to agentic-repo's Python scripts); validates topicSlug/slug against a safe pattern before either reaches the Python scripts
 ├── tests/
 │   ├── auth.test.js           Auth flow, rate limiting, and demo mode tests
@@ -381,13 +437,15 @@ backend/
 │   ├── ask.test.js            POST /api/ask integration tests against a fake Ollama
 │   ├── ask.unit.test.js       Similarity, embedding cache, chunking, sanitizer, citation tests
 │   ├── ask.disabled.test.js   POST /api/ask with LLM_PROVIDER unset
+│   ├── devTools.test.js       The dev-tools gate and where /api/dev is (never) registered
+│   ├── devProvider.test.js    The dev-only provider switch, POST /api/dev/provider
 │   ├── ask.static.test.js     GET /api/ask/config and POST /api/ask with LLM_PROVIDER=static
 │   ├── staticAnswers.data.test.js  The checked-in static answers file (ask/static/answers.json)
 │   ├── staticAnswers.test.js  The static answers validator and the capture script's review checks
 │   ├── ask.live.test.js       POST /api/ask against a real local Ollama (OLLAMA_LIVE=1 only)
 │   └── helpers/
 │       ├── setupTestRepo.js   Creates/destroys the disposable fixture repo shared by every test file
-│       └── fakeOllama.js      Local HTTP server speaking Ollama's /api/embed and /api/chat
+│       └── fakeOllama.js      Local HTTP server speaking Ollama's /api/tags, /api/embed and /api/chat
 ├── .env.example              Template for required environment variables (development)
 ├── .env.production.example   Template for the additional settings NODE_ENV=production reads — see ../docs/deploy.md
 └── app.db        SQLite file (git-ignored, created on first run; app.test.*.db files are the test-only equivalent)
@@ -431,13 +489,13 @@ otherwise).
 | Method | Path       | Body                                   | Notes |
 |--------|------------|----------------------------------------|-------|
 | GET    | `/api/ask/config` | — | What the Ask tab needs up front: whether asking works here, and the project list. Always `200` for a signed-in user (never `503`); `401` when signed out. |
-| POST   | `/api/ask` | `{ question: string, project?: string }`, or `{ questionId: string }` when static | RAG over every record, answered by a local Ollama; with `LLM_PROVIDER=static`, a captured answer. `503` when `LLM_PROVIDER` is unset; `502` if Ollama is unreachable or fails. |
+| POST   | `/api/ask` | `{ question: string, project?: string }`, or `{ questionId: string }` when static | RAG over every record, answered by a local Ollama; with `LLM_PROVIDER=static`, a captured answer. `503` when no provider is active (`LLM_PROVIDER` unset, and not switched on by the dev toggle); `502` if Ollama is unreachable or fails. |
 
 **`GET /api/ask/config`** responds:
 
 ```jsonc
 {
-  "enabled": true,  // true when LLM_PROVIDER is ollama or static; false means POST /api/ask answers 503
+  "enabled": true,  // true when a provider is active (LLM_PROVIDER, or a dev switch); false means POST /api/ask answers 503
   "mode": "live",   // "live" (ollama), "static", or null when disabled
   "projects": [
     { "id": "project-onboarding", "label": "Onboarding", "count": 21 },
@@ -558,6 +616,18 @@ model is called, so there's no `502`. See [Static answers for the public
 demo](#static-answers-for-the-public-demo-llm_providerstatic) for where the
 answers come from.
 
+### Dev tools (dev only)
+
+Registered only when `DEV_TOOLS_ENABLED=true` **and** `NODE_ENV` is
+`development` or `test`; otherwise these paths don't exist (a signed-in
+request gets the usual JSON `404`). See [Switching providers without a
+restart](#switching-providers-without-a-restart-dev-only).
+
+| Method | Path | Body | Notes |
+|--------|------|------|-------|
+| GET  | `/api/dev/provider` | — | `{ provider: "static" \| "ollama" \| null }`: the provider Ask the Repo answers with now (`null`: off). |
+| POST | `/api/dev/provider` | `{ provider: "static" \| "ollama" }` | Switches the provider for this server process until it restarts, and responds `{ provider }`. `400` for any other value or a body that isn't JSON (the provider is unchanged); `502` when switching to `ollama` and Ollama isn't reachable or lacks a model (the message says which; unchanged); `500` when switching to `static` and the answers file is invalid (unchanged). |
+
 ### Git attribution (v0.8)
 
 `POST /sessions`, `PUT /records/:id`, and `DELETE /records/:id` each commit
@@ -652,6 +722,16 @@ cookies.txt` / `-b cookies.txt` to persist the cookie across requests.
   to avoid a vulnerable `sqlite3`/`node-gyp`/`tar` dependency chain
 - All `/api/sessions`, `/api/records` and `/api/ask` routes require an
   authenticated session
+- There are no CSRF tokens. Cross-site requests are stopped by the
+  `sameSite: lax` session cookie and by the API taking JSON bodies only:
+  `express.json()` parses only `application/json`, which a page on another
+  origin can't send without a CORS preflight this app never answers. A
+  `text/plain` or form body arrives empty and is rejected (`400`), which
+  `tests/devProvider.test.js` checks for the dev provider switch
+- The dev-only `/api/dev` routes (the provider switch) are registered at
+  startup only with `DEV_TOOLS_ENABLED=true` and `NODE_ENV` development or
+  test (`devTools.js`), and never otherwise, so there's no runtime permission
+  check to get wrong. They also require a session
 - `POST /api/ask` never passes model output through raw: the answer is
   flattened to plain text server-side (HTML tags and `<script>`/`<style>`
   contents removed, markdown unwrapped) before it's returned, and Ollama

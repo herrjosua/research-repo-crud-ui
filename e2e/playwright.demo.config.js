@@ -23,7 +23,9 @@ export default defineConfig({
             // only ASK_STATIC_ANSWERS_FILE), never the real answers file.
             // Set explicitly so an LLM_PROVIDER in backend/.env can't leak in
             // (dotenv never overrides a variable that's already set).
-            env: { NODE_ENV: 'test', DEMO_MODE: 'true', LLM_PROVIDER: 'static' },
+            // DEV_TOOLS_ENABLED false for the same reason: the public demo
+            // never has the dev-only provider toggle.
+            env: { NODE_ENV: 'test', DEMO_MODE: 'true', LLM_PROVIDER: 'static', DEV_TOOLS_ENABLED: 'false' },
             reuseExistingServer: false,
             // Lets start-backend.js delete the throwaway repo on the way out.
             gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 },

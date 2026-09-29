@@ -21,3 +21,14 @@
     color: vars.$text-secondary;
     white-space: nowrap;
 }
+
+// Controls on the right (the Ask page's dev-only provider toggle). Pushed
+// right on their own when there's no `meta`.
+.actions {
+    margin-inline-start: auto;
+    padding-inline-start: 1rem;
+}
+
+.meta + .actions {
+    margin-inline-start: 0;
+}

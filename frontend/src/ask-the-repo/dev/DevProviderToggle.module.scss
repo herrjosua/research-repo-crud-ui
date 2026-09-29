@@ -1,0 +1,37 @@
+// Sits at the right end of BreadcrumbBar's row (its `actions` slot), inside
+// the bar's 2.5rem height: the sm ContentSwitcher is 2rem tall.
+.toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tag {
+    margin: 0;
+}
+
+// Carbon gives each Switch an equal share of the switcher's width and
+// truncates a label that doesn't fit, so the switcher needs room for the
+// longer one ("Live (Ollama)") at full length: two 8rem buttons.
+.switcher {
+    flex: none;
+    inline-size: 16rem;
+}
+
+.loading {
+    inline-size: auto;
+    min-block-size: 0;
+}
+
+// Floats under the bar's right edge rather than taking a row: the Ask page
+// fills the viewport exactly (see AskTheRepo.module.scss), so a new row
+// would squeeze the chat instead.
+.error {
+    position: absolute;
+    inset-block-start: calc(100% + 0.25rem);
+    inset-inline-end: 0;
+    z-index: 9000;
+    inline-size: 22rem;
+    max-inline-size: calc(100vw - 2rem);
+}

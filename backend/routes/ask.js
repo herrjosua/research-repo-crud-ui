@@ -1,12 +1,9 @@
 const express = require('express');
 const requireAuth = require('../middleware/requireAuth');
 const { SAFE_SLUG_RE } = require('../validation');
-const { resolveProvider } = require('../ask/config');
-const { createOllamaClient, OllamaError, OLLAMA_DEFAULTS } = require('../ask/ollama');
+const activeProvider = require('../ask/activeProvider');
+const { OllamaError } = require('../ask/ollama');
 const { loadRecords } = require('../ask/corpus');
-const { createEmbeddingIndex } = require('../ask/retrieval');
-const { createAskPipeline } = require('../ask/pipeline');
-const { loadStaticAnswers, ANSWERS_FILE } = require('../ask/staticAnswers');
 const { readProjectList, recordProjectTag } = require('../projects');
 
 // ---------------------------------------------------------------------------
@@ -61,40 +58,19 @@ const { readProjectList, recordProjectTag } = require('../projects');
 //   (No `page`: markdown records have no pages. SourceCard already omits it.)
 //
 // Errors (all `{ error: string }`): 400 bad input, 401 not logged in,
-// 404 unknown questionId (static), 503 LLM_PROVIDER not set, 502 Ollama
+// 404 unknown questionId (static), 503 no provider active (LLM_PROVIDER not set), 502 Ollama
 // unreachable or failed, 500 anything else.
 // ---------------------------------------------------------------------------
 
 const MAX_QUESTION_CHARS = 2000;
 
-const provider = resolveProvider(process.env);
 // GET /api/ask/config's `mode` for each provider.
 const MODES = { ollama: 'live', static: 'static' };
 
-// Live mode only. Static mode never builds a client, so it can't reach Ollama.
-const ollama = provider === 'ollama'
-  ? createOllamaClient({
-    baseUrl: process.env.OLLAMA_BASE_URL || OLLAMA_DEFAULTS.baseUrl,
-    embedModel: process.env.OLLAMA_EMBED_MODEL || OLLAMA_DEFAULTS.embedModel,
-    chatModel: process.env.OLLAMA_CHAT_MODEL || OLLAMA_DEFAULTS.chatModel,
-  })
-  : null;
-
-const pipeline = ollama
-  ? createAskPipeline({ ollama, index: createEmbeddingIndex({ embed: ollama.embed, loadRecords }) })
-  : null;
-
-// Static mode only: read and validated once, at startup, so a missing or
-// broken file stops the server instead of failing each request. Live mode
-// and a disabled Ask never read it, so they start without it.
-//
-// ASK_STATIC_ANSWERS_FILE is test-only: under NODE_ENV=test (set by Jest) it
-// points at a fixture instead. Everywhere else it's ignored, so a deployed
-// server always serves the checked-in file.
-const answersFile = process.env.NODE_ENV === 'test' && process.env.ASK_STATIC_ANSWERS_FILE
-  ? process.env.ASK_STATIC_ANSWERS_FILE
-  : ANSWERS_FILE;
-const staticAnswers = provider === 'static' ? loadStaticAnswers(answersFile) : null;
+// The provider is read once per request from ask/activeProvider.js: it
+// starts as LLM_PROVIDER and, on a dev server only, can be switched without
+// a restart (POST /api/dev/provider, routes/dev.js). Static mode never
+// builds an Ollama client, so it can't reach Ollama.
 
 function validateAsk(body) {
   const { question, project } = body || {};
@@ -118,7 +94,8 @@ router.use(requireAuth);
 // GET /api/ask/config — what the Ask tab needs before anyone asks anything.
 // Always 200 for a signed-in user (never 503, unlike POST):
 //   {
-//     enabled: boolean,  // true when LLM_PROVIDER is set ("ollama" or "static")
+//     enabled: boolean,  // true when a provider is active: LLM_PROVIDER, or
+//                        // on a dev server a switch (routes/dev.js)
 //     mode: 'live' | 'static' | null,
 //                        // live: POST takes a typed question; static: POST
 //                        // takes a questionId from `questions`; null: off
@@ -139,6 +116,7 @@ router.use(requireAuth);
 //   }
 // ---------------------------------------------------------------------------
 router.get('/config', async (req, res) => {
+  const provider = activeProvider.get();
   const projectList = readProjectList(process.env.AGENTIC_REPO_ROOT);
   let projects = [];
   if (projectList.length > 0) {
@@ -155,7 +133,8 @@ router.get('/config', async (req, res) => {
     }
   }
   const body = { enabled: Boolean(provider), mode: MODES[provider] ?? null, projects };
-  if (staticAnswers) {
+  if (provider === 'static') {
+    const staticAnswers = activeProvider.getStaticAnswers();
     body.questions = staticAnswers.questions.map(({ id, question, project }) => ({ id, question, project }));
     const { model, capturedAt } = staticAnswers.metadata;
     body.capture = { model, capturedAt };
@@ -171,6 +150,7 @@ function answerStatic(req, res) {
   if (typeof questionId !== 'string' || !questionId) {
     return res.status(400).json({ error: 'questionId is required' });
   }
+  const staticAnswers = activeProvider.getStaticAnswers();
   const entry = staticAnswers.byId.get(questionId);
   if (!entry) {
     return res.status(404).json({ error: 'unknown questionId' });
@@ -179,6 +159,7 @@ function answerStatic(req, res) {
 }
 
 router.post('/', async (req, res) => {
+  const provider = activeProvider.get();
   if (!provider) {
     return res.status(503).json({ error: 'ask the repo is not enabled on this server' });
   }
@@ -195,7 +176,7 @@ router.post('/', async (req, res) => {
   const project = req.body.project && req.body.project !== 'all' ? req.body.project : null;
 
   try {
-    const { answer, sources, model } = await pipeline.ask(question, project);
+    const { answer, sources, model } = await activeProvider.getPipeline().ask(question, project);
     res.json({ answer, sources, model });
   } catch (err) {
     if (err instanceof OllamaError) {

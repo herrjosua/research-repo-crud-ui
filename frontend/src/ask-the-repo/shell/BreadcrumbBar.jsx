@@ -8,8 +8,10 @@ import styles from './BreadcrumbBar.module.scss';
  *
  * `current` (default `'Ask the Repo'`): the current page's crumb.
  * `meta` (optional): right-aligned text beside the breadcrumb.
+ * `actions` (optional): right-aligned controls, after `meta`. Only the Ask
+ * page's dev-only provider toggle uses it (see AskTheRepo.jsx).
  */
-export default function BreadcrumbBar({ current = 'Ask the Repo', meta }) {
+export default function BreadcrumbBar({ current = 'Ask the Repo', meta, actions }) {
     return (
         // Grid/Column, not a flat `padding-inline`: Dashboard.jsx gets its own
         // horizontal inset entirely from Carbon's Grid (a responsive margin,
@@ -28,6 +30,7 @@ export default function BreadcrumbBar({ current = 'Ask the Repo', meta }) {
                     <BreadcrumbItem isCurrentPage>{current}</BreadcrumbItem>
                 </Breadcrumb>
                 {meta && <p className={styles.meta}>{meta}</p>}
+                {actions && <div className={styles.actions}>{actions}</div>}
             </Column>
         </Grid>
     );

@@ -25,6 +25,22 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - run: npm run build
+      # The dev-only provider toggle (src/ask-the-repo/dev/) is loaded only
+      # under import.meta.env.DEV, which a production build replaces with
+      # false, dropping it. Fail if its endpoint path or its label made it
+      # into the build anyway. It first fails if dist/ is missing or empty,
+      # so a changed outDir can't make the grep pass on nothing.
+      - name: Production build has no dev-only provider toggle
+        run: |
+          if [ ! -d dist ] || [ -z "$(ls -A dist)" ]; then
+            echo "::error::dist/ is missing or empty; the build output moved or the build produced nothing"
+            exit 1
+          fi
+          if grep -rlF -e '/dev/provider' -e 'Ask the Repo provider (dev only)' dist; then
+            echo "::error::dist/ contains the dev-only provider toggle (files listed above)"
+            exit 1
+          fi
 
   backend:
     runs-on: ubuntu-latest

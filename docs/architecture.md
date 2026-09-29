@@ -18,6 +18,10 @@ the server can answer and for the project list, and asks questions with
 `POST /api/ask`. Where `LLM_PROVIDER` is unset it says Ask the Repo isn't
 available and disables asking. With `LLM_PROVIDER=static` (the public demo)
 there is no model at all: see [static mode](#the-ask-tab-in-static-mode-the-public-demo).
+On a dev server (`DEV_TOOLS_ENABLED=true`, `NODE_ENV` development or test) a
+Dev toggle on the Ask page switches between the two without a restart; it
+isn't in the production build, and its route isn't registered in production
+(see [decision 14](./decisions.md#14-a-dev-only-switch-between-static-and-live-answers)).
 
 ## Where things live
 

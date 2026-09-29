@@ -25,9 +25,13 @@ function fakeEmbedding(text) {
  *
  * `chatReply(body)` returns the assistant's content for a /api/chat call.
  * Set `failNext` to a status code to make the next request fail with it.
+ * GET /api/tags lists `state.models` (the pulled models; by default the two
+ * Ask the Repo uses), which a test can change. Set `dropNext` to close the
+ * next request's connection without answering, as a stopped Ollama would,
+ * and `chatDelayMs` to hold /api/chat replies back that long.
  */
-async function startFakeOllama({ chatReply }) {
-    const state = { requests: [], failNext: null };
+async function startFakeOllama({ chatReply, models = ['nomic-embed-text:latest', 'gemma2:9b'] }) {
+    const state = { requests: [], failNext: null, dropNext: false, chatDelayMs: 0, models: [...models] };
 
     const server = http.createServer((req, res) => {
         let raw = '';
@@ -37,10 +41,19 @@ async function startFakeOllama({ chatReply }) {
             state.requests.push({ path: req.url, body });
             res.setHeader('Content-Type', 'application/json');
 
+            if (state.dropNext) {
+                state.dropNext = false;
+                return req.socket.destroy();
+            }
             if (state.failNext) {
                 res.statusCode = state.failNext;
                 state.failNext = null;
                 return res.end(JSON.stringify({ error: 'model runner has unexpectedly stopped' }));
+            }
+            if (req.method === 'GET' && req.url === '/api/tags') {
+                return res.end(JSON.stringify({
+                    models: state.models.map((name) => ({ name, model: name, size: 1, digest: 'fake' })),
+                }));
             }
             if (req.method === 'POST' && req.url === '/api/embed') {
                 return res.end(JSON.stringify({
@@ -52,7 +65,7 @@ async function startFakeOllama({ chatReply }) {
                 }));
             }
             if (req.method === 'POST' && req.url === '/api/chat') {
-                return res.end(JSON.stringify({
+                const reply = () => res.end(JSON.stringify({
                     model: body.model,
                     created_at: new Date().toISOString(),
                     message: { role: 'assistant', content: chatReply(body) },
@@ -61,6 +74,8 @@ async function startFakeOllama({ chatReply }) {
                     total_duration: 1000,
                     eval_count: 42,
                 }));
+                if (state.chatDelayMs) return setTimeout(reply, state.chatDelayMs);
+                return reply();
             }
             res.statusCode = 404;
             res.end(JSON.stringify({ error: 'not found' }));

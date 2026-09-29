@@ -1,7 +1,7 @@
 # Decision log
 
 Short notes on why the project works the way it does. Newest decisions are
-at the bottom. Status as of 2026-09-28.
+at the bottom. Status as of 2026-09-29.
 
 ## 1. Run the LLM locally with Ollama first
 
@@ -175,3 +175,35 @@ fake delay or typing effect, so neither is simulated.
 **Consequence:** Answers can drift from the corpus they quote. The capture
 script's `verify` command checks every cited record and excerpt against a
 clone, and the answers are recaptured when the corpus changes a lot.
+
+## 14. A dev-only switch between static and live answers
+
+**Decision:** On a dev server, Ask the Repo's provider can be switched
+between `static` and `ollama` at runtime, from a Dev toggle on the Ask page
+(`POST /api/dev/provider`). The provider lives in the server process's
+memory and starts as `LLM_PROVIDER`; a restart goes back to it. The route
+is registered at startup only when `DEV_TOOLS_ENABLED=true` and `NODE_ENV`
+is `development` or `test`, and the frontend loads the toggle only under
+`vite dev`. With `LLM_PROVIDER` unset the toggle can turn Ask on, but not
+off: the endpoint accepts only the two providers.
+
+**Why:** Checking the public demo's static mode against live answers meant
+restarting the backend with a different `.env`. The toggle has to be
+impossible to reach from the public demo, so it fails closed at every layer:
+an allowlist of `NODE_ENV` values rather than "not production" (a deploy
+that forgot `NODE_ENV` gets nothing), registration rather than a runtime
+permission check (nothing to get wrong per request), and a production build
+that doesn't contain it at all (CI checks `dist/`). Switching to `ollama`
+first asks Ollama for its model list, so a stopped Ollama or a missing model
+fails the switch with a message instead of failing the next question.
+
+**Consequence:** A switch clears the Ask tab's conversations and resets the
+project to "All projects". Threads from the other mode can't be told apart
+(both answer as `gemma2:9b`) and their retries would be rejected by the new
+mode. Saved insights and pins are kept: they're sources, valid in either
+mode. Other open tabs keep the old mode until their config refetches.
+The toggle deliberately has no Storybook story, an exception to
+`frontend/CLAUDE.md` rule 8: it renders only in dev builds and must add no
+Chromatic baseline. Its behavior is covered by `DevProviderToggle.test.jsx`
+and the production-build check.
+
