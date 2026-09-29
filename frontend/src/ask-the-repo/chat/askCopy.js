@@ -3,6 +3,9 @@
 // chat's live region), so the two can't drift apart.
 
 export const LOADING_TEXT = 'Searching the repo…';
+// Until GET /api/ask/config says which mode this is, in place of the
+// starters (live) or the question list (static).
+export const CONFIG_LOADING_TEXT = 'Loading questions…';
 export const SLOW_TEXT = 'The first question after a server restart can take up to 20 seconds while the repo is indexed.';
 
 // Live mode: the empty state for a project with no checked starters

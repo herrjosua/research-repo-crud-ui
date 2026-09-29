@@ -4,7 +4,7 @@ import ChatMessage from './ChatMessage';
 import Composer from './Composer';
 import QuestionPicker from './QuestionPicker';
 import StarterQuestions from './StarterQuestions';
-import { ERROR_COPY, LOADING_TEXT, NO_PICKER_QUESTIONS, NO_STARTERS, PICKER_LABEL, SLOW_TEXT, UNAVAILABLE_COPY } from './askCopy';
+import { CONFIG_LOADING_TEXT, ERROR_COPY, LOADING_TEXT, NO_PICKER_QUESTIONS, NO_STARTERS, PICKER_LABEL, SLOW_TEXT, UNAVAILABLE_COPY } from './askCopy';
 import styles from './ChatPanel.module.scss';
 
 /**
@@ -23,6 +23,12 @@ import styles from './ChatPanel.module.scss';
  * - `unavailable`: the server has no language model. Shows the "not
  *   available here" notice, disables the composer, and leaves out the
  *   starters, which could only fill a composer that can't send.
+ * - `configLoading`: GET /api/ask/config hasn't answered yet, so it isn't
+ *   known whether this is live or static mode. The empty state shows a
+ *   loading line instead of either mode's questions, and the composer is
+ *   disabled: a live starter clicked now would only fill a composer that
+ *   static mode then takes away, and static mode can't answer typed text.
+ *   A config that fails to load isn't loading, so live mode shows as before.
  * - `announcement`: text for the polite live region (new answers and
  *   errors), from `useAskRepo`.
  * - `pickerQuestions`: static mode (the public demo) when set, an array of
@@ -51,6 +57,7 @@ export default function ChatPanel({
     slow = false,
     error = null,
     unavailable = false,
+    configLoading = false,
     announcement = '',
     pickerQuestions = null,
     pickerNote = '',
@@ -89,7 +96,7 @@ export default function ChatPanel({
 
     function handleSend() {
         const text = input.trim();
-        if (!text || loading || unavailable) return;
+        if (!text || loading || unavailable || configLoading) return;
         onSend(text);
         setInput('');
     }
@@ -143,6 +150,14 @@ export default function ChatPanel({
                 scrollable-region-focusable. */}
             <div className={styles.messages} role="region" aria-label="Conversation" tabIndex={0}>
                 {messages.length === 0 && unavailableNotice}
+                {messages.length === 0 && configLoading && (
+                    // Same polite-region pattern as the answer's loading
+                    // state below. Nothing announces the questions once
+                    // they replace it.
+                    <div className={styles.configLoading} aria-live="polite">
+                        <InlineLoading description={CONFIG_LOADING_TEXT} aria-live="off" className={styles.configLoadingSpinner} />
+                    </div>
+                )}
                 {messages.length === 0 && picking && (
                     <div className={styles.pickerEmpty}>
                         {pickerQuestions.length > 0 ? (
@@ -158,7 +173,7 @@ export default function ChatPanel({
                     </div>
                 )}
                 {messages.length === 0 ? (
-                    !unavailable && !picking && (
+                    !unavailable && !picking && !configLoading && (
                         starters.length > 0 ? (
                             <StarterQuestions questions={starters} onSelect={handleSelectStarter} />
                         ) : (
@@ -213,7 +228,7 @@ export default function ChatPanel({
                     onChange={setInput}
                     onSend={handleSend}
                     sending={loading}
-                    disabled={unavailable}
+                    disabled={unavailable || configLoading}
                 />
             ) : messages.length > 0 && (
                 <QuestionPicker

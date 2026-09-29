@@ -45,7 +45,8 @@ export default function AskTheRepo() {
     // real project list (project-* tags with labels and record counts).
     // Until it loads, or if it fails, the picker shows only "All
     // projects", and a 503 from POST /api/ask still switches the tab to
-    // "not available".
+    // "not available". While it's pending, ChatPanel shows neither mode's
+    // questions (see its `configLoading`).
     const config = useAskConfig();
     const configProjects = useMemo(() => config.data?.projects ?? [], [config.data]);
 
@@ -264,6 +265,7 @@ export default function AskTheRepo() {
                                             slow={activeRequest?.slow}
                                             error={activeRequest?.error}
                                             unavailable={unavailable}
+                                            configLoading={config.isPending}
                                             announcement={ask.announcement}
                                             pickerQuestions={pickerQuestions}
                                             pickerNote={isStatic ? captureNote(config.data.capture) : ''}
