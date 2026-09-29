@@ -33,118 +33,29 @@ const { execFileSync } = require('child_process');
 
 const { createOllamaClient, OLLAMA_DEFAULTS } = require('../ask/ollama');
 const { loadRecords } = require('../ask/corpus');
-const { createEmbeddingIndex, rankPassages } = require('../ask/retrieval');
+const { createEmbeddingIndex } = require('../ask/retrieval');
 const { createAskPipeline, CHAT_OPTIONS, TOP_K } = require('../ask/pipeline');
+const { analyseAnswer, summariseSentences, MARKER_RE } = require('../ask/checks');
 const { loadGold, GOLD_FILE, GOLD_SETS } = require('../ask/eval/gold');
 const {
-    reviewRun, numbersIn, countPairsIn, corpusCommit, ollamaInfo, withChatOptions,
+    reviewRun, corpusCommit, ollamaInfo, withChatOptions,
 } = require('./capture-static-answers');
 
 const RESULTS_DIR = path.join(__dirname, '..', 'ask', 'eval', 'results');
 // Bump when what `run` stores or how it runs the pipeline changes; `report`
 // only compares results from the same version. An entry's gold set isn't
 // stored with its runs (the report reads it from the gold file), so adding
-// sets didn't change it.
+// sets didn't change it. Nor did v1.3.6.7: the checks moving to
+// ask/checks.js are re-applied by `report`, cold latency is the stored first
+// seeded run, and the pipeline's rank() is the same ranking as before.
 const EVAL_HARNESS_VERSION = 1;
 
 // ---------------------------------------------------------------------------
-// Checks. Pure functions of an answer and its sources, so `report` can
-// re-judge stored runs and the tests can pin the rules down.
+// Judging. The per-sentence checks live in ask/checks.js (shared with the
+// live route and the capture script); these are pure functions of a run and
+// its gold entry, so `report` can re-judge stored runs and the tests can pin
+// the rules down.
 // ---------------------------------------------------------------------------
-
-const MARKER_RE = /\[(\d+)\]/g;
-const LIST_ITEM_RE = /^\s*(?:[-•*]|\d+[.)])\s+/;
-// A sentence saying the sources don't cover something. Not a claim, so it
-// needs no citation (a figure in it still needs one).
-const DECLINE_RE = /\b(sources?|records?|notes?|data|research|documents?|repository|repo)\b[^.]{0,60}\b(do not|don't|does not|doesn't|did not|didn't|not|no|never)\b[^.]{0,40}\b(say|state|mention|describe|include|contain|specify|provide|give|report|answer|cover|address|discuss|information|detail)/i;
-
-function markersIn(text) {
-    return [...String(text).matchAll(MARKER_RE)].map((m) => Number(m[1]));
-}
-
-function withoutMarkers(text) {
-    return String(text).replace(MARKER_RE, '').replace(/[ \t]+([.,;:!?])/g, '$1').trim();
-}
-
-// The answer as sentences and list items, each with its own [n] markers.
-// Lines are split into sentences the way the capture script's
-// citedSentences does, except that a list item's leading "1." or "-" is
-// kept out of it. A line of nothing but markers belongs to what precedes it:
-// a list's trailing "[1][2]" cites the whole list (a group citation), and
-// anywhere else it joins the sentence before it.
-function answerSentences(answer) {
-    const out = [];
-    let listStart = null; // index in `out` where the current run of list items began
-    for (const line of String(answer).split(/\n+/)) {
-        if (!line.trim()) continue;
-        const listItem = LIST_ITEM_RE.test(line);
-        const body = line.replace(LIST_ITEM_RE, '');
-        const pieces = body.split(/(?<=[.!?](?:\s*\[\d+\])*)\s+(?!\[)/).map((p) => p.trim()).filter(Boolean);
-        for (const piece of pieces) {
-            const text = withoutMarkers(piece);
-            const markers = markersIn(piece);
-            if (!text) {
-                const previous = out[out.length - 1];
-                if (!previous) continue;
-                if (previous.listItem && listStart !== null) {
-                    for (const item of out.slice(listStart)) item.groupMarkers = [...new Set([...item.groupMarkers, ...markers])];
-                } else {
-                    previous.markers = [...previous.markers, ...markers];
-                }
-                continue;
-            }
-            if (listItem && listStart === null) listStart = out.length;
-            if (!listItem) listStart = null;
-            out.push({ text, markers, listItem, groupMarkers: [] });
-        }
-    }
-    // A list intro ("The steps are: [1]") also cites the list below it.
-    out.forEach((sentence, i) => {
-        if (sentence.listItem || !sentence.text.endsWith(':') || sentence.markers.length === 0) return;
-        for (let j = i + 1; j < out.length && out[j].listItem; j += 1) {
-            out[j].groupMarkers = [...new Set([...out[j].groupMarkers, ...sentence.markers])];
-        }
-    });
-    return out;
-}
-
-// Every sentence of an answer, checked against the sources it cites:
-//   exempt       why it needs no citation of its own: 'decline', 'list intro'
-//                (ends with ":"), or 'group-cited list item'; null otherwise
-//   uncited      not exempt and cites nothing
-//   stack        distinct sources it cites (3 or more is a stack)
-//   unsupported  figures and "N of M" counts that none of *its own* cited
-//                excerpts contain (a group-cited item uses the group's). A
-//                decline may repeat the question's own figures ("the sources
-//                don't describe the step 3 wireframe").
-function analyseAnswer(answer, sources, question = '') {
-    return answerSentences(answer).map((sentence) => {
-        const own = [...new Set(sentence.markers)];
-        const cites = own.length > 0 ? own : sentence.groupMarkers;
-        let exempt = null;
-        if (own.length === 0) {
-            if (DECLINE_RE.test(sentence.text)) exempt = 'decline';
-            else if (!sentence.listItem && sentence.text.endsWith(':')) exempt = 'list intro';
-            else if (sentence.listItem && sentence.groupMarkers.length > 0) exempt = 'group-cited list item';
-        }
-        const excerpts = cites.map((n) => (sources[n - 1] ? sources[n - 1].excerpt : '')).join('\n');
-        const evidence = exempt === 'decline' ? `${excerpts}\n${question}` : excerpts;
-        const knownNumbers = new Set(numbersIn(evidence));
-        const knownPairs = new Set(countPairsIn(evidence));
-        return {
-            text: sentence.text,
-            listItem: sentence.listItem,
-            cites,
-            exempt,
-            uncited: exempt === null && own.length === 0,
-            stack: own.length,
-            unsupported: [
-                ...[...new Set(numbersIn(sentence.text))].filter((n) => !knownNumbers.has(n)),
-                ...[...new Set(countPairsIn(sentence.text))].filter((pair) => !knownPairs.has(pair)).map((pair) => `"${pair}"`),
-            ],
-        };
-    });
-}
 
 // The answer as a claim pattern sees it: no [n] markers, straight quotes.
 function claimText(answer) {
@@ -153,7 +64,7 @@ function claimText(answer) {
 
 // One run judged against its gold entry. A run passes when every non-exempt
 // sentence has a citation, every figure is in that sentence's own cited
-// excerpts, it cites at least one supporting record, it cites the required
+// sources (title, section or excerpt), it cites at least one supporting record, it cites the required
 // raw session (if the entry names one), every must-claim matches and no
 // must-not claim does. On an entry with acceptDecline, a decline that cites
 // nothing (every sentence a decline, no sources) is excused from citing a
@@ -165,11 +76,10 @@ function judgeRun(entry, { answer, sources }) {
     const matches = (claim) => new RegExp(claim.pattern, 'i').test(text);
 
     const failures = [];
-    const uncited = sentences.filter((s) => s.uncited);
-    if (uncited.length > 0) failures.push(`${uncited.length} uncited sentence(s)`);
     // Per sentence: the same figure unsupported in two sentences counts twice.
-    const unsupported = sentences.flatMap((s) => s.unsupported);
-    if (unsupported.length > 0) failures.push(`figure(s) not in their sentence's cited excerpts: ${unsupported.join(', ')}`);
+    const { uncited, unsupportedFigures: unsupported, stacked } = summariseSentences(sentences);
+    if (uncited.length > 0) failures.push(`${uncited.length} uncited sentence(s)`);
+    if (unsupported.length > 0) failures.push(`figure(s) not in their sentence's cited sources: ${unsupported.join(', ')}`);
     const isDecline = sources.length === 0 && sentences.length > 0 && sentences.every((s) => s.exempt === 'decline');
     const declineAccepted = entry.acceptDecline === true && isDecline;
     if (!declineAccepted && !cited.some((id) => entry.supportingRecords.includes(id))) failures.push('cites no supporting record');
@@ -184,8 +94,8 @@ function judgeRun(entry, { answer, sources }) {
         cited,
         declineAccepted,
         citesRaw: sources.some((s) => s.recordKind === 'raw'),
-        uncited: uncited.map((s) => s.text),
-        stacks: sentences.filter((s) => s.stack >= 3).map((s) => s.text),
+        uncited,
+        stacks: stacked,
         unsupported,
     };
 }
@@ -271,12 +181,9 @@ async function run({ label, seed, temperature, seededRuns, unseededRuns, set, on
 
     const questions = [];
     for (const entry of entries) {
-        // Where every in-scope record ranks, as the pipeline ranks them (best
-        // passage per record), for the first raw session's rank.
-        const inScope = entry.project
-            ? passages.filter(({ record }) => Array.isArray(record.tags) && record.tags.includes(entry.project))
-            : passages;
-        const ranking = rankPassages(await index.embedQuery(entry.question), inScope, Infinity)
+        // Where every in-scope record ranks, ranked by the pipeline itself
+        // with no cut-off, for the first raw session's rank.
+        const ranking = (await seeded.rank(entry.question, entry.project, Infinity))
             .map(({ passage, score }) => ({ recordId: passage.record.id, kind: passage.record.kind, score: Math.round(score * 1000) / 1000 }));
 
         const ask = async (pipeline) => {
@@ -339,6 +246,10 @@ function summarise(q, entry) {
         firstRaw: rawIndex === -1 ? null : { rank: rawIndex + 1, of: q.ranking.length, recordId: q.ranking[rawIndex].recordId },
         seededIdentical: new Set(q.seeded.map(signature)).size === 1,
         distinctUnseeded: new Set(q.unseeded.map((r) => r.answer)).size,
+        // The first seeded run is the cold one: its reruns share its prompt,
+        // so Ollama answers them from its prompt cache and they run faster
+        // than a live question would.
+        coldLatency: first.secs,
         latency: median(q.seeded.map((r) => r.secs)),
         unseededLatency: median(q.unseeded.map((r) => r.secs)),
         reviewFlags: reviewRun({ answer: first.answer, sources: first.sources, raw: null }, first.shown.length).flags,
@@ -433,13 +344,13 @@ function renderReport(sets, gold) {
             '',
             '### Per question',
             '',
-            '| Question | Gold | Shown | First raw | Cited | Raw cited | Uncited | Stacks 3+ | Unsupported figures | Distinct unseeded | Latency (s) |',
+            '| Question | Gold | Shown | First raw | Cited | Raw cited | Uncited | Stacks 3+ | Unsupported figures | Distinct unseeded | Latency, cold / median (s) |',
             '|---|---|---|---|---|---|---|---|---|---|---|',
         );
         for (const i of indexes) {
             const per = summaries.map((s) => s[i]);
             const col = (f) => per.map(f).join(' → ');
-            lines.push(`| \`${ids[i]}\` | ${col((s) => (s.verdict.pass ? 'PASS' : '**FAIL**'))} | ${col((s) => s.shown.length)} | ${col(firstRawText)} | ${col((s) => s.verdict.cited.length)} | ${col((s) => (s.verdict.citesRaw ? 'yes' : 'no'))} | ${col((s) => s.verdict.uncited.length)} | ${col((s) => s.verdict.stacks.length)} | ${col((s) => s.verdict.unsupported.length)} | ${col((s) => `${s.distinctUnseeded}/${sets[per.indexOf(s)].metadata.unseededRuns}`)} | ${col((s) => s.latency)} |`);
+            lines.push(`| \`${ids[i]}\` | ${col((s) => (s.verdict.pass ? 'PASS' : '**FAIL**'))} | ${col((s) => s.shown.length)} | ${col(firstRawText)} | ${col((s) => s.verdict.cited.length)} | ${col((s) => (s.verdict.citesRaw ? 'yes' : 'no'))} | ${col((s) => s.verdict.uncited.length)} | ${col((s) => s.verdict.stacks.length)} | ${col((s) => s.verdict.unsupported.length)} | ${col((s) => `${s.distinctUnseeded}/${sets[per.indexOf(s)].metadata.unseededRuns}`)} | ${col((s) => `${s.coldLatency} / ${s.latency}`)} |`);
         }
         lines.push('');
     }
@@ -473,7 +384,7 @@ function renderReport(sets, gold) {
             row('Exempt sentences', (s) => s.verdict.sentences.filter((x) => x.exempt).map((x) => `${x.exempt}: ${x.text}`).join('\n') || '—'),
             row('Seeded runs identical', (s) => (s.seededIdentical ? 'yes' : 'NO')),
             row('Distinct unseeded answers', (s) => `${s.distinctUnseeded} of ${sets[per.indexOf(s)].metadata.unseededRuns}`),
-            row('Latency, median (s)', (s) => `${s.latency} seeded, ${s.unseededLatency ?? '—'} unseeded`),
+            row('Latency (s)', (s) => `${s.coldLatency} cold (first seeded run), ${s.latency} seeded median, ${s.unseededLatency ?? '—'} unseeded median`),
             row('Review flags (capture script)', (s) => s.reviewFlags.join('\n') || '—'),
             row('Answer', (s) => s.first.answer),
         );
@@ -571,4 +482,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { answerSentences, analyseAnswer, judgeRun, claimText, renderReport, EVAL_HARNESS_VERSION };
+module.exports = { judgeRun, claimText, renderReport, EVAL_HARNESS_VERSION };

@@ -1,9 +1,11 @@
 const { GOLD_FILE, loadGold, validateGold } = require('../ask/eval/gold');
-const { answerSentences, analyseAnswer, judgeRun, claimText, renderReport } = require('../scripts/eval-ask');
+const { answerSentences, analyseAnswer } = require('../ask/checks');
+const { judgeRun, claimText, renderReport } = require('../scripts/eval-ask');
 const { withChatOptions, chatOverrides } = require('../scripts/capture-static-answers');
 
 // The evaluation gold set (ask/eval/gold.json) and the harness's pass/fail
-// checks (scripts/eval-ask.js). Running the harness itself needs Ollama; see
+// rules (scripts/eval-ask.js, on ask/checks.js; tests/askChecks.test.js
+// covers the checks themselves). Running the harness itself needs Ollama; see
 // backend/README.md, "Evaluating answers".
 
 describe('gold set', () => {
@@ -264,7 +266,7 @@ describe('eval checks', () => {
         ];
         const [first, second] = analyseAnswer('5 of 6 recognized it [1]. 5 of 6 liked the placement [2].', sources);
         expect(first.unsupported).toEqual([]);
-        expect(second.unsupported).toEqual(['5', '6', '"5 of 6"']);
+        expect(second.unsupported).toEqual(['5', '6', '5 of 6']);
     });
 
     it('lets a decline repeat the question’s own figures', () => {
@@ -299,7 +301,7 @@ describe('eval checks', () => {
             expect(verdict.pass).toBe(false);
             expect(verdict.failures).toEqual([
                 '1 uncited sentence(s)',
-                "figure(s) not in their sentence's cited excerpts: 2",
+                "figure(s) not in their sentence's cited sources: 2",
                 "doesn't cite raw:a",
                 'forbidden: step 2 skippable',
             ]);

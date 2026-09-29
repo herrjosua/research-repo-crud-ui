@@ -6,6 +6,7 @@
 const { rankPassages } = require('./retrieval');
 const { buildMessages, renumberCitations, toSource } = require('./answer');
 const { toPlainText } = require('./plainText');
+const { checkAnswer } = require('./checks');
 
 // Records handed to the model per question. Six best-matching passages (one
 // per record) is ~3–4k characters of context: enough to synthesize across
@@ -20,37 +21,54 @@ const CHAT_OPTIONS = { temperature: 0.2, num_ctx: 8192 };
 // wasn't called) and `ranked` (the passages it was shown, in [n] order) for
 // the capture script's review report. Ollama failures reject with
 // OllamaError.
+//
+// rank() is the retrieval step on its own: the in-scope records' best
+// passages, best first, `k` of them ([] when no record has the project tag).
+// The evaluation harness calls it with k = Infinity to see where every
+// record ranks.
 function createAskPipeline({ ollama, index }) {
-    async function ask(question, project) {
+    async function rank(question, project, k = TOP_K) {
         const { passages } = await index.refresh();
         const inScope = project
             ? passages.filter(({ record }) => Array.isArray(record.tags) && record.tags.includes(project))
             : passages;
+        if (inScope.length === 0) return [];
+        return rankPassages(await index.embedQuery(question), inScope, k);
+    }
 
-        if (inScope.length === 0) {
+    async function ask(question, project) {
+        const ranked = await rank(question, project);
+
+        if (ranked.length === 0) {
             return {
                 answer: `No records in the repo are tagged "${project}", so there's nothing to answer from.`,
                 sources: [],
                 model: ollama.chatModel,
+                // Nothing the model wrote, so nothing to check.
+                checks: { retried: false, ...checkAnswer('', []) },
                 raw: null,
                 ranked: [],
             };
         }
 
-        const ranked = rankPassages(await index.embedQuery(question), inScope, TOP_K);
         const raw = await ollama.chat(buildMessages(question, ranked), CHAT_OPTIONS);
         const { text, cited } = renumberCitations(toPlainText(raw), ranked.length);
+        const sources = cited.map((i) => toSource(ranked[i], project));
 
         return {
             answer: text || "The model didn't return an answer. Try rephrasing the question.",
-            sources: cited.map((i) => toSource(ranked[i], project)),
+            sources,
             model: ollama.chatModel,
+            // Flags only: the answer is returned as the model wrote it
+            // (ask/checks.js). `text` rather than the fallback message, which
+            // the model didn't write.
+            checks: { retried: false, ...checkAnswer(text, sources, question) },
             raw,
             ranked,
         };
     }
 
-    return { ask };
+    return { ask, rank };
 }
 
 module.exports = { createAskPipeline, TOP_K, CHAT_OPTIONS };

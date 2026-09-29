@@ -35,6 +35,15 @@ const { readProjectList, recordProjectTag } = require('../projects');
 //     sources: Source[],  // only the sources the answer cites, in [1], [2], …
 //                         // order; [] when the answer cites nothing.
 //     model: string,      // the generating model, e.g. "gemma2:9b"
+//     checks: {           // live (ollama) only, never static. Flags on the
+//                         // answer from ask/checks.js; the answer is unchanged.
+//       retried: false,   // always false for now: nothing is regenerated
+//       uncited: string[],            // sentences needing a citation that have none
+//       unsupportedFigures: string[], // figures / "N of M" counts not in their
+//                                     // sentence's cited sources (title, section
+//                                     // or excerpt), once per sentence
+//       stacked: string[],            // sentences citing 3+ distinct sources
+//     },
 //   }
 //
 //   Source — the frontend's mock Source shape
@@ -176,8 +185,8 @@ router.post('/', async (req, res) => {
   const project = req.body.project && req.body.project !== 'all' ? req.body.project : null;
 
   try {
-    const { answer, sources, model } = await activeProvider.getPipeline().ask(question, project);
-    res.json({ answer, sources, model });
+    const { answer, sources, model, checks } = await activeProvider.getPipeline().ask(question, project);
+    res.json({ answer, sources, model, checks });
   } catch (err) {
     if (err instanceof OllamaError) {
       console.error(`[POST /api/ask] ${err.message}: ${err.detail || ''}`);

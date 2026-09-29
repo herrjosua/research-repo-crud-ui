@@ -42,6 +42,7 @@ const { createOllamaClient, OLLAMA_DEFAULTS } = require('../ask/ollama');
 const { loadRecords, htmlToBlocks } = require('../ask/corpus');
 const { createEmbeddingIndex } = require('../ask/retrieval');
 const { createAskPipeline, CHAT_OPTIONS } = require('../ask/pipeline');
+const { sourceEvidence, unsupportedFiguresIn } = require('../ask/checks');
 const {
     STATIC_DIR, QUESTIONS_FILE, ANSWERS_FILE, CAPTURE_SCRIPT_VERSION,
     citationMarkers, validateQuestionList, validateStaticAnswers, loadStaticAnswers,
@@ -89,41 +90,13 @@ function citedSentences(answer) {
     return out;
 }
 
-const NUMBER_WORDS = [
-    'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven',
-    'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty',
-];
-const NUMBER_WORD_RE = new RegExp(`\\b(${NUMBER_WORDS.slice(1).join('|')})\\b`, 'g');
-const NUMBER_RE = /\d+(?:\.\d+)?/g;
-const PAIR_RE = /(\d+(?:\.\d+)?)\s*(?:of|out of|\/)\s*(\d+(?:\.\d+)?)/g;
-
-// Text with "one" through "twenty" written as digits, so "four" and "4"
-// compare equal. Percent signs need no handling: "52%" yields "52".
-function digitsForWords(text) {
-    return String(text).toLowerCase().replace(NUMBER_WORD_RE, (word) => String(NUMBER_WORDS.indexOf(word)));
-}
-
-function numbersIn(text) {
-    return digitsForWords(text).match(NUMBER_RE) || [];
-}
-
-// "N of M" / "N out of M" / "N/M" counts, as "N of M" strings.
-function countPairsIn(text) {
-    return [...digitsForWords(text).matchAll(PAIR_RE)].map((m) => `${m[1]} of ${m[2]}`);
-}
-
-// Numbers in the answer that no cited excerpt contains, and "N of M" counts
-// no cited excerpt states. The second catches a right number in the wrong
-// count, like "4 of 4" cited to an excerpt that says "4 of 5".
+// Numbers in the answer that no cited source contains, and "N of M" counts
+// no cited source states, by ask/checks.js's figure rule (a source's title
+// and section count as well as its excerpt). Unlike the harness's check,
+// which holds each sentence to its own citations, this pools every cited
+// source: it flags a figure from nowhere, not one cited to the wrong source.
 function unsupportedNumbers(answer, sources) {
-    const text = answer.replace(/\[\d+\]/g, '');
-    const excerpts = sources.map((source) => source.excerpt).join('\n');
-    const known = new Set(numbersIn(excerpts));
-    const knownPairs = new Set(countPairsIn(excerpts));
-    return {
-        numbers: [...new Set(numbersIn(text))].filter((n) => !known.has(n)),
-        pairs: [...new Set(countPairsIn(text))].filter((pair) => !knownPairs.has(pair)),
-    };
+    return unsupportedFiguresIn(answer.replace(/\[\d+\]/g, ''), sources.map(sourceEvidence).join('\n'));
 }
 
 // Flags one run. `shownCount` is how many sources the model was shown, for
@@ -562,6 +535,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-    reviewRun, citedSentences, contentWords, unsupportedNumbers, numbersIn, countPairsIn, renderReport, verifyAnswers,
+    reviewRun, citedSentences, contentWords, unsupportedNumbers, renderReport, verifyAnswers,
     corpusCommit, ollamaInfo, withChatOptions, chatOverrides,
 };
