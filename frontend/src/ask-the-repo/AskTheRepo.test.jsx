@@ -87,25 +87,37 @@ describe('AskTheRepo', () => {
         expect(screen.getByText('Questions you ask will appear here.')).toBeInTheDocument();
     });
 
-    it('lists "All projects" and then the config\'s projects, with counts', async () => {
+    it('lists "All projects" and then the config\'s projects, by label', async () => {
         const user = userEvent.setup();
         renderPage();
 
         expect(projectPicker()).toHaveTextContent('All projects');
         expect(await projectOptions(user)).toEqual([
-            'All projects, 51 records51',
-            'AI-Assisted Prior Authorization, 5 records5',
-            'Onboarding, 21 records21',
-            'Cross-cutting, 25 records25',
+            'All projects',
+            'AI-Assisted Prior Authorization',
+            'Onboarding',
+            'Cross-cutting',
         ]);
     });
 
-    it('shows only "All projects", without a count, when the corpus has no project list', async () => {
+    it('says how many records the selected project searches, totalling the projects for "All projects"', async () => {
+        const user = userEvent.setup();
+        renderPage();
+
+        expect(projectPicker()).toHaveAccessibleDescription('Searches all 51 records');
+
+        await pickProject(user, 'Onboarding');
+        expect(projectPicker()).toHaveAccessibleDescription('Searches 21 records');
+        expect(screen.getByText('Searches 21 records')).toBeInTheDocument();
+    });
+
+    it('shows only "All projects", with no record count, when the corpus has no project list', async () => {
         const user = userEvent.setup();
         vi.mocked(useAskConfig).mockReturnValue({ data: { enabled: true, mode: 'live', projects: [] } });
         renderPage();
 
         expect(await projectOptions(user)).toEqual(['All projects']);
+        expect(screen.queryByText(/Searches/)).not.toBeInTheDocument();
     });
 
     it('starts the picker on "All projects" alone, and keeps it selected once the config loads', async () => {
@@ -123,7 +135,7 @@ describe('AskTheRepo', () => {
 
         expect(projectPicker()).toHaveTextContent('All projects');
         expect(await projectOptions(user)).toHaveLength(4);
-        expect(screen.getByRole('option', { name: /All projects/ })).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getByRole('option', { name: 'All projects' })).toHaveAttribute('aria-selected', 'true');
     });
 
     it('switches between the Ask and Saved Insights tabs', async () => {
@@ -433,15 +445,25 @@ describe('AskTheRepo in static mode', () => {
         expect(questionList()).toHaveLength(STATIC_QUESTIONS.length);
     });
 
-    it('leaves projects with no captured questions out of the picker, keeping "All projects" and its full count', async () => {
+    it('leaves projects with no captured questions out of the picker, keeping "All projects"', async () => {
         const user = userEvent.setup();
         renderPage();
 
         expect(await projectOptions(user)).toEqual([
-            'All projects, 51 records51',
-            'AI-Assisted Prior Authorization, 5 records5',
-            'Cross-cutting, 25 records25',
+            'All projects',
+            'AI-Assisted Prior Authorization',
+            'Cross-cutting',
         ]);
+    });
+
+    it('shows no record count, since nothing is searched', async () => {
+        const user = userEvent.setup();
+        renderPage();
+
+        expect(projectPicker()).not.toHaveAttribute('aria-describedby');
+        await pickProject(user, 'Cross-cutting');
+        expect(projectPicker()).not.toHaveAttribute('aria-describedby');
+        expect(screen.queryByText(/Searches/)).not.toBeInTheDocument();
     });
 
     it('keeps "All projects" alone when no captured question names a project', async () => {
@@ -451,7 +473,7 @@ describe('AskTheRepo in static mode', () => {
         });
         renderPage();
 
-        expect(await projectOptions(user)).toEqual(['All projects, 51 records51']);
+        expect(await projectOptions(user)).toEqual(['All projects']);
     });
 
     it('says so when there are no questions at all, still showing the pre-generated banner', () => {
