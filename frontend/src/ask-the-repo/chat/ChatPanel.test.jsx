@@ -125,6 +125,24 @@ describe('ChatPanel', () => {
         });
     });
 
+    describe('before the config loads', () => {
+        it('shows a loading line in place of the starters and disables the composer', () => {
+            renderPanel({ configLoading: true });
+
+            expect(screen.getByText('Loading questions…')).toBeInTheDocument();
+            expect(screen.getByText('Loading questions…').closest('[aria-live="polite"]')).toBeInTheDocument();
+            expect(screen.queryByText('Try asking')).not.toBeInTheDocument();
+            expect(screen.queryByRole('button', { name: STARTERS[0] })).not.toBeInTheDocument();
+            expect(composer()).toBeDisabled();
+        });
+
+        it('doesn\'t point to the composer when there are no starters either', () => {
+            renderPanel({ configLoading: true, starters: [] });
+
+            expect(screen.queryByText(/No starter questions/)).not.toBeInTheDocument();
+        });
+    });
+
     describe('when unavailable', () => {
         it('says so, disables the composer, and shows no starters', () => {
             renderPanel({ unavailable: true });

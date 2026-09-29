@@ -110,7 +110,7 @@ describe('AskTheRepo', () => {
 
     it('starts the picker on "All projects" alone, and keeps it selected once the config loads', async () => {
         const user = userEvent.setup();
-        vi.mocked(useAskConfig).mockReturnValue({ data: undefined });
+        vi.mocked(useAskConfig).mockReturnValue({ data: undefined, isPending: true });
         const { rerender } = renderPage();
         expect(projectPicker()).toHaveTextContent('All projects');
 
@@ -288,6 +288,36 @@ describe('AskTheRepo', () => {
         await user.click(screen.getByRole('button', { name: /What made the drafts hard to review\?/ }));
         expect(screen.getByRole('button', { name: `Source 1: ${V1.title}` })).toBeInTheDocument();
         expect(projectPicker()).toHaveTextContent('AI-Assisted Prior Authorization');
+    });
+
+    it('shows neither mode\'s questions, and a disabled composer, until the config loads', () => {
+        vi.mocked(useAskConfig).mockReturnValue({ data: undefined, isPending: true });
+        const { rerender } = renderPage();
+
+        expect(screen.getByText('Loading questions…')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: STARTERS.all[0] })).not.toBeInTheDocument();
+        expect(screen.queryByText('Choose a question')).not.toBeInTheDocument();
+        expect(composer()).toBeDisabled();
+
+        vi.mocked(useAskConfig).mockReturnValue({ data: CONFIG, isPending: false });
+        rerender(
+            <QueryClientProvider client={queryClient}>
+                <AskTheRepo />
+            </QueryClientProvider>
+        );
+
+        expect(screen.queryByText('Loading questions…')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: STARTERS.all[0] })).toBeInTheDocument();
+        expect(composer()).toBeEnabled();
+    });
+
+    it('falls back to live mode\'s starters and composer when the config fails to load', () => {
+        vi.mocked(useAskConfig).mockReturnValue({ data: undefined, isPending: false, isError: true });
+        renderPage();
+
+        expect(screen.queryByText('Loading questions…')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: STARTERS.all[0] })).toBeInTheDocument();
+        expect(composer()).toBeEnabled();
     });
 
     it('shows "not available" up front when the config says so', () => {
