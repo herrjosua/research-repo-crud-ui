@@ -207,3 +207,132 @@ The toggle deliberately has no Storybook story, an exception to
 Chromatic baseline. Its behavior is covered by `DevProviderToggle.test.jsx`
 and the production-build check.
 
+
+## 15. Retrieval changes for raw-session evidence (RR-103)
+
+**Decision:** Ask the Repo labels every source for the model as a
+`RAW SESSION`, `SYNTHESIS` or `DOC`, tells it to prefer raw sessions for
+quotes and counts and to cite one or two sources per sentence, and keeps
+metadata sections out of retrieval: raw rosters (`Participants — <title>`)
+and `Related` lists, findings' `Evidence Trail` and `Related Findings`,
+components' `Code mapping` and `Related Research Findings`, and a raw
+session's heading-less `Researcher: …` line. A raw session's roster reaches
+the model as a one-line header on its sources instead. The top 6 records
+by their best passage are shown: a raw session with its two best passages
+(in record order), anything else with one. A provenance slot and k = 8 were
+tried and are off. The final defaults are k = 6, metadata sections
+excluded, provenance slot off, `passagesPerRaw: 2`. Details in
+`backend/README.md`, "Retrieval".
+
+**Why rosters are excluded:** a roster is a list of role names, so it
+matches any question that names a role, and link lists do the same with
+record titles. Before this change, 10 of the passages shown to the model
+were metadata, on 5 of the 17 gold questions. On the care-coordinator gaps
+question, three sessions (the chart-review baseline among them) reached the
+model only as their rosters. On the documentation pain-points question,
+three of the six records were represented by their link lists. Excluded
+sections are still read, so a cited passage keeps its real surrounding text
+and the provenance links (below) can use them, but they're never embedded
+or ranked (117 of 548 passages). The roster's facts (head count, roles) are
+kept as the one-line header, which the answer checks count as evidence.
+
+**How the provenance slot works, and why it's off:** it links a synthesis
+or doc record to the raw sessions it was built from, by four kinds of link:
+a raw session's `Synthesized into: <slug>.md`, a `raw/<date-slug>` path, a
+raw session's exact title in a finding's Evidence Trail, and a raw
+session's `related_components`. When none of the top k is a raw session
+linked to a shown non-raw record, the best-ranked linked session from below
+the cut-off replaces the lowest non-raw record, and is shown last. It never
+replaces the only record linking to the session it adds. It changed what
+the model saw on 5 of 17 gold questions, gained no passing answer, and
+turned `audit-step3-wireframe` from pass to fail in 3 of 3 seeded and 2 of 3
+unseeded runs. Given the onboarding session's notes, the model answered
+"The question cannot be answered from the provided sources." instead of
+saying there is no step 3 wireframe. On the two invite questions it did
+bring the onboarding session in, but through its best-scoring passage (its
+Participants prose), not the session 3 quote that holds the answer. The slot
+picks records, not passages, so the evidence stayed out of view. The code
+and its tests stay, so it can be turned on (`RETRIEVAL.provenanceSlot`)
+once passage choice is fixed.
+
+**What was measured** (gold set 10 regression + 7 scenario questions, seed 42, temperature 0.2, 3
+seeded and 3 unseeded runs each, corpus 4ba145f). Every step was measured
+against the one before, and stopped at an entry turning from pass to fail
+in the seeded run and at least 2 of 3 unseeded runs. Passes are regression /
+scenario, against a baseline of 5 / 0, all judged by the current answer
+checks (below). The final step's runs are kept in `backend/ask/eval/results/`
+(`v1.3.6.7-step5`, `v1.3.6.7-step5-scenarios`, and `baseline-vs-v1.3.6.7-step5`
+for both sets). The intermediate runs and reports (steps 1–4, step 3-off,
+and their comparisons) were moved out of the repo to `~/rr103-results/` on
+the machine that ran them. The table below summarizes each:
+
+| Step | Change | Passes | Prompt chars, regression mean / max | What flipped |
+|---|---|---|---|---|
+| 1 | Labels and prompt rules | 5 / 0 | 3,925 / 4,615 (baseline 3,419 / 4,091) | `prior-auth-citations` fail → pass; `scribe-sound-alike-names` pass → fail (the raw session was shown by its Objective, not the Key Findings with the counts) |
+| 2 | Metadata sections excluded, roster header | 5 / 0 | 4,025 / 4,999 | none; one more scenario cites a raw session |
+| 3 | Provenance slot | 4 / 0 | 4,064 / 4,999 | `audit-step3-wireframe` pass → fail |
+| 3, off | Slot off again | 5 / 0 | 4,025 / 4,999 | back to step 2 exactly (identical seeded answers) |
+| 4 | k = 8 | 4 / 0 | 4,920 / 5,905 | `audit-onboarding-steps-order` pass → fail, 3 of 3 unseeded too |
+| 5 | Two passages per raw session (k = 6, slot off) | **6 / 0** | 4,837 / 7,162 (scenario 5,521 / 7,378) | `scribe-sound-alike-names` fail → pass (unseeded 2 of 3 passing before and after); nothing lost |
+
+k = 8 was reverted. At 8 the model wrote the onboarding steps as a
+"- Step N — …" list with its one citation on the last item, which the
+answer checks read as five uncited sentences. The answer itself was right,
+but the regression rule stopped there. Step 5 was measured on its own, on
+top of step 3-off, and kept (`passagesPerRaw: 2`) because it met the
+rule set for it: at least one entry gained and none lost. Its one gold gain
+is incidental. It shows the same records as before and adds each raw
+session's second-best passage, which for the medication-flag session is
+its Method, not the Key Findings holding "5 of 6". The entry passes because
+the reworded answer cites that session's Objective for one sentence, while
+the counts are still cited to the synthesis finding, and its unseeded runs
+pass 2 of 3 both before and after. The real effect is evidence in view: for
+four failing entries the second passage put the gold evidence in front of
+the model (the burnout survey's quotes, the prior-auth v1 "inline source
+citations" recommendation, the chart-review session's representative
+quote, the onboarding session's sessions 4–6), and the model still doesn't
+use it. It lengthens the prompt by
+20–25% on average, most on survey-heavy questions where four of the six
+records are raw sessions (up to +2,500 characters). Limiting the second
+passage to sessions ranked in the top 3 would keep the one gain (that
+session ranked 3rd) and, by estimate, cut about two thirds of the growth.
+It wasn't built, since the growth stays well inside the context window.
+
+**Answer-check fixes** (`backend/ask/checks.js`), found by reading every
+uncited sentence the runs produced:
+- A sentence with "not", "cannot" or "no" and the word "sources" anywhere
+  is a decline. "The question cannot be answered from the provided sources."
+  and "Steps 1, 2, 4, 5, and 6 are not explicitly labeled … in the provided
+  sources." were counted as uncited claims. A decline's figures must still
+  be in its sources or the question.
+- Markers after a full stop that are followed by a lowercase word open the
+  next sentence: in "…care coordinators. [1] mentions that three sessions…"
+  the [1] is the subject of the second sentence, not a trailing citation
+  of the first. Followed by a capital, as in "…sessions. [1] The next…" (374
+  times in the stored runs, against 26 of the lowercase form), they stay
+  with the sentence before.
+- A list whose one citation sits on its last item is still read as
+  uncited items. That's deliberate: the citation may cover only that item.
+
+Every stored run, the baselines included, was re-judged with these rules.
+No seeded verdict changed. The baseline and PR A runs' counts didn't change
+at all. Steps 1–4 lost their uncited sentences except step 4's list items
+(one per set, two in step 3's regression set), and one unseeded run of
+`onboarding-required-steps` now passes in each of steps 1–3-off.
+
+**Consequence:** cold embedding covers 431 passages instead of 548 (about
+3–4 seconds instead of 6). The prompt is about 40% longer on average than
+before RR-103 (3,419 → 4,837 regression, 3,730 → 5,521 scenario), for the
+labels, roster lines and second raw passages. Cold latency rose from 3.1 to
+4.1 seconds (regression mean). The remaining failures that don't cite
+their raw session split three ways:
+- The session isn't shown at all: the invite questions, and scribe v0.2 for
+  the scribe-trust question.
+- The evidence is in a third section of the session: the adoption window's
+  "4 weeks" is in Method, and the prior-auth "show your work" is in the
+  other Key Findings passage.
+- The evidence was shown and the model didn't use it: the burnout survey's
+  "52% of physicians", and the care coordinators' cross-referencing and
+  distrust of AVS summaries.
+
+See "Known gaps" in `docs/architecture.md`.

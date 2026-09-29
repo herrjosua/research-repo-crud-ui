@@ -9,9 +9,21 @@
 
 const MARKER_RE = /\[(\d+)\]/g;
 const LIST_ITEM_RE = /^\s*(?:[-•*]|\d+[.)])\s+/;
+// Where a sentence that opens with its own markers begins: after
+// punctuation, before "[n]…" and a lowercase word.
+const LEADING_MARKERS_SPLIT_RE = /(?<=[.!?])\s+(?=(?:\[\d+\]\s*)+[a-z])/;
 // A sentence saying the sources don't cover something. Not a claim, so it
-// needs no citation (a figure in it still needs one).
+// needs no citation (a figure in it still needs one). Either DECLINE_RE
+// ("the sources do not say…"), or a negation and the word "sources"
+// anywhere, in either order ("The question cannot be answered from the
+// provided sources", "Steps 1–6 are not labeled … in the sources").
 const DECLINE_RE = /\b(sources?|records?|notes?|data|research|documents?|repository|repo)\b[^.]{0,60}\b(do not|don't|does not|doesn't|did not|didn't|not|no|never)\b[^.]{0,40}\b(say|state|mention|describe|include|contain|specify|provide|give|report|answer|cover|address|discuss|information|detail)/i;
+const NEGATION_RE = /\b(not|cannot|no)\b/i;
+const SOURCES_RE = /\bsources\b/i;
+
+function isDecline(text) {
+    return DECLINE_RE.test(text) || (NEGATION_RE.test(text) && SOURCES_RE.test(text));
+}
 
 // ---------------------------------------------------------------------------
 // Figures
@@ -40,12 +52,14 @@ function countPairsIn(text) {
     return [...digitsForWords(text).matchAll(PAIR_RE)].map((m) => `${m[1]} of ${m[2]}`);
 }
 
-// What a cited source offers as evidence for a figure: its title and section
-// as well as its excerpt, since the model is shown all three. Otherwise
-// "Participant in session 1…" is flagged for the "1" in its heading.
+// What a cited source offers as evidence for a figure: its title, section
+// and a raw session's roster line as well as its excerpt, since the model is
+// shown all of them. Otherwise "Participant in session 1…" is flagged for
+// the "1" in its heading, and "6 participants" for a count only the roster
+// line gives.
 function sourceEvidence(source) {
     if (!source) return '';
-    return [source.title, source.section, source.excerpt].filter(Boolean).join('\n');
+    return [source.title, source.section, source.participants, source.excerpt].filter(Boolean).join('\n');
 }
 
 // Figures and "N of M" counts in `text` that `evidence` doesn't contain.
@@ -75,7 +89,11 @@ function withoutMarkers(text) {
 // The answer as sentences and list items, each with its own [n] markers. A
 // split only happens after punctuation and any markers that follow it (the
 // model writes both "…sessions [1]." and "…sessions. [1]"), and a list
-// item's leading "1." or "-" is kept out of it. A line of nothing but
+// item's leading "1." or "-" is kept out of it. Markers after punctuation
+// that are followed by a lowercase word start the next sentence instead:
+// "…coordinators. [1] mentions that…" has [1] as its subject. (Followed by
+// a capital, as in "…sessions. [1] The next…", they stay a trailing
+// citation of the sentence before.) A line of nothing but
 // markers belongs to what precedes it: a list's trailing "[1][2]" cites the
 // whole list (a group citation), and anywhere else it joins the sentence
 // before it.
@@ -86,7 +104,9 @@ function answerSentences(answer) {
         if (!line.trim()) continue;
         const listItem = LIST_ITEM_RE.test(line);
         const body = line.replace(LIST_ITEM_RE, '');
-        const pieces = body.split(/(?<=[.!?](?:\s*\[\d+\])*)\s+(?!\[)/).map((p) => p.trim()).filter(Boolean);
+        const pieces = body.split(LEADING_MARKERS_SPLIT_RE)
+            .flatMap((part) => part.split(/(?<=[.!?](?:\s*\[\d+\])*)\s+(?!\[)/))
+            .map((p) => p.trim()).filter(Boolean);
         for (const piece of pieces) {
             const text = withoutMarkers(piece);
             const markers = markersIn(piece);
@@ -131,7 +151,7 @@ function analyseAnswer(answer, sources, question = '') {
         const cites = own.length > 0 ? own : sentence.groupMarkers;
         let exempt = null;
         if (own.length === 0) {
-            if (DECLINE_RE.test(sentence.text)) exempt = 'decline';
+            if (isDecline(sentence.text)) exempt = 'decline';
             else if (!sentence.listItem && sentence.text.endsWith(':')) exempt = 'list intro';
             else if (sentence.listItem && sentence.groupMarkers.length > 0) exempt = 'group-cited list item';
         }
@@ -182,4 +202,5 @@ module.exports = {
     unsupportedFiguresIn,
     MARKER_RE,
     DECLINE_RE,
+    isDecline,
 };

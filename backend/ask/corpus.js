@@ -104,6 +104,66 @@ function chunkRecord(record) {
     return passages.map((passage, index) => ({ ...passage, index }));
 }
 
+// Sections that describe a record rather than hold its evidence: who took
+// part, what it links to, where it lives in code. A question about a topic
+// matches these on names and titles alone (a roster matches any question
+// naming a role; an Evidence Trail matches any question naming a session), so
+// they crowded real evidence out of the top k. They're still chunked, so a
+// record's text is complete for provenance links (ask/provenance.js) and a
+// cited passage's surrounding context, but never embedded or retrieved. A
+// raw session's roster reaches the model instead as a one-line header on
+// that session's sources (participantsHeader). Per record kind, by heading:
+const METADATA_SECTIONS = {
+    raw: [/^Participants — /, /^Related$/],
+    finding: [/^Evidence Trail$/, /^Related Findings$/],
+    component: [/^Code mapping$/, /^Related Research Findings$/],
+};
+// …plus a raw record's heading-less one-line "Researcher: …" passage (the
+// onboarding session has one). The onboarding session's own "Participants"
+// section, with no " — <title>", is prose evidence ("6 participants, all
+// first-time admins…") and stays retrievable.
+const RESEARCHER_LINE_RE = /^Researcher:[^\n]*$/;
+
+function isMetadataPassage(record, passage) {
+    if (record.kind === 'raw' && !passage.heading && RESEARCHER_LINE_RE.test(passage.text)) return true;
+    return (METADATA_SECTIONS[record.kind] || []).some((re) => re.test(passage.heading || ''));
+}
+
+// A raw session's roster (its "Participants — <title>" section) as one line:
+//   "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1"
+// Roles carry a ×n count only when the list has one line per participant;
+// most rosters list each role once whatever the head count ("Count: 6" over
+// four roles), and there a count would be invented, so the roles are listed
+// plainly: "Participants: 6 — Physician, Nurse Practitioner, …". A count
+// that isn't a number ("N/A" on the analytics review) is kept as written,
+// without roles. null for a record with no roster.
+function participantsHeader(record) {
+    if (record.kind !== 'raw') return null;
+    const blocks = htmlToBlocks(record.html || '').filter((b) => /^Participants — /.test(b.heading || ''));
+    if (blocks.length === 0) return null;
+    let count = null;
+    const roles = [];
+    let inRoles = false;
+    for (const { text } of blocks) {
+        const field = /^([A-Z][A-Za-z ]{0,30}):\s*(.*)$/.exec(text);
+        if (field) {
+            inRoles = field[1] === 'Roles';
+            if (field[1] === 'Count') count = field[2].trim();
+            if (inRoles && field[2].trim()) roles.push(field[2].trim());
+        } else if (inRoles) {
+            roles.push(text);
+        }
+    }
+    if (!count) return null;
+    if (!/^\d+$/.test(count)) return `Participants: ${count}`;
+    if (roles.length === 0) return `Participants: ${count}`;
+    const tally = new Map();
+    for (const role of roles) tally.set(role, (tally.get(role) || 0) + 1);
+    const onePerParticipant = roles.length === Number(count);
+    const list = [...tally].map(([role, n]) => (onePerParticipant ? `${role} ×${n}` : role)).join(', ');
+    return `Participants: ${count} — ${list}`;
+}
+
 // Text actually sent to the embedding model for a passage. nomic-embed-text
 // is trained with task prefixes ("search_document: " for corpus text,
 // "search_query: " for questions) and retrieves noticeably worse without
@@ -160,6 +220,9 @@ module.exports = {
     decodeEntities,
     htmlToBlocks,
     chunkRecord,
+    METADATA_SECTIONS,
+    isMetadataPassage,
+    participantsHeader,
     embeddingText,
     queryEmbeddingText,
     clip,
