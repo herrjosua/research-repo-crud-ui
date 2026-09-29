@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:all": "concurrently \"npm:dev\" \"npm:storybook\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -35,6 +36,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "chromatic": "^18.9.5",
+    "concurrently": "^10.0.5",
     "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.6",
