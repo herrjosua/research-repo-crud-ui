@@ -29,6 +29,10 @@ Opens at `http://localhost:5173` by default. The Vite dev server proxies
 session cookies work correctly across the frontend/backend origin split in
 dev without needing CORS config on the Express side.
 
+To run Storybook (`http://localhost:6006`) alongside the dev server, use
+`npm run dev:all` instead: it starts both with output prefixed `[dev]` /
+`[storybook]`, and Ctrl+C stops both.
+
 Ask the Repo's local Ollama setup is backend-only — see
 [`../backend/README.md`](../backend/README.md#ask-the-repo-local-ollama).
 
