@@ -4,8 +4,8 @@
 command. It runs **on the server**, from the app checkout, never locally:
 
 ```bash
-~/apps/research-repo-crud-ui/scripts/deploy.sh v1.2.8
-~/apps/research-repo-crud-ui/scripts/deploy.sh --dry-run v1.2.8   # checks + plan, no changes
+<app-dir>/scripts/deploy.sh v1.2.8
+<app-dir>/scripts/deploy.sh --dry-run v1.2.8   # checks + plan, no changes
 ```
 
 It's non-interactive and exits non-zero on any failure, so a GitHub Actions
@@ -14,21 +14,24 @@ this page).
 
 ## The server
 
-`scripts/deploy.sh` defines this reference deployment's actual paths near
-its top (`APP_DIR`, `LAUNCHER`, and the rest — see
-[Configuration](#configuration)); adjust them for a different host.
+This page writes host-specific values as placeholders. The scripts'
+built-in defaults (app directory, launcher path, port) are still those of
+the reference deployment; override them with the `DEPLOY_*` variables for
+your host (see [Configuration](#configuration)). The placeholders are
+`<app-dir>` (the app checkout), `<port>` (the port the app listens on),
+`<state-dir>` (deploy state), `<log-dir>` (deploy logs) and `<scripts-dir>`
+(where the SSH wrapper is installed).
 
 | What | Where |
 |---|---|
-| OS | Rocky Linux 8.10 (glibc 2.28), bash 4.4, `flock` from util-linux |
-| `$HOME` | `/home` |
+| OS | Linux with a glibc older than 2.34 (see [better-sqlite3 on an older glibc](#better-sqlite3-on-an-older-glibc)), bash 4.4+, `flock` from util-linux |
 | Node | v24, installed by the process manager (see below) under a path shaped like a Node version manager's, e.g. `<node-bin>` — though no version manager is actually installed on this host; its shell config puts that directory on `PATH` directly. |
-| App checkout | `~/apps/research-repo-crud-ui`, always a release tag (detached HEAD) |
+| App checkout | `<app-dir>`, always a release tag (detached HEAD) |
 | Launcher | `<launcher>`, run by the process manager; it requires `backend/server.js` from the checkout |
 | Secrets | `backend/.env`, not in git. The script never reads or writes it. |
-| Port | 26851 (`PORT` in `backend/.env`; the script has its own copy, `DEPLOY_PORT`) |
-| Deploy log | `~/logs/deploy/research-repo-crud-ui.log`, outside the web root |
-| Deploy state | `~/apps/.research-repo-crud-ui-deploy/`: the lock file and the backend staging directory |
+| Port | `<port>` (`PORT` in `backend/.env`; the script has its own copy, `DEPLOY_PORT`) |
+| Deploy log | `<log-dir>/research-repo-crud-ui.log`, outside the web root |
+| Deploy state | `<state-dir>/`: the lock file and the backend staging directory |
 
 Some shared hosts run Node apps through a control-panel feature that assigns
 the port, expects the app at a specific launcher path, and restarts it
@@ -41,7 +44,10 @@ one within about 20 seconds.
 
 1. **Refuses (exit 3, nothing changed)** in any of these cases:
    - another deploy holds the lock;
-   - the tag isn't exactly `vMAJOR.MINOR.PATCH`;
+   - the tag doesn't match `^v[0-9]+\.[0-9]+\.[0-9]+$`: a lowercase `v`
+     and three dot-separated numbers, with nothing before or after (no
+     suffix such as `-rc1`, no fourth part such as `v1.3.6.31`). The
+     deploy workflow and the SSH wrapper check the same pattern;
    - tracked files in the checkout have uncommitted changes;
    - there isn't exactly one app process (see [Finding the app process](#finding-the-app-process));
    - `git fetch` fails — including two cases it names specifically: the tag
@@ -67,7 +73,7 @@ one within about 20 seconds.
 7. **Restarts:** SIGTERM to the app process, never `-9`. Its start time is
    checked again just before the signal, so a reused PID is never killed.
 8. **Waits** (120s by default) for a *new* app process. That process must
-   answer `http://127.0.0.1:26851/api/health` (sent with the right `Host`),
+   answer `http://127.0.0.1:<port>/api/health` (sent with the right `Host`),
    then the public `https://ux-research.joshuabock.com/api/health`. Both must
    report `status: ok`, the tag's version, and a `startedAt` later than the
    SIGTERM.
@@ -149,7 +155,7 @@ the launcher path as an argument.
 | 2 | Rollback failed or the app didn't come back: see [Manual rollback](#manual-rollback) |
 | 3 | Refused before changing anything |
 
-### better-sqlite3 on glibc 2.28
+### better-sqlite3 on an older glibc
 
 better-sqlite3 13 ships prebuilt binaries inside the package, and the Linux
 one needs glibc 2.34. Its loader always tries `prebuilds/linux-x64.node`
@@ -191,7 +197,7 @@ pushed.
 2. **Check the checkout is clean and on v1.2.6:**
 
    ```bash
-   cd ~/apps/research-repo-crud-ui
+   cd <app-dir>
    git status --porcelain --untracked-files=no    # must print nothing
    git describe --tags --exact-match              # v1.2.6
    ```
@@ -263,7 +269,7 @@ pushed.
 
    ```bash
    scripts/deploy.sh --dry-run v1.2.7    # "... v1.2.7 is already checked out; nothing to do." exit 0
-   tail ~/logs/deploy/research-repo-crud-ui.log
+   tail <log-dir>/research-repo-crud-ui.log
    ```
 
 **If step 7 fails,** go back to v1.2.6 by hand:
@@ -296,13 +302,13 @@ pushed.
 1. **Fetch the tag.** `git show` below needs it locally:
 
    ```bash
-   git -C ~/apps/research-repo-crud-ui fetch --tags origin
+   git -C <app-dir> fetch --tags origin
    ```
 
 2. **Extract v1.2.8's script** outside the checkout:
 
    ```bash
-   git -C ~/apps/research-repo-crud-ui show v1.2.8:scripts/deploy.sh > ~/deploy-v1.2.8.sh
+   git -C <app-dir> show v1.2.8:scripts/deploy.sh > ~/deploy-v1.2.8.sh
    ```
 
 3. **Dry run, then deploy.** Run it with `bash` rather than `chmod +x`, so a
@@ -328,13 +334,13 @@ pushed.
 
 ## Manual rollback
 
-Only needed after exit 2. Read the end of `~/logs/deploy/research-repo-crud-ui.log` first.
+Only needed after exit 2. Read the end of `<log-dir>/research-repo-crud-ui.log` first.
 It says which step failed.
 
-1. Make sure no deploy is running: `flock -n ~/apps/.research-repo-crud-ui-deploy/deploy.lock true`
+1. Make sure no deploy is running: `flock -n <state-dir>/deploy.lock true`
    succeeds.
 2. Check out the release that should be live:
-   `git -C ~/apps/research-repo-crud-ui checkout <tag>`.
+   `git -C <app-dir> checkout <tag>`.
 3. If the log shows `node_modules` or `dist` were swapped and not restored,
    move the `.prev` copy back:
    - `rm -rf backend/node_modules && mv backend/node_modules.prev backend/node_modules`
@@ -346,21 +352,22 @@ It says which step failed.
 
 ## Configuration
 
-Every path and setting has a default for this server and can be overridden
-through the environment. The test harness uses these overrides.
+Every path and setting has a default near the top of `scripts/deploy.sh`
+and can be overridden through the environment. The test harness uses these
+overrides.
 
 | Variable | Default |
 |---|---|
-| `DEPLOY_APP_DIR` | `~/apps/research-repo-crud-ui` |
-| `DEPLOY_LAUNCHER` | `<launcher>` — this reference deployment's actual value is set at the top of `scripts/deploy.sh` |
-| `DEPLOY_PORT` | `26851` |
+| `DEPLOY_APP_DIR` | `<app-dir>` |
+| `DEPLOY_LAUNCHER` | `<launcher>`; the script's default is the reference deployment's launcher path |
+| `DEPLOY_PORT` | `<port>` |
 | `DEPLOY_HOST` | `ux-research.joshuabock.com` (the `Host` sent to the local health check) |
 | `DEPLOY_HEALTH_URL` | `https://ux-research.joshuabock.com/api/health`; set it empty to skip the public check |
 | `DEPLOY_HEALTH_TIMEOUT` / `DEPLOY_POLL_INTERVAL` | `120` / `3` seconds |
 | `DEPLOY_STEP_TIMEOUT` | `1200` seconds per npm or git step |
-| `DEPLOY_STATE_DIR` | `~/apps/.research-repo-crud-ui-deploy`; must be on the same filesystem as the checkout |
+| `DEPLOY_STATE_DIR` | `<state-dir>`; must be on the same filesystem as the checkout |
 | `DEPLOY_LOCK_FILE` | `$DEPLOY_STATE_DIR/deploy.lock` |
-| `DEPLOY_LOG_FILE` | `~/logs/deploy/research-repo-crud-ui.log` |
+| `DEPLOY_LOG_FILE` | `<log-dir>/research-repo-crud-ui.log` |
 | `DEPLOY_NODE_BIN` | empty: use the directory of the running app's own `node` (`/proc/<pid>/exe`, else argv[0]; see [Finding the app process](#finding-the-app-process)) |
 | `DEPLOY_SCL` | `scl enable gcc-toolset-14 --`; the prefix for the better-sqlite3 compile |
 
@@ -416,7 +423,7 @@ macOS, `brew install bash flock` and run it with Homebrew's bash. There the
 script falls back from `/proc` to `ps`, so the `/proc` code paths, including
 the unreadable-exe phase (reported as `SKIP`), are only exercised in CI.
 Neither place can test the real `npm ci`, the gcc-toolset compile, or
-Cloudflare. The first real deploy covers those.
+the edge proxy in front of the host. The first real deploy covers those.
 
 [`scripts/tests/ssh-retry-classify.test.sh`](../scripts/tests/ssh-retry-classify.test.sh)
 tests [`scripts/ssh-retry-classify.sh`](../scripts/ssh-retry-classify.sh)
@@ -427,7 +434,11 @@ codes 0-3 are never retried regardless of their output.
 ## Deploying from GitHub Actions
 
 Pushing a `vX.Y.Z` tag triggers
-[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml), which SSHes
+[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) (any tag
+matching `v*.*.*` starts it, and the `verify` job below refuses the rest;
+see the README's
+[Versioning and releases](../README.md#versioning-and-releases) for how
+tags are cut), which SSHes
 into the server with a key restricted to one forced command and runs
 [`scripts/ssh-deploy-wrapper.sh`](../scripts/ssh-deploy-wrapper.sh) there. No
 shell is ever reachable through that key.
@@ -438,8 +449,12 @@ shell is ever reachable through that key.
    out the tag's commit and confirms it's an ancestor of `origin/main`. That
    second check matters: branch protection only ever examined commits that
    reached `main` through a PR, so a tag pushed at some other commit could
-   otherwise skip the 5 required CI checks entirely. `deploy` only runs if
-   this passes.
+   otherwise skip the seven required status checks entirely (listed in the
+   README's [CI](../README.md#ci) section). The job reads no check results
+   itself: it only confirms the commit is on `main`'s history, and relies on
+   branch protection having required those checks, and an up-to-date
+   branch, before the commit reached `main`. `deploy` only runs if this
+   passes.
 2. **`deploy` job.** Re-checks the tag format (belt and suspenders — the
    value flows into an SSH command), writes the SSH private key and pinned
    host key from GitHub secrets to temp files, then runs
@@ -450,7 +465,7 @@ shell is ever reachable through that key.
    lands only in `$SSH_ORIGINAL_COMMAND`. The wrapper accepts exactly
    `deploy vMAJOR.MINOR.PATCH` (same regex as `deploy.sh`'s own tag check)
    and refuses everything else, logging every attempt (accepted or refused)
-   to `~/logs/deploy/ssh-wrapper.log`. On a match it `exec`s
+   to `<log-dir>/ssh-wrapper.log`. On a match it `exec`s
    `scripts/deploy.sh <tag>` from the live checkout — the same script and
    same rules as a manual deploy, including the lock, so a workflow run and
    a person running `deploy.sh` by hand can never race each other.
@@ -514,18 +529,18 @@ None of this is automated; it's server and GitHub configuration, done once.
    ssh-keygen -t ed25519 -f github-actions-deploy -N "" -C github-actions-deploy
    ```
 2. **Install the wrapper on the server, outside the app checkout** (it must
-   keep working no matter what `~/apps/research-repo-crud-ui` has checked
+   keep working no matter what `<app-dir>` has checked
    out, or is mid-deploying):
    ```bash
-   scp scripts/ssh-deploy-wrapper.sh user@host:~/scripts/ssh-deploy-wrapper.sh
-   ssh user@host chmod +x ~/scripts/ssh-deploy-wrapper.sh
+   scp scripts/ssh-deploy-wrapper.sh user@host:<scripts-dir>/ssh-deploy-wrapper.sh
+   ssh user@host chmod +x <scripts-dir>/ssh-deploy-wrapper.sh
    ```
    Re-run this `scp` whenever the wrapper changes in the repo — it is not
    picked up automatically like `deploy.sh` is.
 3. **Add the forced-command entry to `~/.ssh/authorized_keys`** on the
    server (one line, no line breaks):
    ```
-   command="/home/scripts/ssh-deploy-wrapper.sh",no-pty,no-agent-forwarding,no-X11-forwarding,no-port-forwarding,no-user-rc ssh-ed25519 AAAA... github-actions-deploy
+   command="<scripts-dir>/ssh-deploy-wrapper.sh",no-pty,no-agent-forwarding,no-X11-forwarding,no-port-forwarding,no-user-rc ssh-ed25519 AAAA... github-actions-deploy
    ```
    Use the *public* key (`github-actions-deploy.pub`) here.
 4. **Pin the host key**, so the workflow can set `StrictHostKeyChecking=yes`
@@ -561,7 +576,7 @@ Before relying on it for a real release:
   ssh -i github-actions-deploy -p <port> user@host "bash"             # should be refused
   ssh -i github-actions-deploy -p <port> user@host                    # should be refused (no command)
   ```
-- Check `~/logs/deploy/ssh-wrapper.log` shows the attempts above, accepted
+- Check `<log-dir>/ssh-wrapper.log` shows the attempts above, accepted
   and refused.
 - Push a real tag and watch the Actions run end to end, including that the
   `verify` job actually blocks a tag pushed at a commit not on `main`.

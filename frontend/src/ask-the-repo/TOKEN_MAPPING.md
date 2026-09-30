@@ -8,9 +8,9 @@ Real tokens read from `frontend/src/styles/_variables.scss` and the
 `docs/design-tokens/README.md`, read 2026-09-26).
 
 This file lives here (not under `docs/design-tokens/`) because `docs/` is
-gitignored wholesale (`.gitignore:19`, commit `5a487ad`) except the
-already-tracked `docs/deploy.md` — anything else placed there would never
-actually get committed.
+gitignored (`docs/*`, `.gitignore:21`) except the published docs the lines
+after it un-ignore: `docs/architecture.md`, `docs/decisions.md` and
+`docs/deploy.md`. Anything else placed there isn't committed.
 
 ## Color: DARK/LIGHT → Carbon theme tokens
 

@@ -267,9 +267,28 @@ frontend/
 ├── src/
 │   ├── api/
 │   │   ├── client.js       Shared fetch wrapper — credentials included, JSON in/out, error handling
-│   │   ├── auth.js         useLogin, useLogout, useSignup (hook, no screen yet), useMe
+│   │   ├── client.test.js
+│   │   ├── auth.js         useLogin, useLogout, useSignup (hook, no screen yet), useMe,
+│   │   │                   useDemoUsers, useDemoLogin, useUsers (the lead-reassignment list)
+│   │   ├── ask.js          useAskConfig (GET /api/ask/config), askRepo (POST /api/ask)
+│   │   ├── dev.js          useDevProvider, useSetDevProvider: the dev-only provider toggle's calls
+│   │   ├── dev.test.jsx
 │   │   └── records.js      useRecords, useRecord, useCreateSession, useUpdateRecord,
 │   │                       useDeleteRecord, useRecordHistory
+│   ├── ask-the-repo/       The Ask the Repo page. Most components below also have a
+│   │   │                   .module.scss, a .stories.jsx and a .test.jsx beside them.
+│   │   ├── AskTheRepo.jsx  The page: left rail, chat panel, sources rail, Saved Insights tab;
+│   │   │                   loads the dev-only toggle in dev builds only
+│   │   ├── TOKEN_MAPPING.md  How the design's tokens map to Carbon
+│   │   ├── chat/           ChatPanel, ChatMessage, AssistantMessage, Composer,
+│   │   │                   QuestionPicker (static mode), StarterQuestions; useAskRepo
+│   │   │                   (the ask flow), askCopy.js (request-state wording), starters.js
+│   │   ├── dev/            DevProviderToggle (dev only, no story), devProviderCopy.js
+│   │   ├── fixtures/       Story and test data only
+│   │   ├── insights/       SavedInsightsView, InsightCard, useSavedInsights (page state only)
+│   │   ├── rails/          LeftRail, ProjectSwitcher, ConversationList
+│   │   ├── shell/          BreadcrumbBar (shared by both pages)
+│   │   └── sources/        SourcesPanel, SourceCard, SourceDetailModal, KindTag, kindMeta.js
 │   ├── styles/
 │   │   └── _variables.scss Shared Sass tokens (spacing, header height)
 │   ├── App.jsx              Top-level: session gate (login/picker vs. dashboard), demo disclaimer, header
@@ -317,12 +336,15 @@ Shipped. What changed for the frontend:
 - **Security hardening**: covered in
   [`../backend/README.md`](../backend/README.md)'s Security notes — path
   validation, `helmet` headers, `robots.txt`, rate limiting, and HTTPS
-  (terminated at Cloudflare's edge) are all live, not just prepped.
+  (terminated at the edge proxy in front of the host, configured outside
+  this repo) are all live, not just prepped.
 - **Signup screen**: still not built. `useSignup()` exists in `api/auth.js`
   but has no screen — the public deploy uses closed signup with seeded demo
   accounts instead (see the root README's [Demo mode](../README.md#demo-mode)).
 
-What's next (v1.3, v1.4) is in the root README's
+v1.3 is in progress (its Ask the Repo was released as v1.3.6), and v1.4
+(Storybook and Chromatic, see [Storybook](#storybook)) has shipped. Their
+status and what's still planned are in the root README's
 [Roadmap](../README.md#roadmap). v1.0 also found and fixed three real bugs:
 a silent git-commit-loss bug, a `build_index.py` crash, and its root cause
 in how `gray-matter` handles frontmatter dates.

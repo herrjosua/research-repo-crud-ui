@@ -24,6 +24,32 @@ Research Repo CRUD UI/
 └── .gitignore
 ```
 
+## Documentation
+
+Every tracked doc. "Checked" means re-read against the repo on that date;
+"partly checked" means only the sections named were. The other docs
+haven't been re-checked since the date of their last commit.
+
+| Doc | Purpose | Status |
+|---|---|---|
+| [`README.md`](./README.md) | Overview, setup pointers, repos, CI, roadmap, versioning | Checked against repo 2026-09-30 |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Chromatic visual review and Storybook story rules | Not re-verified (last commit 2026-09-29) |
+| [`docs/architecture.md`](./docs/architecture.md) | How the pieces fit together; Ask the Repo's request flow, static mode and known gaps | Checked against repo 2026-09-30 |
+| [`docs/decisions.md`](./docs/decisions.md) | The decision log | Checked against repo 2026-09-30 |
+| [`docs/deploy.md`](./docs/deploy.md) | Deploy runbook: `deploy.sh`, the tag-triggered workflow, the deploy key | Checked against repo 2026-09-30 |
+| [`backend/README.md`](./backend/README.md) | Backend setup, env vars, Ask the Repo setup and evaluation, API reference | Partly checked 2026-09-30 (intro and agentic-repo link, Python path note, the milestone line, Ask the Repo latency and passage counts, Auth and Records API tables, lead role, the HTTPS security note); rest not re-verified (last commit 2026-09-30) |
+| [`frontend/README.md`](./frontend/README.md) | Frontend setup, testing, Storybook, stack decisions | Partly checked 2026-09-30 (milestone status, project structure's `api/` and `ask-the-repo/` entries, v1.2 section); rest not re-verified (last commit 2026-09-29) |
+| [`frontend/CLAUDE.md`](./frontend/CLAUDE.md) | Frontend theming and component conventions | Not re-verified (last commit 2026-09-28) |
+| [`frontend/src/ask-the-repo/TOKEN_MAPPING.md`](./frontend/src/ask-the-repo/TOKEN_MAPPING.md) | How the Ask the Repo design's tokens map to Carbon | Partly checked 2026-09-30 (why it lives there); rest not re-verified (last commit 2026-09-28) |
+| [`e2e/README.md`](./e2e/README.md) | End-to-end and accessibility tests: setup and findings | Not re-verified (last commit 2026-09-29) |
+| [`e2e/fixtures/README.md`](./e2e/fixtures/README.md) | The e2e fixture corpus | Not re-verified (last commit 2026-09-28) |
+| [`backend/tests/fixtures/projects-corpus/README.md`](./backend/tests/fixtures/projects-corpus/README.md) | The project-tagging test corpus | Not re-verified (last commit 2026-09-28) |
+| `backend/ask/eval/results/*.md` | Generated evaluation reports (`scripts/eval-ask.js`) | Generated, not hand-edited (last commit 2026-09-30) |
+
+The other markdown files under `e2e/fixtures/corpus/` and
+`backend/tests/fixtures/projects-corpus/` are fictional test records, not
+docs.
+
 ## Getting started
 
 This is a two-part app — the backend must be running before the frontend can
@@ -45,6 +71,36 @@ along with the push-disabled dev clone of agentic-repo to point the backend
 at, is covered in [`backend/README.md`](./backend/README.md#ask-the-repo-local-ollama).
 For how the pieces fit together, see
 [`docs/architecture.md`](./docs/architecture.md).
+
+## Repos and how they fit
+
+- **[agentic-repo](https://github.com/herrjosua/agentic-repo)** (public) is
+  the source of truth for the research corpus: the markdown records and the
+  Python scripts this app runs (`export_records.py`, `build_index.py` and
+  others). Set it up, including its Python environment, with its
+  [`docs/SETUP.md`](https://github.com/herrjosua/agentic-repo/blob/main/docs/SETUP.md).
+  Corpus edits are made in your own agentic-repo checkout, never through
+  this app's dev clone.
+- **A push-disabled dev clone** of agentic-repo is what the app reads and
+  writes. `AGENTIC_REPO_ROOT` in `backend/.env` points at it. The app
+  commits every create, edit and delete to whatever repo that variable
+  names, so never point it at your real checkout. Setting up the clone is
+  covered in [`backend/README.md`](./backend/README.md); the incident that
+  led to it is in
+  [decision 8](./docs/decisions.md#8-the-corpus-is-fictional-so-problems-are-fixed-by-authoring).
+- **The public demo's corpus** is a private demo repo, kept in step with
+  agentic-repo by a sync workflow in agentic-repo. Nothing in this repo
+  configures either.
+- **The static answers** the public demo serves
+  (`backend/ask/static/answers.json`) quote corpus records by id and were
+  captured against one agentic-repo commit (`metadata.corpusCommit`).
+  Changing the corpus can make them wrong, so check them with
+  `capture-static-answers.js verify` after corpus changes, and recapture
+  when cited records change: see
+  [`backend/README.md`](./backend/README.md#static-answers-for-the-public-demo-llm_providerstatic).
+
+Automated tests use none of these: they copy agentic-repo's scripts into a
+throwaway repo (see [Testing](#testing)).
 
 ## Demo mode
 
@@ -104,7 +160,9 @@ which copies the real Python scripts into a fresh, git-initialized temp folder.
 [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) runs on every push
 and pull request to `main`, as five jobs:
 
-- **frontend**: `npm ci`, `npm run lint`, and the Vitest suite on Node 24.
+- **frontend**: `npm ci`, `npm run lint`, the Vitest suite and
+  `npm run build` on Node 24, then a check that the production build
+  contains no trace of the dev-only provider toggle.
 - **backend**: checks out
   [`herrjosua/agentic-repo`](https://github.com/herrjosua/agentic-repo)
   (`main`) for the Python scripts the tests copy, installs its
@@ -126,6 +184,17 @@ and pull request to `main`, as five jobs:
   report and traces are uploaded as the `playwright-main` or
   `playwright-demo` artifact.
 
+Branch protection on `main` requires seven status checks, and requires a
+branch to be up to date with `main` before it merges:
+
+- from GitHub Actions, the six check names these five jobs produce:
+  `backend`, `frontend`, `chromatic`, `deploy-script`, `e2e (demo)` and
+  `e2e (main)`;
+- **UI Tests**, Chromatic's own status (accepted from any source).
+
+The protection settings themselves live in GitHub, not in this repo; this
+list is as of 2026-09-30.
+
 ## Production
 
 With `NODE_ENV=production`, one Node process serves both the API and the built
@@ -135,14 +204,17 @@ the build is missing. Every production setting is listed, with comments, in
 [`backend/.env.production.example`](./backend/.env.production.example),
 including:
 
-- **Proxy trust** for traffic arriving through Cloudflare and the host's
-  proxy: the host proxy's address (`TRUST_PROXY`, default `loopback`) plus
-  Cloudflare's published IP ranges in
-  [`backend/proxyTrust.js`](./backend/proxyTrust.js), so the rate limiters see
-  the real visitor IP.
+- **Proxy trust** for traffic arriving through the edge proxy and the
+  host's proxy: the host proxy's address (`TRUST_PROXY`, default
+  `loopback`) plus the edge's published IP ranges in
+  [`backend/proxyTrust.js`](./backend/proxyTrust.js), which lists
+  Cloudflare's, so the rate limiters see the real visitor IP.
 - **`ALLOWED_HOSTS`**: requests for any other hostname get `421`.
 - **`HTTPS_REDIRECT`**: the app's own HTTP→HTTPS redirect, off in the example
-  because Cloudflare's edge already enforces HTTPS.
+  for an edge proxy that already enforces HTTPS.
+
+How the public host and its edge proxy are configured lives outside this
+repo.
 
 `GET /api/health` returns `{ status, version, startedAt }` with
 `Cache-Control: no-store`, after checking the database answers.
@@ -151,7 +223,8 @@ including:
 
 Pushing a `vX.Y.Z` tag on `main` triggers
 [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml): after
-confirming the tag's commit actually reached `main` through a PR, the job
+confirming the tag's commit is on `main`'s history (so branch protection
+and the required checks above applied to it), the job
 waits for approval against the `production` GitHub Environment, then SSHes
 into the webhost — through a forced-command key, retrying a specific set of
 pre-auth connection failures (`scripts/ssh-retry-classify.sh`) — to run
@@ -167,7 +240,9 @@ one-time run of v1.2.8's own script.
 ## Roadmap
 
 Continues the version numbering from the original research repo (v0.1–v0.5
-shipped there).
+shipped there). These are milestones, not release numbers: see
+[Versioning and releases](#versioning-and-releases) for how they relate to
+tags.
 
 - [x] v0.6 — Backend Foundation (auth, sessions)
 - [x] v0.7 — File CRUD API (sessions, records)
@@ -175,9 +250,53 @@ shipped there).
 - [x] v0.9 — React Frontend: Auth + Browse
 - [x] v1.0 — React Frontend: Create/Edit/Delete
 - [x] v1.1 — Testing (Unit + QA)
-- [x] v1.2 — Deploy + Polish
-- [ ] v1.3 — Agentic LLM Layer (local, Ollama)
-- [ ] v1.4 — Enterprise Integration Design (Copilot / SharePoint) — design doc only
+- [x] v1.2 — Deploy + Polish, including the first release tags (v1.2.6 to
+  v1.2.10) and the tag-triggered deploy
+- [ ] v1.3 — Agentic LLM Layer (local, Ollama). In progress.
+  - [x] **Ask the Repo**, released as v1.3.6: questions answered from the
+    corpus with cited sources, by a local model. The same release has the
+    **static public-demo mode**: the public demo runs no model and serves
+    pre-generated answers to a curated list of questions
+    ([decision 13](./docs/decisions.md#13-the-public-demo-uses-pre-generated-answers-picked-from-a-list)).
+  - Merged since v1.3.6, not yet released: the **dev-only provider toggle**,
+    which switches a dev server between static and live answers without a
+    restart and is absent from production builds
+    ([decision 14](./docs/decisions.md#14-a-dev-only-switch-between-static-and-live-answers));
+    the answer-evaluation harness and its gold sets; the retrieval changes
+    in [decision 15](./docs/decisions.md#15-retrieval-changes-for-raw-session-evidence);
+    and the local chat-model comparison in
+    [decision 16](./docs/decisions.md#16-gemma29b-stays-the-chat-model-after-a-local-bake-off-v13631).
+  - [ ] Per-record synthesis assistance
+  - [ ] Document ingestion
+- [x] v1.4 — Storybook and Chromatic visual testing. Shipped: merged before
+  v1.3's first release and released with v1.3.6. See
+  [`frontend/README.md`](./frontend/README.md#storybook) and
+  [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+
+## Versioning and releases
+
+- **Version labels are milestones.** Labels such as v1.3 or v1.3.6.31 order
+  planned work and name branches (`feature/v1.3.6.31-…`). A label isn't a
+  release number, and most labels never become a tag.
+- **Release tags are `vMAJOR.MINOR.PATCH`**, cut in release order.
+  Before tagging, the `version` in both `backend/package.json` and
+  `frontend/package.json` must equal the tag without its `v`: `deploy.sh`
+  refuses a tag whose versions don't match.
+- **A tag starts the deploy.** Pushing a tag that matches `v*.*.*` runs
+  [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml). Its
+  `verify` job refuses any tag that isn't exactly
+  `^v[0-9]+\.[0-9]+\.[0-9]+$` (so a four-part label pushed as a tag starts
+  the workflow and then fails) and any tag whose commit isn't on `main`.
+  The `deploy` job then waits for approval in the `production` environment.
+  See [`docs/deploy.md`](./docs/deploy.md#deploying-from-github-actions).
+- **Tags are annotated from now on:** `git tag -a vX.Y.Z`.
+- **Six tags so far:** v1.2.6, v1.2.7, v1.2.8, v1.2.9, v1.2.10 and v1.3.6.
+  v1.2.6 to v1.2.9 are lightweight tags; v1.2.10 and v1.3.6 are annotated.
+  Earlier work (v0.6 to v1.1, and v1.2 before v1.2.6) shipped before
+  tagging began.
+- **"Shipped" means released**: a tag exists and it's deployed. Work merged
+  to `main` but not yet tagged is "merged". See
+  [decision 17](./docs/decisions.md#17-release-versioning).
 
 ## AI-Assisted Development
 

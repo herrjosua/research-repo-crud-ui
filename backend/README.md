@@ -1,7 +1,7 @@
 # Research Repo CRUD UI — Backend
 
 Node/Express API for the CRUD UI. Handles auth, session management, and all
-file CRUD against the [Agentic UX Research Repo](../../agentic-repo) by
+file CRUD against the [Agentic UX Research Repo](https://github.com/herrjosua/agentic-repo) by
 shelling out to its Python scripts (and, where no script exists, editing
 markdown files directly).
 
@@ -10,7 +10,8 @@ remain the source of truth for research content), `express-session` +
 `bcrypt` for auth, `gray-matter` for frontmatter parsing, Jest + supertest
 for testing.
 
-v0.6–v1.2 are complete (backend foundation through deploy). See the root
+v0.6–v1.2 are complete (backend foundation through deploy). v1.3 is in
+progress: its Ask the Repo was released as v1.3.6. See the root
 [Roadmap](../README.md#roadmap) for milestones and
 [`../docs/decisions.md`](../docs/decisions.md) for recent design decisions.
 
@@ -32,8 +33,8 @@ openssl rand -base64 32
 ```
 Find your agentic-repo venv's Python path (needed so the server calls the
 right interpreter — one that has `python-frontmatter` installed — rather than
-whatever bare `python3` resolves to on `PATH`, which ServBay shadows with a
-broken shim on this machine):
+whatever bare `python3` resolves to on `PATH`, which can be another tool's
+shim rather than a Python with the venv's packages):
 ```bash
 cd /absolute/path/to/your/agentic-repo
 source .venv/bin/activate
@@ -248,8 +249,8 @@ answers stay true to the commit in `metadata.corpusCommit`. Commit
 
 #### Evaluating answers (`scripts/eval-ask.js`)
 
-A before/after harness for changes to chunking, retrieval or prompting
-(RR-98, RR-103). It asks a fixed gold set of questions through the same
+A before/after harness for changes to chunking, retrieval or prompting.
+It asks a fixed gold set of questions through the same
 pipeline as the live route and judges each answer against what the corpus
 says a correct answer cites and claims. **It's a manual report, not a CI
 check**: it needs a real Ollama with the chat and embedding models pulled,
@@ -279,6 +280,15 @@ version, corpus commit, seed and temperature, so compare a `--set
 regression` run with `baseline` and a `--set scenario` run with
 `baseline-scenarios`. It warns when the Ollama version or a model digest
 differs.
+
+**Latency in the reports.** `run` embeds the whole corpus before it times
+anything, so no reported latency includes corpus embedding. A question's
+**cold** latency is its first seeded run (the first time that prompt is
+sent), and its **warm** latency is the median of its seeded runs, with the
+unseeded median alongside. The reports give cold latency as a mean and max
+over the set: for gemma2:9b with the current retrieval, 4.1 / 6.7 seconds on
+the regression set and 4.7 / 5.7 on the scenario set
+(`v1.3.6.7-step5.md`, `v1.3.6.7-step5-scenarios.md`).
 
 **The gold set** is `ask/eval/gold.json`, kept apart from `questions.json`.
 It holds two sets, named by each entry's `set`:
@@ -488,7 +498,10 @@ The Ask the Repo page asks `POST /api/ask` and reads its project list and
 availability from `GET /api/ask/config`. With `LLM_PROVIDER=ollama` it answers
 from the local model: the first question after a server start takes 10 to 20
 seconds while the corpus is embedded and the model loads (after about 5
-seconds the page says why), and later questions are faster. With
+seconds the page says why), and later questions are faster. That figure is
+the whole first question, including loading the models and embedding the
+corpus; the checked-in evaluation results don't measure it. What they do
+measure is under [Evaluating answers](#evaluating-answers-scriptseval-askjs). With
 `LLM_PROVIDER` unset, the page says Ask the Repo isn't available in this
 environment and disables asking; the rest of the app works as usual.
 With `LLM_PROVIDER=static` it offers the captured questions to pick from
@@ -701,16 +714,41 @@ otherwise).
 | POST   | `/api/auth/signup`       | `username, password, gitName, gitEmail` | Creates user, starts a session. Returns `403` when `DEMO_MODE=true`.  |
 | POST   | `/api/auth/login`        | `username, password`                      | Rate-limited: 5 attempts / 15 min. Refuses the three demo usernames with `403` when `DEMO_MODE=true`. |
 | POST   | `/api/auth/logout`       | —                                           | Destroys the session                                                  |
-| GET    | `/api/auth/me`           | —                                           | Returns current user or `401`                                        |
+| GET    | `/api/auth/me`           | —                                           | Returns current user (`id, username, git_name, git_email, is_lead`) or `401` |
+| GET    | `/api/auth/users`        | —                                           | Every user's `username` and `git_name`, ordered by username. Any logged-in user can call it (`401` otherwise); it feeds the lead-reassignment dropdown in the create and edit forms. Restricting it is planned. |
 | GET    | `/api/auth/demo-users`   | —                                           | Public, unauthenticated. Returns the three demo identities (`username`, `displayName`, `role`) when `DEMO_MODE=true`, else `[]`. |
 | POST   | `/api/auth/demo-login`   | `username`                                | Public, unauthenticated. Passwordless login for one of the three seeded demo usernames only (validated server-side against a fixed allowlist). `404` when `DEMO_MODE` isn't set; its own IP-based rate limiter (20 requests / 15 min). |
+
+#### The lead role
+
+A lead can attribute a record to someone else. Each user row has an
+`is_lead` flag (`users.is_lead`, `0` by default, added by a startup
+migration in `db.js`). Nothing in the API or UI sets it. In demo mode,
+`seedDemoUsers.js` seeds it from `demoUsers.js`, where Jordan Lee (Research
+Ops Lead) is the only lead; a demo user that already exists isn't
+re-seeded, so a changed flag there doesn't reach an existing database.
+Anyone else becomes a lead only by setting `is_lead = 1` on their row in
+the database directly.
+
+What it allows: setting a record's author field to someone other than
+yourself. The field is `researcher` on raw sessions, findings and analytics
+summaries, and `designer` on deliverables (`evaluator` on heuristic
+evaluations). The rule is enforced in `routes/records.js`:
+
+- `POST /api/sessions`: an empty `researcher` (raw mode) or `designer`
+  (deliverable mode) defaults to you. A non-lead may set it only to their
+  own `git_name`. Heuristic evaluations' `evaluator` isn't set at creation.
+- `PUT /api/records/:id`: a non-lead may leave the field unchanged or set it
+  to their own `git_name`.
+
+Anything else from a non-lead gets a `400`.
 
 ### Records / File CRUD (v0.7)
 
 | Method | Path                    | Body / Query                                          | Notes                                                       |
 |--------|-------------------------|---------------------------------------------------------|-----------------------------------------------------------------|
 | POST   | `/api/sessions`         | `{ mode: "raw" \| "deliverable", ... }`                | Wraps `new_research_session.py`. See field reference below. Rate-limited: 30 requests / 15 min per IP. |
-| GET    | `/api/records`          | `?kind=raw\|finding\|component\|analytics\|deliverable` | Shells out to `export_records.py`. `kind` filter optional.       |
+| GET    | `/api/records`          | `?kind=raw\|finding\|component\|analytics\|deliverable`, `?summary=true` | Shells out to `export_records.py`. Both optional. `summary=true` passes `--summary`, which leaves out each record's rendered HTML and search text; the frontend's `useRecords` uses it. |
 | GET    | `/api/records/:id`      | —                                                        | Single record by id (e.g. `raw:2026-09-15-foo`). 404 if not found. |
 | PUT    | `/api/records/:id`      | `{ frontmatter?: {...}, content?: "..." }`             | Merges frontmatter, replaces content if given. Reruns `build_index.py`. Rate-limited: 30 requests / 15 min per IP. |
 | DELETE | `/api/records/:id`      | —                                                        | Deletes the file (whole session folder for `kind: raw`). Reruns `build_index.py`. 204 on success. Rate-limited: 30 requests / 15 min per IP. |
@@ -871,7 +909,8 @@ evaluation harness records them with every result:
   `Related Research Findings`, and a raw session's heading-less one-line
   `Researcher: …` passage. They match questions on names and titles alone,
   so they used to outrank real evidence. That's 117 of the corpus's 548
-  passages, so the first question embeds 431. They stay in the record for
+  passages, so the first question embeds 431 (counted at agentic-repo
+  commit 4ba145f, the corpus the 2026-09-29 evaluation runs record). They stay in the record for
   a cited passage's surrounding context and for the provenance links below.
   The onboarding session's own `Participants` section, which is prose
   evidence, stays retrievable.
@@ -901,7 +940,7 @@ evaluation harness records them with every result:
   `raw/<date-slug>` path in a record's text or links, a raw session's exact
   title in a finding's Evidence Trail, and a raw session's
   `related_components`. It's off because it cost a passing answer and gained
-  none; see [decision 15](../docs/decisions.md#15-retrieval-changes-for-raw-session-evidence-rr-103).
+  none; see [decision 15](../docs/decisions.md#15-retrieval-changes-for-raw-session-evidence).
 - **Two passages per raw session** (`passagesPerRaw: 2`). Each raw session
   in the top k shows its two best-scoring passages, in the order they
   appear in the record; synthesis and doc records show one. A session's
@@ -1077,14 +1116,15 @@ cookies.txt` / `-b cookies.txt` to persist the cookie across requests.
   `middleware/rateLimiter.js` — separate from the stricter login/demo-login
   limiters noted above, since these guard the actual write endpoints rather
   than auth attempts
-- HTTPS is fully live in production, terminated at Cloudflare's edge in
-  front of the host. `trust proxy` (production only) is set to the host's
-  own proxy address plus Cloudflare's published IP ranges (`proxyTrust.js`),
-  so `req.ip` and `req.secure` reflect the real visitor rather than the last
-  hop. The app's own HTTP→HTTPS redirect (`middleware/httpsRedirect.js`)
-  stays off by default (`HTTPS_REDIRECT=false`) since Cloudflare's edge
-  already enforces HTTPS — see `.env.production.example` for when to turn it
-  on instead
+- HTTPS is live in production, terminated by an edge proxy in front of the
+  host; how the public host and its edge are configured lives outside this
+  repo. `trust proxy` (production only) is set to the host's own proxy
+  address plus the edge's published IP ranges (`proxyTrust.js`, which lists
+  Cloudflare's), so `req.ip` and `req.secure` reflect the real visitor
+  rather than the last hop. The app's own HTTP→HTTPS redirect
+  (`middleware/httpsRedirect.js`) stays off by default
+  (`HTTPS_REDIRECT=false`), for an edge that already enforces HTTPS — see
+  `.env.production.example` for when to turn it on instead
 - `middleware/hostCheck.js` rejects any request whose `Host` header isn't in
   `ALLOWED_HOSTS` with `421`, registered before every other middleware so
   nothing downstream ever acts on a hostname the app doesn't own

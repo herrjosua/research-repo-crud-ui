@@ -1,7 +1,7 @@
 # Decision log
 
 Short notes on why the project works the way it does. Newest decisions are
-at the bottom. Status as of 2026-09-29.
+at the bottom. Status as of 2026-09-30.
 
 ## 1. Run the LLM locally with Ollama first
 
@@ -17,6 +17,11 @@ smaller model answers faster on ordinary hardware.
 **Kept open:** AWS Bedrock as a later option for a hosted demo. The
 `LLM_PROVIDER` switch is in place, but only the `ollama` branch exists.
 
+**Update (2026-09-30):** `LLM_PROVIDER` now also takes `static`, the
+public demo's pre-generated answers (decision 13), and a dev server can
+switch between `static` and `ollama` at runtime (decision 14). There's
+still no hosted-model provider.
+
 ## 2. Brute-force similarity search, no vector database
 
 **Decision:** Compare the question against every passage with cosine
@@ -25,6 +30,10 @@ similarity.
 **Why:** The corpus is about 500 passages; a vector database would add
 infrastructure for no visible benefit. Revisit if the corpus grows by
 orders of magnitude.
+
+**Update (2026-09-30):** At agentic-repo commit 4ba145f (the corpus the
+2026-09-29 evaluation runs record), the corpus splits into 548 passages,
+431 of them retrievable; decision 15 keeps the other 117 out of retrieval.
 
 ## 3. Embeddings cached in memory, keyed by passage text
 
@@ -37,6 +46,15 @@ passages, with no cache-clearing code.
 
 **Tradeoff:** The first question is slow (about 9 seconds cold), and the
 cache is lost on restart.
+
+**Update (2026-09-30):** Which measure "about 9 seconds" is wasn't recorded,
+and no checked-in result supports it. The measures now in the docs: the
+whole first question after a server start, including loading the models and
+embedding the corpus, is 10 to 20 seconds (`backend/README.md`, not
+measured by the evaluation harness); the evaluation's cold run, a question's
+first seeded run with the corpus already embedded, averages 4.1 seconds on
+the regression set (decision 15); its warm runs, the seeded median, are
+faster.
 
 ## 4. Project filter works by tag
 
@@ -76,6 +94,12 @@ separate keeps that distinction clear.
 
 **Consequence:** Insights hold real cited passages (up to about 600
 characters), so long ones collapse behind "Show more".
+
+**Status (2026-09-30):** "Save as deliverable" is a visual stub: the action
+exists on an assistant reply (`AssistantMessage.jsx`, `ChatPanel.jsx`) but
+stores nothing. Deliverable persistence isn't built. Saved Insights and
+Pins live in the page's state only, and are gone when the user leaves the
+page.
 
 ## 7. Model output is rendered as plain text
 
@@ -208,7 +232,7 @@ Chromatic baseline. Its behavior is covered by `DevProviderToggle.test.jsx`
 and the production-build check.
 
 
-## 15. Retrieval changes for raw-session evidence (RR-103)
+## 15. Retrieval changes for raw-session evidence
 
 **Decision:** Ask the Repo labels every source for the model as a
 `RAW SESSION`, `SYNTHESIS` or `DOC`, tells it to prefer raw sessions for
@@ -263,8 +287,8 @@ scenario, against a baseline of 5 / 0, all judged by the current answer
 checks (below). The final step's runs are kept in `backend/ask/eval/results/`
 (`v1.3.6.7-step5`, `v1.3.6.7-step5-scenarios`, and `baseline-vs-v1.3.6.7-step5`
 for both sets). The intermediate runs and reports (steps 1–4, step 3-off,
-and their comparisons) were moved out of the repo to `~/rr103-results/` on
-the machine that ran them. The table below summarizes each:
+and their comparisons) were moved out of the repo and kept on the machine
+that ran them. The table below summarizes each:
 
 | Step | Change | Passes | Prompt chars, regression mean / max | What flipped |
 |---|---|---|---|---|
@@ -322,9 +346,10 @@ at all. Steps 1–4 lost their uncited sentences except step 4's list items
 
 **Consequence:** cold embedding covers 431 passages instead of 548 (about
 3–4 seconds instead of 6). The prompt is about 40% longer on average than
-before RR-103 (3,419 → 4,837 regression, 3,730 → 5,521 scenario), for the
+before these changes (3,419 → 4,837 regression, 3,730 → 5,521 scenario), for the
 labels, roster lines and second raw passages. Cold latency rose from 3.1 to
-4.1 seconds (regression mean). The remaining failures that don't cite
+4.1 seconds (regression mean; the evaluation's cold run, a question's first
+seeded run, with the corpus already embedded). The remaining failures that don't cite
 their raw session split three ways:
 - The session isn't shown at all: the invite questions, and scribe v0.2 for
   the scribe-trust question.
@@ -341,7 +366,7 @@ See "Known gaps" in `docs/architecture.md`.
 
 **Decision:** Keep `gemma2:9b`. Two larger local models, `gemma3:27b` and
 `qwen3:32b`, were run on both gold sets with exactly the retrieval and prompt
-of RR-103's step 5 (decision 15), and each passed fewer entries: 3 of 10
+of decision 15's step 5, and each passed fewer entries: 3 of 10
 regression against 6 of 10, and 0 of 7 scenario for all three. They took 4–6
 times as long to answer and 2.5–3.5 times the memory. `gpt-oss:20b`, run
 afterwards at thinking level low, passed 0 of 10 and 0 of 7. It answers as
@@ -520,3 +545,22 @@ run at thinking level low only. Medium, its default, wasn't run. Its
 remaining failures are mostly where it puts citations, which a prompt
 change could reach. A re-run would also need to allow for its seeds not
 fully reproducing.
+
+## 17. Release versioning
+
+**Date:** 2026-09-30. **Status:** Active.
+
+**Decision:** A version such as v1.3 or v1.3.6.31 is a milestone label: it
+orders planned work and names branches. For this repo, "shipped" means
+released: a `vMAJOR.MINOR.PATCH` tag exists and that tag is deployed. Work
+merged to `main` but not yet tagged is tracked as merged, not shipped.
+agentic-repo isn't tagged; nothing pins to its tags, since the demo sync
+and the evaluation harness pin commits instead. The tag rules are in the
+README's
+[Versioning and releases](../README.md#versioning-and-releases).
+
+**Why (substance confirmed by the owner 2026-09-30; wording drafted):**
+Releases need to be identifiable, and the deploy starts from a tag, so a
+tag marks a release; merged work not yet tagged is tracked separately so
+it isn't mistaken for released. agentic-repo isn't tagged because nothing
+pins to tags: the demo sync and the evaluation harness pin commits.
