@@ -564,3 +564,124 @@ Releases need to be identifiable, and the deploy starts from a tag, so a
 tag marks a release; merged work not yet tagged is tracked separately so
 it isn't mistaken for released. agentic-repo isn't tagged because nothing
 pins to tags: the demo sync and the evaluation harness pin commits.
+
+## 18. Whole raw-session notes: measured, off by default (v1.3.6.37)
+
+**Date:** 2026-09-30. **Status:** Measured. The option stays in the code,
+off by default; whether to change the default is the owner's decision.
+
+**What was tried:** `RETRIEVAL.wholeRawNotes` in `ask/pipeline.js`, off (0)
+by default, and run with `scripts/eval-ask.js run --whole-raw-notes N`.
+Set to N, it drops the raw sessions from the top 6 and shows the top N raw
+sessions of the whole ranking instead. Each one gets its whole
+`session-notes.md` under one label: every section in order under its own
+heading, with the one-line roster header. The metadata sections and the
+appended participants file are left out. Synthesis and doc records are
+shown as before, and every record stays in ranking order. The idea came
+from decision 15: for several failing entries, the evidence sat in a
+section of a session that wasn't among its two best-scoring passages. It
+was run at N = 2 (primary) and N = 4 (exploratory).
+
+**Result:** Neither setting passes the stop rule. The rule stops a run
+when a seeded pass turns into a fail and at least 2 of that entry's 3
+unseeded runs also fail. An improvement counts only when at least 2 of 3
+unseeded runs agree. Each setting gained two passing answers and lost
+three. It was one round with no tuning, and the default is unchanged.
+
+**What was measured:** gemma2:9b, seed 42, temperature 0.2, 3 seeded and
+3 unseeded runs, corpus 4ba145f, both gold sets. Step 5 (decision 15) is
+the baseline. Ollama is now 0.35.0 (step 5 ran on 0.34.3), so the current
+defaults were run again first (`v1.3.6.37-control[-scenarios]`): all 51
+seeded answers were byte-identical to step 5. Results are in
+`backend/ask/eval/results/`: `v1.3.6.37-whole2[-scenarios]` and
+`v1.3.6.37-whole4[-scenarios]`, with the before/after reports
+`v1.3.6.7-step5[-scenarios]-vs-v1.3.6.37-whole2[-scenarios]` and the
+same for `whole4`. Cells are regression / scenario. Step 5's token counts
+come from the control run, which stored them: its prompts are identical
+to step 5's.
+
+| | Step 5 (default) | N = 2 | N = 4 |
+|---|---|---|---|
+| Gold pass | **6 / 0** | 4 / 0 | 5 / 1 |
+| Unseeded runs passing | 17 of 30 / 0 of 21 | 15 of 30 / 3 of 21 | 15 of 30 / 0 of 21 |
+| Raw session cited | 4 / 3 | 4 / 5 | 6 / 5 |
+| Uncited sentences | 0 / 0 | 5 / 1 | 5 / 1 |
+| Unsupported figures | 0 / 0 | 1 / 4 | 1 / 7 |
+| Sentences with 3+ stacked citations | 0 / 1 | 1 / 0 | 1 / 0 |
+| Prompt chars, mean / max | 4,837 / 7,162; 5,521 / 7,378 | 6,705 / 9,796; 7,498 / 8,411 | 9,596 / 14,308; 12,211 / 13,904 |
+| Prompt tokens (Ollama), mean / max | 1,150 / 1,682; 1,294 / 1,730 | 1,554 / 2,191; 1,705 / 1,941 | 2,198 / 3,151; 2,754 / 3,068 |
+| Largest prompt, share of `num_ctx` 8192 | 21% | 27% | 38% |
+| Cold latency, mean / max (s) | 4.1 / 6.7; 4.7 / 5.7 | 4.8 / 9.0; 7.1 / 8.6 | 7.5 / 13.5; 11.5 / 14.7 |
+
+Every prompt stayed under 85% of `num_ctx` (6,963 tokens). The largest
+was 3,151 tokens.
+
+Entries whose verdict changed. The numbers in brackets are unseeded runs
+passing, out of 3:
+
+| Entry | Step 5 | N = 2 | N = 4 | Under the stop rule |
+|---|---|---|---|---|
+| `onboarding-invite-worry` | FAIL (0) | PASS (3) | PASS (3) | gain at both |
+| `audit-adoption-window` | FAIL (0) | PASS (3) | PASS (3) | gain at both |
+| `scribe-sound-alike-names` | PASS (2) | FAIL (0) | PASS (2) | loss at N = 2 |
+| `audit-onboarding-steps-order` | PASS (3) | FAIL (1) | FAIL (1) | loss at both |
+| `audit-session-timeout` | PASS (3) | FAIL (0) | FAIL (0) | loss at both |
+| `audit-step3-wireframe` | PASS (3) | FAIL (2) | FAIL (0) | seed noise at N = 2, loss at N = 4 |
+| `scenario-nurses-citations` | FAIL (0) | FAIL (3) | PASS (0) | not counted: the seeded run and the unseeded runs disagree at both |
+
+**What was learned:**
+- **It works where the evidence was out of view.** For the two gains, the
+  gold evidence wasn't in the prompt at step 5 and was with whole notes.
+  On `onboarding-invite-worry`, the onboarding session ranked 14th of 21
+  and wasn't shown; now the session 3 quote is shown and cited. On
+  `audit-adoption-window`, the dashboard review was shown, but not its
+  Method line ("the first 4 weeks of GA-candidate rollout"). The step 5
+  answer already said "4 weeks" but cited the topline; now it cites the
+  raw session.
+- **A fixed N brings in sessions ranked far down, and they distract.** The
+  top N raw sessions can rank well below the top 6. On
+  `audit-step3-wireframe`, the onboarding session (12th of 97) came in,
+  and the model read its session 1 ("paused at step 3 ('Connect
+  calendar')… the 'required' indicator") as a description of the step 3
+  wireframe, instead of saying there isn't one.
+- **Bigger raw sources drew citations away from raw sessions.** On
+  `audit-session-timeout`, the answer was word for word the same as step 5
+  ("The current session timeout is 10 minutes."), but it cited the
+  session-lock user flow instead of the raw session. On
+  `scribe-sound-alike-names`, at N = 2, "5 of 6" was cited to the post-GA
+  finding, not the concept test that holds it.
+- **One loss is the answer's format.** On `audit-onboarding-steps-order`,
+  the only change to the prompt was the onboarding session's whole notes.
+  The answer listed the same six steps, but as "- " items instead of
+  numbered lines, and the checks count those as five uncited sentences.
+- **Evidence in view still isn't evidence used.** Where step 5 already
+  showed the gold evidence (`audit-burnout-share`,
+  `onboarding-required-steps`, `scenario-calendar-premise`,
+  `scenario-documentation-pain-points`), whole notes didn't change the
+  verdict. With whole notes, the chart-review session's Follow-ups reached
+  the model, and `scenario-care-coordinator-gaps` now names both open
+  items (the float-pool coordinators and the AVS tool) and cites the
+  session. It fails only on its "what the data shows" claim. At N = 4,
+  `scenario-scribe-trust` and `scenario-session-timeout-open` got their
+  required sessions (3rd and 4th raw in the ranking) into view. The first
+  now cites its session and fails only on the medication-errors claim.
+  The second still doesn't cite its session.
+- **Size isn't the constraint.** Even at N = 4, the largest prompt was 38%
+  of `num_ctx`. The cost is latency: cold answers took about 0.7 s (regression) and 2.4 s
+  (scenario) longer on average at N = 2, and roughly twice as long at N = 4.
+
+**Not tried** (one round, no tuning): limiting whole notes to raw sessions
+already in the top 6, so nothing comes in from far down the ranking;
+N = 1; and whole notes for only the best-ranked raw session, with passages
+for the rest.
+
+**The prompt-size guard, added alongside.** Ollama doesn't refuse a
+prompt longer than `num_ctx`. It keeps what fits and answers without
+saying so. `ask()` now keeps Ollama's `prompt_eval_count` with the answer
+as `promptTokens`. When the count is over 85% of `num_ctx`, it logs a
+console warning, once per question. Ollama reports the full prompt even
+when it reuses its cache, so the count holds on repeat questions. The
+evaluation harness stores `promptTokens` with every run. With the guard
+in place, the default configuration was run again
+(`v1.3.6.37-guard[-scenarios]`): all 51 seeded answers were byte-identical
+to step 5, and no prompt came near the limit (1,730 tokens at most).

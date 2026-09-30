@@ -273,6 +273,10 @@ node scripts/eval-ask.js report baseline-scenarios after-chunking-scenarios
 minutes with the model loaded. `--set regression|scenario` asks one
 gold set's questions (all of them without it); `--seed`, `--temperature`,
 `--seeded-runs`, `--unseeded-runs` and `--only id,id` change the defaults.
+`--whole-raw-notes N` runs with the off-by-default whole-notes option set to
+N (see "Retrieval" below) for that run only, and the report's Retrieval row
+records it. Every run also stores `promptTokens`, Ollama's count of the
+prompt's tokens (the number the prompt-size warning below uses).
 `report` re-judges stored runs against the current gold file, so editing
 the gold set needs no re-run. With two labels it puts them side by side,
 and it refuses unless both ask the same questions and share the harness
@@ -956,8 +960,27 @@ evaluation harness records them with every result:
   prompt about 20–25% longer (mean 4,837 regression and 5,521 scenario
   characters, max 7,378). See decision 15.
 
+- **Off by default: whole raw notes** (`wholeRawNotes`). Set to N, the raw
+  sessions in the top k are dropped and the top N raw sessions of the whole
+  ranking are shown instead, each as its whole notes: every section of its
+  `session-notes.md` in order under its own heading, one label, and the
+  roster header, without the metadata sections or the appended
+  participants (`ask/corpus.js`, `wholeNotesText`). Synthesis and doc records
+  are shown as without it, all in ranking order. In the evaluation, N = 2
+  and N = 4 each gained two passing answers and lost three; see
+  [decision 18](../docs/decisions.md#18-whole-raw-session-notes-measured-off-by-default-v13637).
+
 The final defaults are **k = 6, metadata sections excluded, provenance slot
-off, `passagesPerRaw: 2`**.
+off, `passagesPerRaw: 2`, whole raw notes off**.
+
+**Prompt size.** Every question is sent with `num_ctx: 8192`
+(`CHAT_OPTIONS` in `ask/pipeline.js`). Ollama doesn't refuse a longer prompt:
+it keeps what fits and answers without saying so, and the answer shares the
+same window. So `ask()` keeps Ollama's count of the prompt's tokens
+(`prompt_eval_count`) as `promptTokens` and logs a console warning, once per
+question, when it's over 85% of `num_ctx` (6,963 tokens). The answer is
+unchanged either way. Today's prompts are 21% of `num_ctx` at most (1,730
+tokens).
 
 **Static mode (`LLM_PROVIDER=static`).** `POST /api/ask` takes
 `{ "questionId": "<id from config's questions>" }` and returns that
