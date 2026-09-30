@@ -183,3 +183,76 @@ describe('passagesPerRaw: a second passage for raw sessions only', () => {
         expect(await shownWith({ ...RETRIEVAL, passagesPerRaw: 1 })).toEqual(['finding:flag#0', 'raw:2026-02-10-flag#2']);
     });
 });
+
+describe('wholeRawNotes: whole notes for the top raw sessions', () => {
+    const { createAskPipeline, RETRIEVAL } = require('../ask/pipeline');
+    const { chunkRecord, wholeNotesText } = require('../ask/corpus');
+
+    // Two raw sessions (a roster and Related list each, like the real ones),
+    // one of them ranked below the top k, and three findings.
+    const session = (slug, title) => ({
+        id: `raw:${slug}`, kind: 'raw', type: 'usability-test', title,
+        html: `<h1>${title}</h1><h2>Objective</h2><p>objective of ${slug}</p>`
+            + `<h2>Key Findings</h2><ul><li>finding one of ${slug}</li><li>finding two of ${slug}</li></ul>`
+            + '<h2>Related</h2><ul><li>Synthesized into: flag.md</li></ul>'
+            + `<h2>Participants — ${title}</h2><p>Count: 2</p>`,
+    });
+    const rawTop = session('2026-02-10-flag', 'Flag test');
+    const rawLow = session('2026-02-17-lock', 'Lock test');
+    const findings = [0, 1, 2].map((i) => ({
+        id: `finding:f${i}`, kind: 'finding', type: 'synthesis', title: `Finding ${i}`, html: `<h2>Overview</h2><p>finding ${i}</p>`,
+    }));
+    const records = [rawTop, rawLow, ...findings];
+    // Ranking: f0, rawTop, f1, f2, rawLow. rawTop's best passage is its Key Findings.
+    const scores = {
+        'finding:f0': 0.95, 'raw:2026-02-10-flag': 0.9, 'finding:f1': 0.85, 'finding:f2': 0.8, 'raw:2026-02-17-lock': 0.7,
+    };
+    const passages = records.flatMap((record) => chunkRecord(record)
+        .filter((chunk) => !/^(Related|Participants — )/.test(chunk.heading || ''))
+        .map((chunk) => {
+            const s = scores[record.id] - (chunk.heading === 'Objective' ? 0.01 : 0);
+            return {
+                record, chunk, vector: [s, Math.sqrt(1 - s * s)], participants: record.kind === 'raw' ? 'Participants: 2' : null, previous: null, next: null,
+            };
+        }));
+    const index = { refresh: async () => ({ passages, records }), embedQuery: async () => [1, 0] };
+    const shownWith = async (retrieval) => (await createAskPipeline({ ollama: {}, index, retrieval }).select('q', null))
+        .map(({ passage }) => `${passage.record.id}#${passage.chunk.index}`);
+
+    it("is a session's sections in order under their headings, without Related or the appended roster", () => {
+        expect(wholeNotesText(rawTop)).toBe([
+            'Objective', 'objective of 2026-02-10-flag',
+            'Key Findings', 'finding one of 2026-02-10-flag\nfinding two of 2026-02-10-flag',
+        ].join('\n'));
+    });
+
+    it('leaves out the heading-less Researcher line and a heading-only Participants section', () => {
+        const onboarding = {
+            id: 'raw:2026-01-19-onboarding', kind: 'raw', title: 'Onboarding',
+            html: '<p>Researcher: Priya Patel</p><h2>Session 1 — Jan 19</h2><p>paused at step 3</p><h2>Participants</h2><p>6 participants</p>',
+        };
+        expect(wholeNotesText(onboarding)).toBe('Session 1 — Jan 19\npaused at step 3');
+    });
+
+    it('is off by default: the passages as before', async () => {
+        expect(RETRIEVAL.wholeRawNotes).toBe(0);
+        expect(await shownWith({ ...RETRIEVAL, topK: 3 })).toEqual(['finding:f0#0', 'raw:2026-02-10-flag#0', 'raw:2026-02-10-flag#1', 'finding:f1#0']);
+    });
+
+    it('replaces the raw passages with the whole notes of the top N raw sessions, in ranking order', async () => {
+        expect(await shownWith({ ...RETRIEVAL, topK: 3, wholeRawNotes: 1 })).toEqual(['finding:f0#0', 'raw:2026-02-10-flag#notes', 'finding:f1#0']);
+        // A session below the top k comes in; the findings stay the top k's.
+        expect(await shownWith({ ...RETRIEVAL, topK: 3, wholeRawNotes: 2 }))
+            .toEqual(['finding:f0#0', 'raw:2026-02-10-flag#notes', 'finding:f1#0', 'raw:2026-02-17-lock#notes']);
+    });
+
+    it('labels the notes once, keeps the roster header, and cites them as one source', async () => {
+        let prompt = null;
+        const ollama = { chatModel: 'test', chat: async (messages) => { prompt = messages[1].content; return 'It was recognized [2].'; } };
+        const result = await createAskPipeline({ ollama, index, retrieval: { ...RETRIEVAL, topK: 3, wholeRawNotes: 1 } }).ask('q', null);
+        expect(prompt).toContain(`[2] RAW SESSION · usability test — Flag test\nParticipants: 2\n${wholeNotesText(rawTop)}\n\n[3]`);
+        expect(result.sources).toEqual([expect.objectContaining({
+            id: 'raw:2026-02-10-flag#notes', excerpt: wholeNotesText(rawTop), section: null, participants: 'Participants: 2', contextBefore: null, contextAfter: null,
+        })]);
+    });
+});

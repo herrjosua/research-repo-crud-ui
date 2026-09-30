@@ -164,6 +164,32 @@ function participantsHeader(record) {
     return `Participants: ${count} — ${list}`;
 }
 
+// A raw session's appended participants.md: its "Participants — <title>"
+// roster, or the onboarding session's heading-only "Participants" prose.
+// Neither is part of the session's notes.
+const APPENDED_PARTICIPANTS_RE = /^Participants(?: — |$)/;
+
+// A raw session's whole notes as one text, for the pipeline's wholeRawNotes
+// option: its sections in record order, each under its own heading line,
+// without the metadata sections (isMetadataPassage) or the appended
+// participants. Sections are separated by a line break, not a blank line,
+// so the text stays one source block in the prompt.
+function wholeNotesText(record) {
+    const sections = [];
+    for (const chunk of chunkRecord(record)) {
+        if (isMetadataPassage(record, chunk) || APPENDED_PARTICIPANTS_RE.test(chunk.heading || '')) continue;
+        const last = sections[sections.length - 1];
+        if (last && last.heading === chunk.heading) {
+            last.lines.push(chunk.text);
+        } else {
+            sections.push({ heading: chunk.heading, lines: [chunk.text] });
+        }
+    }
+    return sections
+        .map(({ heading, lines }) => [...(heading && heading !== record.title ? [heading] : []), ...lines].join('\n'))
+        .join('\n');
+}
+
 // Text actually sent to the embedding model for a passage. nomic-embed-text
 // is trained with task prefixes ("search_document: " for corpus text,
 // "search_query: " for questions) and retrieves noticeably worse without
@@ -223,6 +249,7 @@ module.exports = {
     METADATA_SECTIONS,
     isMetadataPassage,
     participantsHeader,
+    wholeNotesText,
     embeddingText,
     queryEmbeddingText,
     clip,

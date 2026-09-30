@@ -4,6 +4,7 @@
 // so a captured answer is exactly what the live route would have returned.
 
 const { rankRecords } = require('./retrieval');
+const { wholeNotesText } = require('./corpus');
 const { provenanceLinks, withProvenanceSlot } = require('./provenance');
 const { buildMessages, renumberCitations, toSource } = require('./answer');
 const { toPlainText } = require('./plainText');
@@ -27,13 +28,43 @@ const { checkAnswer } = require('./checks');
 //                   record gets one. A session's best passage is often
 //                   its Objective, and the second can bring in the
 //                   findings or quotes it leaves out.
+//   wholeRawNotes   0 (off), or N: the raw sessions in the top k are
+//                   dropped, and the top N raw sessions of the whole
+//                   ranking are shown instead, each as its whole notes
+//                   (ask/corpus.js wholeNotesText) under one label, with
+//                   its roster header. Synthesis and doc records are
+//                   shown as without it, and every record stays in
+//                   ranking order. passagesPerRaw doesn't apply.
 // The evaluation harness records this with every result.
 const RETRIEVAL = {
-    topK: 6, metadataSections: 'excluded', provenanceSlot: false, passagesPerRaw: 2,
+    topK: 6, metadataSections: 'excluded', provenanceSlot: false, passagesPerRaw: 2, wholeRawNotes: 0,
 };
 const TOP_K = RETRIEVAL.topK;
 // Low temperature: this is retrieval-grounded summarization, not writing.
 const CHAT_OPTIONS = { temperature: 0.2, num_ctx: 8192 };
+
+// The wholeRawNotes selection (RETRIEVAL above): the non-raw records of
+// `chosen` and the top `n` raw sessions of `ranked`, in ranking order, a raw
+// session as one passage holding its whole notes. Its id is
+// "<record id>#notes", and it has no neighbours for the sources panel.
+function withWholeRawNotes(ranked, chosen, n) {
+    const raw = ranked.filter((r) => r.record.kind === 'raw').slice(0, n);
+    const shown = new Set([...chosen.filter((r) => r.record.kind !== 'raw'), ...raw]);
+    return ranked.filter((r) => shown.has(r)).map((r) => {
+        if (r.record.kind !== 'raw') return r.passages[0];
+        const { record, participants } = r.passages[0].passage;
+        return {
+            passage: {
+                record,
+                chunk: { heading: null, text: wholeNotesText(record), index: 'notes' },
+                participants,
+                previous: null,
+                next: null,
+            },
+            score: r.score,
+        };
+    });
+}
 
 // `ollama` is an ask/ollama.js client; `index` an embedding index built on it
 // (ask/retrieval.js). ask() resolves to the response body POST /api/ask
@@ -69,6 +100,7 @@ function createAskPipeline({ ollama, index, retrieval = RETRIEVAL }) {
         const chosen = retrieval.provenanceSlot
             ? withProvenanceSlot(ranked, retrieval.topK, provenanceLinks(records))
             : ranked.slice(0, retrieval.topK);
+        if (retrieval.wholeRawNotes > 0) return withWholeRawNotes(ranked, chosen, retrieval.wholeRawNotes);
         return chosen.flatMap((r) => r.passages
             .slice(0, r.record.kind === 'raw' ? retrieval.passagesPerRaw : 1)
             .sort((a, b) => a.passage.chunk.index - b.passage.chunk.index));
