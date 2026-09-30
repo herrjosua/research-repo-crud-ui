@@ -263,13 +263,20 @@ async function ollamaInfo(baseUrl, models) {
     return { version, digests };
 }
 
-// An ask/ollama.js client whose chat() applies `overrides` on top of the
-// options the pipeline passes, so a capture can fix the seed or temperature
-// without touching the pipeline's CHAT_OPTIONS. With no overrides it's the
-// client unchanged.
+// An ask/ollama.js client whose chat() and chatDetailed() apply `overrides`
+// on top of the options the pipeline passes, so a capture can fix the seed
+// or temperature without touching the pipeline's CHAT_OPTIONS. With no
+// overrides it's the client unchanged.
 function withChatOptions(ollama, overrides) {
     if (Object.keys(overrides).length === 0) return ollama;
-    return { ...ollama, chat: (messages, options = {}) => ollama.chat(messages, { ...options, ...overrides }) };
+    const withOverrides = (options = {}) => ({ ...options, ...overrides });
+    return {
+        ...ollama,
+        chat: (messages, options) => ollama.chat(messages, withOverrides(options)),
+        ...(typeof ollama.chatDetailed === 'function'
+            ? { chatDetailed: (messages, options) => ollama.chatDetailed(messages, withOverrides(options)) }
+            : {}),
+    };
 }
 
 // --seed / --temperature as chat-option overrides (only the ones given).

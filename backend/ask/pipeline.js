@@ -42,6 +42,30 @@ const RETRIEVAL = {
 const TOP_K = RETRIEVAL.topK;
 // Low temperature: this is retrieval-grounded summarization, not writing.
 const CHAT_OPTIONS = { temperature: 0.2, num_ctx: 8192 };
+// A prompt past num_ctx isn't refused: Ollama keeps what fits and answers,
+// without saying so. ask() warns when Ollama's count of the prompt's tokens
+// (prompt_eval_count, which counts the whole prompt even when Ollama reuses
+// its cache) is over this share of num_ctx. The answer shares the window,
+// since num_predict isn't set, so 85% leaves roughly 1,200 tokens for it.
+const PROMPT_WARN_SHARE = 0.85;
+
+// The chat reply and Ollama's count of the prompt's tokens. A client with
+// chatDetailed() (ask/ollama.js) gives the count; one with only chat() (the
+// tests' stubs) gives null.
+async function chatWithPromptTokens(ollama, messages, options) {
+    if (typeof ollama.chatDetailed !== 'function') {
+        return { content: await ollama.chat(messages, options), promptTokens: null };
+    }
+    const { content, stats } = await ollama.chatDetailed(messages, options);
+    return { content, promptTokens: stats && typeof stats.promptTokens === 'number' ? stats.promptTokens : null };
+}
+
+// The warning ask() logs for a prompt near or past num_ctx, or null.
+function promptSizeWarning(promptTokens, numCtx = CHAT_OPTIONS.num_ctx) {
+    if (promptTokens === null || promptTokens <= PROMPT_WARN_SHARE * numCtx) return null;
+    return `Ask the Repo: the prompt was ${promptTokens} tokens, over ${Math.round(PROMPT_WARN_SHARE * 100)}% of num_ctx ${numCtx}; `
+        + 'Ollama may have cut it or left too little room for the answer.';
+}
 
 // The wholeRawNotes selection (RETRIEVAL above): the non-raw records of
 // `chosen` and the top `n` raw sessions of `ranked`, in ranking order, a raw
@@ -70,8 +94,10 @@ function withWholeRawNotes(ranked, chosen, n) {
 // (ask/retrieval.js). ask() resolves to the response body POST /api/ask
 // sends, plus `raw` (the model's unprocessed reply, or null when the model
 // wasn't called), `ranked` (the passages it was shown, in [n] order) for
-// the capture script's review report, and `promptChars` (the prompt's size,
-// system and user messages, for the evaluation harness). Ollama failures
+// the capture script's review report, `promptChars` (the prompt's size,
+// system and user messages, for the evaluation harness) and `promptTokens`
+// (Ollama's prompt_eval_count, or null when the client doesn't report it;
+// over PROMPT_WARN_SHARE of num_ctx it's also logged). Ollama failures
 // reject with OllamaError.
 //
 // select() is what the model is shown: RETRIEVAL applied to the in-scope
@@ -119,11 +145,14 @@ function createAskPipeline({ ollama, index, retrieval = RETRIEVAL }) {
                 raw: null,
                 ranked: [],
                 promptChars: 0,
+                promptTokens: null,
             };
         }
 
         const messages = buildMessages(question, ranked);
-        const raw = await ollama.chat(messages, CHAT_OPTIONS);
+        const { content: raw, promptTokens } = await chatWithPromptTokens(ollama, messages, CHAT_OPTIONS);
+        const warning = promptSizeWarning(promptTokens);
+        if (warning) console.warn(warning);
         const { text, cited } = renumberCitations(toPlainText(raw), ranked.length);
         const sources = cited.map((i) => toSource(ranked[i], project));
 
@@ -138,10 +167,13 @@ function createAskPipeline({ ollama, index, retrieval = RETRIEVAL }) {
             raw,
             ranked,
             promptChars: messages.reduce((n, m) => n + m.content.length, 0),
+            promptTokens,
         };
     }
 
     return { ask, rank, select };
 }
 
-module.exports = { createAskPipeline, TOP_K, RETRIEVAL, CHAT_OPTIONS };
+module.exports = {
+    createAskPipeline, promptSizeWarning, TOP_K, RETRIEVAL, CHAT_OPTIONS, PROMPT_WARN_SHARE,
+};

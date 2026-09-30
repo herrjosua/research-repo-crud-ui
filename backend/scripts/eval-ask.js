@@ -77,6 +77,9 @@ const RESULTS_DIR = path.join(__dirname, '..', 'ask', 'eval', 'results');
 // `thinkingChars`, and the metadata `thinking` and `memory`, all optional.
 // Nor did --think: the metadata `thinking` also stores the model's
 // `levels`, and `think` can be a level.
+// Nor did the prompt-size guard: runs also store `promptTokens`, the
+// count the pipeline's warning used (the same number as
+// `stats.promptTokens`), optional like the rest.
 const EVAL_HARNESS_VERSION = 1;
 
 // ---------------------------------------------------------------------------
@@ -209,16 +212,18 @@ async function loadedModelMemory(baseUrl, model) {
     }
 }
 
-// An ask/ollama.js client whose chat() also keeps the last reply's thinking
-// and stats, for the run that asked it. Questions are asked one at a time.
+// An ask/ollama.js client whose chat() and chatDetailed() also keep the last
+// reply's thinking and stats, for the run that asked it. Questions are asked
+// one at a time.
 function recordingClient(ollama) {
     const client = {
         ...ollama,
         last: null,
-        chat: async (messages, options) => {
+        chatDetailed: async (messages, options) => {
             client.last = await ollama.chatDetailed(messages, options);
-            return client.last.content;
+            return client.last;
         },
+        chat: async (messages, options) => (await client.chatDetailed(messages, options)).content,
     };
     return client;
 }
@@ -318,6 +323,7 @@ async function run({
                 ...(reply ? { stats: reply.stats, thinkingChars: reply.thinking.length } : {}),
                 sources: result.sources.map(storedSource),
                 promptChars: result.promptChars,
+                promptTokens: result.promptTokens,
                 shown: result.ranked.map(({ passage }, i) => ({
                     n: i + 1, recordId: passage.record.id, kind: passage.record.kind, passage: `${passage.record.id}#${passage.chunk.index}`,
                 })),
