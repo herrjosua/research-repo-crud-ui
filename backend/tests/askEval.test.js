@@ -404,6 +404,15 @@ describe('eval --model', () => {
     });
 });
 
+describe('eval --whole-raw-notes', () => {
+    it('takes a session count of at least 1, and none by default', () => {
+        expect(parseArgs(['run', '--label', 'x']).wholeRawNotes).toBeNull();
+        expect(parseArgs(['run', '--label', 'x', '--whole-raw-notes', '2']).wholeRawNotes).toBe(2);
+        expect(() => parseArgs(['run', '--label', 'x', '--whole-raw-notes', '0'])).toThrow(/--whole-raw-notes/);
+        expect(() => parseArgs(['run', '--label', 'x', '--whole-raw-notes', 'two'])).toThrow(/--whole-raw-notes/);
+    });
+});
+
 describe('eval --think', () => {
     it('takes a thinking level, and none by default', () => {
         expect(parseArgs(['run', '--label', 'x']).think).toBeNull();
