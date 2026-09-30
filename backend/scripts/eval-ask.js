@@ -5,10 +5,11 @@
 // manual report, not a CI check: it needs a real Ollama and the agentic-repo
 // clone. See backend/README.md, "Evaluating answers".
 //
-//   node scripts/eval-ask.js run --label NAME [--seed 42] [--temperature 0.2]
+//   node scripts/eval-ask.js run --label NAME [--model NAME] [--seed 42] [--temperature 0.2]
 //                                [--seeded-runs 3] [--unseeded-runs 3]
 //                                [--set regression|scenario] [--only id,id]
 //   node scripts/eval-ask.js report BEFORE [AFTER]
+//   node scripts/eval-ask.js compare --label NAME BASE [OTHER ...]
 //
 // run     Asks every gold question --seeded-runs times with the fixed seed and
 //         --unseeded-runs times without one, both at --temperature, through
@@ -17,12 +18,24 @@
 //         and the report to ask/eval/results/NAME.md. Pass or fail is decided
 //         on the first seeded run; the unseeded runs only count distinct
 //         answers. --set asks only one gold set's questions, --only only the
-//         ids given (within --set, if both are given).
+//         ids given (within --set, if both are given). --model sets the chat
+//         model for this process only (default OLLAMA_CHAT_MODEL, else
+//         gemma2:9b); the embedding model is never changed. A model whose
+//         Ollama capabilities include "thinking" is asked with think: false
+//         (any other model gets the request it always did), and every run
+//         stores Ollama's token counts and how much thinking text came back.
 // report  Re-judges stored runs against the current gold file (so editing
 //         the gold set needs no re-run) and rewrites the report. With two
 //         names it writes a before/after report to ask/eval/results/
 //         BEFORE-vs-AFTER.md, and refuses unless both share the harness
 //         version, corpus commit, seed and temperature.
+// compare Several result sets side by side, grouped by chat model (a
+//         model's regression and scenario runs are usually two sets), the
+//         first set's model as the base: pass counts, speed and memory per
+//         model, and each entry that fails on any model with every model's
+//         verdict and whether the gold evidence was in the prompt. Writes
+//         ask/eval/results/NAME.md. Refuses sets that differ in harness
+//         version, corpus commit, seed or temperature, like report.
 //
 // Both report each gold set (regression, scenario) in its own section with
 // its own pass counts, taking an entry's set from the current gold file.
@@ -52,6 +65,8 @@ const RESULTS_DIR = path.join(__dirname, '..', 'ask', 'eval', 'results');
 // metadata `retrieval`, a source's `participants` line and a shown
 // record's `passage` id, all optional, and the report shows "—" for results
 // stored without them, so older results still compare.
+// Nor did v1.3.6.31's --model: runs also store `stats` and
+// `thinkingChars`, and the metadata `thinking` and `memory`, all optional.
 const EVAL_HARNESS_VERSION = 1;
 
 // ---------------------------------------------------------------------------
@@ -135,7 +150,47 @@ function storedSource(source) {
     return { id, recordId, recordKind, recordType, title, section, participants, excerpt, score };
 }
 
-async function run({ label, seed, temperature, seededRuns, unseededRuns, set, only }) {
+// A model's capabilities as Ollama lists them (/api/show), e.g.
+// ["completion", "tools", "thinking"].
+async function modelCapabilities(baseUrl, model) {
+    const res = await fetch(`${baseUrl}/api/show`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model }), signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) throw new Error(`Ollama /api/show returned ${res.status} for ${model}`);
+    const data = await res.json();
+    return Array.isArray(data.capabilities) ? data.capabilities : [];
+}
+
+// The chat model's memory while it's loaded, as Ollama reports it
+// (/api/ps: weights, KV cache and compute buffers), or null when it isn't
+// loaded or Ollama doesn't say.
+async function loadedModelMemory(baseUrl, model) {
+    try {
+        const res = await fetch(`${baseUrl}/api/ps`, { signal: AbortSignal.timeout(5_000) });
+        if (!res.ok) return null;
+        const withTag = (name) => (name.includes(':') ? name : `${name}:latest`);
+        const loaded = ((await res.json()).models || []).find((m) => withTag(String(m.name)) === withTag(model));
+        return loaded ? { bytes: loaded.size, vramBytes: loaded.size_vram } : null;
+    } catch {
+        return null;
+    }
+}
+
+// An ask/ollama.js client whose chat() also keeps the last reply's thinking
+// and stats, for the run that asked it. Questions are asked one at a time.
+function recordingClient(ollama) {
+    const client = {
+        ...ollama,
+        last: null,
+        chat: async (messages, options) => {
+            client.last = await ollama.chatDetailed(messages, options);
+            return client.last.content;
+        },
+    };
+    return client;
+}
+
+async function run({ label, model, seed, temperature, seededRuns, unseededRuns, set, only }) {
     if (!label) throw new Error('run needs --label NAME');
     const repoRoot = process.env.AGENTIC_REPO_ROOT;
     if (!repoRoot) throw new Error('AGENTIC_REPO_ROOT is not set (backend/.env or the environment).');
@@ -150,12 +205,21 @@ async function run({ label, seed, temperature, seededRuns, unseededRuns, set, on
     const ollama = createOllamaClient({
         baseUrl: process.env.OLLAMA_BASE_URL || OLLAMA_DEFAULTS.baseUrl,
         embedModel: process.env.OLLAMA_EMBED_MODEL || OLLAMA_DEFAULTS.embedModel,
-        chatModel: process.env.OLLAMA_CHAT_MODEL || OLLAMA_DEFAULTS.chatModel,
+        chatModel: model || process.env.OLLAMA_CHAT_MODEL || OLLAMA_DEFAULTS.chatModel,
     });
-    const index = createEmbeddingIndex({ embed: ollama.embed, loadRecords });
-    const seeded = createAskPipeline({ ollama: withChatOptions(ollama, { seed, temperature }), index });
-    const unseeded = createAskPipeline({ ollama: withChatOptions(ollama, { temperature }), index });
+    // Refuses a model that isn't pulled, before anything else is asked.
     const info = await ollamaInfo(ollama.baseUrl, [ollama.chatModel, ollama.embedModel]);
+    const capabilities = await modelCapabilities(ollama.baseUrl, ollama.chatModel);
+    const thinkingCapable = capabilities.includes('thinking');
+    // Ollama's supported switch for a reasoning model's thinking. Sent only to
+    // models that have it, so gemma2:9b's requests are unchanged.
+    const chatClient = thinkingCapable
+        ? createOllamaClient({ baseUrl: ollama.baseUrl, embedModel: ollama.embedModel, chatModel: ollama.chatModel, think: false })
+        : ollama;
+    const recording = recordingClient(chatClient);
+    const index = createEmbeddingIndex({ embed: ollama.embed, loadRecords });
+    const seeded = createAskPipeline({ ollama: withChatOptions(recording, { seed, temperature }), index });
+    const unseeded = createAskPipeline({ ollama: withChatOptions(recording, { temperature }), index });
 
     const metadata = {
         harnessVersion: EVAL_HARNESS_VERSION,
@@ -168,6 +232,10 @@ async function run({ label, seed, temperature, seededRuns, unseededRuns, set, on
         ollamaVersion: info.version,
         modelDigest: info.digests[0],
         embedModelDigest: info.digests[1],
+        capabilities,
+        thinking: thinkingCapable
+            ? { capable: true, think: false, handling: 'think: false sent with every chat request; the answer is message.content only' }
+            : { capable: false, think: null, handling: 'no think parameter sent (the model has no thinking capability); the answer is message.content only' },
         seed,
         temperature,
         chatOptions: { ...CHAT_OPTIONS, temperature },
@@ -178,6 +246,7 @@ async function run({ label, seed, temperature, seededRuns, unseededRuns, set, on
     };
     console.log(`Evaluating ${entries.length} question(s) against ${repoRoot} @ ${metadata.corpusCommit.slice(0, 7)} with ${metadata.model}`);
     console.log(`Ollama ${info.version}, seed ${seed}, temperature ${temperature}, ${seededRuns} seeded + ${unseededRuns} unseeded run(s) each`);
+    console.log(`Capabilities ${capabilities.join(', ') || 'none listed'}; ${metadata.thinking.handling}`);
 
     // Embed the corpus before timing anything, and check the gold set names
     // real records.
@@ -187,6 +256,8 @@ async function run({ label, seed, temperature, seededRuns, unseededRuns, set, on
     if (missing.length > 0) throw new Error(`gold records not in the corpus: ${missing.join(', ')}`);
 
     const questions = [];
+    const memory = [];
+    const started = Date.now();
     for (const entry of entries) {
         // Where every in-scope record ranks, ranked by the pipeline itself
         // with no cut-off, for the first raw session's rank.
@@ -194,11 +265,14 @@ async function run({ label, seed, temperature, seededRuns, unseededRuns, set, on
             .map(({ passage, score }) => ({ recordId: passage.record.id, kind: passage.record.kind, score: Math.round(score * 1000) / 1000 }));
 
         const ask = async (pipeline) => {
-            const started = Date.now();
+            const askStarted = Date.now();
+            recording.last = null;
             const result = await pipeline.ask(entry.question, entry.project);
+            const reply = recording.last;
             return {
-                secs: Math.round((Date.now() - started) / 100) / 10,
+                secs: Math.round((Date.now() - askStarted) / 100) / 10,
                 answer: result.answer,
+                ...(reply ? { stats: reply.stats, thinkingChars: reply.thinking.length } : {}),
                 sources: result.sources.map(storedSource),
                 promptChars: result.promptChars,
                 shown: result.ranked.map(({ passage }, i) => ({
@@ -210,11 +284,18 @@ async function run({ label, seed, temperature, seededRuns, unseededRuns, set, on
         for (let i = 0; i < seededRuns; i += 1) q.seeded.push(await ask(seeded));
         for (let i = 0; i < unseededRuns; i += 1) q.unseeded.push(await ask(unseeded));
         questions.push(q);
+        const loaded = await loadedModelMemory(ollama.baseUrl, ollama.chatModel);
+        if (loaded) memory.push(loaded);
 
         const verdict = judgeRun(entry, q.seeded[0]);
-        console.log(`  ${entry.id}: ${verdict.pass ? 'PASS' : 'FAIL'}${verdict.citesRaw ? ', raw cited' : ''}, ${q.seeded.map((r) => `${r.secs}s`).join('/')} seeded`);
+        const thinkingChars = [...q.seeded, ...q.unseeded].reduce((n, r) => n + (r.thinkingChars || 0), 0);
+        console.log(`  ${entry.id}: ${verdict.pass ? 'PASS' : 'FAIL'}${verdict.citesRaw ? ', raw cited' : ''}, ${q.seeded.map((r) => `${r.secs}s`).join('/')} seeded${thinkingChars ? `, ⚠ ${thinkingChars} chars of thinking text` : ''}`);
     }
 
+    metadata.wallSecs = Math.round((Date.now() - started) / 1000);
+    metadata.memory = memory.length > 0
+        ? { source: 'Ollama /api/ps after each question', peakBytes: Math.max(...memory.map((m) => m.bytes)), peakVramBytes: Math.max(...memory.map((m) => m.vramBytes)) }
+        : null;
     const results = { metadata, questions };
     const file = path.join(RESULTS_DIR, `${label}.json`);
     writeJson(file, results);
@@ -250,12 +331,14 @@ function summarise(q, entry) {
     const rawIndex = q.ranking.findIndex((r) => r.kind === 'raw');
     const signature = (r) => JSON.stringify([r.answer, r.sources.map((s) => s.id)]);
     return {
+        q,
         verdict,
         first,
         shown: first.shown,
         firstRaw: rawIndex === -1 ? null : { rank: rawIndex + 1, of: q.ranking.length, recordId: q.ranking[rawIndex].recordId },
         seededIdentical: new Set(q.seeded.map(signature)).size === 1,
         distinctUnseeded: new Set(q.unseeded.map((r) => r.answer)).size,
+        unseededPasses: q.unseeded.filter((r) => judgeRun(entry, r).pass).length,
         // The first seeded run is the cold one: its reruns share its prompt,
         // so Ollama answers them from its prompt cache and they run faster
         // than a live question would.
@@ -279,6 +362,23 @@ function promptSize(summaries) {
     return sizes.every((n) => typeof n === 'number') ? meanMax(sizes) : '—';
 }
 
+// A run's generation speed: tokens written per second of generation
+// (Ollama's eval_count / eval_duration), or null for runs stored without it.
+function tokensPerSec(r) {
+    const s = r.stats;
+    return s && s.evalTokens && s.evalSecs ? s.evalTokens / s.evalSecs : null;
+}
+
+function gib(bytes) {
+    return `${(bytes / 2 ** 30).toFixed(1)} GiB`;
+}
+
+function memoryText(m) {
+    if (!m.memory) return '—';
+    const { peakBytes, peakVramBytes } = m.memory;
+    return `${gib(peakBytes)}${peakVramBytes === peakBytes ? ', all on GPU' : ` (${gib(peakVramBytes)} on GPU)`}`;
+}
+
 function firstRawText(s) {
     if (!s.firstRaw) return 'none in scope';
     return `#${s.firstRaw.rank} of ${s.firstRaw.of}${s.firstRaw.rank <= s.shown.length ? ' (shown)' : ''}`;
@@ -300,11 +400,14 @@ function settingsRows(sets) {
         row('Chat model', (x) => `${x.model} @ ${x.modelDigest.slice(0, 12)}`),
         row('Embedding model', (x) => `${x.embedModel} @ ${x.embedModelDigest.slice(0, 12)}`),
         row('Ollama', (x) => x.ollamaVersion),
+        row('Thinking', (x) => (x.thinking ? x.thinking.handling : '—')),
         row('Seed / temperature', (x) => `${x.seed} / ${x.temperature}`),
         row('Chat options', (x) => JSON.stringify(x.chatOptions)),
         row('Top k', (x) => x.topK),
         row('Retrieval', (x) => (x.retrieval ? JSON.stringify(x.retrieval) : '—')),
         row('Runs per question', (x) => `${x.seededRuns} seeded, ${x.unseededRuns} unseeded`),
+        row('Peak model memory', memoryText),
+        row('Wall time', (x) => (typeof x.wallSecs === 'number' ? `${Math.round(x.wallSecs / 60)} min` : '—')),
     ];
 }
 
@@ -368,6 +471,8 @@ function renderReport(sets, gold) {
             `- Questions whose seeded runs weren't identical: ${join((s) => count(of(s), (x) => !x.seededIdentical))}`,
             `- Prompt size, mean / max (chars): ${join((s) => promptSize(of(s)))}`,
             `- Cold latency, mean / max (s): ${join((s) => meanMax(of(s).map((x) => x.coldLatency), 1))}`,
+            `- Tokens per second, cold run, mean / max: ${join((s) => meanMax(of(s).map((x) => tokensPerSec(x.first)).filter((n) => n !== null), 1))}`,
+            `- Runs that returned thinking text: ${join((s) => (of(s).every((x) => typeof x.first.thinkingChars === 'number') ? of(s).reduce((n, x) => n + [...x.q.seeded, ...x.q.unseeded].filter((r) => r.thinkingChars > 0).length, 0) : '—'))}`,
             '',
             '### Per question',
             '',
@@ -430,20 +535,168 @@ function renderReport(sets, gold) {
     return `${lines.join('\n')}\n`;
 }
 
-function report({ labels }) {
-    if (labels.length < 1 || labels.length > 2) throw new Error('report takes one result name, or two for before/after');
-    const sets = labels.map((label) => {
-        const file = path.join(RESULTS_DIR, `${label}.json`);
-        if (!fs.existsSync(file)) throw new Error(`no results named ${label} (${path.relative(process.cwd(), file)})`);
-        return readJson(file);
-    });
-    if (sets.length === 2) {
-        for (const key of ['harnessVersion', 'corpusCommit', 'seed', 'temperature']) {
-            if (sets[0].metadata[key] !== sets[1].metadata[key]) {
-                throw new Error(`${labels[0]} and ${labels[1]} differ in ${key} (${sets[0].metadata[key]} vs ${sets[1].metadata[key]}); re-run one so they match`);
+// Where the gold evidence stood in a question's prompt: whether its required
+// raw session was shown, and how many supporting records were. Retrieval
+// doesn't depend on the chat model, so this is the same for every model.
+function evidenceText(entry, shown) {
+    const ids = new Set(shown.map((x) => x.recordId));
+    const raw = entry.requiredRawRecord
+        ? `required raw ${ids.has(entry.requiredRawRecord) ? 'shown' : '**not shown**'}`
+        : 'no required raw';
+    return `${raw}; ${entry.supportingRecords.filter((id) => ids.has(id)).length} of ${entry.supportingRecords.length} supporting shown`;
+}
+
+// Several result sets side by side by chat model; the first set's model is
+// the base. Judged against the current gold file.
+function renderComparison(sets, gold) {
+    const models = [];
+    for (const set of sets) {
+        let group = models.find((m) => m.model === set.metadata.model);
+        if (!group) {
+            group = { model: set.metadata.model, sets: [], byId: new Map() };
+            models.push(group);
+        }
+        group.sets.push(set);
+        for (const q of set.questions) {
+            const entry = gold.entries.find((e) => e.id === q.id);
+            if (!entry) throw new Error(`${q.id} is no longer in ${path.basename(GOLD_FILE)}`);
+            if (entry.question !== q.question || entry.project !== q.project) {
+                throw new Error(`${q.id}: its gold question or project changed since \`${set.metadata.label}\` ran; re-run it`);
             }
+            if (group.byId.has(q.id)) throw new Error(`${q.id} is asked twice for ${group.model}`);
+            group.byId.set(q.id, { ...summarise(q, entry), metadata: set.metadata });
         }
     }
+    const ids = gold.entries.map((e) => e.id).filter((id) => models.some((m) => m.byId.has(id)));
+    const base = models[0];
+    const at = (m, id) => m.byId.get(id);
+    const col = (f) => models.map((m) => f(m)).join(' | ');
+    const header = `| | ${col((m) => `\`${m.model}\`${m === base ? ' (base)' : ''}`)} |`;
+    const rule = `|---|${models.map(() => '---').join('|')}|`;
+    const sum = (list, f) => list.reduce((n, x) => n + f(x), 0);
+
+    const lines = [
+        `# Ask the Repo eval — model comparison: ${models.map((m) => `\`${m.model}\``).join(', ')}`,
+        '',
+        'Generated by `backend/scripts/eval-ask.js compare` from the gold set in `backend/ask/eval/gold.json`.',
+        'Every model is given the same retrieval and prompt; only the chat model differs. Pass or fail',
+        'is judged on the first seeded run; unseeded passes count the unseeded runs that would also pass.',
+        '',
+        header,
+        rule,
+        `| Result sets | ${col((m) => m.sets.map((x) => `\`${x.metadata.label}\``).join(', '))} |`,
+        `| Model digest | ${col((m) => m.sets[0].metadata.modelDigest.slice(0, 12))} |`,
+        `| Capabilities | ${col((m) => (m.sets[0].metadata.capabilities || ['—']).join(', '))} |`,
+        `| Thinking | ${col((m) => cell(m.sets[0].metadata.thinking ? m.sets[0].metadata.thinking.handling : '— (stored before --model)'))} |`,
+        `| Ollama | ${col((m) => [...new Set(m.sets.map((x) => x.metadata.ollamaVersion))].join(', '))} |`,
+        `| Corpus / seed / temperature | ${col((m) => `${m.sets[0].metadata.corpusCommit.slice(0, 7)} / ${m.sets[0].metadata.seed} / ${m.sets[0].metadata.temperature}`)} |`,
+        `| Chat options | ${col((m) => cell(JSON.stringify(m.sets[0].metadata.chatOptions)))} |`,
+        `| Retrieval | ${col((m) => cell(JSON.stringify(m.sets[0].metadata.retrieval || '—')))} |`,
+        `| Peak model memory | ${col((m) => m.sets.map((x) => memoryText(x.metadata)).join(', '))} |`,
+        `| Wall time per set | ${col((m) => m.sets.map((x) => (typeof x.metadata.wallSecs === 'number' ? `${Math.round(x.metadata.wallSecs / 60)} min` : '—')).join(', '))} |`,
+        '',
+    ];
+    const retrieval = (m) => JSON.stringify([m.sets[0].metadata.retrieval, m.sets[0].metadata.chatOptions, m.sets[0].metadata.embedModelDigest]);
+    if (models.some((m) => retrieval(m) !== retrieval(base))) lines.push('⚠ The models were run with different retrieval, chat options or embedding model, so differences aren\'t all the chat model\'s.', '');
+
+    for (const name of GOLD_SETS) {
+        const inSet = ids.filter((id) => gold.entries.find((e) => e.id === id).set === name);
+        if (inSet.length === 0) continue;
+        const of = (m) => inSet.map((id) => at(m, id)).filter(Boolean);
+        const unseededTotal = (m) => sum(of(m), (x) => x.metadata.unseededRuns);
+        lines.push(
+            `## ${name[0].toUpperCase()}${name.slice(1)} set (${inSet.length} question${inSet.length === 1 ? '' : 's'})`,
+            '',
+            header,
+            rule,
+            `| Gold pass | ${col((m) => `**${of(m).filter((x) => x.verdict.pass).length} of ${of(m).length}**`)} |`,
+            `| Raw session cited | ${col((m) => `${of(m).filter((x) => x.verdict.citesRaw).length} of ${of(m).length}`)} |`,
+            `| Uncited sentences | ${col((m) => sum(of(m), (x) => x.verdict.uncited.length))} |`,
+            `| Sentences with 3+ stacked citations | ${col((m) => sum(of(m), (x) => x.verdict.stacks.length))} |`,
+            `| Unsupported figures | ${col((m) => sum(of(m), (x) => x.verdict.unsupported.length))} |`,
+            `| Unseeded runs passing | ${col((m) => `${sum(of(m), (x) => x.unseededPasses)} of ${unseededTotal(m)}`)} |`,
+            `| Seeded runs not identical | ${col((m) => of(m).filter((x) => !x.seededIdentical).length)} |`,
+            `| Cold latency, mean / max (s) | ${col((m) => meanMax(of(m).map((x) => x.coldLatency), 1))} |`,
+            `| Tokens per second, cold run, mean / max | ${col((m) => meanMax(of(m).map((x) => tokensPerSec(x.first)).filter((n) => n !== null), 1))} |`,
+            `| Answer length, mean / max (words) | ${col((m) => meanMax(of(m).map((x) => x.first.answer.split(/\s+/).filter(Boolean).length)))} |`,
+            `| Runs that returned thinking text | ${col((m) => (of(m).every((x) => typeof x.first.thinkingChars === 'number') ? sum(of(m), (x) => [...x.q.seeded, ...x.q.unseeded].filter((r) => r.thinkingChars > 0).length) : '—'))} |`,
+            '',
+            `Per question: seeded verdict (unseeded runs passing). Gold evidence is from \`${base.model}\`'s prompt.`,
+            '',
+            `| Question | ${col((m) => `\`${m.model}\``)} | Gold evidence in the prompt | Same passages shown to every model |`,
+            `|---|${models.map(() => '---').join('|')}|---|---|`,
+        );
+        for (const id of inSet) {
+            const entry = gold.entries.find((e) => e.id === id);
+            const shownIds = (x) => (x ? x.shown.map((y) => y.passage || y.recordId).join() : null);
+            const same = models.every((m) => shownIds(at(m, id)) === shownIds(at(base, id)));
+            lines.push(`| \`${id}\` | ${col((m) => {
+                const x = at(m, id);
+                return x ? `${x.verdict.pass ? 'PASS' : '**FAIL**'} (${x.unseededPasses}/${x.metadata.unseededRuns})` : '—';
+            })} | ${at(base, id) ? evidenceText(entry, at(base, id).shown) : '—'} | ${same ? 'yes' : '**no**'} |`);
+        }
+        lines.push('');
+    }
+
+    const failing = ids.filter((id) => models.some((m) => at(m, id) && !at(m, id).verdict.pass));
+    lines.push('## Entries failing on any model', '', `| Question | Gold evidence in the prompt | ${col((m) => `\`${m.model}\``)} |`, `|---|---|${models.map(() => '---').join('|')}|`);
+    for (const id of failing) {
+        const entry = gold.entries.find((e) => e.id === id);
+        lines.push(`| \`${id}\` | ${evidenceText(entry, at(base, id).shown)} | ${col((m) => {
+            const x = at(m, id);
+            if (!x) return '—';
+            return cell(x.verdict.pass ? 'PASS' : `FAIL: ${x.verdict.failures.join('; ')}`);
+        })} |`);
+    }
+    lines.push('', '## Answers (first seeded run)');
+    for (const id of ids) {
+        const entry = gold.entries.find((e) => e.id === id);
+        lines.push('', '---', '', `### \`${id}\` (${entry.set})`, '', `**${entry.question}** (${entry.project || 'all projects'})`, '');
+        for (const m of models) {
+            const x = at(m, id);
+            if (!x) continue;
+            lines.push(
+                `**\`${m.model}\`: ${x.verdict.pass ? 'PASS' : `FAIL: ${x.verdict.failures.join('; ')}`}**`,
+                `(cited ${x.first.sources.map((y) => short(y.recordId)).join(', ') || 'nothing'}; unseeded ${x.unseededPasses}/${x.metadata.unseededRuns} passing; cold ${x.coldLatency}s)`,
+                '',
+                ...x.first.answer.split('\n').map((l) => `> ${l}`),
+                '',
+            );
+        }
+    }
+    return `${lines.join('\n')}\n`;
+}
+
+// The settings every compared result set must share.
+function checkComparable(labels, sets) {
+    for (const key of ['harnessVersion', 'corpusCommit', 'seed', 'temperature']) {
+        const values = new Set(sets.map((x) => x.metadata[key]));
+        if (values.size > 1) {
+            throw new Error(`${labels.join(', ')} differ in ${key} (${[...values].join(' vs ')}); re-run so they match`);
+        }
+    }
+}
+
+function readResults(label) {
+    const file = path.join(RESULTS_DIR, `${label}.json`);
+    if (!fs.existsSync(file)) throw new Error(`no results named ${label} (${path.relative(process.cwd(), file)})`);
+    return readJson(file);
+}
+
+function compare({ label, labels }) {
+    if (!label) throw new Error('compare needs --label NAME');
+    if (labels.length < 2) throw new Error('compare takes at least two result names');
+    const sets = labels.map(readResults);
+    checkComparable(labels, sets);
+    const out = path.join(RESULTS_DIR, `${label}.md`);
+    fs.writeFileSync(out, renderComparison(sets, loadGold()));
+    console.log(`Report: ${path.relative(process.cwd(), out)}`);
+}
+
+function report({ labels }) {
+    if (labels.length < 1 || labels.length > 2) throw new Error('report takes one result name, or two for before/after');
+    const sets = labels.map(readResults);
+    if (sets.length === 2) checkComparable(labels, sets);
     const out = path.join(RESULTS_DIR, `${labels.join('-vs-')}.md`);
     fs.writeFileSync(out, renderReport(sets, loadGold()));
     console.log(`Report: ${path.relative(process.cwd(), out)}`);
@@ -454,7 +707,7 @@ function report({ labels }) {
 function parseArgs(argv) {
     const [command, ...rest] = argv;
     const options = {
-        command, label: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, labels: [],
+        command, label: null, model: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, labels: [],
     };
     const count = (arg, raw, min) => {
         const n = Number(raw);
@@ -471,6 +724,9 @@ function parseArgs(argv) {
         if (arg === '--label') {
             options.label = value();
             if (!/^[a-z0-9][a-z0-9._-]*$/.test(options.label)) throw new Error('--label must be lowercase letters, digits, ".", "_" or "-"');
+        } else if (arg === '--model') {
+            options.model = value().trim();
+            if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]*$/.test(options.model)) throw new Error('--model must be an Ollama model name, like gemma3:27b');
         } else if (arg === '--seed') {
             options.seed = count(arg, value(), 0);
         } else if (arg === '--temperature') {
@@ -485,7 +741,7 @@ function parseArgs(argv) {
             if (!GOLD_SETS.includes(options.set)) throw new Error(`--set must be one of ${GOLD_SETS.join(', ')}`);
         } else if (arg === '--only') {
             options.only = value().split(',').map((id) => id.trim()).filter(Boolean);
-        } else if (!arg.startsWith('--') && command === 'report') {
+        } else if (!arg.startsWith('--') && (command === 'report' || command === 'compare')) {
             options.labels.push(arg);
         } else {
             throw new Error(`unknown argument ${arg}`);
@@ -500,7 +756,8 @@ async function main() {
     const options = parseArgs(process.argv.slice(2));
     if (options.command === 'run') return run(options);
     if (options.command === 'report') return report(options);
-    throw new Error('usage: eval-ask.js run --label NAME [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] | report BEFORE [AFTER]');
+    if (options.command === 'compare') return compare(options);
+    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] | report BEFORE [AFTER] | compare --label NAME BASE OTHER...');
 }
 
 if (require.main === module) {
@@ -510,4 +767,6 @@ if (require.main === module) {
     });
 }
 
-module.exports = { judgeRun, claimText, renderReport, EVAL_HARNESS_VERSION };
+module.exports = {
+    judgeRun, claimText, renderReport, renderComparison, parseArgs, EVAL_HARNESS_VERSION,
+};

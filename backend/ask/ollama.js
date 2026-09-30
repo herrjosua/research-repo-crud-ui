@@ -24,6 +24,17 @@ function withTag(name) {
 // Thrown for anything that goes wrong talking to Ollama (unreachable, non-2xx,
 // malformed JSON, timeout). routes/ask.js turns it into a generic 502 and
 // logs `detail` server-side only.
+// A reasoning model's reply can open with its thinking in <think>…</think>
+// tags when Ollama doesn't split it into the message's separate `thinking`
+// field (Ollama 0.34 does split it, for models whose /api/show capabilities
+// include "thinking"). Only the final answer is kept. A reply that doesn't
+// start with the tag, which is every reply from a model without thinking, is
+// returned unchanged.
+function finalAnswer(content) {
+    const match = /^\s*<think>[\s\S]*?<\/think>\s*/.exec(content);
+    return match ? content.slice(match[0].length) : content;
+}
+
 class OllamaError extends Error {
     constructor(message, detail) {
         super(message);
@@ -38,6 +49,11 @@ function createOllamaClient({
     chatModel = DEFAULTS.chatModel,
     timeoutMs = DEFAULTS.timeoutMs,
     readyTimeoutMs = DEFAULTS.readyTimeoutMs,
+    // Ollama's top-level `think` chat parameter (false turns a reasoning
+    // model's thinking off). Undefined, the default, leaves it out of the
+    // request, so a model without thinking gets exactly the request it
+    // always did. Only the evaluation harness sets it (scripts/eval-ask.js).
+    think,
 } = {}) {
     const root = baseUrl.replace(/\/+$/, '');
 
@@ -62,6 +78,38 @@ function createOllamaClient({
         } catch {
             throw new OllamaError(`Ollama ${endpoint} returned invalid JSON`, text.slice(0, 500));
         }
+    }
+
+    // Non-streaming chat; resolves to { content, thinking, stats }:
+    // `content` the assistant message's final answer (finalAnswer()),
+    // `thinking` whatever reasoning the model returned apart from it ("" when
+    // none), and `stats` Ollama's token counts and timings (null where
+    // Ollama doesn't report them).
+    async function chatDetailed(messages, options = {}) {
+        const body = { model: chatModel, messages, stream: false, options };
+        if (think !== undefined) body.think = think;
+        const data = await post('/api/chat', body);
+        const content = data && data.message && data.message.content;
+        if (typeof content !== 'string') {
+            throw new OllamaError('Ollama /api/chat returned no message content');
+        }
+        const tagged = /^\s*<think>([\s\S]*?)<\/think>/.exec(content);
+        // Never part of the answer: the pipeline only ever sees `content`.
+        const separate = typeof data.message.thinking === 'string' ? data.message.thinking : '';
+        const secs = (ns) => (typeof ns === 'number' ? ns / 1e9 : null);
+        const count = (n) => (typeof n === 'number' ? n : null);
+        return {
+            content: finalAnswer(content),
+            thinking: separate || (tagged ? tagged[1].trim() : ''),
+            stats: {
+                promptTokens: count(data.prompt_eval_count),
+                evalTokens: count(data.eval_count),
+                promptSecs: secs(data.prompt_eval_duration),
+                evalSecs: secs(data.eval_duration),
+                loadSecs: secs(data.load_duration),
+                totalSecs: secs(data.total_duration),
+            },
+        };
     }
 
     return {
@@ -106,16 +154,15 @@ function createOllamaClient({
             return data.embeddings;
         },
 
-        // Non-streaming chat; returns the assistant message's raw content.
+        chatDetailed,
+
+        // Non-streaming chat; returns the assistant message's final answer.
         async chat(messages, options = {}) {
-            const data = await post('/api/chat', { model: chatModel, messages, stream: false, options });
-            const content = data && data.message && data.message.content;
-            if (typeof content !== 'string') {
-                throw new OllamaError('Ollama /api/chat returned no message content');
-            }
-            return content;
+            return (await chatDetailed(messages, options)).content;
         },
     };
 }
 
-module.exports = { createOllamaClient, OllamaError, OLLAMA_DEFAULTS: DEFAULTS };
+module.exports = {
+    createOllamaClient, OllamaError, finalAnswer, OLLAMA_DEFAULTS: DEFAULTS,
+};

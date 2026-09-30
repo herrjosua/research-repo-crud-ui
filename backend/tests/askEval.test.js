@@ -1,6 +1,9 @@
 const { GOLD_FILE, loadGold, validateGold } = require('../ask/eval/gold');
 const { answerSentences, analyseAnswer } = require('../ask/checks');
-const { judgeRun, claimText, renderReport } = require('../scripts/eval-ask');
+const {
+    judgeRun, claimText, renderReport, renderComparison, parseArgs,
+} = require('../scripts/eval-ask');
+const { createOllamaClient, finalAnswer } = require('../ask/ollama');
 const { withChatOptions, chatOverrides } = require('../scripts/capture-static-answers');
 
 // The evaluation gold set (ask/eval/gold.json) and the harness's pass/fail
@@ -390,5 +393,96 @@ describe('eval report', () => {
         const report = renderReport([{ metadata, questions: [question('s1', 'yes [1].')] }], gold);
         expect(report).not.toContain('## Regression set');
         expect(report).toContain('## Scenario set (1 question)');
+    });
+});
+
+describe('eval --model', () => {
+    it('takes a model for this run only, and none by default', () => {
+        expect(parseArgs(['run', '--label', 'x']).model).toBeNull();
+        expect(parseArgs(['run', '--label', 'x', '--model', 'qwen3:32b']).model).toBe('qwen3:32b');
+        expect(() => parseArgs(['run', '--label', 'x', '--model', 'bad model'])).toThrow(/--model/);
+    });
+});
+
+describe('thinking text', () => {
+    it('keeps only the final answer after a leading think block', () => {
+        expect(finalAnswer('<think>\nThe user wants…\n</think>\n\nThe answer [1].')).toBe('The answer [1].');
+        expect(finalAnswer('The answer [1].')).toBe('The answer [1].');
+        expect(finalAnswer('An answer that mentions <think>tags</think> later.')).toBe('An answer that mentions <think>tags</think> later.');
+    });
+
+    describe('the Ollama client', () => {
+        const realFetch = global.fetch;
+        let bodies;
+        const reply = (message) => {
+            global.fetch = jest.fn(async (url, init) => {
+                bodies.push(JSON.parse(init.body));
+                return {
+                    ok: true,
+                    text: async () => JSON.stringify({
+                        message, prompt_eval_count: 10, eval_count: 20, eval_duration: 2e9, prompt_eval_duration: 1e9, load_duration: 0, total_duration: 3e9,
+                    }),
+                };
+            });
+        };
+        beforeEach(() => { bodies = []; });
+        afterEach(() => { global.fetch = realFetch; });
+
+        it('sends no think parameter unless asked, so a model without thinking gets the same request', async () => {
+            reply({ content: 'Answer [1].' });
+            expect(await createOllamaClient().chat([], { temperature: 0.2 })).toBe('Answer [1].');
+            expect(bodies[0]).toEqual({ model: 'gemma2:9b', messages: [], stream: false, options: { temperature: 0.2 } });
+            await createOllamaClient({ chatModel: 'qwen3:32b', think: false }).chat([], {});
+            expect(bodies[1].think).toBe(false);
+        });
+
+        it('returns only the answer, never the thinking, and reports the stats', async () => {
+            reply({ content: 'Answer [1].', thinking: 'Let me think.' });
+            const client = createOllamaClient();
+            expect(await client.chat([], {})).toBe('Answer [1].');
+            const detail = await client.chatDetailed([], {});
+            expect(detail).toEqual({
+                content: 'Answer [1].',
+                thinking: 'Let me think.',
+                stats: {
+                    promptTokens: 10, evalTokens: 20, promptSecs: 1, evalSecs: 2, loadSecs: 0, totalSecs: 3,
+                },
+            });
+            reply({ content: '<think>Hmm.</think>\nAnswer [1].' });
+            expect(await client.chatDetailed([], {})).toMatchObject({ content: 'Answer [1].', thinking: 'Hmm.' });
+        });
+    });
+});
+
+describe('eval model comparison', () => {
+    const entry = (id, set) => ({
+        id, set, status: 'reviewed', question: `${id}?`, project: null,
+        supportingRecords: ['raw:a', 'finding:b'], requiredRawRecord: 'raw:a',
+        mustClaims: [{ description: 'says yes', pattern: 'yes' }], mustNotClaims: [], evidence: 'e',
+    });
+    const gold = { version: 1, entries: [entry('r1', 'regression'), entry('s1', 'scenario')] };
+    const run = (answer) => ({
+        secs: 2, answer, stats: { evalTokens: 30, evalSecs: 3 }, thinkingChars: 0,
+        sources: [{ id: 'raw:a#0', recordId: 'raw:a', recordKind: 'raw', title: 'A', section: null, excerpt: 'yes' }],
+        shown: [{ n: 1, recordId: 'raw:a', kind: 'raw', passage: 'raw:a#0' }],
+    });
+    const question = (id, answer) => ({ id, question: `${id}?`, project: null, ranking: [], seeded: [run(answer)], unseeded: [run(answer)] });
+    const metadata = (label, model) => ({
+        harnessVersion: 1, label, createdAt: 't', corpusCommit: 'c', appCommit: 'a', model, embedModel: 'e',
+        ollamaVersion: 'o', modelDigest: 'd', embedModelDigest: 'd', seed: 42, temperature: 0.2, chatOptions: {}, topK: 6, seededRuns: 1, unseededRuns: 1,
+    });
+
+    it('puts each model side by side, a model’s two sets together, and lists entries failing on any model', () => {
+        const report = renderComparison([
+            { metadata: metadata('base', 'm1'), questions: [question('r1', 'yes [1].')] },
+            { metadata: metadata('base-s', 'm1'), questions: [question('s1', 'yes [1].')] },
+            { metadata: metadata('other', 'm2'), questions: [question('r1', 'no [1].'), question('s1', 'yes [1].')] },
+        ], gold);
+        expect(report).toContain('| Result sets | `base`, `base-s` | `other` |');
+        expect(report).toContain('| `r1` | PASS (1/1) | **FAIL** (0/1) | required raw shown; 1 of 2 supporting shown | yes |');
+        expect(report).toContain('| Tokens per second, cold run, mean / max | 10 / 10 | 10 / 10 |');
+        const failing = report.slice(report.indexOf('## Entries failing on any model'), report.indexOf('## Answers'));
+        expect(failing).toContain('`r1`');
+        expect(failing).not.toContain('`s1`');
     });
 });

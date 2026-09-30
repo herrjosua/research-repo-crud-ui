@@ -379,6 +379,51 @@ because "Participant in session 1…" cites a source whose section is
 than comparing across machines: identical seeded answers are only expected on
 the same Ollama build and model digests.
 
+**Other chat models (`--model`, v1.3.6.31).** `run --model NAME` asks with
+another pulled Ollama chat model, for that process only, like `--seed` and
+`--temperature`. Without it the model is `OLLAMA_CHAT_MODEL`, else
+`gemma2:9b`, as for the server. The embedding model, retrieval and prompt
+never change, so every model is shown exactly the same passages. Results
+record the chat model, its digest, its Ollama capabilities and the Ollama
+version, and `report` and `compare` refuse results from different corpus
+commits, seeds or temperatures as before.
+
+A model whose capabilities include `thinking` (qwen3, gpt-oss) is asked with
+Ollama's `think: false`; other models get the same request as always, so
+`gemma2:9b` runs are unchanged (the `model-gemma2-9b` re-run gives every
+seeded answer of `v1.3.6.7-step5` byte for byte). Whatever the model
+returns, only `message.content` is the answer: Ollama returns reasoning in a
+separate `thinking` field, which is never used, and a reply that opens with
+a `<think>…</think>` block has that block removed (`finalAnswer()` in
+`ask/ollama.js`). Each run also stores Ollama's token counts and timings
+(`stats`) and how much thinking text came back (`thinkingChars`, which should
+be 0), and each result the model's peak memory as `/api/ps` reports it after
+each question. Reports add tokens per second (cold run), runs that returned
+thinking text, peak model memory and wall time.
+
+```bash
+node scripts/eval-ask.js run --label model-gemma3-27b --model gemma3:27b --set regression
+node scripts/eval-ask.js run --label model-gemma3-27b-scenarios --model gemma3:27b --set scenario
+node scripts/eval-ask.js compare --label model-comparison \
+  v1.3.6.7-step5 v1.3.6.7-step5-scenarios model-gemma3-27b model-gemma3-27b-scenarios
+```
+
+`compare` groups result sets by chat model (the first one is the base) and
+writes `ask/eval/results/<label>.md`: pass counts and the other totals per
+model and gold set, unseeded passes, cold latency, tokens per second and
+memory, a per-question grid with whether the gold evidence was in the
+prompt, the entries that fail on any model with every model's reasons, and
+every model's answer.
+
+The v1.3.6.31 bake-off (`model-comparison.md`, and
+[decision 16](../docs/decisions.md)) ran `gemma3:27b` and `qwen3:32b`
+against `gemma2:9b`'s step 5 results. Gold pass, regression / scenario:
+gemma2:9b 6 / 0, gemma3:27b 3 / 0, qwen3:32b 3 / 0. Cold latency was 4 s for
+gemma2, 17–30 s for the others, and peak memory 6.1, 16.3 and 20.6 GiB, so
+gemma2:9b stays the default. `model-gemma2-9b[-scenarios]` is gemma2
+re-run through `--model`: same seeded answers as step 5, plus its speed and
+memory.
+
 For a production deployment, see
 [`.env.production.example`](./.env.production.example) instead — it covers
 the additional settings (`ALLOWED_HOSTS`, `TRUST_PROXY`, `HTTPS_REDIRECT`,
