@@ -1,7 +1,7 @@
 const { GOLD_FILE, loadGold, validateGold } = require('../ask/eval/gold');
 const { answerSentences, analyseAnswer } = require('../ask/checks');
 const {
-    judgeRun, claimText, renderReport, renderComparison, parseArgs,
+    judgeRun, claimText, renderReport, renderComparison, parseArgs, thinkRequest,
 } = require('../scripts/eval-ask');
 const { createOllamaClient, finalAnswer } = require('../ask/ollama');
 const { withChatOptions, chatOverrides } = require('../scripts/capture-static-answers');
@@ -404,6 +404,29 @@ describe('eval --model', () => {
     });
 });
 
+describe('eval --think', () => {
+    it('takes a thinking level, and none by default', () => {
+        expect(parseArgs(['run', '--label', 'x']).think).toBeNull();
+        expect(parseArgs(['run', '--label', 'x', '--think', 'low']).think).toBe('low');
+        expect(() => parseArgs(['run', '--label', 'x', '--think', 'false'])).toThrow(/--think/);
+        expect(() => parseArgs(['run', '--label', 'x', '--think', 'Low!'])).toThrow(/--think/);
+    });
+
+    it('sends the same think value as before to models without levels', () => {
+        expect(thinkRequest('gemma2:9b', ['completion'], null, null)).toBeUndefined();
+        expect(thinkRequest('qwen3:32b', ['completion', 'tools', 'thinking'], [false, true], null)).toBe(false);
+        expect(thinkRequest('qwen3:32b', ['completion', 'tools', 'thinking'], null, null)).toBe(false);
+    });
+
+    it('sends a level only to a model that takes it, and needs one where false isn\'t a value', () => {
+        const levels = ['low', 'medium', 'high'];
+        expect(thinkRequest('gpt-oss:20b', ['completion', 'thinking'], levels, 'low')).toBe('low');
+        expect(() => thinkRequest('gpt-oss:20b', ['completion', 'thinking'], levels, 'max')).toThrow(/takes low, medium, high/);
+        expect(() => thinkRequest('gpt-oss:20b', ['completion', 'thinking'], levels, null)).toThrow(/--think LEVEL/);
+        expect(() => thinkRequest('gemma2:9b', ['completion'], null, 'low')).toThrow(/no thinking capability/);
+    });
+});
+
 describe('thinking text', () => {
     it('keeps only the final answer after a leading think block', () => {
         expect(finalAnswer('<think>\nThe user wants…\n</think>\n\nThe answer [1].')).toBe('The answer [1].');
@@ -484,5 +507,14 @@ describe('eval model comparison', () => {
         const failing = report.slice(report.indexOf('## Entries failing on any model'), report.indexOf('## Answers'));
         expect(failing).toContain('`r1`');
         expect(failing).not.toContain('`s1`');
+        expect(report).not.toContain('different Ollama versions');
+    });
+
+    it('warns when the sets were run on different Ollama versions', () => {
+        const report = renderComparison([
+            { metadata: metadata('base', 'm1'), questions: [question('r1', 'yes [1].')] },
+            { metadata: { ...metadata('other', 'm2'), ollamaVersion: 'o2' }, questions: [question('r1', 'yes [1].')] },
+        ], gold);
+        expect(report).toContain('⚠ The sets were run on different Ollama versions (o, o2).');
     });
 });
