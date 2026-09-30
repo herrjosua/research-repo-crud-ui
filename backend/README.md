@@ -388,8 +388,8 @@ record the chat model, its digest, its Ollama capabilities and the Ollama
 version, and `report` and `compare` refuse results from different corpus
 commits, seeds or temperatures as before.
 
-A model whose capabilities include `thinking` (qwen3, gpt-oss) is asked with
-Ollama's `think: false`; other models get the same request as always, so
+A model whose capabilities include `thinking` (qwen3) is asked with Ollama's
+`think: false`; other models get the same request as always, so
 `gemma2:9b` runs are unchanged (the `model-gemma2-9b` re-run gives every
 seeded answer of `v1.3.6.7-step5` byte for byte). Whatever the model
 returns, only `message.content` is the answer: Ollama returns reasoning in a
@@ -401,9 +401,21 @@ be 0), and each result the model's peak memory as `/api/ps` reports it after
 each question. Reports add tokens per second (cold run), runs that returned
 thinking text, peak model memory and wall time.
 
+`--think LEVEL` sends that thinking level instead of `false`. gpt-oss takes
+`low`, `medium` or `high` and can't turn thinking off: on Ollama 0.35.0 it
+ignores `think: false` and thinks at its default level, medium. The harness
+reads the values each model takes from `/api/show` (`thinking.values`).
+It refuses a level the model doesn't list, `--think` on a model without
+thinking, and a run without `--think` on a model whose values don't include
+`false`. The level is stored in the results' `thinking` metadata and shown
+in the report. Thinking text is expected then, and it is still never part
+of the answer. Without `--think`, qwen3, gemma2 and gemma3 get exactly the
+requests they did before.
+
 ```bash
 node scripts/eval-ask.js run --label model-gemma3-27b --model gemma3:27b --set regression
 node scripts/eval-ask.js run --label model-gemma3-27b-scenarios --model gemma3:27b --set scenario
+node scripts/eval-ask.js run --label model-gpt-oss-20b-low --model gpt-oss:20b --think low --set regression
 node scripts/eval-ask.js compare --label model-comparison \
   v1.3.6.7-step5 v1.3.6.7-step5-scenarios model-gemma3-27b model-gemma3-27b-scenarios
 ```
@@ -411,8 +423,8 @@ node scripts/eval-ask.js compare --label model-comparison \
 `compare` groups result sets by chat model (the first one is the base) and
 writes `ask/eval/results/<label>.md`: pass counts and the other totals per
 model and gold set, unseeded passes, cold latency, tokens per second and
-memory, a per-question grid with whether the gold evidence was in the
-prompt, the entries that fail on any model with every model's reasons, and
+memory, a warning when the sets ran on different Ollama versions, a
+per-question grid with whether the gold evidence was in the prompt, the entries that fail on any model with every model's reasons, and
 every model's answer.
 
 The v1.3.6.31 bake-off (`model-comparison.md`, and
@@ -423,6 +435,24 @@ gemma2, 17–30 s for the others, and peak memory 6.1, 16.3 and 20.6 GiB, so
 gemma2:9b stays the default. `model-gemma2-9b[-scenarios]` is gemma2
 re-run through `--model`: same seeded answers as step 5, plus its speed and
 memory.
+
+`gpt-oss:20b` was added at `--think low` (`model-gpt-oss-20b-low[-scenarios]`)
+and passed 0 / 0, with 3 / 4 raw sessions cited. It was the fastest model:
+3.9 s cold on the regression set and 5.8 s on the scenario set, at 60 tokens
+per second. Its peak memory was 12.0 GiB.
+- **How it fails:** mostly where it puts its citations. It groups them after
+  a paragraph's last sentence, or leaves them out. A scratch re-judge that
+  moves them back gives 2 / 1 (decision 16).
+- **Ollama version:** it ran on Ollama 0.35.0, the others on 0.34.3. A
+  gemma2 control on 0.35.0 reproduced all 10 regression seeded answers
+  byte for byte.
+- **Seed 42 doesn't fully reproduce gpt-oss:**
+  - within a run, 2 of 17 questions' cold seeded run differed from the
+    next two;
+  - across two processes, 14 of 17 first seeded answers were
+    byte-identical;
+  - no verdict changed.
+- **Not run:** medium, its default level.
 
 For a production deployment, see
 [`.env.production.example`](./.env.production.example) instead — it covers
