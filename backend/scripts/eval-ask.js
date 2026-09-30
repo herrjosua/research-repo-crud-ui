@@ -5,8 +5,8 @@
 // manual report, not a CI check: it needs a real Ollama and the agentic-repo
 // clone. See backend/README.md, "Evaluating answers".
 //
-//   node scripts/eval-ask.js run --label NAME [--model NAME] [--seed 42] [--temperature 0.2]
-//                                [--seeded-runs 3] [--unseeded-runs 3]
+//   node scripts/eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed 42]
+//                                [--temperature 0.2] [--seeded-runs 3] [--unseeded-runs 3]
 //                                [--set regression|scenario] [--only id,id]
 //   node scripts/eval-ask.js report BEFORE [AFTER]
 //   node scripts/eval-ask.js compare --label NAME BASE [OTHER ...]
@@ -24,6 +24,9 @@
 //         Ollama capabilities include "thinking" is asked with think: false
 //         (any other model gets the request it always did), and every run
 //         stores Ollama's token counts and how much thinking text came back.
+//         --think LEVEL sends that thinking level instead (gpt-oss takes
+//         low, medium or high, and can't turn thinking off with false), and
+//         a model whose levels don't include false needs it.
 // report  Re-judges stored runs against the current gold file (so editing
 //         the gold set needs no re-run) and rewrites the report. With two
 //         names it writes a before/after report to ask/eval/results/
@@ -67,6 +70,8 @@ const RESULTS_DIR = path.join(__dirname, '..', 'ask', 'eval', 'results');
 // stored without them, so older results still compare.
 // Nor did v1.3.6.31's --model: runs also store `stats` and
 // `thinkingChars`, and the metadata `thinking` and `memory`, all optional.
+// Nor did --think: the metadata `thinking` also stores the model's
+// `levels`, and `think` can be a level.
 const EVAL_HARNESS_VERSION = 1;
 
 // ---------------------------------------------------------------------------
@@ -151,14 +156,37 @@ function storedSource(source) {
 }
 
 // A model's capabilities as Ollama lists them (/api/show), e.g.
-// ["completion", "tools", "thinking"].
-async function modelCapabilities(baseUrl, model) {
+// ["completion", "tools", "thinking"], and the `think` values it takes
+// (Ollama 0.35: [false, true] for qwen3, ["low", "medium", "high"] for
+// gpt-oss; null when Ollama doesn't say).
+async function modelDetails(baseUrl, model) {
     const res = await fetch(`${baseUrl}/api/show`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model }), signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) throw new Error(`Ollama /api/show returned ${res.status} for ${model}`);
     const data = await res.json();
-    return Array.isArray(data.capabilities) ? data.capabilities : [];
+    return {
+        capabilities: Array.isArray(data.capabilities) ? data.capabilities : [],
+        thinkValues: data.thinking && Array.isArray(data.thinking.values) ? data.thinking.values : null,
+    };
+}
+
+// The `think` value to send: undefined (none) for a model without thinking,
+// the --think level when one is given, else false. Refuses a level the
+// model doesn't take, and false for a model whose levels don't include it,
+// since Ollama then ignores it and the model thinks at its default level.
+function thinkRequest(model, capabilities, thinkValues, level) {
+    const capable = capabilities.includes('thinking');
+    if (level) {
+        if (!capable) throw new Error(`--think: ${model} has no thinking capability`);
+        if (thinkValues && !thinkValues.includes(level)) throw new Error(`--think: ${model} takes ${thinkValues.join(', ')}, not ${level}`);
+        return level;
+    }
+    if (!capable) return undefined;
+    if (thinkValues && thinkValues.length > 0 && !thinkValues.includes(false)) {
+        throw new Error(`${model} takes a thinking level (${thinkValues.join(', ')}), not think: false; pass --think LEVEL`);
+    }
+    return false;
 }
 
 // The chat model's memory while it's loaded, as Ollama reports it
@@ -190,7 +218,7 @@ function recordingClient(ollama) {
     return client;
 }
 
-async function run({ label, model, seed, temperature, seededRuns, unseededRuns, set, only }) {
+async function run({ label, model, think: thinkLevel, seed, temperature, seededRuns, unseededRuns, set, only }) {
     if (!label) throw new Error('run needs --label NAME');
     const repoRoot = process.env.AGENTIC_REPO_ROOT;
     if (!repoRoot) throw new Error('AGENTIC_REPO_ROOT is not set (backend/.env or the environment).');
@@ -209,12 +237,12 @@ async function run({ label, model, seed, temperature, seededRuns, unseededRuns, 
     });
     // Refuses a model that isn't pulled, before anything else is asked.
     const info = await ollamaInfo(ollama.baseUrl, [ollama.chatModel, ollama.embedModel]);
-    const capabilities = await modelCapabilities(ollama.baseUrl, ollama.chatModel);
-    const thinkingCapable = capabilities.includes('thinking');
-    // Ollama's supported switch for a reasoning model's thinking. Sent only to
-    // models that have it, so gemma2:9b's requests are unchanged.
-    const chatClient = thinkingCapable
-        ? createOllamaClient({ baseUrl: ollama.baseUrl, embedModel: ollama.embedModel, chatModel: ollama.chatModel, think: false })
+    const { capabilities, thinkValues } = await modelDetails(ollama.baseUrl, ollama.chatModel);
+    // Ollama's switch for a reasoning model's thinking. Sent only to models
+    // that have it, so gemma2:9b's requests are unchanged.
+    const think = thinkRequest(ollama.chatModel, capabilities, thinkValues, thinkLevel);
+    const chatClient = think !== undefined
+        ? createOllamaClient({ baseUrl: ollama.baseUrl, embedModel: ollama.embedModel, chatModel: ollama.chatModel, think })
         : ollama;
     const recording = recordingClient(chatClient);
     const index = createEmbeddingIndex({ embed: ollama.embed, loadRecords });
@@ -233,9 +261,16 @@ async function run({ label, model, seed, temperature, seededRuns, unseededRuns, 
         modelDigest: info.digests[0],
         embedModelDigest: info.digests[1],
         capabilities,
-        thinking: thinkingCapable
-            ? { capable: true, think: false, handling: 'think: false sent with every chat request; the answer is message.content only' }
-            : { capable: false, think: null, handling: 'no think parameter sent (the model has no thinking capability); the answer is message.content only' },
+        thinking: think === undefined
+            ? { capable: false, think: null, handling: 'no think parameter sent (the model has no thinking capability); the answer is message.content only' }
+            : {
+                capable: true,
+                think,
+                levels: thinkValues,
+                handling: typeof think === 'string'
+                    ? `think: "${think}" (thinking level) sent with every chat request; the thinking comes back in message.thinking and is never judged; the answer is message.content only`
+                    : 'think: false sent with every chat request; the answer is message.content only',
+            },
         seed,
         temperature,
         chatOptions: { ...CHAT_OPTIONS, temperature },
@@ -289,7 +324,7 @@ async function run({ label, model, seed, temperature, seededRuns, unseededRuns, 
 
         const verdict = judgeRun(entry, q.seeded[0]);
         const thinkingChars = [...q.seeded, ...q.unseeded].reduce((n, r) => n + (r.thinkingChars || 0), 0);
-        console.log(`  ${entry.id}: ${verdict.pass ? 'PASS' : 'FAIL'}${verdict.citesRaw ? ', raw cited' : ''}, ${q.seeded.map((r) => `${r.secs}s`).join('/')} seeded${thinkingChars ? `, ⚠ ${thinkingChars} chars of thinking text` : ''}`);
+        console.log(`  ${entry.id}: ${verdict.pass ? 'PASS' : 'FAIL'}${verdict.citesRaw ? ', raw cited' : ''}, ${q.seeded.map((r) => `${r.secs}s`).join('/')} seeded${thinkingChars ? `, ${typeof think === 'string' ? '' : '⚠ '}${thinkingChars} chars of thinking text` : ''}`);
     }
 
     metadata.wallSecs = Math.round((Date.now() - started) / 1000);
@@ -598,6 +633,8 @@ function renderComparison(sets, gold) {
     ];
     const retrieval = (m) => JSON.stringify([m.sets[0].metadata.retrieval, m.sets[0].metadata.chatOptions, m.sets[0].metadata.embedModelDigest]);
     if (models.some((m) => retrieval(m) !== retrieval(base))) lines.push('⚠ The models were run with different retrieval, chat options or embedding model, so differences aren\'t all the chat model\'s.', '');
+    const versions = [...new Set(models.flatMap((m) => m.sets.map((x) => x.metadata.ollamaVersion)))];
+    if (versions.length > 1) lines.push(`⚠ The sets were run on different Ollama versions (${versions.join(', ')}). A seed only reproduces an answer on the same Ollama build, so check a model re-run on both before reading small differences as the model's.`, '');
 
     for (const name of GOLD_SETS) {
         const inSet = ids.filter((id) => gold.entries.find((e) => e.id === id).set === name);
@@ -707,7 +744,7 @@ function report({ labels }) {
 function parseArgs(argv) {
     const [command, ...rest] = argv;
     const options = {
-        command, label: null, model: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, labels: [],
+        command, label: null, model: null, think: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, labels: [],
     };
     const count = (arg, raw, min) => {
         const n = Number(raw);
@@ -727,6 +764,9 @@ function parseArgs(argv) {
         } else if (arg === '--model') {
             options.model = value().trim();
             if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]*$/.test(options.model)) throw new Error('--model must be an Ollama model name, like gemma3:27b');
+        } else if (arg === '--think') {
+            options.think = value().trim();
+            if (!/^[a-z]+$/.test(options.think) || ['true', 'false'].includes(options.think)) throw new Error('--think must be a thinking level, like low');
         } else if (arg === '--seed') {
             options.seed = count(arg, value(), 0);
         } else if (arg === '--temperature') {
@@ -757,7 +797,7 @@ async function main() {
     if (options.command === 'run') return run(options);
     if (options.command === 'report') return report(options);
     if (options.command === 'compare') return compare(options);
-    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] | report BEFORE [AFTER] | compare --label NAME BASE OTHER...');
+    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] | report BEFORE [AFTER] | compare --label NAME BASE OTHER...');
 }
 
 if (require.main === module) {
@@ -768,5 +808,5 @@ if (require.main === module) {
 }
 
 module.exports = {
-    judgeRun, claimText, renderReport, renderComparison, parseArgs, EVAL_HARNESS_VERSION,
+    judgeRun, claimText, renderReport, renderComparison, parseArgs, thinkRequest, EVAL_HARNESS_VERSION,
 };

@@ -343,8 +343,9 @@ See "Known gaps" in `docs/architecture.md`.
 `qwen3:32b`, were run on both gold sets with exactly the retrieval and prompt
 of RR-103's step 5 (decision 15), and each passed fewer entries: 3 of 10
 regression against 6 of 10, and 0 of 7 scenario for all three. They took 4–6
-times as long to answer and 2.5–3.5 times the memory. `gpt-oss:20b` wasn't
-pulled and wasn't run.
+times as long to answer and 2.5–3.5 times the memory. `gpt-oss:20b`, run
+afterwards at thinking level low, passed 0 of 10 and 0 of 7. It answers as
+fast as gemma2 but takes twice the memory.
 
 **What was measured.** `scripts/eval-ask.js run --model` (backend/README.md,
 "Other chat models"), seed 42, temperature 0.2, 3 seeded + 3 unseeded runs,
@@ -354,47 +355,51 @@ corpus 4ba145f, Ollama 0.34.3, all on one machine. Results are in
 was shown the same passages for every question (checked per question in the
 comparison). `model-gemma2-9b` re-ran gemma2:9b through the changed code: all
 17 seeded answers are byte-identical to step 5, and it supplies gemma2's
-speed and memory, which step 5 didn't record.
+speed and memory, which step 5 didn't record. gpt-oss:20b was run later the
+same way plus `--think low` (see "gpt-oss:20b" below), on Ollama 0.35.0.
 
-| | gemma2:9b | gemma3:27b | qwen3:32b |
-|---|---|---|---|
-| Gold pass, regression / scenario | **6 / 0** | 3 / 0 | 3 / 0 |
-| Raw session cited, regression / scenario | 4 / 3 | 7 / 6 | 5 / 6 |
-| Uncited sentences, regression / scenario | 0 / 0 | 2 / 3 | 15 / 11 |
-| Stacks of 3+, regression / scenario | 0 / 1 | 2 / 2 | 1 / 0 |
-| Unsupported figures, regression / scenario | 0 / 0 | 11 / 7 | 8 / 0 |
-| Unseeded runs passing, regression / scenario | 17 of 30 / 0 of 21 | 10 of 30 / 3 of 21 | 7 of 30 / 0 of 21 |
-| Cold latency, mean / max (s), regression | 4.1 / 6.7 (control 3.8 / 6.1) | 22.2 / 27.6 | 16.7 / 25.6 |
-| Cold latency, mean / max (s), scenario | 4.7 / 5.7 (control 4.4 / 5.5) | 29.6 / 38.5 | 24.1 / 28.8 |
-| Tokens per second, cold run, mean / max | 40.9 / 43.5 (control) | 13.6 / 14.7 | 12.5 / 13.2 |
-| Peak model memory (Ollama /api/ps, num_ctx 8192) | 6.1 GiB | 16.3 GiB | 20.6 GiB |
-| Wall time, both sets | 3.6 min | 24 min | 21 min |
-| Answer length, regression mean (words) | 25 | 93 | 71 |
+| | gemma2:9b | gemma3:27b | qwen3:32b | gpt-oss:20b (think low) |
+|---|---|---|---|---|
+| Gold pass, regression / scenario | **6 / 0** | 3 / 0 | 3 / 0 | 0 / 0 |
+| Raw session cited, regression / scenario | 4 / 3 | 7 / 6 | 5 / 6 | 3 / 4 |
+| Uncited sentences, regression / scenario | 0 / 0 | 2 / 3 | 15 / 11 | 24 / 23 |
+| Stacks of 3+, regression / scenario | 0 / 1 | 2 / 2 | 1 / 0 | 1 / 0 |
+| Unsupported figures, regression / scenario | 0 / 0 | 11 / 7 | 8 / 0 | 33 / 15 |
+| Unseeded runs passing, regression / scenario | 17 of 30 / 0 of 21 | 10 of 30 / 3 of 21 | 7 of 30 / 0 of 21 | 3 of 30 / 0 of 21 |
+| Cold latency, mean / max (s), regression | 4.1 / 6.7 (control 3.8 / 6.1) | 22.2 / 27.6 | 16.7 / 25.6 | 3.9 / 9.5 |
+| Cold latency, mean / max (s), scenario | 4.7 / 5.7 (control 4.4 / 5.5) | 29.6 / 38.5 | 24.1 / 28.8 | 5.8 / 11.3 |
+| Tokens per second, cold run, mean / max | 40.9 / 43.5 (control) | 13.6 / 14.7 | 12.5 / 13.2 | 60.1 / 61.8 |
+| Peak model memory (Ollama /api/ps, num_ctx 8192) | 6.1 GiB | 16.3 GiB | 20.6 GiB | 12.0 GiB |
+| Wall time, both sets | 3.6 min | 24 min | 21 min | 5.6 min |
+| Answer length, regression mean (words) | 25 | 93 | 71 | 69 |
+| Ollama | 0.34.3 | 0.34.3 | 0.34.3 | 0.35.0 |
 
 Per entry (seeded verdict, unseeded passes of 3), for every entry any model
 fails. "Evidence" is whether the gold evidence was in the prompt, the same
 for every model:
 
-| Entry | gemma2:9b | gemma3:27b | qwen3:32b | Evidence in the prompt | Failure is |
-|---|---|---|---|---|---|
-| `onboarding-invite-worry` | FAIL 0 | FAIL 0 | FAIL 0 | required raw not shown | retrieval |
-| `onboarding-required-steps` | FAIL 0 | FAIL 0 | FAIL 0 | raw shown | model |
-| `prior-auth-citations` | PASS 3 | FAIL 0 | FAIL 0 | raw shown, 5 of 5 | model (the larger models) |
-| `audit-onboarding-steps-order` | PASS 3 | PASS 3 | FAIL 0 | 3 of 3 shown | model (qwen3's list format) |
-| `audit-session-timeout` | PASS 3 | FAIL 1 | PASS 3 | raw shown | check (gemma3 wrote the source's date) |
-| `audit-adoption-window` | FAIL 0 | FAIL 0 | FAIL 0 | raw shown, "4 weeks" is in a third section | retrieval (passage choice) |
-| `audit-burnout-share` | FAIL 0 | FAIL 0 | FAIL 1 | raw shown, 52% in the prompt | model |
-| `audit-ai-readiness` | PASS 3 | FAIL 0 | FAIL 0 | raw shown | check for gemma3 (a date), model for qwen3 (an uncited lead sentence) |
-| `scenario-documentation-pain-points` | FAIL 0 | FAIL 0 | FAIL 0 | raw shown, but re-entering fields isn't in the prompt (EHR is) | mostly retrieval |
-| `scenario-scribe-trust` | FAIL 0 | FAIL 0 | FAIL 0 | required raw (scribe v0.2) not shown | retrieval |
-| `scenario-nurses-citations` | FAIL 0 | FAIL 3 | FAIL 0 | raw shown | check for gemma3 ("April 8th"), model for the others |
-| `scenario-invite-expectation` | FAIL 0 | FAIL 0 | FAIL 0 | required raw not shown | retrieval |
-| `scenario-calendar-premise` | FAIL 0 | FAIL 0 | FAIL 0 | raw shown | model |
-| `scenario-care-coordinator-gaps` | FAIL 0 | FAIL 0 | FAIL 0 | raw shown; float-pool and AVS open items in the prompt | model |
-| `scenario-session-timeout-open` | FAIL 0 | FAIL 0 | FAIL 0 | required raw (IT Security interview) not shown; badge-tap and re-auth dispute not in the prompt | retrieval |
+| Entry | gemma2:9b | gemma3:27b | qwen3:32b | gpt-oss:20b | Evidence in the prompt | Failure is |
+|---|---|---|---|---|---|---|
+| `onboarding-invite-worry` | FAIL 0 | FAIL 0 | FAIL 0 | FAIL 0 | required raw not shown | retrieval |
+| `onboarding-required-steps` | FAIL 0 | FAIL 0 | FAIL 0 | FAIL 0 | raw shown | model |
+| `prior-auth-citations` | PASS 3 | FAIL 0 | FAIL 0 | FAIL 0 | raw shown, 5 of 5 | model (the larger models) |
+| `scribe-sound-alike-names` | PASS 2 | PASS 3 | PASS 0 | FAIL 0 | raw shown, 5 of 6 | model (gpt-oss's citation placement) |
+| `audit-onboarding-steps-order` | PASS 3 | PASS 3 | FAIL 0 | FAIL 0 | 3 of 3 shown | model (qwen3's list format, gpt-oss's missing citations) |
+| `audit-step3-wireframe` | PASS 3 | PASS 3 | PASS 3 | FAIL 3 | 4 of 6 shown | check wording (gpt-oss's bare decline) |
+| `audit-session-timeout` | PASS 3 | FAIL 1 | PASS 3 | FAIL 0 | raw shown | check (gemma3 wrote the source's date) |
+| `audit-adoption-window` | FAIL 0 | FAIL 0 | FAIL 0 | FAIL 0 | raw shown, "4 weeks" is in a third section | retrieval (passage choice) |
+| `audit-burnout-share` | FAIL 0 | FAIL 0 | FAIL 1 | FAIL 0 | raw shown, 52% in the prompt | model |
+| `audit-ai-readiness` | PASS 3 | FAIL 0 | FAIL 0 | FAIL 0 | raw shown | check for gemma3 (a date), model for qwen3 (an uncited lead sentence) |
+| `scenario-documentation-pain-points` | FAIL 0 | FAIL 0 | FAIL 0 | FAIL 0 | raw shown, but re-entering fields isn't in the prompt (EHR is) | mostly retrieval |
+| `scenario-scribe-trust` | FAIL 0 | FAIL 0 | FAIL 0 | FAIL 0 | required raw (scribe v0.2) not shown | retrieval |
+| `scenario-nurses-citations` | FAIL 0 | FAIL 3 | FAIL 0 | FAIL 0 | raw shown | check for gemma3 ("April 8th"), model for the others |
+| `scenario-invite-expectation` | FAIL 0 | FAIL 0 | FAIL 0 | FAIL 0 | required raw not shown | retrieval |
+| `scenario-calendar-premise` | FAIL 0 | FAIL 0 | FAIL 0 | FAIL 0 | raw shown | model |
+| `scenario-care-coordinator-gaps` | FAIL 0 | FAIL 0 | FAIL 0 | FAIL 0 | raw shown; float-pool and AVS open items in the prompt | model |
+| `scenario-session-timeout-open` | FAIL 0 | FAIL 0 | FAIL 0 | FAIL 0 | required raw (IT Security interview) not shown; badge-tap and re-auth dispute not in the prompt | retrieval |
 
-`scribe-sound-alike-names` and `audit-step3-wireframe` pass on all three.
-Four failures are retrieval's, and a fifth mostly is: the required raw
+`scribe-sound-alike-names` and `audit-step3-wireframe` pass on the first
+three models, and gpt-oss fails both. Four failures are retrieval's, and a fifth mostly is: the required raw
 session, or the passage holding the answer, isn't in the prompt, so no chat
 model can pass them. A larger model fixes none of them. "In the prompt" was
 checked by matching the gold evidence against the text of the passages step 5
@@ -415,29 +420,80 @@ list, which the checks read as uncited (decision 15). On
 `onboarding-required-steps` it also states that steps 1, 5 and 6 are
 required or optional without a source.
 
+**gpt-oss:20b.** Run later with `--model gpt-oss:20b --think low`
+(`model-gpt-oss-20b-low[-scenarios]`, digest 17052f91a42e), otherwise exactly
+as above. It took thinking level low, the closest to thinking off. On
+Ollama 0.35.0, `think: false` doesn't turn gpt-oss's thinking off: a
+one-word probe still returned 136 characters of thinking and 46 tokens, about
+as many as the default medium, against 13 characters and 16 tokens at low.
+The harness now takes `--think LEVEL`, and it refuses to send `false` to a
+model whose Ollama `think` values don't include it (backend/README.md).
+- **Ollama version.** Ollama had moved to 0.35.0 by then. A gemma2:9b
+  control on 0.35.0 gave all 10 regression seeded answers byte-identical to
+  `model-gemma2-9b` on 0.34.3, so the upgrade alone doesn't change seeded
+  output.
+- **Seed 42 doesn't fully reproduce gpt-oss.** Within a run, 15 of 17
+  questions gave three identical seeded answers. The two others,
+  `scenario-documentation-pain-points` and `scenario-calendar-premise`,
+  differ on the first (cold) run only. A second process gave 14 of 17 first
+  seeded answers byte-identical, differing in wording on
+  `onboarding-invite-worry`, `scenario-documentation-pain-points` and
+  `scenario-scribe-trust`. Every one of those runs failed, so no verdict
+  moved, but gpt-oss's seeded verdicts are stable in practice rather than
+  guaranteed.
+- **Where it loses.** It is mostly citation placement, not content:
+  - Six of 17 answers put all their markers after the last sentence
+    ("…study sessions. [1][2][3]"), so every sentence reads as uncited.
+  - Six cite nothing, four of them in the regression set.
+  - It writes a narrow no-break space in "34 %" (U+202F), which misses the
+    `audit-ai-readiness` claim, and non-breaking hyphens (U+2011).
+  - A scratch re-judge (not a check change) normalized U+202F and U+2011
+    and attributed each paragraph-final marker group to that paragraph's
+    uncited sentences. It gives gpt-oss 2 of 10 (`prior-auth-citations`,
+    `audit-session-timeout`) and 1 of 7 (`scenario-nurses-citations`),
+    still well below gemma2's 6 of 10, and changes nothing for the other
+    three models.
+  - Two more are close:
+    - `audit-ai-readiness` then fails only on "December 2025", a label
+      date, as with gemma3.
+    - `audit-step3-wireframe`'s "The sources do not provide any
+      information about a wireframe for step 3" misses the check's
+      wording. Its three unseeded runs pass.
+  - Even counting both, gpt-oss reaches 4 of 10.
+- **Speed and memory.** It is the fastest model run (3.9 s cold on the
+  regression set, 60 tokens per second) at 12.0 GiB. Thinking came back on
+  all 102 runs, always in `message.thinking`, and no answer contains any of
+  it.
+
 **The five behaviors asked about.** None passes without a change, except the
 useful decline:
 - `scenario-calendar-premise`: no model makes the premise check. gemma2 and
   gemma3 report the skip attempts and the drop-off. gemma3 says "misinterpreted as
   optional". qwen3 presents them as the evidence for requiring the step,
-  which the entry forbids.
+  which the entry forbids, and so does gpt-oss ("Evidence that the calendar
+  step must be required comes from multiple sources").
 - `scenario-care-coordinator-gaps`: gemma2 declines ("The sources don't
   directly address…"). gemma3 and qwen3 both list open items with citations
   instead of declining, and gemma3 says what the data shows (ranking
   disagreements, cross-referencing 3–4 systems). They fail only on the two
   specific open items the raw notes list, float-pool coordinators and the
   unquantified AVS misses. This is the clearest gain from a larger model.
+  gpt-oss also lists open items rather than declining, but uncited and
+  none of the two the raw notes record.
 - `scenario-session-timeout-open`: all fail. The IT Security interview that
   holds two of the three open items isn't in the prompt. All three name the
   missing "paused, draft preserved" state, but not as still unshipped.
+  gpt-oss frames the open question as whether the 10-minute policy or the
+  UI is at fault, which no record says is open.
 - `audit-burnout-share`: no model both declines and says what the data shows.
   gemma2 only declines. gemma3 gives the 52% of physicians correctly but
   never says there is no overall burnout rate. qwen3 says there is none but
-  leaves out the 52%.
+  leaves out the 52%. gpt-oss only declines, like gemma2, and cites
+  nothing.
 - `audit-step3-wireframe`: all pass. gemma3's is the most useful decline:
   it says step 3 is "Connect calendar" and a drop-off point, and that no
   source describes its layout. qwen3 cites all six sources on its decline
-  sentence.
+  sentence. gpt-oss fails it (above).
 
 **Thinking text.** Ollama 0.34.3 returns a reasoning model's thinking in the
 message's separate `thinking` field, not in `content`, and supports
@@ -449,7 +505,9 @@ client (`ask/ollama.js`) only ever returns `message.content`, now with any
 leading `<think>…</think>` block removed (`finalAnswer()`, a no-op for every
 reply that doesn't start with the tag), so the pipeline and harness parse
 only the final answer. Every run records how much thinking text came back.
-It was 0 on all 102 qwen3 runs. The live route doesn't send `think`. With
+It was 0 on all 102 qwen3 runs. gpt-oss can't turn thinking off (above).
+Its thinking came back in the separate field on every run, and its answers
+were content only. The live route doesn't send `think`. With
 `OLLAMA_CHAT_MODEL` set to a reasoning model its answers would still be
 content only, but it would spend tokens thinking first.
 
@@ -457,8 +515,8 @@ content only, but it would spend tokens thinking first.
 the gold set is retrieval's passage choice (four failures are evidence that
 never reaches the prompt) and prompt or check work on the behaviors above.
 Re-run the bake-off after either changes: a larger model may do better on
-the open-questions entries once the evidence is in view. gpt-oss:20b can be
-run the same way once pulled (`--model gpt-oss:20b`). Its thinking may not be
-turned off with `false` in the same way (Ollama documents it as taking a
-level, low to high; not verified here), so check its thinking-text count
-first.
+the open-questions entries once the evidence is in view. gpt-oss:20b was
+run at thinking level low only. Medium, its default, wasn't run. Its
+remaining failures are mostly where it puts citations, which a prompt
+change could reach. A re-run would also need to allow for its seeds not
+fully reproducing.

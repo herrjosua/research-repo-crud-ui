@@ -50,7 +50,8 @@ function createOllamaClient({
     timeoutMs = DEFAULTS.timeoutMs,
     readyTimeoutMs = DEFAULTS.readyTimeoutMs,
     // Ollama's top-level `think` chat parameter (false turns a reasoning
-    // model's thinking off). Undefined, the default, leaves it out of the
+    // model's thinking off; gpt-oss takes a level, "low" to "high",
+    // instead). Undefined, the default, leaves it out of the
     // request, so a model without thinking gets exactly the request it
     // always did. Only the evaluation harness sets it (scripts/eval-ask.js).
     think,
