@@ -1,6 +1,6 @@
 # Architecture
 
-How the UX Research Repo app fits together. Current as of 2026-09-28; the
+How the UX Research Repo app fits together. Current as of 2026-09-30; the
 "Known gaps" section at the bottom lists what isn't finished yet.
 
 ## The pieces
@@ -62,8 +62,12 @@ Details worth knowing:
   characters that never cross a heading, so each citation can show real text
   before and after the excerpt.
 - **Caching.** Nothing happens at startup. The first question embeds the
-  whole corpus (431 retrievable passages of 548; 3–4 seconds with the
-  model loaded, more if Ollama has to load it).
+  whole corpus (431 retrievable passages of 548, at agentic-repo commit
+  4ba145f, the corpus the 2026-09-29 evaluation runs record). The embedding
+  step alone takes 3–4 seconds with the model loaded, more if Ollama has
+  to load it; the checked-in evaluation results don't time it. The whole
+  first question after a server start, model loading included, is 10 to 20
+  seconds (`backend/README.md`).
   Embeddings are kept in memory, keyed by a hash of each passage's text, so
   later questions only embed the question plus anything that changed. The
   cache resets when the server restarts.
@@ -72,7 +76,7 @@ Details worth knowing:
   are never retrieved; a raw session's roster rides along as a one-line
   header on its sources. Each source is labelled `RAW SESSION`, `SYNTHESIS`
   or `DOC` for the model. See `backend/README.md`, "Retrieval", and
-  [decision 15](./decisions.md#15-retrieval-changes-for-raw-session-evidence-rr-103).
+  [decision 15](./decisions.md#15-retrieval-changes-for-raw-session-evidence).
 - **Project filter.** Matches by tag, because records have no project field.
   The Ask tab's picker lists the `project-*` tags from `GET /api/ask/config`
   (labels from the corpus's `research/projects.yml`), with the selected
@@ -136,7 +140,9 @@ sequenceDiagram
 ## Known gaps
 
 - Ask shows "not available" where `LLM_PROVIDER` is unset. The public demo
-  shows it until its server sets `LLM_PROVIDER=static`.
+  runs in static mode, so it doesn't: it serves the pre-generated answers
+  through the question picker. How the public host is configured lives
+  outside this repo.
 - Correction files in `raw/` aren't read by the export scripts, so
   retrieval can still cite a number that a correction has fixed.
 - Retrieval quality: numbered lists lose their numbers when chunked, and
@@ -163,7 +169,7 @@ sequenceDiagram
   "sources") could also excuse an uncited claim that happens to mention the
   sources; none has turned up in the stored runs.
 - Topics the retrieval changes don't reach: follow-up and open questions,
-  premise checks, and declining with evidence (RR-103 PR C).
+  premise checks, and declining with evidence.
 - No rate limiting or quotas on `/api/ask`.
 - The public demo can only answer its captured questions; typed questions
   need the project running locally.
