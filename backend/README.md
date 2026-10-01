@@ -371,8 +371,12 @@ A stored run keeps its cited sources' text but not their label dates, and
 of the shown passages only their ids. `report`, `compare` and `run` read
 both from `ask/eval/prompt-sources/<corpus commit>.json`, which
 `node scripts/eval-ask.js prompt-sources` builds from the corpus checkout
-(read only) for every stored result at its commit, and `run` extends. It
-checks the rebuild against each run's stored cited excerpts and prompt
+(read only) for every stored result at its commit, and `run` extends.
+Each corpus commit has its own file: a run at a new commit creates it, and
+it must be committed with that run's results. Results whose commit has no
+file can't be reported until `prompt-sources` is run with
+`AGENTIC_REPO_ROOT` checked out at that commit. `prompt-sources` checks the
+rebuild against each run's stored cited excerpts and prompt
 size: at 4ba145f every cited excerpt and every stored prompt size
 matched. Runs stored before passage ids were (`baseline`,
 `v1.3.6.7-checks`) get their shown records' labels and roster lines

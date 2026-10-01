@@ -923,11 +923,11 @@ and should be recaptured before the next release that ships this
 - Premise check and open items with different wording.
 - Open items with only the Follow-ups section attached.
 
-## 20. Answer-check changes; list format stays off; gpt-oss:20b re-run
+## 20. Answer-check changes; list format stays off; gpt-oss:20b re-run (v1.3.6.39)
 
 **Date:** 2026-10-01. **Status:** Active for the five checks changes. List
-format was retested and stays off by default. Follows decisions 15 (RR-103)
-and 19 (RR-144).
+format was retested and stays off by default. Ticket RR-148. Follows
+decisions 15 (RR-103) and 19 (RR-144).
 
 **Decision:** `ask/checks.js` gets five changes, each with unit fixtures
 (`tests/askChecks.test.js`):
@@ -995,10 +995,11 @@ Counts are the first seeded run's, as the reports give them. Per entry:
 
   Decision 16's scratch re-judge predicted 5 of 10 and 1 of 7. The real
   change gives 6 of 10 because `prior-auth-citations` also needed the quote
-  fix. Under these checks gemma3:27b equals step 5's gemma2:9b on the
-  regression set (6 of 10), and leads on the scenario set (1 against 0).
-  It's still 4–6 times slower at 2.7 times the memory, and two of its four
-  regression gains don't count.
+  fix. Under these checks gemma3:27b's 6 of 10 on the regression set equals
+  step 5's gemma2:9b, and is one ahead of today's default (5 of 10, below).
+  It also leads on the scenario set (1 of 7 against 0). It's still 4–6
+  times slower at 2.7 times the memory, and two of its four regression
+  gains don't count. Decision 16 still stands.
 - **Change 3, quotations.** It clears the RR-144 quote artefact: "I love
   this job. I do not love finishing my notes at 9pm…". That fragment was
   2 uncited and 1 unsupported in every gemma2 run that quoted it (step 5,
@@ -1073,8 +1074,43 @@ from two check problems this decision records but doesn't fix (below):
 
 That answer fails on its claims either way: it opens with a decline and
 misses the AVS open item. If those two problems are fixed, `report` can
-re-judge these runs with no re-run, and the rule may be met. The
+re-judge these runs with no re-run, and the rule may be met. List format
+stays off under the rule as written: the checks were not changed to
+unblock it. Fixing these two problems is the follow-up, RR-149 (checks
+round 2), which re-judges the stored runs and re-decides list format. The
 scenario cold-latency maximum is also that answer: 14.0 s against 7.3.
+
+**Why the default reads 5 of 10 where step 5 read 6.** From the stored
+runs only:
+- The checks aren't the cause. Step 5 re-judged under the new checks reads
+  6 of 10 with 17 unseeded passes, the same as under the old checks.
+- The prompt is. All 10 of `checks-control`'s seeded regression answers are
+  byte-identical to RR-144's decline-with-evidence runs (`behavior-decline`,
+  moved out of the repo, see below, and `behavior-combined`). All 10 of
+  `behavior-control`'s are byte-identical to step 5's, so the Ollama
+  upgrade (0.34.3 to 0.35.0) changed none of them.
+
+Three entries moved:
+- `prior-auth-citations`, PASS → FAIL: it cites the synthesis finding and
+  the v2 session (2025-11-04) instead of the v1 session.
+- `audit-onboarding-steps-order`, PASS → FAIL: the steps are written as
+  "- Step N" bullets with one citation at the end, 5 uncited sentences.
+- `audit-burnout-share`, FAIL → PASS: it declines, then gives the cited 52%
+  of physicians.
+
+**A correction to decision 19's reasoning** (decision 19 is left as
+written). Decision 19 held that neither seeded loss counts as a regression,
+because both entries still passed 3 of 3 unseeded runs in the combined run.
+In `checks-control`, `audit-onboarding-steps-order` passes 1 of 3 unseeded
+runs. Across the three runs of the same setup it passes 2, 3 and 1
+(`behavior-decline`, `behavior-combined`, `checks-control`).
+(`behavior-decline` was moved out of the repo under decision 19's pruning
+and was re-judged from a local copy. `behavior-combined`, which is in the
+repo and is the same setup as decline alone, passes it 3 of 3 unseeded: the
+other end of the range.) At 1 of 3 it
+meets the stop rule's test for a counted regression against step 5.
+Whether decline with evidence alone stays the default is left to the
+re-decision in checks round 2 (RR-149). It isn't decided here.
 
 **gpt-oss:20b re-run.** `--model gpt-oss:20b --think low` on the current
 default configuration (`checks-gpt-oss-20b-low` and `-scenarios`): digest
@@ -1148,7 +1184,9 @@ gemma2:9b stays the chat model (decision 16 stands).
 to decision 19's `behavior-combined`, yet 15 of 30 unseeded regression runs
 pass, against 20 there. `audit-burnout-share`'s gain under decline with
 evidence was counted in decision 19 on 3 of 3 unseeded runs. Here it passes
-1 of 3 under the control and 2 of 3 under decline + list. With 3 unseeded
+1 of 3 under the control and 2 of 3 under decline + list.
+`audit-onboarding-steps-order` passed 3 of 3 unseeded in
+`behavior-combined` and passes 1 of 3 here (above). With 3 unseeded
 runs, one entry's count moves by 1–2 between identical configurations, so
 the stop rule's 2-of-3 threshold sits inside that noise.
 
@@ -1178,6 +1216,9 @@ changed):
   (`scripts/capture-static-answers.js`) uses the figure rule without label
   dates or shown sources, so its review can flag a date the harness now
   accepts.
+
+**Still not done:** recapturing the public demo's saved answers
+(`ask/static/answers.json`), as in decision 19.
 
 **Kept in `backend/ask/eval/results/`:**
 - `checks-rejudge.md`.
