@@ -275,7 +275,10 @@ gold set's questions (all of them without it); `--seed`, `--temperature`,
 `--seeded-runs`, `--unseeded-runs` and `--only id,id` change the defaults.
 `--whole-raw-notes N` runs with the off-by-default whole-notes option set to
 N (see "Retrieval" below) for that run only, and the report's Retrieval row
-records it. Every run also stores `promptTokens`, Ollama's count of the
+records it. `--behaviors none|name,name` runs with exactly the named prompt
+behaviors on and the rest off (`none` for all off; see "Prompt behaviors"
+below), and the report's "Prompt behaviors on" row records them. Without
+it, a run uses the defaults. Every run also stores `promptTokens`, Ollama's count of the
 prompt's tokens (the number the prompt-size warning below uses).
 `report` re-judges stored runs against the current gold file, so editing
 the gold set needs no re-run. With two labels it puts them side by side,
@@ -972,6 +975,27 @@ evaluation harness records them with every result:
 
 The final defaults are **k = 6, metadata sections excluded, provenance slot
 off, `passagesPerRaw: 2`, whole raw notes off**.
+
+**Prompt behaviors.** Four rules for the system prompt, each a switch in
+`PROMPT_BEHAVIORS` (`ask/answer.js`). With all four off, the prompt is what
+it was before they existed.
+- **On: decline with evidence** (`declineWithEvidence`). When the sources
+  don't contain what was asked, the answer says so in one sentence, then
+  says what they do show on the topic, with citations. It replaces "say so
+  plainly … and cite nothing".
+- **Off: premise check** (`premiseCheck`). When the question assumes
+  something, check the assumption first and say so up front if the sources
+  don't support it.
+- **Off: open items** (`openItems`). For "what is unresolved / still open",
+  list each open item the sources state, one per item, each cited.
+- **Off: list format** (`listFormat`). Each list item on its own line with
+  its citation at its end, numbered when ordered.
+
+In the evaluation, decline with evidence gained `audit-burnout-share` and
+lost nothing under the stop rule. Premise check and open items each cost a
+regression, and list format changed no verdict. Open items works only when
+the session's Follow-ups are in the prompt. See
+[decision 19](../docs/decisions.md#19-prompt-behaviors-decline-with-evidence-on-three-left-off-v13638).
 
 **Prompt size.** Every question is sent with `num_ctx: 8192`
 (`CHAT_OPTIONS` in `ask/pipeline.js`). Ollama doesn't refuse a longer prompt:
