@@ -993,7 +993,10 @@ it was before they existed.
 
 In the evaluation, decline with evidence gained `audit-burnout-share` and
 lost nothing under the stop rule. Premise check and open items each cost a
-regression, and list format changed no verdict. Open items works only when
+regression, and list format changed no verdict. Together with decline with
+evidence, list format brought back the numbered onboarding steps and lost
+nothing, but it didn't clear the uncited and unsupported counts: they moved
+to other answers, and rose on the scenario set. So it stays off. Open items works only when
 the session's Follow-ups are in the prompt. See
 [decision 19](../docs/decisions.md#19-prompt-behaviors-decline-with-evidence-on-three-left-off-v13638).
 
