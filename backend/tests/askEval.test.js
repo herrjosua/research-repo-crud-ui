@@ -363,6 +363,18 @@ describe('capture/eval chat option overrides', () => {
         await withChatOptions(ollama, chatOverrides({ seed: null, temperature: 0 })).chat([], { temperature: 0.2, num_ctx: 8192 });
         expect(calls).toEqual([{ temperature: 0.2, num_ctx: 8192, seed: 42 }, { temperature: 0, num_ctx: 8192 }]);
     });
+
+    it('applies them to chatDetailed() too, which the pipeline calls when the client has it', async () => {
+        const calls = [];
+        const ollama = {
+            chatModel: 'm',
+            chat: async () => 'ok',
+            chatDetailed: async (messages, options) => { calls.push(options); return { content: 'ok', thinking: '', stats: null }; },
+        };
+        await withChatOptions(ollama, chatOverrides({ seed: 42, temperature: 0.2 })).chatDetailed([], { temperature: 0.5, num_ctx: 8192 });
+        expect(calls).toEqual([{ temperature: 0.2, num_ctx: 8192, seed: 42 }]);
+        expect(withChatOptions({ chat: async () => 'ok' }, { seed: 1 }).chatDetailed).toBeUndefined();
+    });
 });
 
 describe('eval report', () => {
@@ -401,6 +413,15 @@ describe('eval --model', () => {
         expect(parseArgs(['run', '--label', 'x']).model).toBeNull();
         expect(parseArgs(['run', '--label', 'x', '--model', 'qwen3:32b']).model).toBe('qwen3:32b');
         expect(() => parseArgs(['run', '--label', 'x', '--model', 'bad model'])).toThrow(/--model/);
+    });
+});
+
+describe('eval --whole-raw-notes', () => {
+    it('takes a session count of at least 1, and none by default', () => {
+        expect(parseArgs(['run', '--label', 'x']).wholeRawNotes).toBeNull();
+        expect(parseArgs(['run', '--label', 'x', '--whole-raw-notes', '2']).wholeRawNotes).toBe(2);
+        expect(() => parseArgs(['run', '--label', 'x', '--whole-raw-notes', '0'])).toThrow(/--whole-raw-notes/);
+        expect(() => parseArgs(['run', '--label', 'x', '--whole-raw-notes', 'two'])).toThrow(/--whole-raw-notes/);
     });
 });
 

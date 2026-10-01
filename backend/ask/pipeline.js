@@ -4,6 +4,7 @@
 // so a captured answer is exactly what the live route would have returned.
 
 const { rankRecords } = require('./retrieval');
+const { wholeNotesText } = require('./corpus');
 const { provenanceLinks, withProvenanceSlot } = require('./provenance');
 const { buildMessages, renumberCitations, toSource } = require('./answer');
 const { toPlainText } = require('./plainText');
@@ -27,20 +28,76 @@ const { checkAnswer } = require('./checks');
 //                   record gets one. A session's best passage is often
 //                   its Objective, and the second can bring in the
 //                   findings or quotes it leaves out.
+//   wholeRawNotes   0 (off), or N: the raw sessions in the top k are
+//                   dropped, and the top N raw sessions of the whole
+//                   ranking are shown instead, each as its whole notes
+//                   (ask/corpus.js wholeNotesText) under one label, with
+//                   its roster header. Synthesis and doc records are
+//                   shown as without it, and every record stays in
+//                   ranking order. passagesPerRaw doesn't apply.
 // The evaluation harness records this with every result.
 const RETRIEVAL = {
-    topK: 6, metadataSections: 'excluded', provenanceSlot: false, passagesPerRaw: 2,
+    topK: 6, metadataSections: 'excluded', provenanceSlot: false, passagesPerRaw: 2, wholeRawNotes: 0,
 };
 const TOP_K = RETRIEVAL.topK;
 // Low temperature: this is retrieval-grounded summarization, not writing.
 const CHAT_OPTIONS = { temperature: 0.2, num_ctx: 8192 };
+// A prompt past num_ctx isn't refused: Ollama keeps what fits and answers,
+// without saying so. ask() warns when Ollama's count of the prompt's tokens
+// (prompt_eval_count, which counts the whole prompt even when Ollama reuses
+// its cache) is over this share of num_ctx. The answer shares the window,
+// since num_predict isn't set, so 85% leaves roughly 1,200 tokens for it.
+const PROMPT_WARN_SHARE = 0.85;
+
+// The chat reply and Ollama's count of the prompt's tokens. A client with
+// chatDetailed() (ask/ollama.js) gives the count; one with only chat() (the
+// tests' stubs) gives null.
+async function chatWithPromptTokens(ollama, messages, options) {
+    if (typeof ollama.chatDetailed !== 'function') {
+        return { content: await ollama.chat(messages, options), promptTokens: null };
+    }
+    const { content, stats } = await ollama.chatDetailed(messages, options);
+    return { content, promptTokens: stats && typeof stats.promptTokens === 'number' ? stats.promptTokens : null };
+}
+
+// The warning ask() logs for a prompt near or past num_ctx, or null.
+function promptSizeWarning(promptTokens, numCtx = CHAT_OPTIONS.num_ctx) {
+    if (promptTokens === null || promptTokens <= PROMPT_WARN_SHARE * numCtx) return null;
+    return `Ask the Repo: the prompt was ${promptTokens} tokens, over ${Math.round(PROMPT_WARN_SHARE * 100)}% of num_ctx ${numCtx}; `
+        + 'Ollama may have cut it or left too little room for the answer.';
+}
+
+// The wholeRawNotes selection (RETRIEVAL above): the non-raw records of
+// `chosen` and the top `n` raw sessions of `ranked`, in ranking order, a raw
+// session as one passage holding its whole notes. Its id is
+// "<record id>#notes", and it has no neighbours for the sources panel.
+function withWholeRawNotes(ranked, chosen, n) {
+    const raw = ranked.filter((r) => r.record.kind === 'raw').slice(0, n);
+    const shown = new Set([...chosen.filter((r) => r.record.kind !== 'raw'), ...raw]);
+    return ranked.filter((r) => shown.has(r)).map((r) => {
+        if (r.record.kind !== 'raw') return r.passages[0];
+        const { record, participants } = r.passages[0].passage;
+        return {
+            passage: {
+                record,
+                chunk: { heading: null, text: wholeNotesText(record), index: 'notes' },
+                participants,
+                previous: null,
+                next: null,
+            },
+            score: r.score,
+        };
+    });
+}
 
 // `ollama` is an ask/ollama.js client; `index` an embedding index built on it
 // (ask/retrieval.js). ask() resolves to the response body POST /api/ask
 // sends, plus `raw` (the model's unprocessed reply, or null when the model
 // wasn't called), `ranked` (the passages it was shown, in [n] order) for
-// the capture script's review report, and `promptChars` (the prompt's size,
-// system and user messages, for the evaluation harness). Ollama failures
+// the capture script's review report, `promptChars` (the prompt's size,
+// system and user messages, for the evaluation harness) and `promptTokens`
+// (Ollama's prompt_eval_count, or null when the client doesn't report it;
+// over PROMPT_WARN_SHARE of num_ctx it's also logged). Ollama failures
 // reject with OllamaError.
 //
 // select() is what the model is shown: RETRIEVAL applied to the in-scope
@@ -69,6 +126,7 @@ function createAskPipeline({ ollama, index, retrieval = RETRIEVAL }) {
         const chosen = retrieval.provenanceSlot
             ? withProvenanceSlot(ranked, retrieval.topK, provenanceLinks(records))
             : ranked.slice(0, retrieval.topK);
+        if (retrieval.wholeRawNotes > 0) return withWholeRawNotes(ranked, chosen, retrieval.wholeRawNotes);
         return chosen.flatMap((r) => r.passages
             .slice(0, r.record.kind === 'raw' ? retrieval.passagesPerRaw : 1)
             .sort((a, b) => a.passage.chunk.index - b.passage.chunk.index));
@@ -87,11 +145,14 @@ function createAskPipeline({ ollama, index, retrieval = RETRIEVAL }) {
                 raw: null,
                 ranked: [],
                 promptChars: 0,
+                promptTokens: null,
             };
         }
 
         const messages = buildMessages(question, ranked);
-        const raw = await ollama.chat(messages, CHAT_OPTIONS);
+        const { content: raw, promptTokens } = await chatWithPromptTokens(ollama, messages, CHAT_OPTIONS);
+        const warning = promptSizeWarning(promptTokens);
+        if (warning) console.warn(warning);
         const { text, cited } = renumberCitations(toPlainText(raw), ranked.length);
         const sources = cited.map((i) => toSource(ranked[i], project));
 
@@ -106,10 +167,13 @@ function createAskPipeline({ ollama, index, retrieval = RETRIEVAL }) {
             raw,
             ranked,
             promptChars: messages.reduce((n, m) => n + m.content.length, 0),
+            promptTokens,
         };
     }
 
     return { ask, rank, select };
 }
 
-module.exports = { createAskPipeline, TOP_K, RETRIEVAL, CHAT_OPTIONS };
+module.exports = {
+    createAskPipeline, promptSizeWarning, TOP_K, RETRIEVAL, CHAT_OPTIONS, PROMPT_WARN_SHARE,
+};

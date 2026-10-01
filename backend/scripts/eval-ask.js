@@ -8,6 +8,7 @@
 //   node scripts/eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed 42]
 //                                [--temperature 0.2] [--seeded-runs 3] [--unseeded-runs 3]
 //                                [--set regression|scenario] [--only id,id]
+//                                [--whole-raw-notes N]
 //   node scripts/eval-ask.js report BEFORE [AFTER]
 //   node scripts/eval-ask.js compare --label NAME BASE [OTHER ...]
 //
@@ -27,6 +28,10 @@
 //         --think LEVEL sends that thinking level instead (gpt-oss takes
 //         low, medium or high, and can't turn thinking off with false), and
 //         a model whose levels don't include false needs it.
+//         --whole-raw-notes N runs the pipeline with RETRIEVAL.wholeRawNotes
+//         set to N for this process only (ask/pipeline.js: the whole notes of
+//         the top N raw sessions instead of their passages); the metadata's
+//         `retrieval` records it.
 // report  Re-judges stored runs against the current gold file (so editing
 //         the gold set needs no re-run) and rewrites the report. With two
 //         names it writes a before/after report to ask/eval/results/
@@ -72,6 +77,9 @@ const RESULTS_DIR = path.join(__dirname, '..', 'ask', 'eval', 'results');
 // `thinkingChars`, and the metadata `thinking` and `memory`, all optional.
 // Nor did --think: the metadata `thinking` also stores the model's
 // `levels`, and `think` can be a level.
+// Nor did the prompt-size guard: runs also store `promptTokens`, the
+// count the pipeline's warning used (the same number as
+// `stats.promptTokens`), optional like the rest.
 const EVAL_HARNESS_VERSION = 1;
 
 // ---------------------------------------------------------------------------
@@ -204,21 +212,25 @@ async function loadedModelMemory(baseUrl, model) {
     }
 }
 
-// An ask/ollama.js client whose chat() also keeps the last reply's thinking
-// and stats, for the run that asked it. Questions are asked one at a time.
+// An ask/ollama.js client whose chat() and chatDetailed() also keep the last
+// reply's thinking and stats, for the run that asked it. Questions are asked
+// one at a time.
 function recordingClient(ollama) {
     const client = {
         ...ollama,
         last: null,
-        chat: async (messages, options) => {
+        chatDetailed: async (messages, options) => {
             client.last = await ollama.chatDetailed(messages, options);
-            return client.last.content;
+            return client.last;
         },
+        chat: async (messages, options) => (await client.chatDetailed(messages, options)).content,
     };
     return client;
 }
 
-async function run({ label, model, think: thinkLevel, seed, temperature, seededRuns, unseededRuns, set, only }) {
+async function run({
+    label, model, think: thinkLevel, seed, temperature, seededRuns, unseededRuns, set, only, wholeRawNotes,
+}) {
     if (!label) throw new Error('run needs --label NAME');
     const repoRoot = process.env.AGENTIC_REPO_ROOT;
     if (!repoRoot) throw new Error('AGENTIC_REPO_ROOT is not set (backend/.env or the environment).');
@@ -246,8 +258,9 @@ async function run({ label, model, think: thinkLevel, seed, temperature, seededR
         : ollama;
     const recording = recordingClient(chatClient);
     const index = createEmbeddingIndex({ embed: ollama.embed, loadRecords });
-    const seeded = createAskPipeline({ ollama: withChatOptions(recording, { seed, temperature }), index });
-    const unseeded = createAskPipeline({ ollama: withChatOptions(recording, { temperature }), index });
+    const retrieval = wholeRawNotes === null ? RETRIEVAL : { ...RETRIEVAL, wholeRawNotes };
+    const seeded = createAskPipeline({ ollama: withChatOptions(recording, { seed, temperature }), index, retrieval });
+    const unseeded = createAskPipeline({ ollama: withChatOptions(recording, { temperature }), index, retrieval });
 
     const metadata = {
         harnessVersion: EVAL_HARNESS_VERSION,
@@ -274,8 +287,8 @@ async function run({ label, model, think: thinkLevel, seed, temperature, seededR
         seed,
         temperature,
         chatOptions: { ...CHAT_OPTIONS, temperature },
-        topK: RETRIEVAL.topK,
-        retrieval: RETRIEVAL,
+        topK: retrieval.topK,
+        retrieval,
         seededRuns,
         unseededRuns,
     };
@@ -310,6 +323,7 @@ async function run({ label, model, think: thinkLevel, seed, temperature, seededR
                 ...(reply ? { stats: reply.stats, thinkingChars: reply.thinking.length } : {}),
                 sources: result.sources.map(storedSource),
                 promptChars: result.promptChars,
+                promptTokens: result.promptTokens,
                 shown: result.ranked.map(({ passage }, i) => ({
                     n: i + 1, recordId: passage.record.id, kind: passage.record.kind, passage: `${passage.record.id}#${passage.chunk.index}`,
                 })),
@@ -744,7 +758,7 @@ function report({ labels }) {
 function parseArgs(argv) {
     const [command, ...rest] = argv;
     const options = {
-        command, label: null, model: null, think: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, labels: [],
+        command, label: null, model: null, think: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, wholeRawNotes: null, labels: [],
     };
     const count = (arg, raw, min) => {
         const n = Number(raw);
@@ -781,6 +795,8 @@ function parseArgs(argv) {
             if (!GOLD_SETS.includes(options.set)) throw new Error(`--set must be one of ${GOLD_SETS.join(', ')}`);
         } else if (arg === '--only') {
             options.only = value().split(',').map((id) => id.trim()).filter(Boolean);
+        } else if (arg === '--whole-raw-notes') {
+            options.wholeRawNotes = count(arg, value(), 1);
         } else if (!arg.startsWith('--') && (command === 'report' || command === 'compare')) {
             options.labels.push(arg);
         } else {
@@ -797,7 +813,7 @@ async function main() {
     if (options.command === 'run') return run(options);
     if (options.command === 'report') return report(options);
     if (options.command === 'compare') return compare(options);
-    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] | report BEFORE [AFTER] | compare --label NAME BASE OTHER...');
+    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] [--whole-raw-notes N] | report BEFORE [AFTER] | compare --label NAME BASE OTHER...');
 }
 
 if (require.main === module) {
