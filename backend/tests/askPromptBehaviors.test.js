@@ -11,14 +11,18 @@ const BARE_DECLINE = 'If the sources do not answer the question, say so plainly 
 const DASH_LISTS = 'use "- " for a list item if you need a list';
 
 describe('prompt behaviors', () => {
-    it('are all off by default, and leave the prompt as it was', () => {
-        expect(PROMPT_BEHAVIORS).toEqual(ALL_OFF);
+    it('are off by default except declineWithEvidence', () => {
+        expect(PROMPT_BEHAVIORS).toEqual({ ...ALL_OFF, declineWithEvidence: true });
         expect(systemPrompt()).toBe(SYSTEM_PROMPT);
-        expect(systemPrompt(ALL_OFF)).toBe(SYSTEM_PROMPT);
-        expect(SYSTEM_PROMPT.split('\n')).toHaveLength(10);
-        expect(SYSTEM_PROMPT).toContain(BARE_DECLINE);
-        expect(SYSTEM_PROMPT).toContain(DASH_LISTS);
-        expect(SYSTEM_PROMPT).not.toMatch(/assumes something|still open|what they do show|its own line/);
+        expect(SYSTEM_PROMPT).toBe(systemPrompt({ ...ALL_OFF, declineWithEvidence: true }));
+    });
+
+    it('all off, leave the prompt as it was before they existed', () => {
+        const prompt = systemPrompt(ALL_OFF);
+        expect(prompt.split('\n')).toHaveLength(10);
+        expect(prompt).toContain(BARE_DECLINE);
+        expect(prompt).toContain(DASH_LISTS);
+        expect(prompt).not.toMatch(/assumes something|still open|what they do show|its own line/);
     });
 
     it('premiseCheck adds a rule to check what the question assumes, before anything else', () => {
@@ -64,6 +68,7 @@ describe('prompt behaviors', () => {
 
     it('buildMessages uses the behaviors it is given, and the default prompt without them', () => {
         expect(buildMessages('q', [])[0].content).toBe(SYSTEM_PROMPT);
+        expect(buildMessages('q', [], ALL_OFF)[0].content).toBe(systemPrompt(ALL_OFF));
         expect(buildMessages('q', [], { ...ALL_OFF, openItems: true })[0].content)
             .toBe(systemPrompt({ ...ALL_OFF, openItems: true }));
     });

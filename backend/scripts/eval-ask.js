@@ -8,7 +8,7 @@
 //   node scripts/eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed 42]
 //                                [--temperature 0.2] [--seeded-runs 3] [--unseeded-runs 3]
 //                                [--set regression|scenario] [--only id,id]
-//                                [--whole-raw-notes N] [--behaviors name,name]
+//                                [--whole-raw-notes N] [--behaviors none|name,name]
 //   node scripts/eval-ask.js report BEFORE [AFTER]
 //   node scripts/eval-ask.js compare --label NAME BASE [OTHER ...]
 //
@@ -32,10 +32,11 @@
 //         set to N for this process only (ask/pipeline.js: the whole notes of
 //         the top N raw sessions instead of their passages); the metadata's
 //         `retrieval` records it.
-//         --behaviors turns on the named prompt behaviors (ask/answer.js
-//         PROMPT_BEHAVIORS: premise-check, open-items, decline-with-evidence,
-//         list-format) for this process only; the metadata's
-//         `promptBehaviors` records them.
+//         --behaviors runs with exactly the named prompt behaviors on and
+//         the rest off (ask/answer.js PROMPT_BEHAVIORS: premise-check,
+//         open-items, decline-with-evidence, list-format; `none` turns them
+//         all off) for this process only; without it, the defaults. The
+//         metadata's `promptBehaviors` records them.
 // report  Re-judges stored runs against the current gold file (so editing
 //         the gold set needs no re-run) and rewrites the report. With two
 //         names it writes a before/after report to ask/eval/results/
@@ -777,15 +778,18 @@ function behaviorKey(name) {
     return name.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 }
 
-// PROMPT_BEHAVIORS with the --behaviors names turned on.
+// The prompt behaviors for a run: PROMPT_BEHAVIORS without --behaviors
+// (null), otherwise exactly the names given on and the rest off.
 function withBehaviors(names) {
-    return { ...PROMPT_BEHAVIORS, ...Object.fromEntries(names.map((name) => [behaviorKey(name), true])) };
+    if (names === null) return PROMPT_BEHAVIORS;
+    const on = new Set(names.map(behaviorKey));
+    return Object.fromEntries(Object.keys(PROMPT_BEHAVIORS).map((key) => [key, on.has(key)]));
 }
 
 function parseArgs(argv) {
     const [command, ...rest] = argv;
     const options = {
-        command, label: null, model: null, think: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, wholeRawNotes: null, behaviors: [], labels: [],
+        command, label: null, model: null, think: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, wholeRawNotes: null, behaviors: null, labels: [],
     };
     const count = (arg, raw, min) => {
         const n = Number(raw);
@@ -825,11 +829,13 @@ function parseArgs(argv) {
         } else if (arg === '--whole-raw-notes') {
             options.wholeRawNotes = count(arg, value(), 1);
         } else if (arg === '--behaviors') {
-            options.behaviors = value().split(',').map((name) => name.trim()).filter(Boolean);
-            const unknown = options.behaviors.filter((name) => !Object.hasOwn(PROMPT_BEHAVIORS, behaviorKey(name)));
-            if (options.behaviors.length === 0 || unknown.length > 0) {
-                throw new Error(`--behaviors takes names from ${Object.keys(PROMPT_BEHAVIORS).map(behaviorName).join(', ')}`);
+            const names = value().split(',').map((name) => name.trim()).filter(Boolean);
+            const none = names.join() === 'none';
+            const unknown = names.filter((name) => !Object.hasOwn(PROMPT_BEHAVIORS, behaviorKey(name)));
+            if (!none && (names.length === 0 || unknown.length > 0)) {
+                throw new Error(`--behaviors takes none, or names from ${Object.keys(PROMPT_BEHAVIORS).map(behaviorName).join(', ')}`);
             }
+            options.behaviors = none ? [] : names;
         } else if (!arg.startsWith('--') && (command === 'report' || command === 'compare')) {
             options.labels.push(arg);
         } else {
@@ -846,7 +852,7 @@ async function main() {
     if (options.command === 'run') return run(options);
     if (options.command === 'report') return report(options);
     if (options.command === 'compare') return compare(options);
-    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] [--whole-raw-notes N] [--behaviors name,name] | report BEFORE [AFTER] | compare --label NAME BASE OTHER...');
+    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] [--whole-raw-notes N] [--behaviors none|name,name] | report BEFORE [AFTER] | compare --label NAME BASE OTHER...');
 }
 
 if (require.main === module) {

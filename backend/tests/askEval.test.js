@@ -427,19 +427,24 @@ describe('eval --whole-raw-notes', () => {
 });
 
 describe('eval --behaviors', () => {
-    it('takes prompt behavior names, and none by default', () => {
-        expect(parseArgs(['run', '--label', 'x']).behaviors).toEqual([]);
+    it('takes none or prompt behavior names, and is unset by default', () => {
+        expect(parseArgs(['run', '--label', 'x']).behaviors).toBeNull();
+        expect(parseArgs(['run', '--label', 'x', '--behaviors', 'none']).behaviors).toEqual([]);
         expect(parseArgs(['run', '--label', 'x', '--behaviors', 'premise-check, list-format']).behaviors)
             .toEqual(['premise-check', 'list-format']);
-        expect(() => parseArgs(['run', '--label', 'x', '--behaviors', 'premise'])).toThrow(/--behaviors takes names from premise-check, open-items, decline-with-evidence, list-format/);
+        expect(() => parseArgs(['run', '--label', 'x', '--behaviors', 'premise'])).toThrow(/--behaviors takes none, or names from premise-check, open-items, decline-with-evidence, list-format/);
         expect(() => parseArgs(['run', '--label', 'x', '--behaviors', 'constructor'])).toThrow(/--behaviors/);
+        expect(() => parseArgs(['run', '--label', 'x', '--behaviors', 'none,open-items'])).toThrow(/--behaviors/);
         expect(() => parseArgs(['run', '--label', 'x', '--behaviors', ','])).toThrow(/--behaviors/);
     });
 
-    it('turns on only the behaviors named', () => {
-        expect(withBehaviors([])).toEqual(PROMPT_BEHAVIORS);
-        expect(withBehaviors(['open-items', 'decline-with-evidence'])).toEqual({
-            premiseCheck: false, openItems: true, declineWithEvidence: true, listFormat: false,
+    it('runs the defaults without it, and otherwise exactly the behaviors named', () => {
+        expect(withBehaviors(null)).toBe(PROMPT_BEHAVIORS);
+        expect(withBehaviors([])).toEqual({
+            premiseCheck: false, openItems: false, declineWithEvidence: false, listFormat: false,
+        });
+        expect(withBehaviors(['open-items'])).toEqual({
+            premiseCheck: false, openItems: true, declineWithEvidence: false, listFormat: false,
         });
     });
 });

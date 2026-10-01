@@ -4,8 +4,11 @@
 const { sourceKind, formatDate, clip, CONTEXT_CHARS } = require('./corpus');
 const { recordProjectTag } = require('../projects');
 
-// Prompt behaviors, each a rule added to or swapped into the system prompt,
-// all off by default (docs/decisions.md):
+// Prompt behaviors, each a rule added to or swapped into the system prompt
+// (docs/decisions.md, 19). Only declineWithEvidence is on by default: in the
+// evaluation it gained a passing answer and lost none under the stop rule;
+// the other three were tried and left off.
+//
 //   premiseCheck         when the question assumes something, check it
 //                        against the sources first, and say so before
 //                        anything else if they don't support it.
@@ -21,7 +24,7 @@ const { recordProjectTag } = require('../projects');
 // With all four off the prompt is exactly what it was before they existed.
 // The evaluation harness records this with every result.
 const PROMPT_BEHAVIORS = {
-    premiseCheck: false, openItems: false, declineWithEvidence: false, listFormat: false,
+    premiseCheck: false, openItems: false, declineWithEvidence: true, listFormat: false,
 };
 
 function systemPrompt(behaviors = PROMPT_BEHAVIORS) {
