@@ -1,0 +1,1074 @@
+{
+  "corpusCommit": "4ba145f717683ee7f6192a9f4429eee9fa4f7353",
+  "records": {
+    "analytics:onboarding-funnel-dropoff": {
+      "title": "Onboarding funnel — drop-off analysis",
+      "participants": null,
+      "date": "Jan 28, 2026"
+    },
+    "component:care-gap-badge": {
+      "title": "Care Gap Badge",
+      "participants": null,
+      "date": null
+    },
+    "component:clinician-dashboard": {
+      "title": "Clinician Home Dashboard",
+      "participants": null,
+      "date": null
+    },
+    "component:encounter-view": {
+      "title": "Encounter View",
+      "participants": null,
+      "date": null
+    },
+    "component:prior-auth-drafting-panel": {
+      "title": "Prior Authorization Drafting Panel",
+      "participants": null,
+      "date": null
+    },
+    "component:sso-mfa-login": {
+      "title": "SSO / MFA Login",
+      "participants": null,
+      "date": null
+    },
+    "deliverable:accessibility-screenings/example-accessibility-screening": {
+      "title": "Onboarding Wizard — Accessibility Screening",
+      "participants": null,
+      "date": "Feb 6, 2026"
+    },
+    "deliverable:heuristic-evaluations/example-heuristic-evaluation": {
+      "title": "Onboarding Wizard — Heuristic Evaluation",
+      "participants": null,
+      "date": "Feb 5, 2026"
+    },
+    "deliverable:journey-maps/example-journey-map": {
+      "title": "New Admin Onboarding — Journey Map",
+      "participants": null,
+      "date": "Feb 14, 2026"
+    },
+    "deliverable:journey-maps/longitudinal-physician-ambient-scribe": {
+      "title": "The Longitudinal Physician — Ambient Scribe Journey (v0.1 to Post-GA)",
+      "participants": null,
+      "date": "Feb 27, 2026"
+    },
+    "deliverable:mental-models/care-coordinator-alert-ranking": {
+      "title": "Care Coordinators' Mental Model of Alert Ranking",
+      "participants": null,
+      "date": "Sep 5, 2025"
+    },
+    "deliverable:mockups/example-mockups": {
+      "title": "Workspace Setup — Step 4 (Invite Your Team) Mockup",
+      "participants": null,
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:personas/dana-overwhelmed-new-admin": {
+      "title": "Dana — The Overwhelmed New Admin",
+      "participants": null,
+      "date": "Feb 12, 2026"
+    },
+    "deliverable:personas/physician-longitudinal-scribe-user": {
+      "title": "The Longitudinal Physician — Ambient Scribe",
+      "participants": null,
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:prototypes/ambient-scribe-ga-candidate-clickthrough": {
+      "title": "Ambient Scribe GA Release Candidate — Click-through Prototype",
+      "participants": null,
+      "date": "Dec 10, 2025"
+    },
+    "deliverable:prototypes/example-prototype": {
+      "title": "Onboarding Flow v2 — Click-through",
+      "participants": null,
+      "date": "Feb 27, 2026"
+    },
+    "deliverable:research-readouts/onboarding-flow-q1-readout": {
+      "title": "Onboarding Flow — Q1 Readout",
+      "participants": null,
+      "date": "Feb 2, 2026"
+    },
+    "deliverable:service-topology/prior-auth-drafting-v2": {
+      "title": "AI-Assisted Prior Authorization Drafting — Service Topology (v2)",
+      "participants": null,
+      "date": "Nov 20, 2025"
+    },
+    "deliverable:storyboards/example-storyboard": {
+      "title": "Dana's Monday Morning Setup",
+      "participants": null,
+      "date": "Feb 24, 2026"
+    },
+    "deliverable:thumbnails/example-thumbnail": {
+      "title": "Workspace Setup Screen — Thumbnail Explorations",
+      "participants": null,
+      "date": "Feb 17, 2026"
+    },
+    "deliverable:thumbnails/medication-flag-placement-explorations": {
+      "title": "Sound-Alike Medication Flag — Placement Explorations",
+      "participants": null,
+      "date": "Feb 8, 2026"
+    },
+    "deliverable:topline-summaries/ambient-scribe-ga-adoption-first-4-weeks": {
+      "title": "Ambient Scribe GA Candidate — First 4 Weeks Adoption Topline",
+      "participants": null,
+      "date": "Jan 28, 2026"
+    },
+    "deliverable:topline-summaries/example-topline-summary": {
+      "title": "Onboarding Study — Session 1–3 Topline",
+      "participants": null,
+      "date": "Jan 21, 2026"
+    },
+    "deliverable:user-flows/ambient-scribe-session-lock-recovery": {
+      "title": "Ambient Scribe — Session Lock Recovery",
+      "participants": null,
+      "date": "Feb 25, 2026"
+    },
+    "deliverable:user-flows/onboarding-flow": {
+      "title": "Onboarding Flow — v2",
+      "participants": null,
+      "date": "Feb 20, 2026"
+    },
+    "deliverable:wireflows/example-wireflow": {
+      "title": "Onboarding Flow — Step 4 (Invite Your Team) Wireflow",
+      "participants": null,
+      "date": "Feb 21, 2026"
+    },
+    "deliverable:wireframes/ambient-scribe-medication-flag": {
+      "title": "Ambient Scribe — Sound-Alike Medication Flag",
+      "participants": null,
+      "date": "Feb 24, 2026"
+    },
+    "deliverable:wireframes/workspace-setup-step4-invite-team": {
+      "title": "Workspace Setup — Step 4 (Invite Your Team) Wireframe",
+      "participants": null,
+      "date": "Feb 19, 2026"
+    },
+    "finding:accessibility-cross-cutting": {
+      "title": "Accessibility (Cross-Cutting)",
+      "participants": null,
+      "date": "Nov 18, 2025"
+    },
+    "finding:ambient-scribe": {
+      "title": "Ambient AI Scribe",
+      "participants": null,
+      "date": "Jan 13, 2026"
+    },
+    "finding:ambient-scribe-post-ga-refinements": {
+      "title": "Ambient Scribe — Post-GA Refinements",
+      "participants": null,
+      "date": "Feb 17, 2026"
+    },
+    "finding:care-coordination-triage": {
+      "title": "Care Coordination & Alert Triage",
+      "participants": null,
+      "date": "Aug 26, 2025"
+    },
+    "finding:clinician-experience-documentation-burden": {
+      "title": "Clinician Experience & Documentation Burden",
+      "participants": null,
+      "date": "Sep 9, 2025"
+    },
+    "finding:onboarding": {
+      "title": "Onboarding flow — setup step confusion",
+      "participants": null,
+      "date": "Feb 3, 2026"
+    },
+    "finding:prior-authorization": {
+      "title": "AI-Assisted Prior Authorization",
+      "participants": null,
+      "date": "Nov 4, 2025"
+    },
+    "finding:rollout-and-change-management": {
+      "title": "Rollout & Change Management",
+      "participants": null,
+      "date": "Dec 2, 2025"
+    },
+    "finding:scope-boundaries-and-workflow-fit": {
+      "title": "Scope Boundaries & Workflow Fit",
+      "participants": null,
+      "date": "Oct 7, 2025"
+    },
+    "raw:2025-01-14-stakeholder-interview-ai-strategy-kickoff": {
+      "title": "AI Strategy Kickoff — Executive Alignment Interview",
+      "participants": "Participants: 2 — Chief Information Officer ×1, VP Clinical Informatics ×1",
+      "date": "Jan 14, 2025"
+    },
+    "raw:2025-01-29-contextual-inquiry-chart-review-baseline": {
+      "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
+      "participants": "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1",
+      "date": "Jan 29, 2025"
+    },
+    "raw:2025-02-11-survey-nursing-attitudes-ai-documentation": {
+      "title": "Survey — Nursing Staff Attitudes Toward AI-Assisted Documentation",
+      "participants": "Participants: 142 — Registered Nurse (various units)",
+      "date": "Feb 11, 2025"
+    },
+    "raw:2025-02-25-usability-test-ambient-scribe-v01": {
+      "title": "Usability Test — Ambient AI Scribe Prototype v0.1",
+      "participants": "Participants: 5 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner",
+      "date": "Feb 25, 2025"
+    },
+    "raw:2025-03-10-accessibility-audit-legacy-extjs-admin-console": {
+      "title": "Accessibility Audit — Legacy Admin Console (ExtJS)",
+      "participants": "Participants: 2 — Accessibility Specialist (internal) ×1, IT Admin (screen reader user, low vision) ×1",
+      "date": "Mar 10, 2025"
+    },
+    "raw:2025-04-08-usability-test-prior-auth-ai-v1": {
+      "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v1)",
+      "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
+      "date": "Apr 8, 2025"
+    },
+    "raw:2025-05-06-usability-test-clinician-dashboard-redesign-v1": {
+      "title": "Usability Test — Clinician Dashboard Redesign (v1)",
+      "participants": "Participants: 6 — Physician, Nurse Practitioner, Physician Assistant",
+      "date": "May 6, 2025"
+    },
+    "raw:2025-05-20-interview-it-security-sso-mfa-modernization": {
+      "title": "Interview — IT Security on SSO/MFA Modernization Impact",
+      "participants": "Participants: 1 — IT Security Engineer ×1",
+      "date": "May 20, 2025"
+    },
+    "raw:2025-08-12-interview-cmio-ai-generated-content-governance": {
+      "title": "Interview — CMIO on Governance for AI-Generated Content in the Legal Record",
+      "participants": "Participants: 1 — Chief Medical Information Officer ×1",
+      "date": "Aug 12, 2025"
+    },
+    "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination": {
+      "title": "Usability Test — AI Alert Triage for Care Coordination",
+      "participants": "Participants: 5 — Care Coordinator, Care Coordinator Supervisor",
+      "date": "Aug 26, 2025"
+    },
+    "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline": {
+      "title": "Survey — Clinician Burnout & Documentation Burden Baseline",
+      "participants": "Participants: 287 — Physician, Nurse Practitioner, Physician Assistant, Registered Nurse",
+      "date": "Sep 9, 2025"
+    },
+    "raw:2025-09-23-usability-test-ambient-scribe-v02": {
+      "title": "Usability Test — Ambient AI Scribe Prototype v0.2 (Follow-up)",
+      "participants": "Participants: 5 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner",
+      "date": "Sep 23, 2025"
+    },
+    "raw:2025-10-21-interview-training-department-rollout-change-management": {
+      "title": "Interview — Training & Education Dept on Rollout/Change Management Planning",
+      "participants": "Participants: 1 — Director of Clinical Training & Education ×1",
+      "date": "Oct 21, 2025"
+    },
+    "raw:2025-11-04-usability-test-prior-auth-ai-v2": {
+      "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v2, Follow-up)",
+      "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
+      "date": "Nov 4, 2025"
+    },
+    "raw:2025-12-02-survey-allstaff-ai-readiness-pulse": {
+      "title": "Survey — All-Staff AI Readiness Pulse Survey",
+      "participants": "Participants: 421 — Clinical staff (various), Non-clinical/administrative staff",
+      "date": "Dec 2, 2025"
+    },
+    "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro": {
+      "title": "Executive Steering Committee — Year-End Retro & 2026 Roadmap Input",
+      "participants": "Participants: 4 — Chief Information Officer ×1, VP Clinical Informatics ×1, Chief Privacy Officer ×1, Chief Medical Information Officer ×1",
+      "date": "Dec 16, 2025"
+    },
+    "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate": {
+      "title": "Usability Test — Ambient AI Scribe GA Release Candidate (Final Validation)",
+      "participants": "Participants: 6 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner, Physician Assistant",
+      "date": "Jan 13, 2026"
+    },
+    "raw:2026-01-19-onboarding-usability-test": {
+      "title": "Onboarding usability test — session notes",
+      "participants": null,
+      "date": "Jan 19, 2026"
+    },
+    "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption": {
+      "title": "Dashboard review — Ambient scribe GA candidate adoption",
+      "participants": "Participants: N/A",
+      "date": "Jan 27, 2026"
+    },
+    "raw:2026-02-10-ambient-scribe-medication-flag-concept": {
+      "title": "Usability Test — Ambient Scribe Sound-Alike Medication Flag Concept",
+      "participants": "Participants: 6 — Physician, Nurse Practitioner",
+      "date": "Feb 10, 2026"
+    },
+    "raw:2026-02-17-session-lock-during-dictation": {
+      "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+      "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+      "date": "Feb 17, 2026"
+    }
+  },
+  "passages": {
+    "analytics:onboarding-funnel-dropoff#0": {
+      "title": "Onboarding funnel — drop-off analysis",
+      "section": "Summary",
+      "participants": null,
+      "excerpt": "Step 3 (\"Connect calendar\") is the single largest drop-off point in the onboarding funnel, accounting for a larger share of incomplete signups than any other step.",
+      "date": "Jan 28, 2026"
+    },
+    "component:encounter-view#2": {
+      "title": "Encounter View",
+      "section": "States",
+      "participants": null,
+      "excerpt": "default\nlocked (session timeout)",
+      "date": null
+    },
+    "component:prior-auth-drafting-panel#5": {
+      "title": "Prior Authorization Drafting Panel",
+      "section": "Notes",
+      "participants": null,
+      "excerpt": "Inline source citations (the citation-expanded state) were added directly in response to the 2025-04-08 v1 testing finding that nurses wanted to see the chart text behind each suggestion. Validated as actively used, not ignored, in 2025-11-04 v2 testing.",
+      "date": null
+    },
+    "component:sso-mfa-login#2": {
+      "title": "SSO / MFA Login",
+      "section": "States",
+      "participants": null,
+      "excerpt": "default\nsession-timeout-warning",
+      "date": null
+    },
+    "deliverable:accessibility-screenings/example-accessibility-screening#2": {
+      "title": "Onboarding Wizard — Accessibility Screening",
+      "section": "Recommendations",
+      "participants": null,
+      "excerpt": "Fix the calendar-connect button label first — it's a full blocker for screen-reader users completing the required step.",
+      "date": "Feb 6, 2026"
+    },
+    "deliverable:heuristic-evaluations/example-heuristic-evaluation#0": {
+      "title": "Onboarding Wizard — Heuristic Evaluation",
+      "section": "Scope",
+      "participants": null,
+      "excerpt": "Full onboarding wizard, steps 1–6, desktop web only.",
+      "date": "Feb 5, 2026"
+    },
+    "deliverable:heuristic-evaluations/example-heuristic-evaluation#1": {
+      "title": "Onboarding Wizard — Heuristic Evaluation",
+      "section": "Issues found",
+      "participants": null,
+      "excerpt": "Issue Heuristic violated Severity Location\nStep 3 wording implies \"connect calendar\" is optional when it's required Match between system and real world 3 Step 3\nNo way to go back without losing entered data User control and freedom 3 Steps 2–5\nProgress indicator doesn't reflect actual step count on mobile Consistency and standards 2 Sidebar, mobile view",
+      "date": "Feb 5, 2026"
+    },
+    "deliverable:journey-maps/example-journey-map#1": {
+      "title": "New Admin Onboarding — Journey Map",
+      "section": "Stages",
+      "participants": null,
+      "excerpt": "Step 1 (Signup) — Confident, low effort.\nSteps 2–3 (Basics, Connect calendar) — Still confident; pauses briefly at calendar connection, unsure if required, proceeds anyway.\nStep 4 (Invite your team) — Anxious — worried invites are sending before she's ready. Stalls here longest of any step.\nSteps 5–6 (Preferences, Review & finish) — Relief; the hard part felt over.\nCompletion — Mild surprise the setup is actually done — no strong confirmation moment.",
+      "date": "Feb 14, 2026"
+    },
+    "deliverable:journey-maps/longitudinal-physician-ambient-scribe#1": {
+      "title": "The Longitudinal Physician — Ambient Scribe Journey (v0.1 to Post-GA)",
+      "section": "Stages",
+      "participants": null,
+      "excerpt": "v0.1 (Feb 2025) — Skeptical, reads every generated line; medication dosage errors present in 3 of 5 sessions reinforce that caution.\nv0.2 (Sep 2025) — Errors drop, but reading behavior doesn't — still reads every line despite the accuracy gain. A frustration plateau: \"why doesn't this feel any different?\"\nGA Candidate (Jan 2026) — Per-line confidence highlighting introduces the first behavior change: begins skimming high-confidence lines for the first time. Relief, tempered by sound-alike medication names still being a known, monitored gap.",
+      "date": "Feb 27, 2026"
+    },
+    "deliverable:mental-models/care-coordinator-alert-ranking#0": {
+      "title": "Care Coordinators' Mental Model of Alert Ranking",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Covers how care coordinators conceptualize \"ranking\" in the alert-triage queue versus how the ranking model actually works, drawn from the Aug 2025 usability test's override-disagreement pattern.",
+      "date": "Sep 5, 2025"
+    },
+    "deliverable:mockups/example-mockups#0": {
+      "title": "Workspace Setup — Step 4 (Invite Your Team) Mockup",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Hi-fi visual design for the reworked step 4 (\"Invite your team\"), matching the wireframe and brand style guide.",
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:personas/dana-overwhelmed-new-admin#1": {
+      "title": "Dana — The Overwhelmed New Admin",
+      "section": "Goals",
+      "participants": null,
+      "excerpt": "Get the team up and running with minimal back-and-forth.\nAvoid looking like she broke something in front of her team.",
+      "date": "Feb 12, 2026"
+    },
+    "deliverable:personas/physician-longitudinal-scribe-user#0": {
+      "title": "The Longitudinal Physician — Ambient Scribe",
+      "section": "Summary",
+      "participants": null,
+      "excerpt": "Modeled on P09 (Internal Medicine), one of the 3 returning participants present across all three ambient-scribe testing rounds — v0.1 (Feb 2025), v0.2 (Sep 2025), and the GA candidate (Jan 2026). Represents the clinician whose relationship with the tool has actually changed over a year of iteration, not a first-time impression.",
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:personas/physician-longitudinal-scribe-user#1": {
+      "title": "The Longitudinal Physician — Ambient Scribe",
+      "section": "Goals",
+      "participants": null,
+      "excerpt": "Trust the tool enough to stop reading every generated line, without trusting it blindly.\nCatch the specific error types that matter clinically (medication names) rather than treating all uncertainty as equally worth flagging.\nNot lose work to session/security interruptions that are unrelated to the clinical task.",
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:personas/physician-longitudinal-scribe-user#3": {
+      "title": "The Longitudinal Physician — Ambient Scribe",
+      "section": "What changed for this persona, round over round",
+      "participants": null,
+      "excerpt": "Post-GA (this initiative): The next trust lever is specificity, not just visibility — a distinct medication-safety flag reads as more actionable than generic low confidence, but risks over-trusting anything left unflagged if that distinction isn't actively managed in the UI.",
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:personas/physician-longitudinal-scribe-user#4": {
+      "title": "The Longitudinal Physician — Ambient Scribe",
+      "section": "Frustrations",
+      "participants": null,
+      "excerpt": "Generic \"low confidence\" signals don't tell this persona what kind of thing to double-check.\nSession locks during dictation currently look identical to data loss, which erodes trust in the tool independent of transcription accuracy itself.",
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:prototypes/ambient-scribe-ga-candidate-clickthrough#0": {
+      "title": "Ambient Scribe GA Release Candidate — Click-through Prototype",
+      "section": null,
+      "participants": null,
+      "excerpt": "Click-through prototype covering the GA-release-candidate encounter-view , including per-line confidence highlighting and the draft-review surface. Used for the Jan 13, 2026 usability round and as the reference build for the confidence-highlighted hi-fi mockup.",
+      "date": "Dec 10, 2025"
+    },
+    "deliverable:prototypes/example-prototype#0": {
+      "title": "Onboarding Flow v2 — Click-through",
+      "section": null,
+      "participants": null,
+      "excerpt": "Click-through prototype covering the full reworked onboarding flow, steps 1–6, including the step 4 (\"Invite your team\") draft/not-sent state. Used for the Feb 28 stakeholder walkthrough and as the reference for the v2 usability re-test.",
+      "date": "Feb 27, 2026"
+    },
+    "deliverable:research-readouts/onboarding-flow-q1-readout#0": {
+      "title": "Onboarding Flow — Q1 Readout",
+      "section": "Summary",
+      "participants": null,
+      "excerpt": "Across all 6 onboarding usability sessions (Jan 19-23, 2026), the single largest source of first-time-setup friction is step 3 (\"Connect calendar\") reading as optional when it's actually required — 2 of 3 participants in sessions 1-3 attempted to skip it outright, and sessions 4-6 read it as optional in the same way. This is independently corroborated by the Jan 2026 funnel export, which shows step 3 as the largest drop-off point in the wizard.",
+      "date": "Feb 2, 2026"
+    },
+    "deliverable:service-topology/prior-auth-drafting-v2#1": {
+      "title": "AI-Assisted Prior Authorization Drafting — Service Topology (v2)",
+      "section": "Map",
+      "participants": null,
+      "excerpt": "Encounter chart -> Chart-Data Service (pulls diagnosis/treatment history) -> Drafting Model (generates justification text + inline citations back to specific chart spans) -> Payer-Rules Lookup (validates against current, not cached, diagnosis codes — the fix that closed the v1 data-freshness bug) -> UM Review Queue (nurse accepts/edits/rejects) -> Submission Service. Citation links resolve to specific chart-text spans rather than section headers, which is why nurses could meaningfully check at least one citation before accepting in v2.",
+      "date": "Nov 20, 2025"
+    },
+    "deliverable:storyboards/example-storyboard#1": {
+      "title": "Dana's Monday Morning Setup",
+      "section": "Panels",
+      "participants": null,
+      "excerpt": "Dana opens the signup link from an email, still reading a Slack message.\nShe breezes through steps 1–3 (signup, basics, calendar), barely reading.\nStep 4 (\"Invite your team\") — she stops, phone buzzes, she hesitates before adding real emails.\nShe adds one test email first to see what happens (current design gives her no way to do this safely).\nRelief when nothing sends immediately — but she wasn't sure until then.",
+      "date": "Feb 24, 2026"
+    },
+    "deliverable:thumbnails/example-thumbnail#1": {
+      "title": "Workspace Setup Screen — Thumbnail Explorations",
+      "section": "Options considered",
+      "participants": null,
+      "excerpt": "Explicit \"Invites will send when you finish setup\" banner — carried forward.\nA draft/preview list with a visible \"not sent yet\" state — carried forward.\nMoving invites to the very last step — dropped, breaks existing step order research already validated elsewhere.",
+      "date": "Feb 17, 2026"
+    },
+    "deliverable:thumbnails/medication-flag-placement-explorations#0": {
+      "title": "Sound-Alike Medication Flag — Placement Explorations",
+      "section": "Concept",
+      "participants": null,
+      "excerpt": "Quick sketches exploring where the sound-alike-medication flag should sit relative to the medication name, ahead of the 2026-02-10 concept test.",
+      "date": "Feb 8, 2026"
+    },
+    "deliverable:topline-summaries/ambient-scribe-ga-adoption-first-4-weeks#0": {
+      "title": "Ambient Scribe GA Candidate — First 4 Weeks Adoption Topline",
+      "section": "Quick takeaways",
+      "participants": null,
+      "excerpt": "Covers the first 4 weeks of GA-candidate rollout, per the 2026-01-27 dashboard review.\nClinicians shown confidence highlighting skim high-confidence lines at roughly double the rate of the pre-highlighting cohort — directionally consistent with the GA-candidate usability finding that visible uncertainty, not raw accuracy, changes reviewing behavior.\nAdoption is uneven by role: attending physicians are opting in at a noticeably higher rate than residents in the same departments.",
+      "date": "Jan 28, 2026"
+    },
+    "deliverable:topline-summaries/example-topline-summary#0": {
+      "title": "Onboarding Study — Session 1–3 Topline",
+      "section": "Quick takeaways",
+      "participants": null,
+      "excerpt": "All 3 participants paused at step 4 (\"Invite your team\") — unsure whether invites send immediately or wait until setup is finished.\n2 of 3 tried to skip step 3 (\"Connect calendar\") entirely, assuming it was optional even though it's required.\nNobody read the sidebar progress indicator — all navigated by scrolling.",
+      "date": "Jan 21, 2026"
+    },
+    "deliverable:user-flows/ambient-scribe-session-lock-recovery#0": {
+      "title": "Ambient Scribe — Session Lock Recovery",
+      "section": "Description",
+      "participants": null,
+      "excerpt": "Response to the 2026-02-17 contextual inquiry finding that a session lock mid-recording currently reads as silent draft loss. Covers the encounter-view / ambient-scribe-widget interaction from the moment the idle timeout fires through resumed dictation, replacing today's silent freeze with an explicit state. Per IT Security (interviewed in that session), the 10-minute idle-timeout policy itself is fixed and out of scope — this flow only changes what the UI communicates during that window, not when it triggers.",
+      "date": "Feb 25, 2026"
+    },
+    "deliverable:user-flows/onboarding-flow#1": {
+      "title": "Onboarding Flow — v2",
+      "section": "Steps",
+      "participants": null,
+      "excerpt": "Canonical step numbering for the onboarding wizard — Signup counts as step 1. Other onboarding records use these numbers.\nStep 1 — Signup\nStep 2 — Basics (workspace name, team size)\nStep 3 — Connect calendar (now clearly marked required)\nStep 4 — Invite your team (now shows draft/not-sent state)\nStep 5 — Preferences\nStep 6 — Review & finish",
+      "date": "Feb 20, 2026"
+    },
+    "deliverable:wireflows/example-wireflow#0": {
+      "title": "Onboarding Flow — Step 4 (Invite Your Team) Wireflow",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Combines the step 4 (\"Invite your team\") flow logic with its wireframe, including the branch where a user skips the step. Only step 3 (\"Connect calendar\") is required — see user-flows/onboarding-flow.md — so step 4 can be skipped.",
+      "date": "Feb 21, 2026"
+    },
+    "deliverable:wireframes/ambient-scribe-medication-flag#1": {
+      "title": "Ambient Scribe — Sound-Alike Medication Flag",
+      "section": "Details",
+      "participants": null,
+      "excerpt": "Placement: inline, immediately after the medication name — tested 5:1 over a right-hand margin badge, since participants didn't want to look away from the text.\nVisual treatment: small amber pill-shaped badge, distinct in shape and color from the existing subtle low-confidence underline, so the two signals are never visually conflated.\nCopy: short on-hover/on-tap label — \"Possible sound-alike medication name — verify before signing\" — worded to prompt verification, not to assert an error.",
+      "date": "Feb 24, 2026"
+    },
+    "deliverable:wireframes/ambient-scribe-medication-flag#2": {
+      "title": "Ambient Scribe — Sound-Alike Medication Flag",
+      "section": "Details",
+      "participants": null,
+      "excerpt": "Adjacent messaging (new): a one-time inline tip, shown the first time a clinician encounters the flag, stating that lines without this flag still warrant normal review — directly addressing the over-trust-on-unflagged-lines risk found in 2 of 6 concept-test participants.\nOpen item: false-positive tolerance testing (2026-02-10) suggests the underlying detection threshold can run looser than strict-precision defaults without frustrating clinicians — final threshold tuning is an engineering/detection decision, not a layout decision, and is out of scope for this wireframe.",
+      "date": "Feb 24, 2026"
+    },
+    "deliverable:wireframes/workspace-setup-step4-invite-team#0": {
+      "title": "Workspace Setup — Step 4 (Invite Your Team) Wireframe",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Lo-fi layout for the reworked step 4 (\"Invite your team\"), incorporating the \"not sent yet\" banner and draft invite list from the thumbnail exploration.",
+      "date": "Feb 19, 2026"
+    },
+    "finding:accessibility-cross-cutting#3": {
+      "title": "Accessibility (Cross-Cutting)",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "The mobile app audit (Nov) connects directly to a live Compass AI feature : undersized touch targets (32×32px vs. the 44×44px minimum) were found specifically on the alert-triage icon set, which is the same feature usability-tested in August — see [care-coordination-triage.md](care-coordination-triage.md). This is a case where an accessibility defect and a usability finding land on the exact same component from two different research methods.",
+      "date": "Nov 18, 2025"
+    },
+    "finding:ambient-scribe#0": {
+      "title": "Ambient AI Scribe",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "The ambient AI scribe has moved from a formative concept (v0.1, Feb 2025) through iteration (v0.2, Sep 2025) to a GA release candidate (Jan 2026), with 3 of the original 5 physician participants retained across all three rounds for longitudinal comparison.\nPHI handling: The critical draft-retention/audit gap found in v0.1 was fixed by v0.2 and has remained stable through the GA candidate — drafts auto-expire after 10 minutes of inactivity and the behavior is documented for Compliance. No PHI-handling issues have recurred since.",
+      "date": "Jan 13, 2026"
+    },
+    "finding:ambient-scribe#1": {
+      "title": "Ambient AI Scribe",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Accuracy: Medication dosage errors dropped from 3/5 sessions (v0.1) to 1/5 (v0.2), driven by fixing outright garbling; the remaining error class is specifically sound-alike medication names, which is now a tracked, monitored issue rather than a blocker.",
+      "date": "Jan 13, 2026"
+    },
+    "finding:ambient-scribe-post-ga-refinements#1": {
+      "title": "Ambient Scribe — Post-GA Refinements",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "A distinct sound-alike-medication flag outperforms generic confidence highlighting for this specific error class. The GA-candidate round treated sound-alike medication errors as an ongoing monitoring item, relying on the general confidence-highlighted variant to surface them. A concept test of a dedicated, visually distinct flag found 5 of 6 participants correctly recognized it as categorically different from generic low confidence — but also surfaced a new risk: 2 of 6 participants said the flag's specificity made them trust unflagged medication lines more than they should. Any rollout needs to actively counter that over-trust framing, not just ship the flag.",
+      "date": "Feb 17, 2026"
+    },
+    "finding:ambient-scribe-post-ga-refinements#2": {
+      "title": "Ambient Scribe — Post-GA Refinements",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Session lock during active dictation currently reads as silent data loss, even though it isn't. The locked state's interaction with an in-progress recording was flagged as unresolved in encounter-view 's own notes, sourced from a May 2025 SSO/MFA interview side comment. Direct observation confirms the practical impact: all 4 shadowed clinicians assumed a locked session had destroyed their draft and restarted dictation from scratch, even though the draft is preserved server-side. IT Security confirmed the 10-minute idle-timeout policy itself is fixed, but an explicit \"paused, draft preserved\" state is a UI-only fix, not a policy change.",
+      "date": "Feb 17, 2026"
+    },
+    "finding:ambient-scribe-post-ga-refinements#3": {
+      "title": "Ambient Scribe — Post-GA Refinements",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Both threads point the same direction: the underlying safety/reliability behavior is already correct (drafts are preserved; sound-alike names are technically detectable) — what's missing is UI that tells the clinician that, specifically and distinctly, rather than relying on a generic low-confidence signal to carry two very different kinds of meaning.",
+      "date": "Feb 17, 2026"
+    },
+    "finding:care-coordination-triage#1": {
+      "title": "Care Coordination & Alert Triage",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "The triage ranking works, but not for the reason initially expected. It was faster (6.5 min vs. 9 min to clear a 20-item queue), but 4 of 5 participants disagreed with at least one ranking decision, generally because the model weighted recency over coordinators' own sense of patient-history-driven risk — echoing the alert-fatigue concern raised separately in the May clinician dashboard testing (see [clinician-experience-documentation-burden.md](clinician-experience-documentation-burden.md)). There was also no way to capture why a coordinator overrode a ranking, which both loses a model-improvement signal and undercuts the sense of agency the supervisor specifically flagged as a risk (fast-but-wrong being worse than slow-but-right in this workflow).",
+      "date": "Aug 26, 2025"
+    },
+    "finding:clinician-experience-documentation-burden#2": {
+      "title": "Clinician Experience & Documentation Burden",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Documentation burden is real and quantifiable, not just anecdotal. The September baseline found documentation burden is physicians' #1 self-selected burnout driver (52%, ahead of patient volume at 31%), with 64% doing regular after-hours \"pajama time\" charting (avg. 1.2 hrs/day). This is now the official pre-AI baseline for measuring Compass AI's impact at 6 and 12 months post-GA. Caveat: the September survey mentioned the AI initiative explicitly in its framing, while the February survey didn't — any comparison between the two datasets needs to account for that framing difference, not treat them as a clean before/after.",
+      "date": "Sep 9, 2025"
+    },
+    "finding:onboarding#0": {
+      "title": "Onboarding flow — setup step confusion",
+      "section": "Summary",
+      "participants": null,
+      "excerpt": "New admins hesitate at, or attempt to skip, step 3 of the onboarding wizard (\"Connect calendar\") because its wording implies the step is optional, when it's actually required for later functionality. This is the largest single source of friction in first-time setup.\nA separate, related hesitation sits at step 4 (\"Invite your team\"): admins aren't sure whether invites send immediately or only when the wizard is submitted.",
+      "date": "Feb 3, 2026"
+    },
+    "finding:onboarding#1": {
+      "title": "Onboarding flow — setup step confusion",
+      "section": "Step numbering",
+      "participants": null,
+      "excerpt": "Steps are numbered per user-flows/onboarding-flow.md , where Signup is step 1: 1 Signup, 2 Basics, 3 Connect calendar, 4 Invite your team, 5 Preferences, 6 Review & finish. Some early records counted from the first step after Signup — session 2's raw notes call the calendar step \"step 2\", and the sessions 1–3 topline originally called the invite step \"step 3\". Those refer to the same steps as above: step 3 is always \"Connect calendar\", and step 4 is always \"Invite your team\".",
+      "date": "Feb 3, 2026"
+    },
+    "finding:onboarding#2": {
+      "title": "Onboarding flow — setup step confusion",
+      "section": "Evidence",
+      "participants": null,
+      "excerpt": "Sourced from raw/2026-01-19-onboarding-usability-test/ — 6 participants, moderated usability sessions, Jan 19–23 2026. In sessions 1–3, 2 of 3 participants tried to skip step 3 (\"Connect calendar\"): session 1 tried to exit via the step label, and session 2 tried to skip it before hitting the \"required\" indicator. Sessions 4–6 read the step as optional in the same way. The step 4 invite hesitation comes from session 3 (\"I'm worried this is going to email my whole team before I'm ready\") and the sessions 1–3 topline ( topline-summaries/example-topline-summary.md ).",
+      "date": "Feb 3, 2026"
+    },
+    "finding:prior-authorization#0": {
+      "title": "AI-Assisted Prior Authorization",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "AI-drafted prior authorization justifications were tested in two rounds (v1, Apr 2025; v2, Nov 2025) with the same utilization review nurse supervisor across both, which mattered for tracking whether fixes actually landed.\nv1 surfaced a correctness bug (citing outdated diagnosis codes) serious enough that participants said it would likely cause payer denials — not a UX problem, a data-freshness/model fix. It also surfaced a durable requirement: nurses want inline citations to the specific chart text behind each suggestion (\"show your work\"), not just a black-box draft.",
+      "date": "Nov 4, 2025"
+    },
+    "finding:rollout-and-change-management#0": {
+      "title": "Rollout & Change Management",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Two sessions, five weeks apart at year-end, look at how Compass AI features actually get adopted once built: a training/change-management interview (Oct 2025) and an all-staff AI readiness pulse survey (Dec 2025).",
+      "date": "Dec 2, 2025"
+    },
+    "finding:rollout-and-change-management#1": {
+      "title": "Rollout & Change Management",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "The training interview drew directly on a documented past failure. The 2022 CDS alert rollout — referenced independently by executives back in January (see [governance-and-phi.md](governance-and-phi.md)) — is treated as the cautionary tale: a single 20-minute training video with no hands-on practice, and adoption suffered. The Director of Training's recommendation is a \"unit champion\" model (1-2 respected staff per unit, trained early and deeply) plus mandatory hands-on practice time, and to avoid rolling out during flu season (Nov-Feb) given historical attendance patterns.",
+      "date": "Dec 2, 2025"
+    },
+    "finding:scope-boundaries-and-workflow-fit#0": {
+      "title": "Scope Boundaries & Workflow Fit",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Three sessions across the year are grouped here because their common output was a \"don't build this yet, or don't build it here\" conclusion. The December executive retro praised this kind of scope discipline in general (\"The stuff you told us not to build yet mattered as much as the stuff you told us to build\"), but the only exclusions it named were behavioral health (covered below) and complex prior-auth cases (not part of this finding). It did not discuss the ED intake or SSO/MFA boundaries.",
+      "date": "Oct 7, 2025"
+    },
+    "finding:scope-boundaries-and-workflow-fit#3": {
+      "title": "Scope Boundaries & Workflow Fit",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "By Feb 2026, IT Security described a 10-minute idle timeout as fixed policy (see [ambient-scribe-post-ga-refinements.md](ambient-scribe-post-ga-refinements.md)). The raw notes don't say whether that settles this dispute or is a separate idle-lock setting.",
+      "date": "Oct 7, 2025"
+    },
+    "raw:2025-01-14-stakeholder-interview-ai-strategy-kickoff#0": {
+      "title": "AI Strategy Kickoff — Executive Alignment Interview",
+      "section": "Objective",
+      "participants": "Participants: 2 — Chief Information Officer ×1, VP Clinical Informatics ×1",
+      "excerpt": "Understand executive priorities, risk tolerance, and success criteria for the Compass AI modernization program before any tools are scoped.",
+      "date": "Jan 14, 2025"
+    },
+    "raw:2025-01-14-stakeholder-interview-ai-strategy-kickoff#3": {
+      "title": "AI Strategy Kickoff — Executive Alignment Interview",
+      "section": "Key Findings",
+      "participants": "Participants: 2 — Chief Information Officer ×1, VP Clinical Informatics ×1",
+      "excerpt": "[LOW] (change management) Both anticipate clinician skepticism based on a prior failed CDS (clinical decision support) alert rollout in 2022.",
+      "date": "Jan 14, 2025"
+    },
+    "raw:2025-01-14-stakeholder-interview-ai-strategy-kickoff#notes": {
+      "title": "AI Strategy Kickoff — Executive Alignment Interview",
+      "section": null,
+      "participants": "Participants: 2 — Chief Information Officer ×1, VP Clinical Informatics ×1",
+      "excerpt": "Objective\nUnderstand executive priorities, risk tolerance, and success criteria for the Compass AI modernization program before any tools are scoped.\nMethod\nMethod: 1:1 stakeholder interview (60 min, recorded w/ consent, transcript scrubbed)\nResearcher: J. Alvarez\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (risk tolerance) Both stakeholders want AI pilots to start in low-PHI-exposure workflows (scheduling, intake) before touching clinical documentation, citing HIPAA audit exposure as the top concern.\n[MEDIUM] (success criteria) VP Clinical Informatics defines success as 'reduced documentation time,' while CIO defines success as 'reduced vendor sprawl' — the two are not currently reconciled in a shared metric.\n[MEDIUM] (governance) Neither stakeholder could name who owns model-output accuracy sign-off; assumed it would 'probably fall to compliance.'\n[LOW] (change management) Both anticipate clinician skepticism based on a prior failed CDS (clinical decision support) alert rollout in 2022.\nRepresentative Quotes\n\"We can't be the org that leaks PHI through some vendor's training pipeline. That's the headline we're trying to avoid, not chase.\" — Chief Information Officer, P01\n\"If a doctor spends less time typing and more time looking at the patient, I don't care what's under the hood.\" — VP Clinical Informatics, P02\nRecommendations\nFacilitate a follow-up session to align on 2-3 shared, measurable success metrics before scoping any pilot.\nDocument a RACI for AI-output review/sign-off; surface the gap to Compliance directly.\nReference the 2022 CDS alert rollout retro in early clinician-facing research to avoid repeating known failure modes.\nFollow-ups / Open Questions\nWho in Compliance should own model-output sign-off? Schedule follow-up interview.\nRequest access to 2022 CDS alert rollout post-mortem if it exists.",
+      "date": "Jan 14, 2025"
+    },
+    "raw:2025-01-29-contextual-inquiry-chart-review-baseline#2": {
+      "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
+      "section": "Key Findings",
+      "participants": "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1",
+      "excerpt": "[HIGH] (cognitive load) Coordinators manually cross-reference 3-4 systems (EHR, care management platform, a shared spreadsheet, and a legacy scheduling tool) to build a mental model of a patient's status before every outreach call.\n[MEDIUM] (trust) Coordinators already distrust auto-generated summaries from the EHR's built-in 'AVS' (after-visit summary) tool because they've caught it omitting recently changed medications twice in the past quarter.",
+      "date": "Jan 29, 2025"
+    },
+    "raw:2025-01-29-contextual-inquiry-chart-review-baseline#4": {
+      "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
+      "section": "Representative Quotes",
+      "participants": "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1",
+      "excerpt": "\"I don't trust the summary the system spits out. I've been burned by it missing a med change, so now I just re-check everything myself, which kind of defeats the point.\" — Care Coordinator, P03\n\"If it could just tell me what changed since I last touched this chart, that alone would save me time. I don't need it to think for me.\" — Care Coordinator (float pool), P05",
+      "date": "Jan 29, 2025"
+    },
+    "raw:2025-01-29-contextual-inquiry-chart-review-baseline#notes": {
+      "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
+      "section": null,
+      "participants": "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1",
+      "excerpt": "Objective\nEstablish a baseline of how care coordinators currently review patient charts across encounters, to identify where an AI summarization tool could plausibly help without disrupting judgment calls.\nMethod\nMethod: In-person shadowing, 3 sessions x ~90 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (cognitive load) Coordinators manually cross-reference 3-4 systems (EHR, care management platform, a shared spreadsheet, and a legacy scheduling tool) to build a mental model of a patient's status before every outreach call.\n[MEDIUM] (trust) Coordinators already distrust auto-generated summaries from the EHR's built-in 'AVS' (after-visit summary) tool because they've caught it omitting recently changed medications twice in the past quarter.\n[MEDIUM] (workaround) One coordinator keeps a personal color-coding system in the shared spreadsheet that isn't documented anywhere else; if she's out, others reportedly 'just wing it.'\n[MEDIUM] (time) Chart review before an outreach call takes 8-14 minutes per patient depending on complexity; coordinators see 12-18 patients/day.\nRepresentative Quotes\n\"I don't trust the summary the system spits out. I've been burned by it missing a med change, so now I just re-check everything myself, which kind of defeats the point.\" — Care Coordinator, P03\n\"If it could just tell me what changed since I last touched this chart, that alone would save me time. I don't need it to think for me.\" — Care Coordinator (float pool), P05\nRecommendations\nScope an early AI concept around 'what changed since last review' rather than full summarization — matches an expressed need and avoids the trust gap seen with the existing AVS tool.\nInvestigate formalizing the informal color-coding workaround as a real feature so knowledge isn't siloed in one person.\nFollow-ups / Open Questions\nQuantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist.\nRevisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity.",
+      "date": "Jan 29, 2025"
+    },
+    "raw:2025-02-11-survey-nursing-attitudes-ai-documentation#2": {
+      "title": "Survey — Nursing Staff Attitudes Toward AI-Assisted Documentation",
+      "section": "Key Findings",
+      "participants": "Participants: 142 — Registered Nurse (various units)",
+      "excerpt": "[MEDIUM] (sentiment) 61% of respondents were 'neutral to skeptical' about AI-generated documentation being accurate enough to sign off on without heavy editing; 24% were optimistic; 15% strongly opposed.\n[MEDIUM] (concern) The top volunteered concern (open-ended, coded from 89 responses) was 'losing my clinical narrative voice / it will sound robotic,' not accuracy or privacy as originally hypothesized.\n[LOW] (unit variance) ICU and ED nurses were notably more skeptical than Med-Surg and outpatient clinic nurses, likely correlated with documentation complexity/acuity.",
+      "date": "Feb 11, 2025"
+    },
+    "raw:2025-02-11-survey-nursing-attitudes-ai-documentation#4": {
+      "title": "Survey — Nursing Staff Attitudes Toward AI-Assisted Documentation",
+      "section": "Representative Quotes",
+      "participants": "Participants: 142 — Registered Nurse (various units)",
+      "excerpt": "\"My notes are how I hand off a patient safely. If a robot writes them and I'm just rubber-stamping, that scares me more than typing.\" — Registered Nurse, ICU, P07 (survey open-ended)\n\"Honestly if it got me out of the room 10 minutes faster to chart, I'd try almost anything.\" — Registered Nurse, Outpatient Clinic, P41 (survey open-ended)",
+      "date": "Feb 11, 2025"
+    },
+    "raw:2025-02-11-survey-nursing-attitudes-ai-documentation#5": {
+      "title": "Survey — Nursing Staff Attitudes Toward AI-Assisted Documentation",
+      "section": "Recommendations",
+      "participants": "Participants: 142 — Registered Nurse (various units)",
+      "excerpt": "Recruit the initial usability testing panel from the 38% who volunteered, weighted toward Med-Surg/outpatient where skepticism is lower, to build early momentum before tackling ICU/ED.\nReframe internal AI messaging around 'voice preservation' and editability, not just time savings — this addresses the top volunteered concern directly.",
+      "date": "Feb 11, 2025"
+    },
+    "raw:2025-02-11-survey-nursing-attitudes-ai-documentation#notes": {
+      "title": "Survey — Nursing Staff Attitudes Toward AI-Assisted Documentation",
+      "section": null,
+      "participants": "Participants: 142 — Registered Nurse (various units)",
+      "excerpt": "Objective\nGauge baseline sentiment and specific concerns among nursing staff ahead of any AI documentation pilot, and identify which units are most receptive to early testing.\nMethod\nMethod: Online survey, distributed via internal staff portal, 12 questions (Likert + 2 open-ended)\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[MEDIUM] (sentiment) 61% of respondents were 'neutral to skeptical' about AI-generated documentation being accurate enough to sign off on without heavy editing; 24% were optimistic; 15% strongly opposed.\n[MEDIUM] (concern) The top volunteered concern (open-ended, coded from 89 responses) was 'losing my clinical narrative voice / it will sound robotic,' not accuracy or privacy as originally hypothesized.\n[LOW] (unit variance) ICU and ED nurses were notably more skeptical than Med-Surg and outpatient clinic nurses, likely correlated with documentation complexity/acuity.\n[LOW] (openness to pilot) 38% of respondents volunteered interest in being part of an early pilot group when asked directly.\nRepresentative Quotes\n\"My notes are how I hand off a patient safely. If a robot writes them and I'm just rubber-stamping, that scares me more than typing.\" — Registered Nurse, ICU, P07 (survey open-ended)\n\"Honestly if it got me out of the room 10 minutes faster to chart, I'd try almost anything.\" — Registered Nurse, Outpatient Clinic, P41 (survey open-ended)\nRecommendations\nRecruit the initial usability testing panel from the 38% who volunteered, weighted toward Med-Surg/outpatient where skepticism is lower, to build early momentum before tackling ICU/ED.\nReframe internal AI messaging around 'voice preservation' and editability, not just time savings — this addresses the top volunteered concern directly.\nFollow-ups / Open Questions\nCross-tab results by tenure — does skepticism correlate with years of experience?\nConsider a focused follow-up survey for ICU/ED specifically given their outsized skepticism.",
+      "date": "Feb 11, 2025"
+    },
+    "raw:2025-02-25-usability-test-ambient-scribe-v01#2": {
+      "title": "Usability Test — Ambient AI Scribe Prototype v0.1",
+      "section": "Key Findings",
+      "participants": "Participants: 5 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner",
+      "excerpt": "[CRITICAL] (phi-handling) In 2 of 5 sessions, the prototype's draft transcript persisted in an editable state after the simulated encounter ended with no clear indication of where/how long it was stored — a potential PHI retention/audit gap that needs Security review before any real-patient pilot.\n[HIGH] (accuracy) The scribe correctly captured the chief complaint and HPI in all 5 sessions but missed or garbled medication dosages in 3 of 5 — physicians said this was disqualifying for direct sign-off without review.",
+      "date": "Feb 25, 2025"
+    },
+    "raw:2025-02-25-usability-test-ambient-scribe-v01#3": {
+      "title": "Usability Test — Ambient AI Scribe Prototype v0.1",
+      "section": "Key Findings",
+      "participants": "Participants: 5 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner",
+      "excerpt": "[HIGH] (trust calibration) 4 of 5 participants read every line of AI-generated text before accepting it in this first exposure; none trusted it enough to skim, which undercuts the time-savings premise if that behavior persists post-adoption.\n[MEDIUM] (interaction) Participants were unsure how to correct a single wrong sentence without regenerating the whole note; the edit affordance wasn't discoverable.\n[MEDIUM] (workflow fit) The 'start listening' control required a manual click, which physicians said they would likely forget mid-conversation with a patient.",
+      "date": "Feb 25, 2025"
+    },
+    "raw:2025-02-25-usability-test-ambient-scribe-v01#notes": {
+      "title": "Usability Test — Ambient AI Scribe Prototype v0.1",
+      "section": null,
+      "participants": "Participants: 5 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner",
+      "excerpt": "Objective\nFirst formative usability test of the ambient AI scribe concept, focused on accuracy, trust, and any early PHI-handling red flags before further investment.\nMethod\nMethod: Moderated usability test, simulated patient encounters, 45 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[CRITICAL] (phi-handling) In 2 of 5 sessions, the prototype's draft transcript persisted in an editable state after the simulated encounter ended with no clear indication of where/how long it was stored — a potential PHI retention/audit gap that needs Security review before any real-patient pilot.\n[HIGH] (accuracy) The scribe correctly captured the chief complaint and HPI in all 5 sessions but missed or garbled medication dosages in 3 of 5 — physicians said this was disqualifying for direct sign-off without review.\n[HIGH] (trust calibration) 4 of 5 participants read every line of AI-generated text before accepting it in this first exposure; none trusted it enough to skim, which undercuts the time-savings premise if that behavior persists post-adoption.\n[MEDIUM] (interaction) Participants were unsure how to correct a single wrong sentence without regenerating the whole note; the edit affordance wasn't discoverable.\n[MEDIUM] (workflow fit) The 'start listening' control required a manual click, which physicians said they would likely forget mid-conversation with a patient.\nRepresentative Quotes\n\"I love what it got right, but I have to read every word anyway right now, so where's the time savings? Ask me again in a month.\" — Physician, Internal Medicine, P09\n\"Wait — where did that draft just go when I closed the window? That's the kind of question Legal is going to ask me.\" — Physician, Family Medicine, P11\nRecommendations\nEscalate the draft-transcript retention behavior to Security/Compliance before any additional testing involving even simulated PHI-like content.\nRedesign the correction interaction so a single line can be edited/regenerated in place.\nInvestigate ambient 'always listening within visit' activation (with clear consent/indicator) instead of manual start to fix the workflow-fit issue.\nFollow-ups / Open Questions\nRe-test v0.2 with the same participants where possible for longitudinal comparison.\nConfirm with Compliance whether draft-state ambient transcripts need to be retained/audited even if never finalized.",
+      "date": "Feb 25, 2025"
+    },
+    "raw:2025-03-10-accessibility-audit-legacy-extjs-admin-console#notes": {
+      "title": "Accessibility Audit — Legacy Admin Console (ExtJS)",
+      "section": null,
+      "participants": "Participants: 2 — Accessibility Specialist (internal) ×1, IT Admin (screen reader user, low vision) ×1",
+      "excerpt": "Objective\nAssess the accessibility of the legacy ExtJS-based admin console that Compass AI's governance dashboards would be built into or alongside, ahead of any decision to extend vs. replace it.\nMethod\nMethod: Manual WCAG 2.1 AA audit + screen reader walkthrough (NVDA, JAWS)\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[CRITICAL] (screen reader) Core data grids render without proper ARIA roles; NVDA announces rows as generic 'clickable text' with no column/row context, making the primary admin workflow effectively unusable non-visually.\n[CRITICAL] (keyboard trap) Modal dialogs for user permission edits trap focus with no visible or announced way to close via keyboard (Esc does not work in 2 of 4 modal types tested).\n[HIGH] (color contrast) Status indicator icons rely on color alone (red/yellow/green dots) with no text or pattern alternative, failing WCAG 1.4.1.\n[HIGH] (focus order) Tab order in the record-edit form does not match visual layout, jumping unpredictably between fieldsets.\n[MEDIUM] (zoom/reflow) Layout breaks below 1280px effective width even with the OS at 100% zoom, forcing horizontal scrolling that isn't announced.\nRepresentative Quotes\n\"I've basically memorized which grid row is which by row count instead of by what it actually says, because the screen reader just says nothing useful.\" — IT Admin, screen reader user, P13\n\"This isn't a modernization nice-to-have, this is a 508 complaint waiting to happen the day someone new tries to use it.\" — Accessibility Specialist (internal), Internal SME\nRecommendations\nTreat the two critical findings (grid ARIA, keyboard trap) as blockers for building any new Compass AI governance UI on top of this console without remediation or replacement.\nIf replacement is on the table, use this audit as the accessibility baseline/requirements input for the new admin experience rather than re-auditing from scratch later.\nFollow-ups / Open Questions\nDetermine whether legal/Section 508 has a documented remediation deadline already in place for this console independent of Compass AI.\nScope effort estimate: incremental ARIA remediation vs. full rebuild.",
+      "date": "Mar 10, 2025"
+    },
+    "raw:2025-04-08-usability-test-prior-auth-ai-v1#2": {
+      "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v1)",
+      "section": "Key Findings",
+      "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
+      "excerpt": "[HIGH] (accuracy) In 2 of 4 cases, the AI draft cited outdated diagnosis codes still present elsewhere in the chart rather than the most recent/active ones, which participants said would likely cause a payer denial if submitted as-is.\n[HIGH] (liability concern) The supervisor was firm that nurses would still need to read every AI-drafted justification in full before submission, since a wrongly submitted prior auth can delay patient care by days — no shortcut is acceptable here.",
+      "date": "Apr 8, 2025"
+    },
+    "raw:2025-04-08-usability-test-prior-auth-ai-v1#5": {
+      "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v1)",
+      "section": "Recommendations",
+      "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
+      "excerpt": "Fix the outdated-diagnosis-code issue before any further piloting; this is a correctness bug, not a UX issue.\nAdd inline source citations (chart entry + date) for every claim in the generated justification.\nConsider limiting initial pilot scope to 'straightforward' case types the nurses themselves can help define, deferring complex cases.",
+      "date": "Apr 8, 2025"
+    },
+    "raw:2025-04-08-usability-test-prior-auth-ai-v1#notes": {
+      "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v1)",
+      "section": null,
+      "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
+      "excerpt": "Objective\nTest whether an AI-drafted prior authorization request (pulling from chart data to pre-fill medical necessity justification) speeds up the process without introducing errors that could cause denials.\nMethod\nMethod: Moderated usability test, 4 realistic case scenarios, 60 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (accuracy) In 2 of 4 cases, the AI draft cited outdated diagnosis codes still present elsewhere in the chart rather than the most recent/active ones, which participants said would likely cause a payer denial if submitted as-is.\n[HIGH] (liability concern) The supervisor was firm that nurses would still need to read every AI-drafted justification in full before submission, since a wrongly submitted prior auth can delay patient care by days — no shortcut is acceptable here.\n[HIGH] (time savings (positive)) Despite the above, participants estimated the draft cut initial drafting time from ~15 minutes to ~5 minutes per straightforward case when the citation was correct, which was seen as a real win if accuracy improves.\n[MEDIUM] (transparency) Participants wanted to see which specific chart entries the AI pulled from, inline, rather than trusting a black-box summary — 'show your work' was mentioned unprompted by 3 of 4.\nRepresentative Quotes\n\"Five minutes saved is great until it's the case that gets denied and now I'm on the phone with the payer for 40 minutes instead. Show me where it got that info.\" — Utilization Review Nurse, P17\n\"I actually really liked this for the boring, obvious cases. Just don't let it near the complicated ones yet.\" — Utilization Review Nurse, P19\nRecommendations\nFix the outdated-diagnosis-code issue before any further piloting; this is a correctness bug, not a UX issue.\nAdd inline source citations (chart entry + date) for every claim in the generated justification.\nConsider limiting initial pilot scope to 'straightforward' case types the nurses themselves can help define, deferring complex cases.\nFollow-ups / Open Questions\nWork with engineering to confirm whether the outdated-code issue is a data-freshness bug or a model retrieval issue.\nAsk supervisor to help define what counts as a 'straightforward' case for a narrower v2 pilot scope.",
+      "date": "Apr 8, 2025"
+    },
+    "raw:2025-05-06-usability-test-clinician-dashboard-redesign-v1#2": {
+      "title": "Usability Test — Clinician Dashboard Redesign (v1)",
+      "section": "Key Findings",
+      "participants": "Participants: 6 — Physician, Nurse Practitioner, Physician Assistant",
+      "excerpt": "[HIGH] (alert fatigue) 5 of 6 participants said the new AI-flagged 'care gap' badges would likely become background noise within a week if the flagging threshold isn't tuned, since 2 of the 3 example flags shown were judged clinically low-value.\n[MEDIUM] (information architecture) Participants generally liked having flags inline with the patient list rather than in a separate panel, but wanted a way to dismiss/snooze a flag per patient.\n[MEDIUM] (trust) Participants wanted to know the flag's underlying logic ('why is this flagged?') available on hover/click, not just the flag itself.",
+      "date": "May 6, 2025"
+    },
+    "raw:2025-05-06-usability-test-clinician-dashboard-redesign-v1#3": {
+      "title": "Usability Test — Clinician Dashboard Redesign (v1)",
+      "section": "Key Findings",
+      "participants": "Participants: 6 — Physician, Nurse Practitioner, Physician Assistant",
+      "excerpt": "[MEDIUM] (visual design) Badge color scheme was confused with existing acuity color-coding already used elsewhere in the EHR, creating a risk of misreading a documentation-quality flag as a clinical-acuity flag.\n[LOW] (positive signal) Participants responded well to the reduced number of clicks to get from dashboard to chart (2 clicks vs. 4 in the current system).",
+      "date": "May 6, 2025"
+    },
+    "raw:2025-05-06-usability-test-clinician-dashboard-redesign-v1#6": {
+      "title": "Usability Test — Clinician Dashboard Redesign (v1)",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 6 — Physician, Nurse Practitioner, Physician Assistant",
+      "excerpt": "Get current false-positive rate on the care-gap model from Data Science before scheduling v2 testing.\nCoordinate with design system team on a non-conflicting badge treatment.",
+      "date": "May 6, 2025"
+    },
+    "raw:2025-05-06-usability-test-clinician-dashboard-redesign-v1#notes": {
+      "title": "Usability Test — Clinician Dashboard Redesign (v1)",
+      "section": null,
+      "participants": "Participants: 6 — Physician, Nurse Practitioner, Physician Assistant",
+      "excerpt": "Objective\nTest a redesigned clinician home dashboard that surfaces AI-flagged items (abnormal results, care gaps) alongside the standard patient list, to see if the new information hierarchy helps or adds noise.\nMethod\nMethod: Moderated usability test, task-based, 50 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (alert fatigue) 5 of 6 participants said the new AI-flagged 'care gap' badges would likely become background noise within a week if the flagging threshold isn't tuned, since 2 of the 3 example flags shown were judged clinically low-value.\n[MEDIUM] (information architecture) Participants generally liked having flags inline with the patient list rather than in a separate panel, but wanted a way to dismiss/snooze a flag per patient.\n[MEDIUM] (trust) Participants wanted to know the flag's underlying logic ('why is this flagged?') available on hover/click, not just the flag itself.\n[MEDIUM] (visual design) Badge color scheme was confused with existing acuity color-coding already used elsewhere in the EHR, creating a risk of misreading a documentation-quality flag as a clinical-acuity flag.\n[LOW] (positive signal) Participants responded well to the reduced number of clicks to get from dashboard to chart (2 clicks vs. 4 in the current system).\nRepresentative Quotes\n\"If two out of three of these flags are junk, I'm going to start ignoring all of them, including the one that actually matters. That's worse than no flag at all.\" — Physician, P27\n\"Don't reuse red/yellow/green for this. That already means something else to me on this exact screen.\" — Nurse Practitioner, P29\nRecommendations\nDo not ship the care-gap flagging feature until precision is meaningfully improved and validated against clinical review, given the explicit alert-fatigue risk raised.\nChange the flag badge visual system to something clearly distinct from the existing acuity color convention.\nAdd a 'why flagged' explanation and per-flag dismiss/snooze control before next round of testing.\nFollow-ups / Open Questions\nGet current false-positive rate on the care-gap model from Data Science before scheduling v2 testing.\nCoordinate with design system team on a non-conflicting badge treatment.",
+      "date": "May 6, 2025"
+    },
+    "raw:2025-05-20-interview-it-security-sso-mfa-modernization#notes": {
+      "title": "Interview — IT Security on SSO/MFA Modernization Impact",
+      "section": null,
+      "participants": "Participants: 1 — IT Security Engineer ×1",
+      "excerpt": "Objective\nUnderstand planned SSO/MFA changes and their anticipated impact on clinical workflow before any AI feature is layered on top of authentication-dependent sessions.\nMethod\nMethod: 1:1 interview, 40 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (session timeout) Planned MFA rollout would introduce a shared-workstation re-authentication requirement every 15 minutes, down from the current 4 hours — flagged internally as likely to cause clinician pushback based on prior rollout feedback, independent of any AI feature.\n[MEDIUM] (badge-tap workflow) Most units already use badge-tap proximity login for shared workstations; new MFA plan hasn't yet been confirmed to work with the existing badge-tap hardware.\n[MEDIUM] (AI session risk) If an AI ambient scribe session is mid-recording when a forced re-auth occurs, current design has no defined behavior — could lose the in-progress draft.\nRepresentative Quotes\n\"Security wants 15 minutes, clinical ops wants 4 hours, and nobody's told me yet who wins that argument, but I have to build for one of them.\" — IT Security Engineer, P31\n\"Nobody's asked what happens to an active AI recording session if the screen locks mid-visit. That's going to be a real incident the first time it happens.\" — IT Security Engineer, P31\nRecommendations\nFlag the ambient-scribe-mid-recording + forced-reauth interaction to the ambient scribe engineering team immediately as an unhandled edge case.\nPush for a joint decision meeting between Security and Clinical Ops on the session timeout conflict before MFA rollout, independent of Compass AI.\nFollow-ups / Open Questions\nConfirm badge-tap hardware compatibility with new MFA plan.\nGet the ambient scribe team's answer on session-loss behavior into a future usability test script.",
+      "date": "May 20, 2025"
+    },
+    "raw:2025-08-12-interview-cmio-ai-generated-content-governance#3": {
+      "title": "Interview — CMIO on Governance for AI-Generated Content in the Legal Record",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — Chief Medical Information Officer ×1",
+      "excerpt": "[MEDIUM] (review fatigue tradeoff) CMIO is aware this creates tension with the earlier finding that clinicians currently over-review AI output line-by-line — he sees that as an acceptable, even desirable, transitional state rather than a bug to eliminate quickly.\n[MEDIUM] (rollout sequencing) Prefers rolling out AI features in order of PHI sensitivity, lowest first (scheduling, then admin/coding, then documentation, then anything clinical-decision-adjacent), which aligns with the CIO/VP's January framing.",
+      "date": "Aug 12, 2025"
+    },
+    "raw:2025-08-12-interview-cmio-ai-generated-content-governance#4": {
+      "title": "Interview — CMIO on Governance for AI-Generated Content in the Legal Record",
+      "section": "Representative Quotes",
+      "participants": "Participants: 1 — Chief Medical Information Officer ×1",
+      "excerpt": "\"Once a doctor signs it, it's theirs. I don't want a permanent asterisk on the chart that says 'a robot helped.' I do want to know that internally if something ever goes wrong.\" — Chief Medical Information Officer, P75\n\"I'd rather they over-check it for the first year than under-check it and we find out the hard way.\" — Chief Medical Information Officer, P75",
+      "date": "Aug 12, 2025"
+    },
+    "raw:2025-08-12-interview-cmio-ai-generated-content-governance#notes": {
+      "title": "Interview — CMIO on Governance for AI-Generated Content in the Legal Record",
+      "section": null,
+      "participants": "Participants: 1 — Chief Medical Information Officer ×1",
+      "excerpt": "Objective\nUnderstand the CMIO's position on how AI-generated content (scribe drafts, coding suggestions, prior-auth drafts) should be treated once accepted into the legal medical record.\nMethod\nMethod: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (attestation model) CMIO wants any AI-generated content, once a clinician accepts/signs it, to carry the same attestation weight and liability as if they typed it themselves — no separate 'AI-assisted' watermark visible in the permanent record, though the generation metadata should exist in an internal audit log (echoing the Privacy Officer's March requirement).\n[MEDIUM] (review fatigue tradeoff) CMIO is aware this creates tension with the earlier finding that clinicians currently over-review AI output line-by-line — he sees that as an acceptable, even desirable, transitional state rather than a bug to eliminate quickly.\n[MEDIUM] (rollout sequencing) Prefers rolling out AI features in order of PHI sensitivity, lowest first (scheduling, then admin/coding, then documentation, then anything clinical-decision-adjacent), which aligns with the CIO/VP's January framing.\nRepresentative Quotes\n\"Once a doctor signs it, it's theirs. I don't want a permanent asterisk on the chart that says 'a robot helped.' I do want to know that internally if something ever goes wrong.\" — Chief Medical Information Officer, P75\n\"I'd rather they over-check it for the first year than under-check it and we find out the hard way.\" — Chief Medical Information Officer, P75\nRecommendations\nConfirm this attestation model with Legal/Compliance formally — it's a policy decision, not just a UX one, and should be documented before it's assumed as a design constraint.\nUse the CMIO's PHI-sensitivity-ordered rollout sequence as an explicit input to the 2026 roadmap prioritization.\nFollow-ups / Open Questions\nSchedule a joint session with Legal, Compliance, and the CMIO to formally ratify the attestation model.",
+      "date": "Aug 12, 2025"
+    },
+    "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#4": {
+      "title": "Usability Test — AI Alert Triage for Care Coordination",
+      "section": "Representative Quotes",
+      "participants": "Participants: 5 — Care Coordinator, Care Coordinator Supervisor",
+      "excerpt": "\"It's fast, I'll give it that. But fast and wrong is worse than slow and right in this job.\" — Care Coordinator Supervisor, P79\n\"I wanted to tell it 'no, this one's more urgent because I know this patient's history,' but there was nowhere to put that.\" — Care Coordinator, P81",
+      "date": "Aug 26, 2025"
+    },
+    "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#5": {
+      "title": "Usability Test — AI Alert Triage for Care Coordination",
+      "section": "Recommendations",
+      "participants": "Participants: 5 — Care Coordinator, Care Coordinator Supervisor",
+      "excerpt": "Add a lightweight 'why did you reprioritize' capture on override, both to improve the model and to give coordinators a sense of agency the current design lacks.\nInvestigate incorporating patient history/continuity signals into ranking logic, not just recency, before wider testing.",
+      "date": "Aug 26, 2025"
+    },
+    "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#notes": {
+      "title": "Usability Test — AI Alert Triage for Care Coordination",
+      "section": null,
+      "participants": "Participants: 5 — Care Coordinator, Care Coordinator Supervisor",
+      "excerpt": "Objective\nTest whether an AI-prioritized alert queue (ranking care coordination alerts by urgency) actually improves triage speed/accuracy over the current chronological queue.\nMethod\nMethod: Moderated usability test, simulated alert queue, 45 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (ranking trust) 4 of 5 participants disagreed with the AI's top-3 ranking on at least one of three test queues, generally because the model weighted 'recency' more heavily than coordinators' own sense of clinical risk — echoes the alert-fatigue concern from the May dashboard testing.\n[HIGH] (override friction) When participants disagreed with the ranking, there was no way to note why they reprioritized, meaning that correction signal isn't captured anywhere for future model improvement.\n[MEDIUM] (speed) Despite ranking disagreements, participants still completed triage of a 20-item queue faster with AI ranking present (avg 6.5 min) vs. chronological (avg 9 min) in this simulated test.\n[MEDIUM] (supervisor concern) Supervisor worried that speed gains could mask a coordinator rubber-stamping the AI order without real judgment, similar to the concern raised by the prior-auth supervisor in April.\nRepresentative Quotes\n\"It's fast, I'll give it that. But fast and wrong is worse than slow and right in this job.\" — Care Coordinator Supervisor, P79\n\"I wanted to tell it 'no, this one's more urgent because I know this patient's history,' but there was nowhere to put that.\" — Care Coordinator, P81\nRecommendations\nAdd a lightweight 'why did you reprioritize' capture on override, both to improve the model and to give coordinators a sense of agency the current design lacks.\nInvestigate incorporating patient history/continuity signals into ranking logic, not just recency, before wider testing.\nFollow-ups / Open Questions\nShare the override-capture idea with the Data Science team working on the care-gap flagging model (May findings) — likely the same underlying tuning problem.",
+      "date": "Aug 26, 2025"
+    },
+    "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline#2": {
+      "title": "Survey — Clinician Burnout & Documentation Burden Baseline",
+      "section": "Key Findings",
+      "participants": "Participants: 287 — Physician, Nurse Practitioner, Physician Assistant, Registered Nurse",
+      "excerpt": "[HIGH] (documentation as burnout driver) Documentation burden ranked as the #1 self-selected contributor to burnout among physicians specifically (52%), ahead of patient volume (31%) and administrative meetings (12%).\n[MEDIUM] (after-hours charting) 64% of physician respondents report regularly completing documentation after clinic hours ('pajama time'), averaging a self-reported 1.2 hours/day.",
+      "date": "Sep 9, 2025"
+    },
+    "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline#4": {
+      "title": "Survey — Clinician Burnout & Documentation Burden Baseline",
+      "section": "Representative Quotes",
+      "participants": "Participants: 287 — Physician, Nurse Practitioner, Physician Assistant, Registered Nurse",
+      "excerpt": "\"I love this job. I do not love finishing my notes at 9pm after my kids are in bed. If AI fixes that, I'm in.\" — Physician, P84 (survey open-ended)\n\"Just don't let 'AI will fix documentation' become the excuse to skip fixing the actual EHR problems underneath it.\" — Nurse Practitioner, P91 (survey open-ended)",
+      "date": "Sep 9, 2025"
+    },
+    "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline#notes": {
+      "title": "Survey — Clinician Burnout & Documentation Burden Baseline",
+      "section": null,
+      "participants": "Participants: 287 — Physician, Nurse Practitioner, Physician Assistant, Registered Nurse",
+      "excerpt": "Objective\nEstablish a pre-AI-rollout baseline of self-reported burnout and documentation burden, so future surveys can measure whether Compass AI tools move the needle.\nMethod\nMethod: Anonymous org-wide survey, 15 questions (validated burnout subscale + custom documentation items)\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (documentation as burnout driver) Documentation burden ranked as the #1 self-selected contributor to burnout among physicians specifically (52%), ahead of patient volume (31%) and administrative meetings (12%).\n[MEDIUM] (after-hours charting) 64% of physician respondents report regularly completing documentation after clinic hours ('pajama time'), averaging a self-reported 1.2 hours/day.\n[MEDIUM] (baseline caution) Respondents were told this survey relates to a future AI initiative, which may have primed more favorable-than-baseline attitudes toward documentation-reducing tools — worth noting as a methodological caveat for anyone comparing to the February nursing survey, which didn't mention AI in its framing.\nRepresentative Quotes\n\"I love this job. I do not love finishing my notes at 9pm after my kids are in bed. If AI fixes that, I'm in.\" — Physician, P84 (survey open-ended)\n\"Just don't let 'AI will fix documentation' become the excuse to skip fixing the actual EHR problems underneath it.\" — Nurse Practitioner, P91 (survey open-ended)\nRecommendations\nUse this survey as the official baseline metric for measuring Compass AI's impact on documentation burden and after-hours charting in future re-surveys (e.g., 6 and 12 months post-rollout).\nNote the framing caveat explicitly in any report comparing this dataset to the February nursing survey.\nFollow-ups / Open Questions\nSchedule a repeat of this exact survey instrument 6 months after ambient scribe GA rollout for comparison.",
+      "date": "Sep 9, 2025"
+    },
+    "raw:2025-09-23-usability-test-ambient-scribe-v02#notes": {
+      "title": "Usability Test — Ambient AI Scribe Prototype v0.2 (Follow-up)",
+      "section": null,
+      "participants": "Participants: 5 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner",
+      "excerpt": "Objective\nRe-test the ambient scribe after v0.1 fixes (medication dosage accuracy, inline correction, auto-listening, and the draft-retention/Security review from February) to see whether the critical and high findings were resolved.\nMethod\nMethod: Moderated usability test, simulated patient encounters, 45 min/session — follow-up with 3 returning + 2 new participants\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[LOW] (phi-handling (resolved)) The draft-retention issue from v0.1 (critical finding, Feb) has been fixed — drafts now auto-expire from the editable state after 10 minutes of inactivity and the behavior is documented for Compliance; verified in all 5 sessions.\n[MEDIUM] (accuracy (improved but not resolved)) Medication dosage errors dropped from 3/5 to 1/5 sessions — a clear improvement, but the remaining error type (misheard similar-sounding drug names) is a known class of error the team should track going forward.\n[HIGH] (trust calibration (unchanged)) Despite accuracy improvements, all 5 participants still read every line before accepting — the returning 3 participants said their behavior from v0.1 hadn't changed at all in the interim, suggesting trust doesn't shift from accuracy improvements alone without something like a track record or confidence indicator.\n[MEDIUM] (interaction (resolved)) In-place line correction (requested in v0.1) works well; all participants successfully corrected a wrong line without regenerating the full note.\nRepresentative Quotes\n\"It's better, no question. But I still read every line, same as last time. Getting it right once doesn't mean I trust it yet.\" — Physician, Internal Medicine, P09 (returning from v0.1)\n\"The fix where I can just click and edit one line? That's the difference between me using this and not.\" — Physician, Family Medicine, P11 (returning from v0.1)\nRecommendations\nSince accuracy fixes alone haven't shifted trust/skim behavior, explore an explicit confidence indicator per line (e.g., highlighting low-confidence transcriptions) as the next trust-building lever, rather than continuing to chase raw accuracy alone.\nAdd a specific test/tracking metric for similar-sounding medication name errors going forward, since it's now the dominant remaining error type.\nFollow-ups / Open Questions\nDesign and test a per-line confidence indicator concept for v0.3.\nCheck with engineering whether a medication name pronunciation dictionary/fine-tune could reduce the sound-alike error class.",
+      "date": "Sep 23, 2025"
+    },
+    "raw:2025-10-21-interview-training-department-rollout-change-management#0": {
+      "title": "Interview — Training & Education Dept on Rollout/Change Management Planning",
+      "section": "Objective",
+      "participants": "Participants: 1 — Director of Clinical Training & Education ×1",
+      "excerpt": "Understand what a realistic training/rollout plan looks like for the first Compass AI features going to general availability, drawing on lessons from past rollouts.",
+      "date": "Oct 21, 2025"
+    },
+    "raw:2025-10-21-interview-training-department-rollout-change-management#2": {
+      "title": "Interview — Training & Education Dept on Rollout/Change Management Planning",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — Director of Clinical Training & Education ×1",
+      "excerpt": "[MEDIUM] (past rollout lesson) Director pointed to the 2022 CDS alert rollout (also referenced by executives in January) as a cautionary tale specifically because training was a single 20-minute video with no hands-on practice, and adoption suffered as a result — she wants any Compass AI rollout to include live, hands-on sessions instead.\n[MEDIUM] (champion model) Prefers a 'unit champion' model (1-2 respected staff per unit trained early and deeply, who then support peers) over an all-at-once broadcast rollout, based on past success with an unrelated EHR module rollout in 2023.",
+      "date": "Oct 21, 2025"
+    },
+    "raw:2025-10-21-interview-training-department-rollout-change-management#4": {
+      "title": "Interview — Training & Education Dept on Rollout/Change Management Planning",
+      "section": "Representative Quotes",
+      "participants": "Participants: 1 — Director of Clinical Training & Education ×1",
+      "excerpt": "\"We already know what doesn't work. A video nobody watches and hoping for the best. I don't want to repeat 2022.\" — Director of Clinical Training & Education, P99\n\"Give me two respected nurses per unit, trained early and given actual time to practice, and they'll do more for adoption than any all-staff email ever will.\" — Director of Clinical Training & Education, P99",
+      "date": "Oct 21, 2025"
+    },
+    "raw:2025-10-21-interview-training-department-rollout-change-management#notes": {
+      "title": "Interview — Training & Education Dept on Rollout/Change Management Planning",
+      "section": null,
+      "participants": "Participants: 1 — Director of Clinical Training & Education ×1",
+      "excerpt": "Objective\nUnderstand what a realistic training/rollout plan looks like for the first Compass AI features going to general availability, drawing on lessons from past rollouts.\nMethod\nMethod: 1:1 interview, 40 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[MEDIUM] (past rollout lesson) Director pointed to the 2022 CDS alert rollout (also referenced by executives in January) as a cautionary tale specifically because training was a single 20-minute video with no hands-on practice, and adoption suffered as a result — she wants any Compass AI rollout to include live, hands-on sessions instead.\n[MEDIUM] (champion model) Prefers a 'unit champion' model (1-2 respected staff per unit trained early and deeply, who then support peers) over an all-at-once broadcast rollout, based on past success with an unrelated EHR module rollout in 2023.\n[LOW] (timing sensitivity) Flagged that rolling out during flu season (Nov-Feb) has historically correlated with poor training attendance and should be avoided if possible for the ambient scribe GA rollout.\nRepresentative Quotes\n\"We already know what doesn't work. A video nobody watches and hoping for the best. I don't want to repeat 2022.\" — Director of Clinical Training & Education, P99\n\"Give me two respected nurses per unit, trained early and given actual time to practice, and they'll do more for adoption than any all-staff email ever will.\" — Director of Clinical Training & Education, P99\nRecommendations\nBuild the ambient scribe GA rollout plan around the unit-champion model, and explicitly avoid flu-season timing given the historical attendance pattern.\nInclude hands-on practice time in training, not just a recorded overview, directly addressing the 2022 lesson learned.\nFollow-ups / Open Questions\nGet the actual 2022 CDS rollout adoption numbers if they exist, to quantify the lesson rather than rely on recollection.\nIdentify candidate unit champions once the GA rollout unit list is finalized.",
+      "date": "Oct 21, 2025"
+    },
+    "raw:2025-11-04-usability-test-prior-auth-ai-v2#2": {
+      "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v2, Follow-up)",
+      "section": "Key Findings",
+      "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
+      "excerpt": "[LOW] (accuracy (resolved)) The outdated diagnosis code issue from v1 did not recur in any of the 4 test cases; citations now correctly reference the most recent active diagnosis.\n[LOW] (transparency (resolved)) Inline source citations were well-received and used actively — 3 of 4 participants clicked into at least one citation to verify before accepting, which participants described as appropriately fast rather than as friction.",
+      "date": "Nov 4, 2025"
+    },
+    "raw:2025-11-04-usability-test-prior-auth-ai-v2#4": {
+      "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v2, Follow-up)",
+      "section": "Representative Quotes",
+      "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
+      "excerpt": "\"This is what I wanted in April. It shows its work, it got the codes right, and it didn't try to be a hero on the complicated case — it basically said 'this one's harder, take the wheel.'\" — Utilization Review Nurse (supervisor), P17 (returning from v1)",
+      "date": "Nov 4, 2025"
+    },
+    "raw:2025-11-04-usability-test-prior-auth-ai-v2#notes": {
+      "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v2, Follow-up)",
+      "section": null,
+      "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
+      "excerpt": "Objective\nRe-test the prior authorization tool after the outdated-diagnosis-code fix and addition of inline source citations (from April findings), scoped to the 'straightforward' case definition the supervisor helped define.\nMethod\nMethod: Moderated usability test, 4 case scenarios (2 straightforward, 2 complex), 60 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[LOW] (accuracy (resolved)) The outdated diagnosis code issue from v1 did not recur in any of the 4 test cases; citations now correctly reference the most recent active diagnosis.\n[LOW] (transparency (resolved)) Inline source citations were well-received and used actively — 3 of 4 participants clicked into at least one citation to verify before accepting, which participants described as appropriately fast rather than as friction.\n[MEDIUM] (scope boundary) On the 2 complex cases (intentionally outside the agreed 'straightforward' scope), the tool still struggled, confirming the supervisor's April instinct that scope limitation was the right call rather than something to fix immediately.\n[MEDIUM] (time savings (confirmed)) For straightforward cases, drafting time was confirmed at ~5 minutes vs. ~15 minutes manual, consistent with April's estimate, now measured directly rather than estimated.\nRepresentative Quotes\n\"This is what I wanted in April. It shows its work, it got the codes right, and it didn't try to be a hero on the complicated case — it basically said 'this one's harder, take the wheel.'\" — Utilization Review Nurse (supervisor), P17 (returning from v1)\nRecommendations\nRecommend this tool for pilot expansion within the agreed straightforward-case scope; do not expand scope to complex cases without a separate, dedicated round of model work and testing.\nUse the clear before/after (v1 to v2) data here as a model for how to communicate iterative improvement to executives, tying back to the January request for shared success metrics.\nFollow-ups / Open Questions\nDefine what 'pilot expansion' means concretely — how many nurses, how many weeks, what's the go/no-go metric.",
+      "date": "Nov 4, 2025"
+    },
+    "raw:2025-12-02-survey-allstaff-ai-readiness-pulse#2": {
+      "title": "Survey — All-Staff AI Readiness Pulse Survey",
+      "section": "Key Findings",
+      "participants": "Participants: 421 — Clinical staff (various), Non-clinical/administrative staff",
+      "excerpt": "[MEDIUM] (awareness gap) Only 34% of non-clinical staff reported being aware Compass AI initiatives were underway at all, versus 71% of clinical staff — suggesting internal communications have been clinically focused and may need broadening if non-clinical rollouts (e.g., scheduling) proceed.",
+      "date": "Dec 2, 2025"
+    },
+    "raw:2025-12-02-survey-allstaff-ai-readiness-pulse#4": {
+      "title": "Survey — All-Staff AI Readiness Pulse Survey",
+      "section": "Key Findings",
+      "participants": "Participants: 421 — Clinical staff (various), Non-clinical/administrative staff",
+      "excerpt": "[LOW] (top requested feature) When asked what AI feature they'd most want next, 'appointment scheduling help' was the top write-in among non-clinical/admin staff, and 'documentation time savings' remained the top pick among clinical staff — consistent with priorities identified all year.",
+      "date": "Dec 2, 2025"
+    },
+    "raw:2025-12-02-survey-allstaff-ai-readiness-pulse#6": {
+      "title": "Survey — All-Staff AI Readiness Pulse Survey",
+      "section": "Recommendations",
+      "participants": "Participants: 421 — Clinical staff (various), Non-clinical/administrative staff",
+      "excerpt": "Broaden internal communications about Compass AI to non-clinical staff specifically before any admin-facing pilot (e.g., scheduling chatbot) goes live, given the awareness gap found here.\nIf a clean sentiment trend is wanted for 2026 reporting, re-run the exact February nursing survey instrument rather than a new pulse survey, to get a true apples-to-apples comparison.",
+      "date": "Dec 2, 2025"
+    },
+    "raw:2025-12-02-survey-allstaff-ai-readiness-pulse#7": {
+      "title": "Survey — All-Staff AI Readiness Pulse Survey",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 421 — Clinical staff (various), Non-clinical/administrative staff",
+      "excerpt": "Decide with leadership whether the September burnout survey or a repeat of the February survey is the better instrument for the planned 6-month post-GA comparison.",
+      "date": "Dec 2, 2025"
+    },
+    "raw:2025-12-02-survey-allstaff-ai-readiness-pulse#notes": {
+      "title": "Survey — All-Staff AI Readiness Pulse Survey",
+      "section": null,
+      "participants": "Participants: 421 — Clinical staff (various), Non-clinical/administrative staff",
+      "excerpt": "Objective\nTake an org-wide temperature check on AI readiness/sentiment heading into 2026, as input to roadmap prioritization and communications planning.\nMethod\nMethod: Org-wide anonymous pulse survey, 10 questions\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[MEDIUM] (awareness gap) Only 34% of non-clinical staff reported being aware Compass AI initiatives were underway at all, versus 71% of clinical staff — suggesting internal communications have been clinically focused and may need broadening if non-clinical rollouts (e.g., scheduling) proceed.\n[MEDIUM] (sentiment trend (directional, not causal)) Among clinical respondents, favorable sentiment toward AI-assisted documentation was somewhat higher than the March-ish baseline period, though this survey used different question wording than February's, so it's directional context rather than a clean comparison.\n[LOW] (top requested feature) When asked what AI feature they'd most want next, 'appointment scheduling help' was the top write-in among non-clinical/admin staff, and 'documentation time savings' remained the top pick among clinical staff — consistent with priorities identified all year.\nRepresentative Quotes\n\"I hear about this AI stuff from clinical friends but nobody's told admin staff what's actually happening or if it affects us.\" — Non-clinical/administrative staff, P112 (survey open-ended)\nRecommendations\nBroaden internal communications about Compass AI to non-clinical staff specifically before any admin-facing pilot (e.g., scheduling chatbot) goes live, given the awareness gap found here.\nIf a clean sentiment trend is wanted for 2026 reporting, re-run the exact February nursing survey instrument rather than a new pulse survey, to get a true apples-to-apples comparison.\nFollow-ups / Open Questions\nDecide with leadership whether the September burnout survey or a repeat of the February survey is the better instrument for the planned 6-month post-GA comparison.",
+      "date": "Dec 2, 2025"
+    },
+    "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#4": {
+      "title": "Executive Steering Committee — Year-End Retro & 2026 Roadmap Input",
+      "section": "Key Findings",
+      "participants": "Participants: 4 — Chief Information Officer ×1, VP Clinical Informatics ×1, Chief Privacy Officer ×1, Chief Medical Information Officer ×1",
+      "excerpt": "[LOW] (scope discipline praised) VP Clinical Informatics specifically praised the decision to keep behavioral health and complex prior-auth cases out of scope for 2025, saying the discipline of 'not doing it' was as valuable as anything shipped.",
+      "date": "Dec 16, 2025"
+    },
+    "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#5": {
+      "title": "Executive Steering Committee — Year-End Retro & 2026 Roadmap Input",
+      "section": "Representative Quotes",
+      "participants": "Participants: 4 — Chief Information Officer ×1, VP Clinical Informatics ×1, Chief Privacy Officer ×1, Chief Medical Information Officer ×1",
+      "excerpt": "\"A year ago we couldn't agree on what success even meant. Now we at least agree on the two numbers we're arguing about. That's real progress.\" — Chief Information Officer, P01 (returning from January)\n\"The stuff you told us not to build yet mattered as much as the stuff you told us to build.\" — VP Clinical Informatics, P02 (returning from January)",
+      "date": "Dec 16, 2025"
+    },
+    "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#notes": {
+      "title": "Executive Steering Committee — Year-End Retro & 2026 Roadmap Input",
+      "section": null,
+      "participants": "Participants: 4 — Chief Information Officer ×1, VP Clinical Informatics ×1, Chief Privacy Officer ×1, Chief Medical Information Officer ×1",
+      "excerpt": "Objective\nClose out the year with the same executive group (plus two additions) from the January kickoff to review what research found, what shipped, and what should be prioritized in 2026.\nMethod\nMethod: Group interview/retro, 90 min, 4 executives\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[MEDIUM] (shared metrics gap partially closed) The group agreed, informally, to adopt 'documentation time saved' and 'PHI incidents (target: zero)' as the two headline metrics going into 2026 — resolving the shared-metrics gap flagged as a finding back in January, though it's not yet been formally written into any governance document.\n[MEDIUM] (recurring platform debt surfaced) The CIO specifically called out the color-only status indicator issue (found independently in 3 separate 2025 audits) as an example of the kind of small, recurring finding that research should flag as a pattern, not just three separate tickets — asked for a standing 'cross-cutting findings' section in future reporting.\n[LOW] (scope discipline praised) VP Clinical Informatics specifically praised the decision to keep behavioral health and complex prior-auth cases out of scope for 2025, saying the discipline of 'not doing it' was as valuable as anything shipped.\nRepresentative Quotes\n\"A year ago we couldn't agree on what success even meant. Now we at least agree on the two numbers we're arguing about. That's real progress.\" — Chief Information Officer, P01 (returning from January)\n\"The stuff you told us not to build yet mattered as much as the stuff you told us to build.\" — VP Clinical Informatics, P02 (returning from January)\nRecommendations\nFormalize the two agreed 2026 headline metrics in an actual governance document before Q1 2026 planning locks, so the informal agreement here doesn't get lost.\nIntroduce a standing 'cross-cutting findings' section in the research repo/reporting specifically to surface patterns like the color-only status issue across otherwise-separate sessions.\nFollow-ups / Open Questions\nDraft the formal metrics document and route for exec sign-off in January 2026.\nRetrofit a 'cross-cutting findings' index into the research repo covering 2025 (e.g., color-only status, transparency/citation requests, Part 2 flagging gap).",
+      "date": "Dec 16, 2025"
+    },
+    "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate#6": {
+      "title": "Usability Test — Ambient AI Scribe GA Release Candidate (Final Validation)",
+      "section": "Recommendations",
+      "participants": "Participants: 6 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner, Physician Assistant",
+      "excerpt": "Approve for GA release; the critical (Feb) and high (Feb, Sept) findings across this tool's full testing history are resolved or actively monitored, and the confidence-indicator concept appears to be the trust-building lever the team was looking for since September.\nContinue tracking sound-alike medication errors as a post-GA metric rather than delaying release further for a low-frequency, now-flagged issue.\nUse this session as the evidence base for the CIO's requested 'documentation time saved' 2026 headline metric baseline measurement.",
+      "date": "Jan 13, 2026"
+    },
+    "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate#7": {
+      "title": "Usability Test — Ambient AI Scribe GA Release Candidate (Final Validation)",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 6 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner, Physician Assistant",
+      "excerpt": "Set up post-GA monitoring dashboard for sound-alike medication error rate.\nFeed this session's time data into the formal 2026 metrics document (per December retro action item).",
+      "date": "Jan 13, 2026"
+    },
+    "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate#notes": {
+      "title": "Usability Test — Ambient AI Scribe GA Release Candidate (Final Validation)",
+      "section": null,
+      "participants": "Participants: 6 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner, Physician Assistant",
+      "excerpt": "Objective\nFinal validation pass on the ambient scribe before GA release, testing the v0.3 confidence-indicator concept (from September's recommendation) and confirming readiness against the full history of prior findings.\nMethod\nMethod: Moderated usability test, simulated + 2 real (consented) low-acuity encounters, 45 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[LOW] (confidence indicator (positive)) The new per-line confidence highlighting (low-confidence transcription shown in a subtle underline) was well received and, notably, 4 of 6 participants said it let them skim high-confidence lines for the first time across the whole testing history — the first session where reduced line-by-line reading was observed.\n[MEDIUM] (sound-alike medication errors) Still present in 1 of 6 sessions despite the pronunciation dictionary work referenced in September; team should treat this as an ongoing monitoring item post-GA rather than a pre-GA blocker, given the confidence indicator now flags it for review anyway.\n[MEDIUM] (training readiness) Participants who'd been through the champion-model style training pilot (per October's recommendation) reported higher initial comfort than those who hadn't, though this wasn't a controlled comparison.\n[LOW] (phi-handling (confirmed stable)) Draft-retention/auto-expiry behavior (fixed in v0.2) remains stable and correctly documented for audit purposes; no new PHI-handling issues found.\nRepresentative Quotes\n\"This is the first time I actually skimmed a section instead of reading every word, because it showed me exactly where to look instead.\" — Physician, Internal Medicine, P09 (returning from v0.1 and v0.2)\n\"I went through the champion training last month and honestly walked in already comfortable. That part worked.\" — Nurse Practitioner, P118 (new participant)\nRecommendations\nApprove for GA release; the critical (Feb) and high (Feb, Sept) findings across this tool's full testing history are resolved or actively monitored, and the confidence-indicator concept appears to be the trust-building lever the team was looking for since September.\nContinue tracking sound-alike medication errors as a post-GA metric rather than delaying release further for a low-frequency, now-flagged issue.\nUse this session as the evidence base for the CIO's requested 'documentation time saved' 2026 headline metric baseline measurement.\nFollow-ups / Open Questions\nSet up post-GA monitoring dashboard for sound-alike medication error rate.\nFeed this session's time data into the formal 2026 metrics document (per December retro action item).",
+      "date": "Jan 13, 2026"
+    },
+    "raw:2026-01-19-onboarding-usability-test#1": {
+      "title": "Onboarding usability test — session notes",
+      "section": "Session 1 — Jan 19",
+      "participants": null,
+      "excerpt": "Participant paused ~15s at step 3 (\"Connect calendar\"), said \"wait, do I have to do this?\" before proceeding. Completed step without connecting a real calendar (used the skip-adjacent \"I'll do this later\" affordance, which doesn't actually exist — participant tried clicking the step label itself as an exit).",
+      "date": "Jan 19, 2026"
+    },
+    "raw:2026-01-19-onboarding-usability-test#2": {
+      "title": "Onboarding usability test — session notes",
+      "section": "Session 2 — Jan 20",
+      "participants": null,
+      "excerpt": "Attempted to skip step 2 directly, assuming it was optional. Backed out when the \"required\" indicator appeared, expressed mild frustration (\"could've told me that up front\").",
+      "date": "Jan 19, 2026"
+    },
+    "raw:2026-01-19-onboarding-usability-test#4": {
+      "title": "Onboarding usability test — session notes",
+      "section": "Sessions 4–6 (Jan 22–23)",
+      "participants": null,
+      "excerpt": "Consistent with sessions 1–3: step 3 wording read as optional by all participants; none independently identified it as required without hitting the \"required\" state first.",
+      "date": "Jan 19, 2026"
+    },
+    "raw:2026-01-19-onboarding-usability-test#notes": {
+      "title": "Onboarding usability test — session notes",
+      "section": null,
+      "participants": null,
+      "excerpt": "Session 1 — Jan 19\nParticipant paused ~15s at step 3 (\"Connect calendar\"), said \"wait, do I have to do this?\" before proceeding. Completed step without connecting a real calendar (used the skip-adjacent \"I'll do this later\" affordance, which doesn't actually exist — participant tried clicking the step label itself as an exit).\nSession 2 — Jan 20\nAttempted to skip step 2 directly, assuming it was optional. Backed out when the \"required\" indicator appeared, expressed mild frustration (\"could've told me that up front\").\nSession 3 — Jan 21\nSame step 3 hesitation as session 1. When asked directly, said: \"I guess I'm worried this is going to email my whole team before I'm ready.\"\nSessions 4–6 (Jan 22–23)\nConsistent with sessions 1–3: step 3 wording read as optional by all participants; none independently identified it as required without hitting the \"required\" state first.",
+      "date": "Jan 19, 2026"
+    },
+    "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption#0": {
+      "title": "Dashboard review — Ambient scribe GA candidate adoption",
+      "section": "Objective",
+      "participants": "Participants: N/A",
+      "excerpt": "Manually review the internal usage dashboard for the ambient scribe GA release candidate to see whether adoption and engagement patterns in real usage match what the GA-candidate usability round found — particularly whether the per-line confidence highlighting is actually changing reviewing behavior at scale, not just in the moderated session.",
+      "date": "Jan 27, 2026"
+    },
+    "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption#2": {
+      "title": "Dashboard review — Ambient scribe GA candidate adoption",
+      "section": "Key Findings",
+      "participants": "Participants: N/A",
+      "excerpt": "[MEDIUM] (trust) Clinicians who were shown confidence highlighting skim high-confidence lines at roughly double the rate of the pre-highlighting cohort — directionally consistent with the usability round's finding that visible uncertainty, not raw accuracy, changes reviewing behavior.\n[LOW] (adoption) Adoption is uneven by role: attending physicians are opting in at a noticeably higher rate than residents in the same departments, worth understanding qualitatively rather than assuming it's a training gap.",
+      "date": "Jan 27, 2026"
+    },
+    "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption#3": {
+      "title": "Dashboard review — Ambient scribe GA candidate adoption",
+      "section": "Recommendations",
+      "participants": "Participants: N/A",
+      "excerpt": "Feed this dashboard pattern back into findings/ambient-scribe.md as corroborating evidence for the confidence-highlighting result, rather than treating it as a separate finding.\nConsider a short follow-up interview round specifically on the physician/resident adoption gap.",
+      "date": "Jan 27, 2026"
+    },
+    "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption#notes": {
+      "title": "Dashboard review — Ambient scribe GA candidate adoption",
+      "section": null,
+      "participants": "Participants: N/A",
+      "excerpt": "Objective\nManually review the internal usage dashboard for the ambient scribe GA release candidate to see whether adoption and engagement patterns in real usage match what the GA-candidate usability round found — particularly whether the per-line confidence highlighting is actually changing reviewing behavior at scale, not just in the moderated session.\nMethod\nMethod: Manual dashboard review (no moderated session, no participants) — internal analytics dashboard covering the first 4 weeks of GA-candidate rollout\nResearcher: Priya Patel\nFull participant roster: none — this is an analytics review, not a research session; see participants.md in this folder for why\nKey Findings\n[MEDIUM] (trust) Clinicians who were shown confidence highlighting skim high-confidence lines at roughly double the rate of the pre-highlighting cohort — directionally consistent with the usability round's finding that visible uncertainty, not raw accuracy, changes reviewing behavior.\n[LOW] (adoption) Adoption is uneven by role: attending physicians are opting in at a noticeably higher rate than residents in the same departments, worth understanding qualitatively rather than assuming it's a training gap.\nRecommendations\nFeed this dashboard pattern back into findings/ambient-scribe.md as corroborating evidence for the confidence-highlighting result, rather than treating it as a separate finding.\nConsider a short follow-up interview round specifically on the physician/resident adoption gap.\nFollow-ups / Open Questions\nIs the physician/resident adoption gap explained by workflow differences, trust, or something else entirely? Dashboard data alone can't answer this.",
+      "date": "Jan 27, 2026"
+    },
+    "raw:2026-02-10-ambient-scribe-medication-flag-concept#0": {
+      "title": "Usability Test — Ambient Scribe Sound-Alike Medication Flag Concept",
+      "section": "Objective",
+      "participants": "Participants: 6 — Physician, Nurse Practitioner",
+      "excerpt": "The GA-candidate round (2026-01-13) recommended treating sound-alike medication errors as an ongoing post-GA monitoring item rather than a launch blocker, since the existing confidence-highlighted variant already surfaces them as generically low-confidence. This session tests an early concept that goes one step further: a distinct flag specifically for suspected sound-alike medication names, visually separate from the general low-confidence underline, to see whether participants notice and act on it differently than they do on ordinary low-confidence text.",
+      "date": "Feb 10, 2026"
+    },
+    "raw:2026-02-10-ambient-scribe-medication-flag-concept#1": {
+      "title": "Usability Test — Ambient Scribe Sound-Alike Medication Flag Concept",
+      "section": "Method",
+      "participants": "Participants: 6 — Physician, Nurse Practitioner",
+      "excerpt": "Method: Moderated usability test, 6 simulated encounters seeded with known sound-alike pairs (e.g. hydralazine/hydroxyzine, clonidine/Klonopin), 40 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder",
+      "date": "Feb 10, 2026"
+    },
+    "raw:2026-02-10-ambient-scribe-medication-flag-concept#notes": {
+      "title": "Usability Test — Ambient Scribe Sound-Alike Medication Flag Concept",
+      "section": null,
+      "participants": "Participants: 6 — Physician, Nurse Practitioner",
+      "excerpt": "Objective\nThe GA-candidate round (2026-01-13) recommended treating sound-alike medication errors as an ongoing post-GA monitoring item rather than a launch blocker, since the existing confidence-highlighted variant already surfaces them as generically low-confidence. This session tests an early concept that goes one step further: a distinct flag specifically for suspected sound-alike medication names, visually separate from the general low-confidence underline, to see whether participants notice and act on it differently than they do on ordinary low-confidence text.\nMethod\nMethod: Moderated usability test, 6 simulated encounters seeded with known sound-alike pairs (e.g. hydralazine/hydroxyzine, clonidine/Klonopin), 40 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (flag recognized correctly) 5 of 6 participants correctly identified the medication-specific flag (a distinct amber pill-shaped badge, vs. the generic low-confidence underline) as \"different from the usual low-confidence thing\" within the first two encounters, without being told the distinction existed.\n[MEDIUM] (over-trust risk) 2 participants said the badge's specificity made them more likely to treat unflagged medication lines as automatically correct — the opposite of the intended effect, and worth watching as adoption scales.\n[LOW] (placement) Badge placement inline with the medication name (vs. in a right-hand margin, tested as an alternate) was preferred 5:1 — participants didn't want to look away from the text to check a flag.\n[LOW] (false positive tolerance) One deliberately-seeded false positive (a real but unusual drug name) was accepted by all 6 participants as \"worth a second look, not annoying\" — suggests some over-flagging is tolerable if the badge is visually light.\nRepresentative Quotes\n\"That's different from the fuzzy-underline stuff — this one's telling me specifically 'check the drug name,' which is exactly what I'd want flagged.\" — Physician, Internal Medicine, P22\n\"If it's not flagged, I might just... trust it more than I should. That's on me, but it's worth knowing the tool does that to people.\" — Nurse Practitioner, P24\nRecommendations\nBuild the distinct medication-safety flag as its own variant, inline with the medication name, separate from generic confidence highlighting.\nBefore rollout, pair the flag with brief onboarding copy or training-pilot messaging that explicitly counters the over-trust-on-unflagged-lines risk surfaced by 2 of 6 participants — don't let the flag imply \"anything unflagged is guaranteed correct.\"\nFeed the false-positive tolerance finding to whoever tunes the sound-alike detection threshold — participants have headroom for a few extra false positives in exchange for not missing a real one.\nFollow-ups / Open Questions\nNeeds a larger-N validation pass before this moves from concept test to build-ready spec.\nOver-trust-on-unflagged risk should be checked again once the post-GA monitoring dashboard (recommended 2026-01-13) has real error-rate data to compare against self-reported behavior.",
+      "date": "Feb 10, 2026"
+    },
+    "raw:2026-02-17-session-lock-during-dictation#4": {
+      "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+      "section": "Key Findings",
+      "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+      "excerpt": "[LOW] (IT Security confirms feasibility) IT Security confirmed the 10-minute idle timeout is not adjustable per-feature, but confirmed an explicit \"paused, draft preserved\" UI state is technically straightforward to add without changing the timeout policy itself.",
+      "date": "Feb 17, 2026"
+    },
+    "raw:2026-02-17-session-lock-during-dictation#5": {
+      "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+      "section": "Representative Quotes",
+      "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+      "excerpt": "\"I genuinely thought I'd lost it. I've just gotten used to starting over when the screen locks, so I didn't even try to check.\" — Physician, Family Medicine, P31\n\"If it said 'paused, nothing lost, just log back in,' I'd believe it and wait. Right now it just looks broken.\" — Nurse Practitioner, P33\n\"The timeout window itself is a hard policy constraint, but what the screen tells the clinician during that window is entirely a product decision — that part isn't locked down.\" — IT Security stakeholder",
+      "date": "Feb 17, 2026"
+    },
+    "raw:2026-02-17-session-lock-during-dictation#notes": {
+      "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+      "section": null,
+      "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+      "excerpt": "Objective\nencounter-view.md 's component notes flag the locked state's interaction with an in-progress ambient scribe recording as an open edge case, raised as a side note in the 2025-05-20 SSO/MFA interview but never directly studied. This session shadows clinicians through their normal SSO/MFA idle-timeout window while actively dictating, to observe what actually happens today and what they expect/want instead.\nMethod\nMethod: Contextual inquiry / shadowing, 5 clinicians observed through at least one natural idle-timeout event during a real or simulated dictation session, plus 1 IT Security stakeholder interviewed on the technical constraints\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[CRITICAL] (silent draft loss) In the current build, a session lock mid-recording simply freezes the ambient-scribe widget with no message; 4 of 5 clinicians assumed the draft was lost and started re-dictating from scratch after re-authenticating, even though the draft is server-side and actually survives the lock.\n[HIGH] (no explicit paused state) There is no visual distinction between \"recording,\" \"frozen because locked,\" and \"actually stopped\" — participants could not tell which state they were in without asking a shadowing observer.\n[MEDIUM] (re-auth friction stacks) Clinicians already re-authenticate frequently for unrelated reasons (badge-tap SSO renewals); a lock during dictation is perceived as \"one more annoying re-login,\" not as a distinct, expected safety behavior — this framing gap likely drives the abandon-and-redictate behavior above as much as the missing UI does.\n[LOW] (IT Security confirms feasibility) IT Security confirmed the 10-minute idle timeout is not adjustable per-feature, but confirmed an explicit \"paused, draft preserved\" UI state is technically straightforward to add without changing the timeout policy itself.\nRepresentative Quotes\n\"I genuinely thought I'd lost it. I've just gotten used to starting over when the screen locks, so I didn't even try to check.\" — Physician, Family Medicine, P31\n\"If it said 'paused, nothing lost, just log back in,' I'd believe it and wait. Right now it just looks broken.\" — Nurse Practitioner, P33\n\"The timeout window itself is a hard policy constraint, but what the screen tells the clinician during that window is entirely a product decision — that part isn't locked down.\" — IT Security stakeholder\nRecommendations\nAdd an explicit \"paused — draft preserved, re-authenticate to resume\" state to the encounter-view / ambient-scribe-widget lock interaction, replacing the current silent freeze.\nDo not attempt to change or extend the idle-timeout policy itself — per IT Security, treat it as fixed and solve this entirely at the UI-messaging layer.\nPair the new state with brief messaging that reframes the lock as an expected safety behavior rather than an unrelated login interruption, to counter the \"one more annoying re-login\" framing found here.\nFollow-ups / Open Questions\nConfirm with IT Security whether the same \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe.\nRe-test the abandon-and-redictate behavior once the explicit paused state ships, to confirm it actually changes clinician behavior and not just their stated understanding.",
+      "date": "Feb 17, 2026"
+    }
+  }
+}
