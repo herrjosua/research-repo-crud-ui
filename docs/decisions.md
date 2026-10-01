@@ -685,3 +685,240 @@ evaluation harness stores `promptTokens` with every run. With the guard
 in place, the default configuration was run again
 (`v1.3.6.37-guard[-scenarios]`): all 51 seeded answers were byte-identical
 to step 5, and no prompt came near the limit (1,730 tokens at most).
+
+## 19. Prompt behaviors: decline with evidence on, three left off (v1.3.6.38)
+
+**Date:** 2026-10-01. **Status:** Active for decline with evidence; the
+other three were tried and left off by default.
+
+**What was tried:** four rules for the system prompt, each its own
+switch in `PROMPT_BEHAVIORS` (`ask/answer.js`) and run with
+`scripts/eval-ask.js run --behaviors`. With all four off, the prompt is
+byte-identical to step 5's.
+- **Premise check** (`premiseCheck`): when the question assumes
+  something, check the assumption against the sources first, and say so in
+  the first sentence if they don't support it. Target:
+  `scenario-calendar-premise`.
+- **Open items** (`openItems`): when the question asks what is unresolved
+  or still open, list each open question, follow-up or unconfirmed item
+  the sources state, one per item, each cited. Targets:
+  `scenario-care-coordinator-gaps`, `scenario-session-timeout-open`.
+- **Decline with evidence** (`declineWithEvidence`): replaces "say so
+  plainly … and cite nothing". When the sources don't contain what was
+  asked, say so in one sentence, then what they do show on the topic, with
+  citations. Targets: `audit-step3-wireframe`, `audit-burnout-share`.
+- **List format** (`listFormat`): each list item on its own line with its
+  citation at its end, numbered when the items have an order. Target:
+  `audit-onboarding-steps-order`.
+
+Each was run alone against a control, then the ones that helped without a
+net loss were run together. One extra run, not part of the decision, put
+open items together with whole notes at N = 4 (decision 18). After the
+round, one more run was added at the owner's request, beyond the ticket's
+single combined run: decline with evidence and list format together. Its
+rule was set in advance: list format becomes a default only if the pair
+clears the uncited and unsupported counts without a counted regression. One
+round, no tuning: no rule's wording was changed after it was measured.
+
+**Result:** only decline with evidence meets the rule, and it is now on by
+default. The combination is therefore decline with evidence alone, run
+again at the new defaults (`behavior-combined`). Its seeded answers are
+byte-identical to the decline-alone run on all 51 runs.
+- Premise check: no gain, one regression. Off.
+- Open items: no gain, two regressions. Off.
+- Decline with evidence: one gain, no regression. On.
+- List format: no verdict changed, and its target already passed. Off.
+- Decline with evidence + list format (the added run): no counted
+  regression, and it fixes the onboarding steps list. But it doesn't clear
+  the counts (below), so list format stays off.
+
+**What was measured:** gemma2:9b, seed 42, temperature 0.2, 3 seeded and
+3 unseeded runs, corpus 4ba145f (checked before running: agentic-repo-dev
+at that commit, not synced to agentic-repo main), Ollama 0.35.0, both gold
+sets. The control is the current default configuration. Its 51 seeded
+answers are byte-identical to `v1.3.6.37-guard`, so to step 5. The stop
+rule is decision 15's:
+- A seeded pass that turns into a fail counts as a regression only when at
+  least 2 of the entry's 3 unseeded runs also fail.
+- A gain counts only when at least 2 of 3 unseeded runs agree.
+
+No gold entry or answer check was changed. Kept in
+`backend/ask/eval/results/`:
+- `behavior-control[-scenarios]` and `behavior-combined[-scenarios]`, with
+  their before/after reports.
+- `behavior-decline-list[-scenarios]`, the added run, with reports
+  against the control and against `behavior-combined`.
+- `behavior-extra-open-items-whole4[-scenarios]`, with reports against the
+  control and against `v1.3.6.37-whole4`.
+
+The four single-behavior runs (`behavior-premise`, `-open-items`,
+`-decline`, `-list`) and their reports were moved out of the repo and kept
+on the machine that ran them.
+
+Cells are regression / scenario. Unseeded runs are out of 30 / 21. Prompt
+sizes and cold latency are mean / max, regression then scenario.
+
+| | Gold pass | Unseeded passing | Raw cited | Uncited sentences | Unsupported figures | Stacks of 3+ | Prompt chars | Cold latency (s) |
+|---|---|---|---|---|---|---|---|---|
+| Control (step 5) | 6 / 0 | 18 / 1 | 4 / 3 | 0 / 0 | 0 / 0 | 0 / 1 | 4,837 / 7,162; 5,521 / 7,378 | 3.9 / 6.3; 4.6 / 5.4 |
+| Premise check | 5 / 0 | 7 / 0 | 3 / 3 | 0 / 2 | 0 / 1 | 0 / 1 | 5,127 / 7,452; 5,811 / 7,668 | 3.7 / 4.6; 5.2 / 7.2 |
+| Open items | 4 / 0 | 11 / 0 | 3 / 3 | 5 / 2 | 9 / 1 | 0 / 1 | 5,129 / 7,454; 5,813 / 7,670 | 3.9 / 4.9; 4.8 / 6.5 |
+| Decline with evidence | 5 / 0 | 17 / 0 | 5 / 4 | 5 / 2 | 5 / 1 | 1 / 1 | 4,878 / 7,203; 5,562 / 7,419 | 4.1 / 6.3; 5.0 / 6.7 |
+| List format | 6 / 0 | 18 / 1 | 4 / 3 | 0 / 2 | 0 / 1 | 0 / 1 | 4,971 / 7,296; 5,655 / 7,512 | 3.7 / 5.7; 4.7 / 6.3 |
+| **Combined = decline with evidence (new default)** | **5 / 0** | **20 / 0** | 5 / 4 | 5 / 2 | 5 / 1 | 1 / 1 | 4,878 / 7,203; 5,562 / 7,419 | 4.0 / 6.3; 4.9 / 6.4 |
+| Decline with evidence + list format (added run) | 7 / 0 | 18 / 1 | 5 / 4 | 0 / 5 | 5 / 7 | 2 / 1 | 5,012 / 7,337; 5,696 / 7,553 | 4.2 / 7.2; 7.4 / 18.6 |
+| Extra: open items + whole notes N = 4 | 4 / 2 | 16 / 3 | 6 / 6 | 6 / 9 | 5 / 11 | 0 / 0 | 9,888 / 14,600; 12,503 / 14,196 | 7.3 / 17.0; 12.3 / 20.9 |
+| Whole notes N = 4 (decision 18, for the extra run) | 5 / 1 | 15 / 0 | 6 / 5 | 5 / 1 | 1 / 7 | 1 / 0 | 9,596 / 14,308; 12,211 / 13,904 | 7.5 / 13.5; 11.5 / 14.7 |
+
+Entries whose verdict changed in any column, plus the three scenario
+targets. Each cell is the seeded verdict, with unseeded runs passing out of
+3 in brackets:
+
+| Entry | Control | Premise | Open items | Decline | List | Combined | Decline + list | Extra | Whole N = 4 |
+|---|---|---|---|---|---|---|---|---|---|
+| `onboarding-invite-worry` | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | PASS (3) | PASS (3) |
+| `prior-auth-citations` | PASS (3) | PASS (0) | PASS (1) | FAIL (3) | PASS (3) | FAIL (3) | PASS (1) | PASS (3) | PASS (3) |
+| `scribe-sound-alike-names` | PASS (3) | FAIL (0) | FAIL (0) | PASS (0) | PASS (3) | PASS (2) | PASS (2) | FAIL (3) | PASS (2) |
+| `audit-onboarding-steps-order` | PASS (3) | PASS (1) | FAIL (1) | FAIL (2) | PASS (3) | FAIL (3) | PASS (3) | FAIL (0) | FAIL (1) |
+| `audit-step3-wireframe` | PASS (3) | PASS (3) | PASS (3) | PASS (3) | PASS (3) | PASS (3) | PASS (3) | FAIL (0) | FAIL (0) |
+| `audit-session-timeout` | PASS (3) | PASS (0) | PASS (3) | PASS (3) | PASS (3) | PASS (3) | PASS (3) | FAIL (1) | FAIL (0) |
+| `audit-adoption-window` | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | PASS (3) | PASS (3) |
+| `audit-burnout-share` | FAIL (0) | FAIL (0) | FAIL (0) | PASS (3) | FAIL (0) | PASS (3) | PASS (3) | FAIL (0) | FAIL (0) |
+| `scenario-nurses-citations` | FAIL (1) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (1) | FAIL (0) | FAIL (1) | PASS (2) | PASS (0) |
+| `scenario-calendar-premise` | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) |
+| `scenario-care-coordinator-gaps` | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | PASS (1) | FAIL (0) |
+| `scenario-session-timeout-open` | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) | FAIL (0) |
+
+**The new default costs a seeded pass and isn't free on the checks.**
+Decline with evidence passes 5 of 10 seeded against the control's 6: one
+gain and two seeded losses. Neither loss counts under the rule, since both
+entries still pass all 3 unseeded runs in the combined run, and the
+unseeded total rises from 18 of 30 to 20.
+- `prior-auth-citations`: the seeded answer cites the nurses' wish for
+  "show your work" to the synthesis, not the v1 raw session.
+- `audit-onboarding-steps-order`: the seeded answer is the "- Step N" list
+  with one citation at the end, which the checks read as five uncited
+  items with five unsupported figures. All 5 uncited sentences and all 5
+  unsupported figures on the regression set are this one list.
+
+The scenario set's 2 uncited and 1 unsupported come from one quote in
+`scenario-documentation-pain-points` ("I love this job. I do not love
+finishing my notes at 9pm…"): the citation follows the closing quote mark,
+and the checks split the quote at its inner full stop. The same quote gives
+the same counts under premise check and list format, so it's a check
+artefact, not a behavior's.
+
+**Decline with evidence.**
+- `audit-burnout-share` passes, and its unseeded runs agree: "The sources
+  do not contain information about the percentage of clinicians who report
+  burnout. They do show that … 52% of physicians ranking it as the #1
+  self-selected contributor to burnout [1]", cited to the raw survey. The
+  52% was in the prompt at step 5 and went unused. The rule got the model
+  to use it.
+- `audit-step3-wireframe` still passes, now with a useful decline: step 3
+  is "Connect calendar", it's required, and it's the largest drop-off
+  point, each cited. The gold evidence that the only wireframe is step 4's
+  wasn't in the prompt.
+- It also moved `scenario-care-coordinator-gaps`. The answer now cites the
+  chart-review session and says what the data shows: coordinators distrust
+  the AVS summaries and want "what changed since…". It still fails, on its
+  opening decline sentence and the two open items that weren't in the
+  prompt.
+
+**Premise check.** `scenario-calendar-premise` still fails, but the answer
+now opens "The sources do not support making the calendar step required",
+which meets the entry's second claim. It never says the step is already
+required. The flow's "now clearly marked required" wasn't in the prompt.
+The finding's "when it's actually required" was, and the model quoted it
+without drawing the conclusion. The rule made the regression set less
+stable: unseeded passes fell from 18 of 30 to 7.
+
+**Open items.** Alone, it couldn't pass either target, because the open
+items weren't in the prompt:
+- `scenario-care-coordinator-gaps`: the chart-review session was shown
+  only as its Key Findings and Representative Quotes, not its Follow-ups
+  (float-pool coordinators, quantifying the AVS misses). The model still
+  declined: "The sources don't say what hasn't been learned yet."
+- `scenario-session-timeout-open`: the IT Security interview (11th of 97,
+  the 4th raw session) wasn't shown, and the session-lock session's
+  Follow-ups weren't either. The model listed two open items of its own,
+  uncited.
+- On `audit-onboarding-steps-order` the rule ("one per list item") turned
+  the numbered steps into "- Step N" items with one citation at the end.
+  That list is all 5 of its uncited sentences and 5 of its 9 unsupported
+  figures. The other 4 are step numbers in `onboarding-required-steps`,
+  which already failed.
+
+**The extra run: open items with whole notes at N = 4.** It separates
+"the rule doesn't work" from "the open items aren't in view". N = 4 is the
+smallest setting that shows both targets' sessions whole (N = 2 leaves
+the IT Security interview out). Against whole notes at N = 4 alone, open
+items changes two seeded verdicts, and neither counts under the rule.
+`scribe-sound-alike-names` fails seeded but passes all 3 unseeded runs.
+- `scenario-care-coordinator-gaps` passes seeded. The answer lists the
+  session's own follow-ups, each cited to the raw session: "quantify how
+  often the AVS tool has missed medication changes", "revisit with
+  float-pool coordinators specifically", and patient-history signals for
+  the ranking. Only 1 of 3 unseeded runs pass, so it doesn't count as a
+  gain. Two of the others leave out what the data shows, and one of them
+  declines.
+- `scenario-session-timeout-open` still fails, but now cites the IT
+  Security interview and the session-lock Follow-ups ("re-test the
+  abandon-and-redictate behavior once the explicit paused state ships"). It
+  picks the wrong items from the interview: a quote about an AI recording
+  session, not the 15-minute against 4-hour dispute or the badge-tap check.
+- The cost is on the checks. `scenario-calendar-premise` became a list of
+  uncited items (8 uncited, 11 unsupported), and the regression set
+  carries whole notes' own losses (decision 18).
+
+So the rule works when the open items are in view and can't work when
+they aren't. A Follow-ups attachment, which isn't built, would test it
+without whole notes' losses.
+
+**`scribe-sound-alike-names` is fragile.** It flipped from pass to fail
+under premise check and open items, and under whole notes at N = 2
+(decision 18). Each time it was the same change: "5 of 6" was cited to the
+post-GA finding, which repeats it, instead of the raw concept test that
+holds it. The answer was otherwise right, and the entry fails only for not
+citing the required raw session. Under decline with evidence its seeded run
+passed but none of its unseeded runs did. Read its flips as one fragile
+entry reacting to any change in the prompt, not as evidence against each
+change on its own.
+
+**List format.** No verdict changed. On its target the model wrote the
+same numbered list as the control, with one group citation after it, and
+not the per-item citations the rule asks for. It already passes that way.
+
+**The added run: decline with evidence + list format.** Against the
+control, no entry flips from pass to fail. `audit-burnout-share` still
+gains (3 of 3 unseeded), and the seeded regression set passes 7 of 10,
+against 6 for the control and 5 for decline alone. Against decline alone,
+`audit-onboarding-steps-order` comes back. That gain counts, with 3 of 3
+unseeded runs agreeing: the steps are a numbered list again, with a group
+citation after it, instead of "- Step N" items. List format still stays
+off, because the pair doesn't clear the counts. It moves them and adds new
+ones:
+- **Regression set:** uncited sentences go from 5 (decline alone) to 0,
+  but unsupported figures stay at 5. They moved to
+  `onboarding-required-steps`, which already failed: "Steps 1, 2, 4, 5,
+  and 6 are not explicitly stated as required or optional in the provided
+  sources." It's a decline that cites nothing, so the checks look for its
+  figures in the question, which has none of them. Stacks of 3+ go from 1
+  to 2.
+- **Scenario set:** uncited sentences go from 2 to 5, and unsupported
+  figures from 1 to 7. Most of it is `scenario-care-coordinator-gaps`. It
+  now writes a long answer with three quotes, which the checks split at
+  their inner full stops, plus figures like "6.5 min" and "4 of 5". That
+  one answer is also the 18.6 s cold latency. It now names the float-pool
+  coordinator, but still declines first and misses the AVS open item.
+- **One unstable pass:** `prior-auth-citations` passes seeded, but only 1
+  of its 3 unseeded runs passes, against 3 of 3 for the control.
+
+**Consequence:** the system prompt has changed. The public demo's captured
+answers (`ask/static/answers.json`) were made with the old decline rule
+and should be recaptured before the next release that ships this
+(backend/README.md, "Static mode"). That isn't done here.
+
+**Not tried** (one round, no rewording):
+- Premise check and open items with different wording.
+- Open items with only the Follow-ups section attached.
