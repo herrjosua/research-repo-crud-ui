@@ -168,7 +168,9 @@ function createAskPipeline({
             // Flags only: the answer is returned as the model wrote it
             // (ask/checks.js). `text` rather than the fallback message, which
             // the model didn't write.
-            checks: { retried: false, ...checkAnswer(text, sources, question) },
+            // `ranked` as sources too: an uncited decline may repeat
+            // figures from anything the prompt showed.
+            checks: { retried: false, ...checkAnswer(text, sources, question, ranked.map((r) => toSource(r, project))) },
             raw,
             ranked,
             promptChars: messages.reduce((n, m) => n + m.content.length, 0),

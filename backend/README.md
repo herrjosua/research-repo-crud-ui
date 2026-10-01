@@ -332,17 +332,26 @@ report says how many are still drafts.
 - every sentence has a citation, except declines, list intros ending in
   ":", and list items cited as a group (a marker line after the list, or a
   cited intro; a list whose one citation is on its last item still leaves
-  the items above it uncited). A decline is "the sources don't say…", or any
-  sentence with "not", "cannot" or "no" and the word "sources" ("The
-  question cannot be answered from the provided sources."). Markers after a
-  sentence's full stop belong to it ("…sessions. [1]"), unless a lowercase
-  word follows them, when they open the next sentence ("…. [1] mentions
-  that…");
+  the items above it uncited). A decline is "the sources don't say…", or a
+  sentence with "not", "cannot" or "no" within 80 characters of the word
+  "sources" ("The question cannot be answered from the provided sources.");
+  a claim that mentions "sources" further from its negation isn't one.
+  Markers after a sentence's full stop belong to it ("…sessions. [1]"),
+  unless a lowercase word follows them, when they open the next sentence
+  ("…. [1] mentions that…"). A quotation in straight or curly double quotes
+  is never split at its own full stops, and a sentence can end at its
+  closing mark when a capital or another quote follows;
 - every figure and "N of M" count appears in the sources *that sentence*
   cites, not just somewhere in the answer. A cited source's title and
   section count as well as its excerpt, since the model is shown all three
   ("Participant in session 1…" citing a source under "Session 1 — Jan 19" is
-  supported). A decline may repeat the question's own figures;
+  supported), and so does the date its label shows: "April 8, 2025",
+  "2025-04-08", "04/08/2025", "April 8th" or "April 2025" citing a source
+  dated Apr 8, 2025 is supported. A date is matched as a date, so its
+  digits never support anything else, and a time is always a figure (labels
+  carry none). A decline that cites nothing may repeat figures from the
+  question or from any source the prompt showed ("Steps 1, 2, 4, 5 and 6
+  are not labeled … in the sources", with the onboarding flow shown);
 - it cites at least one supporting record, and the required raw session if
   there is one. On an `acceptDecline` entry, an answer that only declines and
   cites nothing is excused from the supporting-record rule, and only that one:
@@ -352,8 +361,27 @@ report says how many are still drafts.
 The first two rules (and the stack count below) are `ask/checks.js`, the same
 checks the live route reports as `checks` (see [Ask the
 Repo](#ask-the-repo-v136)); the capture script's figure flag uses its figure
-rule too. They're pure functions of the answer, its sources and the question,
-so `report` re-applies them to stored runs.
+rule too (without label dates). Every rule reads the answer with a narrow
+no-break space (U+202F) as a space and a non-breaking hyphen (U+2011) as a
+hyphen, which gpt-oss:20b writes; so do the claim patterns. They're pure
+functions of the answer, its sources, the question and the sources the
+prompt showed, so `report` re-applies them to stored runs.
+
+A stored run keeps its cited sources' text but not their label dates, and
+of the shown passages only their ids. `report`, `compare` and `run` read
+both from `ask/eval/prompt-sources/<corpus commit>.json`, which
+`node scripts/eval-ask.js prompt-sources` builds from the corpus checkout
+(read only) for every stored result at its commit, and `run` extends.
+Each corpus commit has its own file: a run at a new commit creates it, and
+it must be committed with that run's results. Results whose commit has no
+file can't be reported until `prompt-sources` is run with
+`AGENTIC_REPO_ROOT` checked out at that commit. `prompt-sources` checks the
+rebuild against each run's stored cited excerpts and prompt
+size: at 4ba145f every cited excerpt and every stored prompt size
+matched. Runs stored before passage ids were (`baseline`,
+`v1.3.6.7-checks`) get their shown records' labels and roster lines
+only. Stored runs themselves are never rewritten. The checks
+changes and what they moved are [decision 20](../docs/decisions.md).
 
 Per question, the report shows the records shown to the model and where the
 first raw session ranks among all in-scope records (ranked by the pipeline's
@@ -471,6 +499,12 @@ per second. Its peak memory was 12.0 GiB.
   - no verdict changed.
 - **Not run:** medium, its default level.
 
+Re-run under the decision 20 checks and the current default prompt
+(`checks-gpt-oss-20b-low[-scenarios]`, compared with the gemma2 control in
+`checks-model-comparison.md`), it still passes 0 / 0, against gemma2's
+5 / 0, with four counted regressions. It loses on citation placement, as
+before.
+
 For a production deployment, see
 [`.env.production.example`](./.env.production.example) instead — it covers
 the additional settings (`ALLOWED_HOSTS`, `TRUST_PROXY`, `HTTPS_REDIRECT`,
@@ -576,7 +610,10 @@ covers, not a count to keep in sync:
 - **`tests/askChecks.test.js`** — `ask/checks.js` on answers the corpus
   audit and the baselines logged as wrong: invented figures, an uncited
   claim, a citation stack, a group-cited list, a decline repeating the
-  question's figure, and a figure found only in a source's title or section.
+  question's figure, a figure found only in a source's title or section,
+  label dates, the 80-character decline window, quotations, an uncited
+  decline's figures from the shown sources, and gpt-oss's U+202F and
+  U+2011.
 - **`tests/ask.unit.test.js`** — cosine similarity, ranking, the embedding
   cache, chunking, kind/date mapping, the plain-text sanitizer, and
   citation parsing.
@@ -852,13 +889,15 @@ record has the tag, the answer says so and the model isn't called.)
   by (see [Evaluating answers](#evaluating-answers-scriptseval-askjs)):
   - `retried`: always `false` for now; nothing is regenerated.
   - `uncited`: sentences that need a citation and have none. Declines ("the
-    sources don't say…", or "not", "cannot" or "no" with the word
-    "sources"), list intros ending in ":" and list items cited as a group are
-    exempt.
+    sources don't say…", or "not", "cannot" or "no" within 80 characters of
+    the word "sources"), list intros ending in ":" and list items cited as
+    a group are exempt. A quotation isn't split at its own full stops.
   - `unsupportedFigures`: numbers and "N of M" counts (as `"3 of 5"`) that
-    the sources *their own sentence* cites don't contain, in title, section
-    or excerpt; one entry per sentence a figure appears in. A decline may
-    repeat the question's figures.
+    the sources *their own sentence* cites don't contain, in title, section,
+    excerpt or label date ("April 8th" citing a source dated Apr 8, 2025);
+    one entry per sentence a figure appears in. An uncited decline may
+    repeat figures from the question or from any source the model was
+    shown.
   - `stacked`: sentences citing three or more distinct sources.
 
   Each list is `[]` when there's nothing to flag, including when the model

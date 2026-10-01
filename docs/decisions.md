@@ -922,3 +922,311 @@ and should be recaptured before the next release that ships this
 **Not tried** (one round, no rewording):
 - Premise check and open items with different wording.
 - Open items with only the Follow-ups section attached.
+
+## 20. Answer-check changes; list format stays off; gpt-oss:20b re-run (v1.3.6.39)
+
+**Date:** 2026-10-01. **Status:** Active for the five checks changes. List
+format was retested and stays off by default. Ticket RR-148. Follows
+decisions 15 (RR-103) and 19 (RR-144).
+
+**Decision:** `ask/checks.js` gets five changes, each with unit fixtures
+(`tests/askChecks.test.js`):
+1. **Label dates.** A source's date, as its label in the prompt shows it
+   ("Apr 8, 2025"), is evidence for a figure. The answer may write it as
+   2025-04-08, 04/08/2025, "April 8, 2025", "April 8th" or "April 2025". The
+   mention is parsed and matched as a date, then taken out before figures are
+   counted. A stray "04" or "08" is still a figure. Labels carry no time, so
+   a time is always a figure. The label and prompt are unchanged.
+2. **Decline window.** The "negation and the word *sources*" decline now
+   needs the two within 80 characters of each other. `DECLINE_RE` ("the
+   sources do not say…") is unchanged.
+3. **Quotations.** A span in straight or curly double quotes is never split
+   at its own full stops. A sentence can end at a closing quote mark when a
+   capital or another quote follows, so a quote can also end mid-sentence
+   ('"do I have to do this?" before proceeding').
+4. **Uncited declines.** A decline that cites nothing may repeat figures
+   from the question or from any source the prompt showed, not only the
+   question. The live route passes its shown passages.
+5. **Odd characters.** U+202F (narrow no-break space) is read as a space
+   and U+2011 (non-breaking hyphen) as a hyphen before anything is judged,
+   claim patterns included.
+
+No gold entry was edited. No check other than these five was changed.
+
+**How stored runs are re-judged.** A stored run keeps its cited excerpts,
+but not their label dates, and of the shown passages only their ids. The
+harness's new `prompt-sources` command rebuilds both, read-only, from the
+corpus at the results' commit into
+`ask/eval/prompt-sources/<commit>.json`. `report`, `compare` and `run` read
+that file, and stored runs are never rewritten. At 4ba145f, every stored
+cited excerpt matched the rebuild. So did every stored prompt size: 1,326 of
+1,326 runs, rebuilt with each run's prompt behaviors. So the dates the
+checks credit are the ones the model saw. `baseline` and `v1.3.6.7-checks`
+predate passage ids, so change 4 gets only their shown records' labels.
+
+**What the checks changes moved** (`checks-rejudge.md`). All 30 stored
+result sets were re-judged: 1,530 runs, the baselines and the bake-off
+included. The JSON files are unchanged and all 1,530 answers are
+byte-identical. Each change was turned off on its own to attribute every
+moved count. With all five off, the new code reproduces every old verdict
+and count exactly.
+
+| Result set | Gold pass | Unseeded passing | Uncited | Unsupported | By |
+|---|---|---|---|---|---|
+| `model-gemma3-27b` | 3 → **6** of 10 | 10 → 13 of 30 | 2 → 1 | 11 → 6 | 1 (one entry 1 and 3) |
+| `model-gemma3-27b-scenarios` | 0 → **1** of 7 | 3 of 21 | 3 → 0 | 7 → 2 | 1, 3 |
+| `model-qwen3-32b` | 3 | 7 | 15 → 14 | 8 → 7 | 3 (unseeded runs also 1, 4) |
+| `model-qwen3-32b-scenarios` | 0 | 0 → 1 | 11 → 9 | 0 | 3 |
+| `behavior-decline-list` | 7 | 18 | 0 | 5 → 0 | 4 |
+| `behavior-decline-list-scenarios` | 0 | 1 | 5 → 1 | 7 → 5 | 3 |
+| `behavior-combined-scenarios` | 0 | 0 | 2 → 0 | 1 → 0 | 3 |
+| `v1.3.6.37-whole4-scenarios` | 1 | 0 → 1 | 1 | 7 | 1 |
+
+Counts are the first seeded run's, as the reports give them. Per entry:
+
+- **Change 1, label dates.** gemma3:27b's dates flip four seeded verdicts:
+  `audit-session-timeout`, `audit-ai-readiness`,
+  `scenario-nurses-citations` and, with change 3, `prior-auth-citations`.
+  Two of those gains count under the stop rule:
+  - `audit-ai-readiness`: 2 of 3 unseeded runs pass.
+  - `scenario-nurses-citations`: 3 of 3.
+  - `audit-session-timeout` (1 of 3) and `prior-auth-citations` (1 of 3)
+    don't count.
+
+  Decision 16's scratch re-judge predicted 5 of 10 and 1 of 7. The real
+  change gives 6 of 10 because `prior-auth-citations` also needed the quote
+  fix. Under these checks gemma3:27b's 6 of 10 on the regression set equals
+  step 5's gemma2:9b, and is one ahead of today's default (5 of 10, below).
+  It also leads on the scenario set (1 of 7 against 0). It's still 4–6
+  times slower at 2.7 times the memory, and two of its four regression
+  gains don't count. Decision 16 still stands.
+- **Change 3, quotations.** It clears the RR-144 quote artefact: "I love
+  this job. I do not love finishing my notes at 9pm…". That fragment was
+  2 uncited and 1 unsupported in every gemma2 run that quoted it (step 5,
+  v1.3.6.37, behavior control, combined, decline + list, in seeded and
+  unseeded runs).
+- **Change 4, uncited declines.** It clears `onboarding-required-steps` in
+  `behavior-decline-list` (5 → 0 unsupported, every seeded run). "Steps 1,
+  2, 4, 5, and 6" are all in the onboarding flow the prompt showed.
+- **Changes 2 and 5** move no verdict and no count.
+  - Change 2: every stored decline the negation rule counts has its
+    negation within 60 characters of "sources". Of the two
+    `onboarding-required-steps` sentences, the "…not explicitly labeled as
+    required or optional in the provided sources" one (`behavior-combined`
+    and `behavior-decline-list` unseeded) is 60 characters apart. The
+    "…stated…" one (`behavior-decline-list` seeded) is 59. Both still
+    count. The "far from its negation" fixture is made up: no stored
+    answer has one.
+  - Change 5 moves only failure reasons. gpt-oss:20b's "34 % of
+    non‑clinical staff" (with U+2011) now meets `audit-ai-readiness`'s
+    claim. "10 minutes" meets `audit-session-timeout`'s on one unseeded
+    run. Those runs still fail on uncited sentences.
+
+  Other odd characters in the stored answers: none. Every other non-ASCII
+  character is an en or em dash or a curly quote.
+- gemma2:9b's seeded verdicts don't move in any set.
+
+**Retest: decline with evidence + list format.** Same rules as decision 19
+(gemma2:9b, seed 42, temperature 0.2, 3 seeded + 3 unseeded runs, corpus
+4ba145f, Ollama 0.35.0), both under the new checks. The control is the
+current default (decline with evidence on, the rest off): `checks-control`
+and `-scenarios`. The test adds list format (`--behaviors
+decline-with-evidence,list-format`): `checks-decline-list` and
+`-scenarios`. All 51 seeded answers in both are byte-identical to decision
+19's `behavior-combined` and `behavior-decline-list`. Only the checks and
+the unseeded draws differ. Cells are regression / scenario.
+
+| | Control | Decline + list format |
+|---|---|---|
+| Gold pass | 5 / 0 | **7 / 0** |
+| Unseeded passing (of 30 / 21) | 15 / 1 | 19 / 1 |
+| Raw session cited | 5 / 4 | 5 / 4 |
+| Uncited sentences | 5 / 0 | 0 / 1 |
+| Unsupported figures | 5 / 0 | 0 / 5 |
+| Stacks of 3+ | 1 / 1 | 2 / 1 |
+| Prompt chars, mean / max | 4,878 / 7,203; 5,562 / 7,419 | 5,012 / 7,337; 5,696 / 7,553 |
+| Cold latency (s), mean / max | 4.4 / 6.7; 5.9 / 7.3 | 4.5 / 8.5; 6.6 / 14.0 |
+
+Per entry (seeded verdict, unseeded passing of 3), every entry that differs:
+
+| Entry | Control | Decline + list | Stop rule |
+|---|---|---|---|
+| `prior-auth-citations` | FAIL (2) | PASS (3) | gain, counts |
+| `audit-onboarding-steps-order` | FAIL (1) | PASS (3) | gain, counts |
+| `scribe-sound-alike-names` | PASS (3) | PASS (2) | no flip |
+| `audit-step3-wireframe` | PASS (2) | PASS (3) | no flip |
+| `audit-burnout-share` | PASS (1) | PASS (2) | no flip |
+| `scenario-care-coordinator-gaps` | FAIL (0), 0 uncited, 0 unsupported | FAIL (0), 1 uncited, 5 unsupported | no flip |
+
+No regression on either set. Every other entry has the same verdict and
+unseeded count in both.
+
+**List format stays off.** The rule set in decision 19 still decides it:
+list format becomes a default only if the pair clears the uncited and
+unsupported counts without a counted regression. The regression set now
+clears both (5 → 0 and 5 → 0), with two counted gains and no counted
+regression. The scenario set doesn't clear them: uncited 0 → 1, unsupported
+0 → 5. All six come from one answer, `scenario-care-coordinator-gaps`, and
+from two check problems this decision records but doesn't fix (below):
+- "(6.5 min vs. 9 min…)" splits at "vs.".
+- The model puts each item's citation before it ("… P05 [3] The triage
+  ranking…"), so every citation is credited to the item before.
+
+That answer fails on its claims either way: it opens with a decline and
+misses the AVS open item. If those two problems are fixed, `report` can
+re-judge these runs with no re-run, and the rule may be met. List format
+stays off under the rule as written: the checks were not changed to
+unblock it. Fixing these two problems is the follow-up, RR-149 (checks
+round 2), which re-judges the stored runs and re-decides list format. The
+scenario cold-latency maximum is also that answer: 14.0 s against 7.3.
+
+**Why the default reads 5 of 10 where step 5 read 6.** From the stored
+runs only:
+- The checks aren't the cause. Step 5 re-judged under the new checks reads
+  6 of 10 with 17 unseeded passes, the same as under the old checks.
+- The prompt is. All 10 of `checks-control`'s seeded regression answers are
+  byte-identical to RR-144's decline-with-evidence runs (`behavior-decline`,
+  moved out of the repo, see below, and `behavior-combined`). All 10 of
+  `behavior-control`'s are byte-identical to step 5's, so the Ollama
+  upgrade (0.34.3 to 0.35.0) changed none of them.
+
+Three entries moved:
+- `prior-auth-citations`, PASS → FAIL: it cites the synthesis finding and
+  the v2 session (2025-11-04) instead of the v1 session.
+- `audit-onboarding-steps-order`, PASS → FAIL: the steps are written as
+  "- Step N" bullets with one citation at the end, 5 uncited sentences.
+- `audit-burnout-share`, FAIL → PASS: it declines, then gives the cited 52%
+  of physicians.
+
+**A correction to decision 19's reasoning** (decision 19 is left as
+written). Decision 19 held that neither seeded loss counts as a regression,
+because both entries still passed 3 of 3 unseeded runs in the combined run.
+In `checks-control`, `audit-onboarding-steps-order` passes 1 of 3 unseeded
+runs. Across the three runs of the same setup it passes 2, 3 and 1
+(`behavior-decline`, `behavior-combined`, `checks-control`).
+(`behavior-decline` was moved out of the repo under decision 19's pruning
+and was re-judged from a local copy. `behavior-combined`, which is in the
+repo and is the same setup as decline alone, passes it 3 of 3 unseeded: the
+other end of the range.) At 1 of 3 it
+meets the stop rule's test for a counted regression against step 5.
+Whether decline with evidence alone stays the default is left to the
+re-decision in checks round 2 (RR-149). It isn't decided here.
+
+**gpt-oss:20b re-run.** `--model gpt-oss:20b --think low` on the current
+default configuration (`checks-gpt-oss-20b-low` and `-scenarios`): digest
+17052f91a42e, Ollama 0.35.0. It ran next to the gemma2:9b control above,
+same machine, same checks, compared in `checks-model-comparison.md`.
+Decision 16's run (`model-gpt-oss-20b-low`) is re-judged under the new
+checks for reference. Its prompt lacked decline with evidence, so it's
+41 characters shorter per question, and none of its first seeded answers
+match this run's.
+
+| | gemma2:9b (control) | gpt-oss:20b, low | gpt-oss:20b, decision 16's run |
+|---|---|---|---|
+| Gold pass | **5 / 0** | 0 / 0 | 0 / 0 |
+| Unseeded passing (of 30 / 21) | 15 / 1 | 2 / 0 | 3 / 0 |
+| Raw session cited | 5 / 4 | 4 / 6 | 3 / 4 |
+| Uncited sentences | 5 / 0 | 32 / 14 | 24 / 23 |
+| Unsupported figures | 5 / 0 | 17 / 8 | 33 / 15 |
+| Stacks of 3+ | 1 / 1 | 2 / 2 | 1 / 0 |
+| Cold latency (s), mean / max | 4.4 / 6.7; 5.9 / 7.3 | 5.2 / 12.3; 5.5 / 7.3 | 3.9 / 9.5; 5.8 / 11.3 |
+| Tokens per second, cold run, mean | 38.5; 32.4 | 47.4; 51.3 | 60.1 (regression) |
+| Answer length, mean words | 38; 57 | 84; 152 | 69 (regression) |
+| Peak model memory | 6.1 GiB | 12.0 GiB | 12.0 GiB |
+| Wall time, both sets | 4.8 min | 7.1 min | 5.6 min |
+
+Against the gemma2 control, per entry, judged on gpt-oss's unseeded runs as
+its seeds don't fully reproduce:
+- **Counted regressions (4):** `scribe-sound-alike-names`,
+  `audit-session-timeout`, `audit-burnout-share` and `audit-ai-readiness`.
+  Each passes seeded on gemma2 and fails seeded and 3 of 3 unseeded on
+  gpt-oss.
+- **Not counted:** `audit-step3-wireframe` fails seeded but passes 2 of 3
+  unseeded.
+- **Gains:** none. No scenario verdict changes.
+
+What gpt-oss showed:
+- **The checks changes don't rescue it.** It writes label dates and
+  U+202F/U+2011 (now accepted), but it loses on citation placement, as in
+  decision 16:
+  - Three answers cite nothing: `onboarding-invite-worry`,
+    `audit-onboarding-steps-order`, `audit-adoption-window`.
+  - Six put every marker after a paragraph's last sentence, or on a line
+    of their own.
+  - `audit-ai-readiness` has the right figures, with "34 %" and "71 %"
+    and the claims met. It fails on one uncited lead sentence.
+- **Decline with evidence changed its declines.**
+  - `audit-burnout-share` now says what the data shows (52% of physicians,
+    cited). It fails on "The surveys do not report an overall burnout
+    rate", which neither decline rule reads as a decline (below).
+  - `audit-step3-wireframe` now declines and then explains. It fails on an
+    uncited bridge sentence ("They do, however, describe step 3's role…")
+    that repeats the question's "3".
+- **Seeds reproduce less often.** Within a run, 13 of 17 questions gave
+  three identical seeded answers, against 15 of 17 in decision 16. The
+  four that didn't are `prior-auth-citations`,
+  `scenario-scribe-trust`, `scenario-calendar-premise` and
+  `scenario-care-coordinator-gaps`. Their seeded verdicts didn't depend on
+  which answer was judged: all fail. gpt-oss returned thinking text on
+  every run (102 of 102), none of it in an answer.
+- **Speed.** It is slower than decision 16's run: 47 and 51 tokens per
+  second against 60. Its regression cold mean is 5.2 s against 3.9, with
+  longer answers (84 words against 69). The machine was a little slower
+  too: the gemma2 control ran at 38.5 tokens per second against 40.9 in
+  decision 16, and 4.4 s cold against 4.0 for the same configuration in
+  decision 19. Against this gemma2 control, gpt-oss is now slower on the
+  regression set (5.2 s cold against 4.4) and slightly faster on the
+  scenario set (5.5 against 5.9).
+
+gemma2:9b stays the chat model (decision 16 stands).
+
+**The control's unseeded runs vary.** Its seeded answers are byte-identical
+to decision 19's `behavior-combined`, yet 15 of 30 unseeded regression runs
+pass, against 20 there. `audit-burnout-share`'s gain under decline with
+evidence was counted in decision 19 on 3 of 3 unseeded runs. Here it passes
+1 of 3 under the control and 2 of 3 under decline + list.
+`audit-onboarding-steps-order` passed 3 of 3 unseeded in
+`behavior-combined` and passes 1 of 3 here (above). With 3 unseeded
+runs, one entry's count moves by 1–2 between identical configurations, so
+the stop rule's 2-of-3 threshold sits inside that noise.
+
+**Check problems found and not fixed** (no check other than the five was
+changed):
+- **Abbreviations end sentences.** "vs." and "avg." split a sentence
+  ("It was faster (6.5 min vs." becomes an uncited sentence with an
+  unsupported "6.5"). Seen in `scenario-care-coordinator-gaps` and
+  `scenario-documentation-pain-points`.
+- **Leading markers before a capital** are credited to the sentence
+  before ("…P05 [3] The triage ranking…"). When a model cites at the start
+  of each item, every citation moves back one sentence, and "P05" is
+  flagged as "05".
+- **Declines without the word "sources."** "The surveys do not report an
+  overall burnout rate" (gpt-oss, `audit-burnout-share`) is read as an
+  uncited claim. `DECLINE_RE`'s nouns don't include "surveys", and the
+  negation rule needs "sources".
+- **A marker line after a paragraph** ("[1][2][3]" on its own line) joins
+  only the paragraph's last sentence (gpt-oss, `audit-session-timeout`).
+- **Month-and-year dates match loosely.** A month-and-year mention matches
+  any cited source dated that month: gemma3's "the November 2025 testing",
+  cited to a deliverable dated Nov 20, 2025, while the test was Nov 4.
+  That's the "April 2025" form as asked.
+- **Single curly quotes** (‘…’) aren't treated as quotation marks, since
+  ’ is also an apostrophe. gemma3 writes ‘ 6 times in the stored runs.
+- **The capture script's figure flag**
+  (`scripts/capture-static-answers.js`) uses the figure rule without label
+  dates or shown sources, so its review can flag a date the harness now
+  accepts.
+
+**Still not done:** recapturing the public demo's saved answers
+(`ask/static/answers.json`), as in decision 19.
+
+**Kept in `backend/ask/eval/results/`:**
+- `checks-rejudge.md`.
+- `checks-control[-scenarios]` and `checks-decline-list[-scenarios]`,
+  with `checks-control-vs-checks-decline-list` and
+  `checks-control-scenarios-vs-checks-decline-list-scenarios`.
+- `checks-gpt-oss-20b-low[-scenarios]` and `checks-model-comparison.md`.
+
+All of these are final runs. No intermediate runs were made, so nothing was
+moved out. The reports stored before this decision are left as written,
+under the checks of their time. `report` re-judges any of them under these.

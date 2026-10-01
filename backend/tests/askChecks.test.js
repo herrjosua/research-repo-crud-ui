@@ -1,4 +1,6 @@
-const { checkAnswer, analyseAnswer } = require('../ask/checks');
+const {
+    checkAnswer, analyseAnswer, negationSourcesGap, normalizeText, DECLINE_WINDOW,
+} = require('../ask/checks');
 
 // ask/checks.js, on answers the corpus audit logged as wrong (and the
 // harness baselines), with the sources as the pipeline cites them. The
@@ -182,5 +184,160 @@ describe('checkAnswer', () => {
 
     it('still catches a right number in the wrong count', () => {
         expect(checkAnswer('3 of 3 tried to skip step 3 [1].', [TOPLINE]).unsupportedFigures).toEqual(['3 of 3']);
+    });
+
+    // RR checks changes (docs/decisions.md, 20). Fixtures are verbatim from
+    // the stored runs in ask/eval/results/ unless they say otherwise.
+    describe('a source’s label date counts as evidence (change 1)', () => {
+        const NURSES_V1 = {
+            ...source('raw:2025-04-08-usability-test-prior-auth-ai-v1', 'Usability Test — Prior Auth AI v1', 'Key Findings', '4 utilization review nurses and 1 supervisor took part.'),
+            date: 'Apr 8, 2025',
+        };
+        const PULSE = { ...AI_READINESS, date: 'Dec 2, 2025' };
+
+        it.each([
+            'The usability test on 2025-04-08 had 4 utilization review nurses [1].',
+            'The usability test on 04/08/2025 had 4 utilization review nurses [1].',
+            'The usability test on 4/8/2025 had 4 utilization review nurses [1].',
+            'The usability test on April 8, 2025 had 4 utilization review nurses [1].',
+            'The usability test on Apr 8, 2025 had 4 utilization review nurses [1].',
+            'The April 8th usability test had 4 utilization review nurses [1].',
+            'The usability test in April 2025 had 4 utilization review nurses [1].',
+        ])('accepts the label date written as in: %s', (answer) => {
+            expect(checkAnswer(answer, [NURSES_V1])).toEqual(CLEAN);
+        });
+
+        it('accepts the real gemma3:27b sentences', () => {
+            expect(checkAnswer('This feature was directly added in response to a finding from the April 8th usability test with 4 utilization review nurses [1].', [NURSES_V1])).toEqual(CLEAN);
+            expect(checkAnswer('According to a December 2025 survey, 71% of clinical staff reported awareness of Compass AI initiatives [1].', [PULSE])).toEqual(CLEAN);
+        });
+
+        it('matches the parsed date, not its digits', () => {
+            expect(checkAnswer('The usability test on April 9, 2025 had 4 nurses [1].', [NURSES_V1]).unsupportedFigures).toEqual(['9', '2025']);
+            expect(checkAnswer('The usability test in March 2025 had 4 nurses [1].', [NURSES_V1]).unsupportedFigures).toEqual(['2025']);
+            // Day and month swapped: not the label date, so judged as before
+            // (the "N/M" count rule reads "08/04" as a count, too).
+            expect(checkAnswer('The usability test on 08/04/2025 had 4 nurses [1].', [NURSES_V1]).unsupportedFigures).toEqual(['08', '04', '2025', '08 of 04']);
+            // A stray "04" or "08" is a figure, never evidence from the date.
+            expect(checkAnswer('Sessions 04 and 08 ran long [1].', [NURSES_V1]).unsupportedFigures).toEqual(['04', '08']);
+        });
+
+        it('only counts the dates of the sources the sentence cites', () => {
+            expect(checkAnswer('The test on April 8, 2025 found the awareness gap [1].', [PULSE, NURSES_V1]).unsupportedFigures).toEqual(['8', '2025']);
+            expect(checkAnswer('The test on April 8, 2025 found the awareness gap [1].', [{ ...NURSES_V1, date: null }]).unsupportedFigures).toEqual(['8', '2025']);
+        });
+
+        it('never counts a time, since labels carry none', () => {
+            expect(checkAnswer('The test on April 8, 2025 at 9:30 had 4 nurses [1].', [NURSES_V1]).unsupportedFigures).toEqual(['9', '30']);
+        });
+    });
+
+    describe('a decline needs its negation within 80 characters of "sources" (change 2)', () => {
+        // The stored onboarding-required-steps sentences: the "labeled" one
+        // (behavior-combined and behavior-decline-list unseeded runs) and
+        // the "stated" one (behavior-decline-list seeded).
+        it.each([
+            ['Steps 1, 2, 4, 5, and 6 are not explicitly labeled as required or optional in the provided sources.', 60],
+            ['Steps 1, 2, 4, 5, and 6 are not explicitly stated as required or optional in the provided sources.', 59],
+            ['The question cannot be answered from the provided sources.', 31],
+        ])('still counts %s (gap %i)', (sentence, gap) => {
+            expect(negationSourcesGap(sentence)).toBe(gap);
+            expect(gap).toBeLessThanOrEqual(DECLINE_WINDOW);
+            expect(analyseAnswer(sentence, [])[0].exempt).toBe('decline');
+        });
+
+        it('no longer excuses a claim that mentions "sources" far from its negation', () => {
+            const sentence = 'Participants did not finish the calendar step, and the readout, which pulls together all six onboarding sessions, the funnel export and both survey sources, recommends a clearer label.';
+            expect(negationSourcesGap(sentence)).toBeGreaterThan(DECLINE_WINDOW);
+            expect(analyseAnswer(sentence, [])[0].exempt).toBeNull();
+            expect(checkAnswer(sentence, []).uncited).toEqual([sentence]);
+        });
+    });
+
+    describe('a quotation stays in its sentence (change 3)', () => {
+        const SURVEY_QUOTES = source(
+            'raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline',
+            'Survey — Clinician Burnout & Documentation Burden Baseline',
+            'Representative Quotes',
+            '"I love this job. I do not love finishing my notes at 9pm after my kids are in bed. If AI fixes that, I\'m in." — Physician, P84',
+        );
+
+        it('keeps a straight-quoted span with its citation (scenario-documentation-pain-points, behavior-decline-list)', () => {
+            const answer = '64% of physician respondents report regularly completing documentation after clinic hours [1]. "I love this job. I do not love finishing my notes at 9pm after my kids are in bed. If AI fixes that, I\'m in." — Physician, P84 [2].';
+            const sentences = analyseAnswer(answer, [{ ...BURNOUT_SURVEY, excerpt: '64% of physician respondents report regularly completing documentation after clinic hours.' }, SURVEY_QUOTES]);
+            expect(sentences.map((x) => x.cites)).toEqual([[1], [2]]);
+            expect(sentences[1].text).toBe('"I love this job. I do not love finishing my notes at 9pm after my kids are in bed. If AI fixes that, I\'m in." — Physician, P84.');
+            expect(sentences.flatMap((x) => x.unsupported)).toEqual([]);
+        });
+
+        it('keeps a quote introduced mid-sentence (behavior-combined)', () => {
+            const answer = 'A physician participant stated, "I love this job. I do not love finishing my notes at 9pm after my kids are in bed. If AI fixes that, I\'m in." [1].';
+            expect(checkAnswer(answer, [SURVEY_QUOTES])).toEqual(CLEAN);
+        });
+
+        it('keeps curly quotes together too', () => {
+            const answer = 'One supervisor said, “This is what I wanted in April. It shows its work.” [1]';
+            expect(analyseAnswer(answer, [SURVEY_QUOTES]).map((x) => x.text)).toEqual(['One supervisor said, “This is what I wanted in April. It shows its work.”']);
+        });
+
+        it('ends a sentence at a closing quote only before a capital or another quote', () => {
+            const ended = analyseAnswer('He said "it was slow." The readout agreed [1].', [READOUT]);
+            expect(ended.map((x) => x.text)).toEqual(['He said "it was slow."', 'The readout agreed.']);
+            const continued = analyseAnswer('Participant in session 1 paused at step 3 and said "wait, do I have to do this?" before proceeding [1].', [SESSION_2]);
+            expect(continued).toHaveLength(1);
+        });
+
+        // scenario-care-coordinator-gaps, behavior-decline-list seeded: the
+        // quotes no longer split, which clears two uncited fragments and the
+        // P03 quote; "6.5 min vs." still splits at the abbreviation, which
+        // isn't a quote (docs/decisions.md, 20: not fixed here).
+        it('fixes the care-coordinator quotes but not the "vs." split', () => {
+            const answer = '[1] Coordinators distrust the AVS tool. [2] "I don\'t trust the summary the system spits out. I\'ve been burned by it missing a med change, so now I just re-check everything myself, which kind of defeats the point." — Care Coordinator, P03 [3] The triage ranking works, but not for the reason initially expected. It was faster (6.5 min vs. 9 min to clear a 20-item queue), but 4 of 5 participants disagreed with at least one ranking decision. [4] "It\'s fast, I\'ll give it that. But fast and wrong is worse than slow and right in this job." — Care Coordinator Supervisor, P79';
+            const texts = analyseAnswer(answer, [READOUT, READOUT, READOUT, READOUT]).map((x) => x.text);
+            expect(texts.some((t) => t.startsWith('"I don\'t trust the summary the system spits out. I\'ve been burned'))).toBe(true);
+            expect(texts.some((t) => t.startsWith('"It\'s fast, I\'ll give it that. But fast and wrong'))).toBe(true);
+            expect(texts).toContain('It was faster (6.5 min vs.');
+            expect(texts.some((t) => t.startsWith('9 min to clear a 20-item queue), but 4 of 5'))).toBe(true);
+        });
+    });
+
+    describe('an uncited decline’s figures may come from the shown sources (change 4)', () => {
+        const FLOW = {
+            ...source('deliverable:user-flows/onboarding-flow', 'Onboarding Flow — v2', 'Steps', 'Step 1 — Signup\nStep 2 — Basics (workspace name, team size)\nStep 3 — Connect calendar (now clearly marked required)\nStep 4 — Invite your team (now shows draft/not-sent state)\nStep 5 — Preferences\nStep 6 — Review & finish'),
+            date: 'Feb 20, 2026',
+        };
+        const question = 'Which onboarding steps are required, and which can be skipped?';
+        // onboarding-required-steps, behavior-decline-list seeded.
+        const answer = 'Step 3 ("Connect calendar") is required [1][2][3].\n\nSteps 1, 2, 4, 5, and 6 are not explicitly stated as required or optional in the provided sources.';
+
+        it('clears "Steps 1, 2, 4, 5, and 6" when the shown flow lists them', () => {
+            const cited = [ONBOARDING_FINDING, TOPLINE, READOUT];
+            expect(checkAnswer(answer, cited, question).unsupportedFigures).toEqual(['1', '2', '4', '5', '6']);
+            expect(checkAnswer(answer, cited, question, [...cited, FLOW, SESSION_2]).unsupportedFigures).toEqual([]);
+        });
+
+        it('still flags a figure no shown source or the question has', () => {
+            expect(checkAnswer('Step 7 is not described in the provided sources.', [], question, [FLOW]).unsupportedFigures).toEqual(['7']);
+        });
+
+        it('holds a cited sentence to its own sources, not the shown ones', () => {
+            expect(checkAnswer('Step 5 is optional [1].', [READOUT], question, [READOUT, FLOW]).unsupportedFigures).toEqual(['5']);
+        });
+
+        it('counts a shown source’s label date for an uncited decline', () => {
+            expect(checkAnswer('The sources do not say whether the February 20, 2026 flow was tested.', [], question, [FLOW])).toEqual(CLEAN);
+        });
+    });
+
+    describe('gpt-oss’s narrow no-break space and non-breaking hyphen (change 5)', () => {
+        it('reads U+202F as a space and U+2011 as a hyphen', () => {
+            expect(normalizeText('Only 34\u202F% of non\u2011clinical staff')).toBe('Only 34 % of non-clinical staff');
+        });
+
+        it('judges a gpt-oss sentence as its plain form', () => {
+            const answer = 'Only 34\u202F% of non\u2011clinical staff were aware, versus 71\u202F% of clinical staff [1].';
+            expect(checkAnswer(answer, [AI_READINESS])).toEqual(CLEAN);
+            expect(analyseAnswer(answer, [AI_READINESS])[0].text).toBe('Only 34 % of non-clinical staff were aware, versus 71 % of clinical staff.');
+        });
     });
 });

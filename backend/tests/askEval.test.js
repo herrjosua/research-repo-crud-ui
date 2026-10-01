@@ -1,7 +1,7 @@
 const { GOLD_FILE, loadGold, validateGold } = require('../ask/eval/gold');
 const { answerSentences, analyseAnswer } = require('../ask/checks');
 const {
-    judgeRun, claimText, renderReport, renderComparison, parseArgs, withBehaviors, thinkRequest,
+    judgeRun, claimText, renderReport, renderComparison, parseArgs, withBehaviors, thinkRequest, withPromptSources,
 } = require('../scripts/eval-ask');
 const { createOllamaClient, finalAnswer } = require('../ask/ollama');
 const { withChatOptions, chatOverrides } = require('../scripts/capture-static-answers');
@@ -561,5 +561,62 @@ describe('eval model comparison', () => {
             { metadata: { ...metadata('other', 'm2'), ollamaVersion: 'o2' }, questions: [question('r1', 'yes [1].')] },
         ], gold);
         expect(report).toContain('⚠ The sets were run on different Ollama versions (o, o2).');
+    });
+});
+
+describe('prompt sources for re-judging stored runs', () => {
+    const promptSources = {
+        corpusCommit: 'c',
+        records: {
+            'raw:a': { title: 'Session A', participants: 'Participants: 4 — Nurse', date: 'Apr 8, 2025' },
+            'deliverable:flow': { title: 'Flow', participants: null, date: 'Feb 20, 2026' },
+        },
+        passages: {
+            'raw:a#2': { title: 'Session A', section: 'Key Findings', participants: 'Participants: 4 — Nurse', excerpt: '4 nurses.', date: 'Apr 8, 2025' },
+            'deliverable:flow#1': { title: 'Flow', section: 'Steps', participants: null, excerpt: 'Step 1\nStep 5', date: 'Feb 20, 2026' },
+        },
+    };
+    const run = (shown) => ({
+        answer: 'x', sources: [{ id: 'raw:a#2', recordId: 'raw:a', excerpt: '4 nurses.' }], shown,
+    });
+    const results = (shown) => ({ metadata: { label: 'l', corpusCommit: 'c' }, questions: [{ id: 'q', seeded: [run(shown)], unseeded: [] }] });
+
+    it('adds the label date to cited sources and every shown source, without touching the stored run', () => {
+        const stored = results([{ n: 1, recordId: 'raw:a', passage: 'raw:a#2' }, { n: 2, recordId: 'deliverable:flow', passage: 'deliverable:flow#1' }]);
+        const copy = JSON.stringify(stored);
+        const enriched = withPromptSources(stored, promptSources).questions[0].seeded[0];
+        expect(enriched.sources[0].date).toBe('Apr 8, 2025');
+        expect(enriched.shownSources.map((s) => s.excerpt)).toEqual(['4 nurses.', 'Step 1\nStep 5']);
+        expect(JSON.stringify(stored)).toBe(copy);
+    });
+
+    it('gives a run stored without passage ids its shown records’ labels only', () => {
+        const enriched = withPromptSources(results([{ n: 1, recordId: 'deliverable:flow' }]), promptSources).questions[0].seeded[0];
+        expect(enriched.shownSources).toEqual([{ title: 'Flow', section: null, participants: null, excerpt: '', date: 'Feb 20, 2026' }]);
+    });
+
+    it('refuses a run whose shown passage it doesn’t have', () => {
+        expect(() => withPromptSources(results([{ n: 1, recordId: 'raw:a', passage: 'raw:a#9' }]), promptSources)).toThrow(/raw:a#9 isn't in the prompt sources/);
+    });
+
+    it('lets an uncited decline’s figures come from the shown sources when judged', () => {
+        const entry = {
+            question: 'Which steps are required?', supportingRecords: ['raw:a'], requiredRawRecord: null, mustClaims: [], mustNotClaims: [],
+        };
+        const stored = results([{ n: 1, recordId: 'raw:a', passage: 'raw:a#2' }, { n: 2, recordId: 'deliverable:flow', passage: 'deliverable:flow#1' }]);
+        stored.questions[0].seeded[0].answer = '4 nurses took part [1]. Step 5 is not described in the provided sources.';
+        expect(judgeRun(entry, stored.questions[0].seeded[0]).unsupported).toEqual(['5']);
+        expect(judgeRun(entry, withPromptSources(stored, promptSources).questions[0].seeded[0]).unsupported).toEqual([]);
+    });
+});
+
+describe('claimText', () => {
+    // model-gpt-oss-20b-low, audit-ai-readiness: "non‑clinical" with a
+    // non-breaking hyphen missed the 34% claim until it was normalized.
+    it('reads gpt-oss’s non-breaking hyphen and narrow no-break space as plain', () => {
+        const [aware] = loadGold(GOLD_FILE).entries.find((e) => e.id === 'audit-ai-readiness').mustClaims;
+        const answer = 'Only 34 % of non‑clinical staff were aware [1].';
+        expect(claimText(answer)).toContain('Only 34 % of non-clinical staff were aware');
+        expect(new RegExp(aware.pattern, 'i').test(claimText(answer))).toBe(true);
     });
 });

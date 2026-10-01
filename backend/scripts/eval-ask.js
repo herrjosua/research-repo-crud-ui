@@ -11,6 +11,7 @@
 //                                [--whole-raw-notes N] [--behaviors none|name,name]
 //   node scripts/eval-ask.js report BEFORE [AFTER]
 //   node scripts/eval-ask.js compare --label NAME BASE [OTHER ...]
+//   node scripts/eval-ask.js prompt-sources
 //
 // run     Asks every gold question --seeded-runs times with the fixed seed and
 //         --unseeded-runs times without one, both at --temperature, through
@@ -49,6 +50,13 @@
 //         verdict and whether the gold evidence was in the prompt. Writes
 //         ask/eval/results/NAME.md. Refuses sets that differ in harness
 //         version, corpus commit, seed or temperature, like report.
+// prompt-sources
+//         Rebuilds ask/eval/prompt-sources/<corpus commit>.json from the
+//         corpus checkout (read only) for every stored result at its
+//         commit: the label dates and shown passages the checks read, which
+//         stored runs don't keep. report, compare and run need it; run
+//         extends it itself. Checks the rebuild against the stored cited
+//         excerpts and prompt sizes.
 //
 // Both report each gold set (regression, scenario) in its own section with
 // its own pass counts, taking an entry's set from the current gold file.
@@ -58,17 +66,22 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const { createOllamaClient, OLLAMA_DEFAULTS } = require('../ask/ollama');
-const { loadRecords } = require('../ask/corpus');
+const {
+    loadRecords, chunkRecord, participantsHeader, wholeNotesText, formatDate,
+} = require('../ask/corpus');
 const { createEmbeddingIndex } = require('../ask/retrieval');
 const { createAskPipeline, CHAT_OPTIONS, RETRIEVAL } = require('../ask/pipeline');
-const { PROMPT_BEHAVIORS } = require('../ask/answer');
-const { analyseAnswer, summariseSentences, MARKER_RE } = require('../ask/checks');
+const { PROMPT_BEHAVIORS, buildMessages } = require('../ask/answer');
+const {
+    analyseAnswer, summariseSentences, normalizeText, MARKER_RE,
+} = require('../ask/checks');
 const { loadGold, GOLD_FILE, GOLD_SETS } = require('../ask/eval/gold');
 const {
     reviewRun, corpusCommit, ollamaInfo, withChatOptions,
 } = require('./capture-static-answers');
 
 const RESULTS_DIR = path.join(__dirname, '..', 'ask', 'eval', 'results');
+const PROMPT_SOURCES_DIR = path.join(__dirname, '..', 'ask', 'eval', 'prompt-sources');
 // Bump when what `run` stores or how it runs the pipeline changes; `report`
 // only compares results from the same version. An entry's gold set isn't
 // stored with its runs (the report reads it from the gold file), so adding
@@ -95,9 +108,11 @@ const EVAL_HARNESS_VERSION = 1;
 // the rules down.
 // ---------------------------------------------------------------------------
 
-// The answer as a claim pattern sees it: no [n] markers, straight quotes.
+// The answer as a claim pattern sees it: no [n] markers, straight quotes,
+// and the checks' normalized characters ("non‑clinical" with a
+// non-breaking hyphen reads as "non-clinical").
 function claimText(answer) {
-    return String(answer).replace(MARKER_RE, '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"');
+    return normalizeText(answer).replace(MARKER_RE, '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"');
 }
 
 // One run judged against its gold entry. A run passes when every non-exempt
@@ -107,8 +122,11 @@ function claimText(answer) {
 // must-not claim does. On an entry with acceptDecline, a decline that cites
 // nothing (every sentence a decline, no sources) is excused from citing a
 // supporting record, and only that. `failures` says which rules failed.
-function judgeRun(entry, { answer, sources }) {
-    const sentences = analyseAnswer(answer, sources, entry.question);
+// `shownSources` is every source the prompt showed (withPromptSources
+// adds it, and the label date to `sources`, to a stored run), which an
+// uncited decline's figures may come from.
+function judgeRun(entry, { answer, sources, shownSources = [] }) {
+    const sentences = analyseAnswer(answer, sources, entry.question, shownSources);
     const cited = [...new Set(sources.map((s) => s.recordId))];
     const text = claimText(answer);
     const matches = (claim) => new RegExp(claim.pattern, 'i').test(text);
@@ -167,6 +185,148 @@ function storedSource(source) {
         id, recordId, recordKind, recordType, title, section, participants, excerpt, score,
     } = source;
     return { id, recordId, recordKind, recordType, title, section, participants, excerpt, score };
+}
+
+// ---------------------------------------------------------------------------
+// Prompt sources. A stored run keeps its cited sources' text but not their
+// label dates, and of what it was shown only the passage ids. The checks
+// need both: a source's label date is evidence for a figure, and an uncited
+// decline's figures may come from any shown source. So they're kept once per
+// corpus commit, in ask/eval/prompt-sources/<commit>.json, rebuilt from the
+// corpus at that commit: every shown passage by id, as the prompt showed it
+// (title, section, roster line, text, date), and every shown record (title,
+// roster line, date) for runs stored before passage ids were. `report`,
+// `compare` and `run` read it; stored runs are never rewritten.
+// ---------------------------------------------------------------------------
+
+function promptSourcesFile(commit) {
+    return path.join(PROMPT_SOURCES_DIR, `${commit}.json`);
+}
+
+function readPromptSources(commit) {
+    const file = promptSourcesFile(commit);
+    if (!fs.existsSync(file)) {
+        throw new Error(`no prompt sources for corpus ${commit.slice(0, 7)} (${path.relative(process.cwd(), file)}); run \`node scripts/eval-ask.js prompt-sources\` with AGENTIC_REPO_ROOT at that commit`);
+    }
+    return readJson(file);
+}
+
+// A passage as the pipeline shows it: chunk `index` of the record, or its
+// whole notes ("notes", RETRIEVAL.wholeRawNotes), with its roster line.
+function promptPassage(record, index) {
+    const chunk = index === 'notes'
+        ? { heading: null, text: wholeNotesText(record), index: 'notes' }
+        : chunkRecord(record)[Number(index)];
+    return chunk ? { record, chunk, participants: participantsHeader(record) } : null;
+}
+
+// What the checks read of a shown passage, as ask/answer.js toSource gives it.
+function passageSource({ record, chunk, participants }) {
+    return {
+        title: record.title,
+        section: chunk.heading && chunk.heading !== record.title ? chunk.heading : null,
+        participants: participants || null,
+        excerpt: chunk.text,
+        date: formatDate(record.date),
+    };
+}
+
+function splitPassageId(id) {
+    const at = id.lastIndexOf('#');
+    return [id.slice(0, at), id.slice(at + 1)];
+}
+
+// A result set with each run's cited sources given their label `date`, and
+// `shownSources` added, in memory. A run stored without passage ids gets
+// its shown records' labels and roster lines, without their text.
+function withPromptSources(results, promptSources = readPromptSources(results.metadata.corpusCommit)) {
+    const recordOf = (id) => {
+        const record = promptSources.records[id];
+        if (!record) throw new Error(`${results.metadata.label}: ${id} isn't in the prompt sources; run \`node scripts/eval-ask.js prompt-sources\``);
+        return record;
+    };
+    const shownSource = (x) => {
+        if (!x.passage) {
+            const { title, participants, date } = recordOf(x.recordId);
+            return { title, section: null, participants, excerpt: '', date };
+        }
+        const passage = promptSources.passages[x.passage];
+        if (!passage) throw new Error(`${results.metadata.label}: ${x.passage} isn't in the prompt sources; run \`node scripts/eval-ask.js prompt-sources\``);
+        return passage;
+    };
+    const withSources = (r) => ({
+        ...r,
+        sources: r.sources.map((source) => ({ ...source, date: recordOf(source.recordId).date })),
+        shownSources: r.shown.map(shownSource),
+    });
+    return {
+        ...results,
+        questions: results.questions.map((q) => ({ ...q, seeded: q.seeded.map(withSources), unseeded: q.unseeded.map(withSources) })),
+    };
+}
+
+// Builds (or extends) the prompt sources for the corpus checkout's commit
+// from every stored result at that commit, and checks the rebuild against
+// what the runs stored: each cited source's title, section, roster line and
+// excerpt, and, for runs that recorded their prompt size and passage ids,
+// the whole prompt's length rebuilt with the run's prompt behaviors.
+async function promptSources() {
+    const repoRoot = process.env.AGENTIC_REPO_ROOT;
+    if (!repoRoot) throw new Error('AGENTIC_REPO_ROOT is not set (backend/.env or the environment).');
+    const commit = corpusCommit(repoRoot);
+    const records = new Map((await loadRecords()).map((record) => [record.id, record]));
+    const file = promptSourcesFile(commit);
+    const out = fs.existsSync(file) ? readJson(file) : { corpusCommit: commit, records: {}, passages: {} };
+    const allOff = Object.fromEntries(Object.keys(PROMPT_BEHAVIORS).map((key) => [key, false]));
+    const record = (id) => {
+        const found = records.get(id);
+        if (!found) throw new Error(`${id} isn't in the corpus at ${commit.slice(0, 7)}`);
+        return found;
+    };
+    const passage = (id) => {
+        const [recordId, index] = splitPassageId(id);
+        const found = promptPassage(record(recordId), index);
+        if (!found) throw new Error(`${id} isn't a passage in the corpus at ${commit.slice(0, 7)}`);
+        return found;
+    };
+    const problems = [];
+    const prompts = {};
+    for (const name of fs.readdirSync(RESULTS_DIR).filter((f) => f.endsWith('.json')).sort()) {
+        const results = readJson(path.join(RESULTS_DIR, name));
+        if (results.metadata.corpusCommit !== commit) continue;
+        const { label, retrieval, promptBehaviors } = results.metadata;
+        prompts[label] = { rebuilt: 0, same: 0 };
+        for (const q of results.questions) {
+            for (const r of [...q.seeded, ...q.unseeded]) {
+                for (const x of r.shown) {
+                    const shownRecord = record(x.recordId);
+                    out.records[x.recordId] = {
+                        title: shownRecord.title, participants: participantsHeader(shownRecord), date: formatDate(shownRecord.date),
+                    };
+                    if (x.passage) out.passages[x.passage] = passageSource(passage(x.passage));
+                }
+                for (const source of r.sources) {
+                    const rebuilt = passageSource(passage(source.id));
+                    for (const key of ['title', 'section', 'excerpt', ...(source.participants === undefined ? [] : ['participants'])]) {
+                        if ((source[key] ?? null) !== rebuilt[key]) problems.push(`${label} ${q.id}: cited ${source.id} ${key} differs from the corpus`);
+                    }
+                }
+                if (retrieval && typeof r.promptChars === 'number' && r.shown.every((x) => x.passage)) {
+                    const messages = buildMessages(q.question, r.shown.map((x) => ({ passage: passage(x.passage) })), promptBehaviors || allOff);
+                    prompts[label].rebuilt += 1;
+                    if (messages.reduce((n, m) => n + m.content.length, 0) === r.promptChars) prompts[label].same += 1;
+                }
+            }
+        }
+    }
+    const sorted = (map) => Object.fromEntries(Object.keys(map).sort().map((key) => [key, map[key]]));
+    writeJson(file, { corpusCommit: commit, records: sorted(out.records), passages: sorted(out.passages) });
+    console.log(`Prompt sources: ${Object.keys(out.passages).length} passages, ${Object.keys(out.records).length} records (${path.relative(process.cwd(), file)})`);
+    for (const [label, { rebuilt, same }] of Object.entries(prompts)) {
+        console.log(`  ${label}: ${rebuilt ? `${same} of ${rebuilt} prompts rebuilt to their stored length` : 'no prompt sizes or passage ids stored'}`);
+    }
+    if (problems.length > 0) throw new Error(`cited sources that don't match the corpus:\n${problems.join('\n')}`);
+    return prompts;
 }
 
 // A model's capabilities as Ollama lists them (/api/show), e.g.
@@ -360,8 +520,10 @@ async function run({
     const results = { metadata, questions };
     const file = path.join(RESULTS_DIR, `${label}.json`);
     writeJson(file, results);
+    // Adds this run's shown passages to the prompt sources the report needs.
+    await promptSources();
     const reportFile = path.join(RESULTS_DIR, `${label}.md`);
-    fs.writeFileSync(reportFile, renderReport([results], gold));
+    fs.writeFileSync(reportFile, renderReport([withPromptSources(results)], gold));
     console.log(`\nRuns: ${path.relative(process.cwd(), file)}\nReport: ${path.relative(process.cwd(), reportFile)}`);
 }
 
@@ -750,7 +912,7 @@ function readResults(label) {
 function compare({ label, labels }) {
     if (!label) throw new Error('compare needs --label NAME');
     if (labels.length < 2) throw new Error('compare takes at least two result names');
-    const sets = labels.map(readResults);
+    const sets = labels.map(readResults).map((set) => withPromptSources(set));
     checkComparable(labels, sets);
     const out = path.join(RESULTS_DIR, `${label}.md`);
     fs.writeFileSync(out, renderComparison(sets, loadGold()));
@@ -759,7 +921,7 @@ function compare({ label, labels }) {
 
 function report({ labels }) {
     if (labels.length < 1 || labels.length > 2) throw new Error('report takes one result name, or two for before/after');
-    const sets = labels.map(readResults);
+    const sets = labels.map(readResults).map((set) => withPromptSources(set));
     if (sets.length === 2) checkComparable(labels, sets);
     const out = path.join(RESULTS_DIR, `${labels.join('-vs-')}.md`);
     fs.writeFileSync(out, renderReport(sets, loadGold()));
@@ -852,7 +1014,8 @@ async function main() {
     if (options.command === 'run') return run(options);
     if (options.command === 'report') return report(options);
     if (options.command === 'compare') return compare(options);
-    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] [--whole-raw-notes N] [--behaviors none|name,name] | report BEFORE [AFTER] | compare --label NAME BASE OTHER...');
+    if (options.command === 'prompt-sources') return promptSources();
+    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] [--whole-raw-notes N] [--behaviors none|name,name] | report BEFORE [AFTER] | compare --label NAME BASE OTHER... | prompt-sources');
 }
 
 if (require.main === module) {
@@ -863,5 +1026,5 @@ if (require.main === module) {
 }
 
 module.exports = {
-    judgeRun, claimText, renderReport, renderComparison, parseArgs, thinkRequest, withBehaviors, EVAL_HARNESS_VERSION,
+    judgeRun, claimText, renderReport, renderComparison, parseArgs, thinkRequest, withBehaviors, withPromptSources, EVAL_HARNESS_VERSION,
 };
