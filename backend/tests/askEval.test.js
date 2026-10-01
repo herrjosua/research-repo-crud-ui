@@ -1,10 +1,11 @@
 const { GOLD_FILE, loadGold, validateGold } = require('../ask/eval/gold');
 const { answerSentences, analyseAnswer } = require('../ask/checks');
 const {
-    judgeRun, claimText, renderReport, renderComparison, parseArgs, thinkRequest,
+    judgeRun, claimText, renderReport, renderComparison, parseArgs, withBehaviors, thinkRequest,
 } = require('../scripts/eval-ask');
 const { createOllamaClient, finalAnswer } = require('../ask/ollama');
 const { withChatOptions, chatOverrides } = require('../scripts/capture-static-answers');
+const { PROMPT_BEHAVIORS } = require('../ask/answer');
 
 // The evaluation gold set (ask/eval/gold.json) and the harness's pass/fail
 // rules (scripts/eval-ask.js, on ask/checks.js; tests/askChecks.test.js
@@ -422,6 +423,24 @@ describe('eval --whole-raw-notes', () => {
         expect(parseArgs(['run', '--label', 'x', '--whole-raw-notes', '2']).wholeRawNotes).toBe(2);
         expect(() => parseArgs(['run', '--label', 'x', '--whole-raw-notes', '0'])).toThrow(/--whole-raw-notes/);
         expect(() => parseArgs(['run', '--label', 'x', '--whole-raw-notes', 'two'])).toThrow(/--whole-raw-notes/);
+    });
+});
+
+describe('eval --behaviors', () => {
+    it('takes prompt behavior names, and none by default', () => {
+        expect(parseArgs(['run', '--label', 'x']).behaviors).toEqual([]);
+        expect(parseArgs(['run', '--label', 'x', '--behaviors', 'premise-check, list-format']).behaviors)
+            .toEqual(['premise-check', 'list-format']);
+        expect(() => parseArgs(['run', '--label', 'x', '--behaviors', 'premise'])).toThrow(/--behaviors takes names from premise-check, open-items, decline-with-evidence, list-format/);
+        expect(() => parseArgs(['run', '--label', 'x', '--behaviors', 'constructor'])).toThrow(/--behaviors/);
+        expect(() => parseArgs(['run', '--label', 'x', '--behaviors', ','])).toThrow(/--behaviors/);
+    });
+
+    it('turns on only the behaviors named', () => {
+        expect(withBehaviors([])).toEqual(PROMPT_BEHAVIORS);
+        expect(withBehaviors(['open-items', 'decline-with-evidence'])).toEqual({
+            premiseCheck: false, openItems: true, declineWithEvidence: true, listFormat: false,
+        });
     });
 });
 

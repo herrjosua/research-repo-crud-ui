@@ -6,7 +6,9 @@
 const { rankRecords } = require('./retrieval');
 const { wholeNotesText } = require('./corpus');
 const { provenanceLinks, withProvenanceSlot } = require('./provenance');
-const { buildMessages, renumberCitations, toSource } = require('./answer');
+const {
+    buildMessages, renumberCitations, toSource, PROMPT_BEHAVIORS,
+} = require('./answer');
 const { toPlainText } = require('./plainText');
 const { checkAnswer } = require('./checks');
 
@@ -105,8 +107,11 @@ function withWholeRawNotes(ranked, chosen, n) {
 // ([] when no record has the project tag). rank() is the similarity ranking
 // alone: every in-scope record's best passage, best first, `k` of them. The
 // evaluation harness calls it with k = Infinity to see where every record
-// ranks. `retrieval` overrides RETRIEVAL, for tests.
-function createAskPipeline({ ollama, index, retrieval = RETRIEVAL }) {
+// ranks. `retrieval` overrides RETRIEVAL and `promptBehaviors`
+// PROMPT_BEHAVIORS (ask/answer.js), for the evaluation and tests.
+function createAskPipeline({
+    ollama, index, retrieval = RETRIEVAL, promptBehaviors = PROMPT_BEHAVIORS,
+}) {
     async function rankInScope(question, project) {
         const { passages, records } = await index.refresh();
         const inScope = project
@@ -149,7 +154,7 @@ function createAskPipeline({ ollama, index, retrieval = RETRIEVAL }) {
             };
         }
 
-        const messages = buildMessages(question, ranked);
+        const messages = buildMessages(question, ranked, promptBehaviors);
         const { content: raw, promptTokens } = await chatWithPromptTokens(ollama, messages, CHAT_OPTIONS);
         const warning = promptSizeWarning(promptTokens);
         if (warning) console.warn(warning);
