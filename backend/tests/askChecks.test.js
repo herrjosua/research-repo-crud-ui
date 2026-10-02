@@ -349,8 +349,15 @@ describe('checkAnswer', () => {
             expect(analyseAnswer('The step was slow. The readout agreed [1].', [READOUT]).map((x) => x.text)).toEqual(['The step was slow.', 'The readout agreed.']);
         });
 
-        it('leaves "e.g." as it was: it still splits', () => {
-            expect(analyseAnswer('Some steps, e.g. step 3, read as optional [1].', [READOUT]).map((x) => x.text)).toEqual(['Some steps, e.g.', 'step 3, read as optional.']);
+        // audit-ai-readiness, v1.3.6.37-guard unseeded: the stored form, before
+        // a comma. A bare "e.g. step 3" still splits, a recorded limitation
+        // (docs/decisions.md, 21).
+        it('doesn\'t split the stored "e.g.," form', () => {
+            const answer = 'Only 34% of non-clinical staff reported being aware Compass AI initiatives were underway at all, versus 71% of clinical staff [1]. Broaden internal communications about Compass AI to non-clinical staff specifically before any admin-facing pilot (e.g., scheduling chatbot) goes live, given the awareness gap found here [2].';
+            expect(analyseAnswer(answer, [AI_READINESS, READOUT]).map((x) => x.text)).toEqual([
+                'Only 34% of non-clinical staff reported being aware Compass AI initiatives were underway at all, versus 71% of clinical staff.',
+                'Broaden internal communications about Compass AI to non-clinical staff specifically before any admin-facing pilot (e.g., scheduling chatbot) goes live, given the awareness gap found here.',
+            ]);
         });
     });
 
