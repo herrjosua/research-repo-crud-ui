@@ -1240,16 +1240,19 @@ default. Ticket RR-149. Follows decisions 15 (RR-103), 19 (RR-144) and 20
 **Decision:** `ask/checks.js` gets two changes, each with unit fixtures
 built from stored answers (`tests/askChecks.test.js`), numbered as in
 RR-149's investigation:
-- **Change 1: "vs." and "avg." don't end a sentence.** The whitespace
-  after a whole word "vs." or "avg." (any case) is never a sentence break:
-  "It was faster (6.5 min vs. 9 min to clear a 20-item queue), but 4 of 5
-  participants disagreed…" and "…charting (avg. 1.2 hrs/day) [1][2]." are
-  one sentence each. Only these two. The other abbreviations ("e.g.",
-  "i.e.", "approx.", "cf.", "etc.", "No.") are never followed by a space in
-  the stored answers: the three "e.g." uses are all "e.g.,", which never
-  split. A bare "e.g. step 3" still splits, a recorded limitation. A
-  sentence that really ends in "vs." or "avg." before a new sentence no
-  longer splits there either; none occurs in the stored answers.
+- **Change 1: "vs." and "avg." don't end a sentence.** Within a line, the
+  whitespace after a whole word "vs." or "avg." (any case) is never a
+  sentence break: "It was faster (6.5 min vs. 9 min to clear a 20-item
+  queue), but 4 of 5 participants disagreed…" and "…charting (avg. 1.2
+  hrs/day) [1][2]." are one sentence each. A line ending in "vs." or
+  "avg." still ends its sentence, because lines are split first. Only
+  these two. The other abbreviations ("e.g.", "i.e.", "approx.", "cf.",
+  "etc.", "No.") are never followed by a space in the stored answers: the
+  four "e.g." uses in the 44 sets (three in the repo's sets, one in
+  `~/rr144-results`) are all "e.g.,", which never split. A bare "e.g.
+  step 3" still splits, a recorded limitation. A sentence that really ends
+  in "vs." or "avg." before a new sentence no longer splits there either;
+  none occurs in the stored answers.
 - **Change 3(a): "surveys" is a decline noun.** `DECLINE_RE` takes
   "survey(s)" beside "sources", "records", "notes" and the rest, so "The
   surveys do not report an overall burnout rate for clinicians." is a
@@ -1268,8 +1271,8 @@ check other than these two.
   The checks apply the documented rule: markers after a full stop and
   before a capital belong to the sentence before. Answers that put the
   marker first on each item occur only in non-default gemma2
-  configurations (list format, open items, whole notes). Crediting them
-  forward would change where a citation is expected.
+  configurations (list format, open items, premise check, whole notes).
+  Crediting them forward would change where a citation is expected.
 - **Item 4, a marker-only line after a paragraph** ("[1][2][3]" on its own
   line) still joins only the paragraph's last sentence. Crediting it to the
   whole paragraph would be a new group-citation form.
@@ -1296,10 +1299,11 @@ check other than these two.
 - A marker before a sentence that opens with a digit is credited to the
   sentence before.
 - Declines worded "No source provides…" or "The documentation does not
-  specify…" are still read as uncited claims: seven distinct sentences in
-  gpt-oss and gemma3 runs, none in the default-configuration sets. A variant
-  that adds them was sized (13 sentences) and not applied, because it was
-  written after seeing those sentences.
+  specify…" are still read as uncited claims: seven distinct sentences, 11
+  records in 10 runs (gpt-oss 8, gemma3 3), none in the
+  default-configuration sets. A variant that adds them was sized in the
+  RR-149 investigation (notes in Notion, not in this repo) and not
+  applied, because it was written after seeing those sentences.
 
 **The re-judge** (`ask/eval/results/checks-rejudge-rr149.md`). All 36
 stored sets in the repo (1,836 runs) and the 8 RR-144 sets in
@@ -1312,7 +1316,7 @@ verdict and count on all 2,244 runs.
 
 Change 1 moved ten runs:
 
-| Result set | Entry | Run | | Uncited | Unsupported |
+| Result set | Entry | Run | Abbreviation | Uncited | Unsupported |
 |---|---|---|---|---|---|
 | `behavior-decline-list-scenarios` | `scenario-care-coordinator-gaps` | seeded 0, 1, 2 | vs. | 1 → 0 each | 5 each |
 | `checks-decline-list-scenarios` | `scenario-care-coordinator-gaps` | seeded 0, 1, 2 | vs. | 1 → 0 each | 5 each |
@@ -1346,9 +1350,8 @@ Counts are the first seeded run's, as the reports give them.
   comparison stands, and so does decision 16.
 
 **Predictions, written before the re-judge.** Predictions 2, 3 and 4
-matched. Prediction 5 (a "may") didn't happen. Predictions 1 ("change 1
-moves exactly 9 records") and 6 ("no other sentence changes") missed on one
-record:
+matched. Predictions 1 ("change 1 moves exactly 9 records") and 6 ("no
+other sentence changes") missed on one record:
 `behavior-list-scenarios`, `scenario-documentation-pain-points`, unseeded 2.
 It's the same "avg." sentence as the two in-repo "avg." rows. The miss is
 one of scope: the predictions came from investigating the 36 in-repo sets,
@@ -1391,9 +1394,9 @@ the default. Its counted regression against step 5 is recorded:
   The repo now holds 36 sets and 1,836 runs because decision 20 added six.
 - Decision 16's gpt-oss 2 of 10 and 1 of 7 (from 0 and 0) came from a
   scratch re-score that both normalized U+202F/U+2011 and credited
-  paragraph-final marker groups. They aren't what change 5 of decision 20
-  gives alone: under the current checks gpt-oss's decision 16 run still
-  passes 0 of 10 and 0 of 7.
+  paragraph-final marker groups. Decision 20 reports that its change 5
+  (normalization alone) moved no gpt-oss verdict, and under the current
+  checks gpt-oss's decision 16 run still passes 0 of 10 and 0 of 7.
 - The "vs." split, which decision 20 and the old test comment called not
   fixed, is fixed here.
 

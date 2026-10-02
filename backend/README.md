@@ -341,8 +341,10 @@ report says how many are still drafts.
   unless a lowercase word follows them, when they open the next sentence
   ("…. [1] mentions that…"). A quotation in straight or curly double quotes
   is never split at its own full stops, and a sentence can end at its
-  closing mark when a capital or another quote follows. "vs." and "avg."
-  never end a sentence ("(6.5 min vs. 9 min…)");
+  closing mark when a capital or another quote follows. Within a line,
+  "vs." and "avg." never end a sentence ("(6.5 min vs. 9 min…)"); a line
+  ending in "vs." or "avg." still ends its sentence, since lines are split
+  first;
 - every figure and "N of M" count appears in the sources *that sentence*
   cites, not just somewhere in the answer. A cited source's title and
   section count as well as its excerpt, since the model is shown all three

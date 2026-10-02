@@ -22,8 +22,8 @@ off, the new code gives exactly the old sentences, verdicts and counts on
 all 2,244 runs.
 
 The changes:
-1. "vs." and "avg." don't end a sentence.
-3(a). "surveys" is one of `DECLINE_RE`'s nouns.
+- 1: "vs." and "avg." don't end a sentence.
+- 3(a): "surveys" is one of `DECLINE_RE`'s nouns.
 
 (Numbered as in RR-149's investigation, which also looked at items 2 and
 4–7 and left them; decision 21 says why.)
