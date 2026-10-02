@@ -289,15 +289,97 @@ describe('checkAnswer', () => {
 
         // scenario-care-coordinator-gaps, behavior-decline-list seeded: the
         // quotes no longer split, which clears two uncited fragments and the
-        // P03 quote; "6.5 min vs." still splits at the abbreviation, which
-        // isn't a quote (docs/decisions.md, 20: not fixed here).
-        it('fixes the care-coordinator quotes but not the "vs." split', () => {
+        // P03 quote; "6.5 min vs." no longer splits either (docs/decisions.md,
+        // 21; decision 20 left it).
+        it('fixes the care-coordinator quotes and the "vs." split', () => {
             const answer = '[1] Coordinators distrust the AVS tool. [2] "I don\'t trust the summary the system spits out. I\'ve been burned by it missing a med change, so now I just re-check everything myself, which kind of defeats the point." — Care Coordinator, P03 [3] The triage ranking works, but not for the reason initially expected. It was faster (6.5 min vs. 9 min to clear a 20-item queue), but 4 of 5 participants disagreed with at least one ranking decision. [4] "It\'s fast, I\'ll give it that. But fast and wrong is worse than slow and right in this job." — Care Coordinator Supervisor, P79';
             const texts = analyseAnswer(answer, [READOUT, READOUT, READOUT, READOUT]).map((x) => x.text);
             expect(texts.some((t) => t.startsWith('"I don\'t trust the summary the system spits out. I\'ve been burned'))).toBe(true);
             expect(texts.some((t) => t.startsWith('"It\'s fast, I\'ll give it that. But fast and wrong'))).toBe(true);
-            expect(texts).toContain('It was faster (6.5 min vs.');
-            expect(texts.some((t) => t.startsWith('9 min to clear a 20-item queue), but 4 of 5'))).toBe(true);
+            expect(texts.some((t) => t.startsWith('It was faster (6.5 min vs. 9 min to clear a 20-item queue), but 4 of 5 participants disagreed'))).toBe(true);
+            expect(texts).not.toContain('It was faster (6.5 min vs.');
+        });
+    });
+
+    describe('"vs." and "avg." don’t end a sentence (decision 21)', () => {
+        // scenario-documentation-pain-points, behavior-decline-list unseeded,
+        // with the two sources it cites. The split left "…charting (avg."
+        // uncited, with the 1 of "#1", 52, 31 and 64 unsupported.
+        const DOC_SURVEY = source(
+            'raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline',
+            'Survey — Clinician Burnout & Documentation Burden Baseline',
+            'Key Findings',
+            '[HIGH] (documentation as burnout driver) Documentation burden ranked as the #1 self-selected contributor to burnout among physicians specifically (52%), ahead of patient volume (31%) and administrative meetings (12%).\n[MEDIUM] (after-hours charting) 64% of physician respondents report regularly completing documentation after clinic hours (\'pajama time\'), averaging a self-reported 1.2 hours/day.',
+        );
+        const DOC_FINDING = source(
+            'finding:clinician-experience-documentation-burden',
+            'Clinician Experience & Documentation Burden',
+            'Overview',
+            'Documentation burden is real and quantifiable, not just anecdotal. The September baseline found documentation burden is physicians\' #1 self-selected burnout driver (52%, ahead of patient volume at 31%), with 64% doing regular after-hours "pajama time" charting (avg. 1.2 hrs/day).',
+        );
+
+        it('keeps "(avg. 1.2 hrs/day)" in its sentence and its citation', () => {
+            const answer = 'Documentation burden is clinicians\' #1 self-selected burnout driver (52%, ahead of patient volume at 31%), with 64% doing regular after-hours "pajama time" charting (avg. 1.2 hrs/day) [1][2].';
+            const sentences = analyseAnswer(answer, [DOC_SURVEY, DOC_FINDING]);
+            expect(sentences).toHaveLength(1);
+            expect(sentences[0].cites).toEqual([1, 2]);
+            expect(checkAnswer(answer, [DOC_SURVEY, DOC_FINDING])).toEqual(CLEAN);
+        });
+
+        // scenario-care-coordinator-gaps, model-gpt-oss-20b-low unseeded.
+        it('keeps gpt-oss\'s "6.5\u2011minute vs. 9\u2011minute" in its sentence', () => {
+            const answer = '- The impact of the current ranking model on overall workflow efficiency beyond the 20\u2011item queue test. We only have a single 6.5\u2011minute vs. 9\u2011minute comparison; we do not know how this translates to real\u2011world call volumes, patient outcomes, or supervisor oversight [4].';
+            expect(analyseAnswer(answer, [READOUT, READOUT, READOUT, READOUT]).map((x) => x.text)).toEqual([
+                'The impact of the current ranking model on overall workflow efficiency beyond the 20-item queue test.',
+                'We only have a single 6.5-minute vs. 9-minute comparison; we do not know how this translates to real-world call volumes, patient outcomes, or supervisor oversight.',
+            ]);
+        });
+
+        it('matches "VS." and "Avg." in any case', () => {
+            expect(analyseAnswer('Faster (6.5 min VS. 9 min) [1].', [READOUT])).toHaveLength(1);
+            expect(analyseAnswer('Charting (Avg. 1.2 hrs/day) [1].', [READOUT])).toHaveLength(1);
+        });
+
+        it('leaves "vs" without a period and "avg" inside a word alone', () => {
+            expect(analyseAnswer('Fast vs slow. The readout agreed [1].', [READOUT]).map((x) => x.text)).toEqual(['Fast vs slow.', 'The readout agreed.']);
+            expect(analyseAnswer('It was a navg. The readout agreed [1].', [READOUT]).map((x) => x.text)).toEqual(['It was a navg.', 'The readout agreed.']);
+        });
+
+        it('still splits an ordinary sentence end before a capital', () => {
+            expect(analyseAnswer('The step was slow. The readout agreed [1].', [READOUT]).map((x) => x.text)).toEqual(['The step was slow.', 'The readout agreed.']);
+        });
+
+        // audit-ai-readiness, v1.3.6.37-guard unseeded: the stored form, before
+        // a comma. A bare "e.g. step 3" still splits, a recorded limitation
+        // (docs/decisions.md, 21).
+        it('doesn\'t split the stored "e.g.," form', () => {
+            const answer = 'Only 34% of non-clinical staff reported being aware Compass AI initiatives were underway at all, versus 71% of clinical staff [1]. Broaden internal communications about Compass AI to non-clinical staff specifically before any admin-facing pilot (e.g., scheduling chatbot) goes live, given the awareness gap found here [2].';
+            expect(analyseAnswer(answer, [AI_READINESS, READOUT]).map((x) => x.text)).toEqual([
+                'Only 34% of non-clinical staff reported being aware Compass AI initiatives were underway at all, versus 71% of clinical staff.',
+                'Broaden internal communications about Compass AI to non-clinical staff specifically before any admin-facing pilot (e.g., scheduling chatbot) goes live, given the awareness gap found here.',
+            ]);
+        });
+    });
+
+    describe('"surveys" is a decline noun (decision 21)', () => {
+        // audit-burnout-share, checks-gpt-oss-20b-low seeded.
+        const SENTENCE = 'The surveys do not report an overall burnout rate for clinicians.';
+
+        it('counts the stored gpt-oss sentence as a decline', () => {
+            expect(analyseAnswer(SENTENCE, [])[0].exempt).toBe('decline');
+            expect(checkAnswer(SENTENCE, [], 'What percentage of clinicians report burnout?')).toEqual(CLEAN);
+        });
+
+        it('still flags a claim that mentions "surveys" without a negation', () => {
+            const claim = 'The surveys show 52% of physicians ranked documentation first.';
+            expect(analyseAnswer(claim, [])[0].exempt).toBeNull();
+            expect(checkAnswer(claim, []).uncited).toEqual([claim]);
+        });
+
+        it('doesn\'t excuse a negated claim with "surveys" after the negation', () => {
+            const claim = 'Physicians did not complete the surveys on time.';
+            expect(analyseAnswer(claim, [])[0].exempt).toBeNull();
+            expect(checkAnswer(claim, []).uncited).toEqual([claim]);
         });
     });
 
