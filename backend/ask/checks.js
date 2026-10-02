@@ -33,7 +33,7 @@ function normalizeText(text) {
 // cannot be answered from the provided sources", "Steps 1–6 are not labeled
 // … in the provided sources"). The window keeps a long claim that mentions
 // "sources" far from its negation from passing as a decline.
-const DECLINE_RE = /\b(sources?|records?|notes?|data|research|documents?|repository|repo)\b[^.]{0,60}\b(do not|don't|does not|doesn't|did not|didn't|not|no|never)\b[^.]{0,40}\b(say|state|mention|describe|include|contain|specify|provide|give|report|answer|cover|address|discuss|information|detail)/i;
+const DECLINE_RE = /\b(sources?|records?|notes?|data|research|documents?|surveys?|repository|repo)\b[^.]{0,60}\b(do not|don't|does not|doesn't|did not|didn't|not|no|never)\b[^.]{0,40}\b(say|state|mention|describe|include|contain|specify|provide|give|report|answer|cover|address|discuss|information|detail)/i;
 const NEGATION_RE = /\b(not|cannot|no)\b/gi;
 const SOURCES_RE = /\bsources\b/gi;
 const DECLINE_WINDOW = 80;
@@ -174,6 +174,10 @@ function withoutSourceDates(text, dates) {
 // its inner full stops while the line is split.
 const QUOTE_RE = /"[^"\n]*"|“[^“”\n]*”/g;
 const QUOTE_SPACE = '\u0000';
+// "vs." and "avg." with the space after them, which never ends a sentence:
+// the models write "(6.5 min vs. 9 min…)" and "(avg. 1.2 hrs/day)" mid-
+// sentence. Only these two; no other abbreviation occurs in stored answers.
+const ABBREVIATION_RE = /\b(?:vs|avg)\.\s+/gi;
 
 function markersIn(text) {
     return [...String(text).matchAll(MARKER_RE)].map((m) => Number(m[1]));
@@ -196,13 +200,16 @@ function withoutMarkers(text) {
 // before it. A quotation in straight or curly double quotes is never split
 // at its own full stops: '"I love this job. I do not love…" [2]' is one
 // sentence, cited [2], and a sentence can end at the quote's closing mark.
+// Nor is a sentence split after "vs." or "avg.".
 function answerSentences(answer) {
     const out = [];
     let listStart = null; // index in `out` where the current run of list items began
     for (const line of normalizeText(answer).split(/\n+/)) {
         if (!line.trim()) continue;
         const listItem = LIST_ITEM_RE.test(line);
-        const body = line.replace(LIST_ITEM_RE, '').replace(QUOTE_RE, (quote) => quote.replace(/(?<=[.!?])\s+/g, QUOTE_SPACE));
+        const body = line.replace(LIST_ITEM_RE, '')
+            .replace(QUOTE_RE, (quote) => quote.replace(/(?<=[.!?])\s+/g, QUOTE_SPACE))
+            .replace(ABBREVIATION_RE, (abbreviation) => abbreviation.replace(/\s+$/, QUOTE_SPACE));
         const pieces = body.split(LEADING_MARKERS_SPLIT_RE)
             .flatMap((part) => part.split(SENTENCE_SPLIT_RE))
             .map((p) => p.replaceAll(QUOTE_SPACE, ' ').trim()).filter(Boolean);
