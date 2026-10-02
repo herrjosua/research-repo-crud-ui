@@ -275,7 +275,11 @@ gold set's questions (all of them without it); `--seed`, `--temperature`,
 `--seeded-runs`, `--unseeded-runs` and `--only id,id` change the defaults.
 `--whole-raw-notes N` runs with the off-by-default whole-notes option set to
 N (see "Retrieval" below) for that run only, and the report's Retrieval row
-records it. `--behaviors none|name,name` runs with exactly the named prompt
+records it. `--follow-ups shown|linked` runs with the off-by-default
+follow-ups option set to that (see "Retrieval" below) for that run only;
+the report's Retrieval row records it, and each run stores `followUps`:
+`fired` (whether the question set the trigger off) and `attached` (the
+passage ids added), a field runs without the flag don't have. `--behaviors none|name,name` runs with exactly the named prompt
 behaviors on and the rest off (`none` for all off; see "Prompt behaviors"
 below), and the report's "Prompt behaviors on" row records them. Without
 it, a run uses the defaults. Every run also stores `promptTokens`, Ollama's count of the
@@ -1017,9 +1021,35 @@ evaluation harness records them with every result:
   are shown as without it, all in ranking order. In the evaluation, N = 2
   and N = 4 each gained two passing answers and lost three; see
   [decision 18](../docs/decisions.md#18-whole-raw-session-notes-measured-off-by-default-v13637).
+- **Off by default: follow-ups** (`followUps`: `false`, `'shown'` or
+  `'linked'`). For a question that asks what is unresolved, a raw session's
+  own `Follow-ups / Open Questions` section (`ask/corpus.js`,
+  `FOLLOW_UPS_HEADING`) is added to what the model is shown. `'shown'` adds
+  it for each raw session already shown, among that session's passages in
+  record order. `'linked'` also adds it for each raw session linked (the
+  provenance links above) to the two best-ranked synthesis records
+  (findings and analytics, anywhere in the ranking), after every selected
+  record, in the order their synthesis record ranks and then link order.
+  Never added: a passage already shown, a session shown whole
+  (`wholeRawNotes`), or a session outside the question's project filter.
+  The added passages are ordinary sources with their real ids
+  (`raw:<record>#<n>`), cited like any other. The trigger is
+  `asksWhatIsUnresolved` in `ask/pipeline.js`: this pattern, matched
+  case-insensitively after curly apostrophes are read as straight ones, and
+  frozen (it isn't edited without a new measurement):
+
+  ```
+  \b(unresolved|undecided|unanswered|outstanding|still open|open (questions?|items?|issues?))\b|\b(haven't|have not|hasn't|has not)\b(\s+\w+){0,2}\s+(learned|learnt|found out|figured out|answered|resolved|decided|settled|confirmed)\b|\bnot (yet )?(known|learned|resolved|decided|answered|settled|confirmed)\b|\bstill (unknown|unclear|undecided|(don't|do not|not) know)\b
+  ```
+
+  Of the 17 gold questions it fires on `scenario-care-coordinator-gaps` and
+  `scenario-session-timeout-open` only, and not on "What did IT Security
+  decide about the idle timeout?". Off, or when the question doesn't fire
+  the trigger, the selection is exactly what it is without the option.
+  Not yet measured with a model (RR-145).
 
 The final defaults are **k = 6, metadata sections excluded, provenance slot
-off, `passagesPerRaw: 2`, whole raw notes off**.
+off, `passagesPerRaw: 2`, whole raw notes off, follow-ups off**.
 
 **Prompt behaviors.** Four rules for the system prompt, each a switch in
 `PROMPT_BEHAVIORS` (`ask/answer.js`). With all four off, the prompt is what
