@@ -332,7 +332,8 @@ report says how many are still drafts.
 - every sentence has a citation, except declines, list intros ending in
   ":", and list items cited as a group (a marker line after the list, or a
   cited intro; a list whose one citation is on its last item still leaves
-  the items above it uncited). A decline is "the sources don't say…", or a
+  the items above it uncited). A decline is "the sources don't say…" (or
+  "the surveys…", "the notes…" and the like), or a
   sentence with "not", "cannot" or "no" within 80 characters of the word
   "sources" ("The question cannot be answered from the provided sources.");
   a claim that mentions "sources" further from its negation isn't one.
@@ -340,7 +341,8 @@ report says how many are still drafts.
   unless a lowercase word follows them, when they open the next sentence
   ("…. [1] mentions that…"). A quotation in straight or curly double quotes
   is never split at its own full stops, and a sentence can end at its
-  closing mark when a capital or another quote follows;
+  closing mark when a capital or another quote follows. "vs." and "avg."
+  never end a sentence ("(6.5 min vs. 9 min…)");
 - every figure and "N of M" count appears in the sources *that sentence*
   cites, not just somewhere in the answer. A cited source's title and
   section count as well as its excerpt, since the model is shown all three
@@ -381,7 +383,9 @@ size: at 4ba145f every cited excerpt and every stored prompt size
 matched. Runs stored before passage ids were (`baseline`,
 `v1.3.6.7-checks`) get their shown records' labels and roster lines
 only. Stored runs themselves are never rewritten. The checks
-changes and what they moved are [decision 20](../docs/decisions.md).
+changes and what they moved are decisions 20 and 21
+([decisions](../docs/decisions.md)); decision 21's re-judge is
+`ask/eval/results/checks-rejudge-rr149.md`.
 
 Per question, the report shows the records shown to the model and where the
 first raw session ranks among all in-scope records (ranked by the pipeline's

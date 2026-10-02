@@ -1,7 +1,7 @@
 # Decision log
 
 Short notes on why the project works the way it does. Newest decisions are
-at the bottom. Status as of 2026-09-30.
+at the bottom. Status as of 2026-10-02.
 
 ## 1. Run the LLM locally with Ollama first
 
@@ -1229,4 +1229,168 @@ changed):
 
 All of these are final runs. No intermediate runs were made, so nothing was
 moved out. The reports stored before this decision are left as written,
+under the checks of their time. `report` re-judges any of them under these.
+
+## 21. Answer-check changes, round 2 (v1.3.6.40)
+
+**Date:** 2026-10-02. **Status:** Active. List format stays off by
+default. Ticket RR-149. Follows decisions 15 (RR-103), 19 (RR-144) and 20
+(RR-148).
+
+**Decision:** `ask/checks.js` gets two changes, each with unit fixtures
+built from stored answers (`tests/askChecks.test.js`), numbered as in
+RR-149's investigation:
+- **Change 1: "vs." and "avg." don't end a sentence.** The whitespace
+  after a whole word "vs." or "avg." (any case) is never a sentence break:
+  "It was faster (6.5 min vs. 9 min to clear a 20-item queue), but 4 of 5
+  participants disagreed…" and "…charting (avg. 1.2 hrs/day) [1][2]." are
+  one sentence each. Only these two. The other abbreviations ("e.g.",
+  "i.e.", "approx.", "cf.", "etc.", "No.") are never followed by a space in
+  the stored answers: the three "e.g." uses are all "e.g.,", which never
+  split. A bare "e.g. step 3" still splits, a recorded limitation.
+- **Change 3(a): "surveys" is a decline noun.** `DECLINE_RE` takes
+  "survey(s)" beside "sources", "records", "notes" and the rest, so "The
+  surveys do not report an overall burnout rate for clinicians." is a
+  decline. The 80-character window for the negation-and-"sources" rule is
+  unchanged.
+
+The principle: the checks may correct how sentences are split and recognise
+honest declines from wording the models actually wrote. They don't change
+where a citation is expected, which is after the sentence it supports, and
+they add no new group-citation forms. Anything else found is recorded, not
+applied. No gold entry, prompt or retrieval setting was changed, and no
+check other than these two.
+
+**What was left, and why** (numbered as in RR-149's investigation):
+- **Item 2, markers before a capital** ("…P05 [3] The triage ranking…").
+  The checks apply the documented rule: markers after a full stop and
+  before a capital belong to the sentence before. Answers that put the
+  marker first on each line occur only in non-default gemma2
+  configurations (list format, open items, whole notes). Crediting them
+  forward would add a citation form.
+- **Item 4, a marker-only line after a paragraph** ("[1][2][3]" on its own
+  line) still joins only the paragraph's last sentence. Crediting it to the
+  whole paragraph would be a new group-citation form.
+- **Item 5, month and year.** "April 2025" still matches any cited source
+  dated that month, the form decision 20 accepted.
+- **Item 6, single curly quotes** (‘…’) still aren't quotation marks, since
+  ’ is also an apostrophe.
+- **Item 7, the capture script** (`scripts/capture-static-answers.js`): its
+  figure flag and its own sentence splitter move to the demo recapture
+  ticket.
+
+**Other problems recorded, not fixed:**
+- The verb "note" is read as `DECLINE_RE`'s noun: "The readout notes
+  that coordinators did not report the override reasons." counts as a
+  decline, so it needs no citation.
+- A participant ID such as "P05" would be read as a figure. This is latent:
+  the checks have no participant-ID rule, and RR-148's quote handling merges
+  the P05 text into a sentence citing [2, 3], where [2] contains "P05".
+- An ISO date in an answer that isn't one of its cited sources' label dates
+  is flagged digit by digit.
+- A marker before a sentence that opens with a digit is credited to the
+  sentence before.
+
+**The re-judge** (`ask/eval/results/checks-rejudge-rr149.md`). All 36
+stored sets in the repo (1,836 runs) and the 8 RR-144 sets in
+`~/rr144-results/` (408 runs, outside the repo) were re-judged with the
+checks at ff5ce49 and with both changes. `~/rr103-results/` is excluded. No
+model was called. Every stored JSON file kept its SHA-1 and every answer is
+byte-identical. Each change was turned off on its own to attribute every
+moved count. With both off, the new code reproduces every old sentence,
+verdict and count on all 2,244 runs.
+
+Change 1 moved ten runs:
+
+| Result set | Entry | Run | | Uncited | Unsupported |
+|---|---|---|---|---|---|
+| `behavior-decline-list-scenarios` | `scenario-care-coordinator-gaps` | seeded 0, 1, 2 | vs. | 1 → 0 each | 5 each |
+| `checks-decline-list-scenarios` | `scenario-care-coordinator-gaps` | seeded 0, 1, 2 | vs. | 1 → 0 each | 5 each |
+| `behavior-decline-list-scenarios` | `scenario-documentation-pain-points` | unseeded 0 | avg. | 2 → 1 | 4 → 0 |
+| `checks-decline-list-scenarios` | `scenario-documentation-pain-points` | unseeded 0 | avg. | 3 → 2 | 4 → 0 |
+| `model-gpt-oss-20b-low-scenarios` | `scenario-care-coordinator-gaps` | unseeded 2 | vs. | 7 → 6 | 2 → 1 |
+| `behavior-list-scenarios` (`~/rr144-results`) | `scenario-documentation-pain-points` | unseeded 2 | avg. | 1 → 0 | 4 → 0 |
+
+Change 3(a) moved three: `checks-gpt-oss-20b-low`, `audit-burnout-share`,
+seeded 0, 1 and 2, uncited 2 → 1 each. No other sentence in the 44 sets
+changed, and no verdict moved, seeded or unseeded. None of the
+default-configuration sets moved (612 runs).
+
+| Result set | Gold pass | Unseeded passing | Uncited | Unsupported | By |
+|---|---|---|---|---|---|
+| `behavior-decline-list-scenarios` | 0 of 7 | 1 of 21 | 1 → 0 | 5 | 1 |
+| `checks-decline-list-scenarios` | 0 of 7 | 1 of 21 | 1 → 0 | 5 | 1 |
+| `checks-gpt-oss-20b-low` | 0 of 10 | 2 of 30 | 32 → 31 | 17 | 3(a) |
+
+Counts are the first seeded run's, as the reports give them.
+
+- **Care coordinator.** The "…(6.5 min vs." fragment is gone, but the
+  merged sentence is still credited to [4] (item 2, left above), so its
+  five figures (6.5, 9, 20, 4, "4 of 5") stay unsupported.
+- **"avg."** The uncited "…charting (avg." fragment and its four figures
+  (the 1 of "#1", 52, 31, 64) are gone.
+- **gpt-oss `audit-burnout-share`** stays FAIL in all three seeded runs.
+  "No source provides a direct percentage of clinicians experiencing
+  burnout." is still uncited: it has singular "source" with the negation
+  first, so neither decline rule matches it. Decision 20's gpt-oss
+  comparison stands, and so does decision 16.
+
+**Predictions, written before the re-judge.** Four of six matched.
+Predictions 1 ("change 1 moves exactly 9 records") and 6 ("no other
+sentence changes") missed on one record:
+`behavior-list-scenarios`, `scenario-documentation-pain-points`, unseeded 2.
+It's the same "avg." sentence as the two in-repo "avg." rows. The miss is
+one of scope: the predictions came from investigating the 36 in-repo sets,
+and the re-judge also covered `~/rr144-results`. No check was changed for
+it. Prediction 5 (gpt-oss `audit-burnout-share` might pass) didn't happen,
+for the reason above.
+
+**List format stays off.** Decision 19's rule, under the new checks:
+a set clears only if its first seeded uncited and unsupported counts are
+both 0, and both sets must clear with no counted regression. Decline with
+evidence plus list format (`checks-decline-list[-scenarios]`) against
+decline with evidence alone (`checks-control[-scenarios]`):
+
+| | Control | Decline + list format |
+|---|---|---|
+| Gold pass, regression / scenario | 5 of 10 / 0 of 7 | 7 of 10 / 0 of 7 |
+| Unseeded passing (of 30 / 21) | 15 / 1 | 19 / 1 |
+| Uncited, regression / scenario | 5 / 0 | 0 / 0 |
+| Unsupported, regression / scenario | 5 / 0 | 0 / 5 |
+
+The regression set clears, with two counted gains (`prior-auth-citations`
+and `audit-onboarding-steps-order`) and no counted regression. The scenario
+set doesn't: its 5 unsupported figures are the care-coordinator answer's
+misplaced citations (item 2, left). So decline with evidence alone stays
+the default. Its counted regression against step 5 is recorded:
+`audit-onboarding-steps-order` passes 1 of 3 unseeded runs in
+`checks-control` (decision 20's correction to decision 19).
+
+**Corrections to decisions 16, 19 and 20** (left as written):
+- Decision 20 said "P05" is flagged as "05". It isn't under the current
+  checks, nor at ff5ce49: no sentence in the 44 sets has "05" unsupported.
+  RR-148's quote handling puts the P05 text in a sentence citing [2, 3],
+  and [2] contains "P05".
+- Decision 20's re-judge ("30 sets, 1,530 runs") was right when it ran.
+  The repo now holds 36 sets and 1,836 runs because decision 20 added six.
+- Decision 16's gpt-oss 2 of 10 and 1 of 7 (from 0 and 0) came from a
+  scratch re-score that both normalized U+202F/U+2011 and credited
+  paragraph-final marker groups. They aren't what change 5 of decision 20
+  gives alone: under the current checks gpt-oss's decision 16 run still
+  passes 0 of 10 and 0 of 7.
+- The "vs." split, which decision 20 and the old test comment called not
+  fixed, is fixed here.
+
+**Reproducibility.** 18 of the 36 stored sets in the repo record a
+`-dirty` appCommit (the gemma2, gemma3, qwen3 and gpt-oss bake-off sets,
+and the `v1.3.6.7-*` and `v1.3.6.37-*` sets except `v1.3.6.37-control`).
+Their pipeline code can't be recovered exactly from git. Their stored
+answers and sources are what's re-judged, so this doesn't affect the
+checks results.
+
+**Still not done:** recapturing the public demo's saved answers
+(`ask/static/answers.json`), as in decisions 19 and 20.
+
+**Kept in `backend/ask/eval/results/`:** `checks-rejudge-rr149.md`. No runs
+were made. The reports stored before this decision are left as written,
 under the checks of their time. `report` re-judges any of them under these.
