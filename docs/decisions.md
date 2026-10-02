@@ -1247,7 +1247,9 @@ RR-149's investigation:
   one sentence each. Only these two. The other abbreviations ("e.g.",
   "i.e.", "approx.", "cf.", "etc.", "No.") are never followed by a space in
   the stored answers: the three "e.g." uses are all "e.g.,", which never
-  split. A bare "e.g. step 3" still splits, a recorded limitation.
+  split. A bare "e.g. step 3" still splits, a recorded limitation. A
+  sentence that really ends in "vs." or "avg." before a new sentence no
+  longer splits there either; none occurs in the stored answers.
 - **Change 3(a): "surveys" is a decline noun.** `DECLINE_RE` takes
   "survey(s)" beside "sources", "records", "notes" and the rest, so "The
   surveys do not report an overall burnout rate for clinicians." is a
@@ -1265,9 +1267,9 @@ check other than these two.
 - **Item 2, markers before a capital** ("…P05 [3] The triage ranking…").
   The checks apply the documented rule: markers after a full stop and
   before a capital belong to the sentence before. Answers that put the
-  marker first on each line occur only in non-default gemma2
+  marker first on each item occur only in non-default gemma2
   configurations (list format, open items, whole notes). Crediting them
-  forward would add a citation form.
+  forward would change where a citation is expected.
 - **Item 4, a marker-only line after a paragraph** ("[1][2][3]" on its own
   line) still joins only the paragraph's last sentence. Crediting it to the
   whole paragraph would be a new group-citation form.
@@ -1280,9 +1282,12 @@ check other than these two.
   ticket.
 
 **Other problems recorded, not fixed:**
-- The verb "note" is read as `DECLINE_RE`'s noun: "The readout notes
-  that coordinators did not report the override reasons." counts as a
-  decline, so it needs no citation.
+- The verb "note" is read as `DECLINE_RE`'s noun. The stored case is
+  `checks-gpt-oss-20b-low`, `audit-step3-wireframe`, unseeded 2: "They
+  describe step 3 as “Connect calendar” and note that it is required, but
+  no visual or layout details are provided." It counts as a decline and
+  needs no citation. "The readout notes that coordinators did not report
+  the override reasons." is a constructed example of the same pattern.
 - A participant ID such as "P05" would be read as a figure. This is latent:
   the checks have no participant-ID rule, and RR-148's quote handling merges
   the P05 text into a sentence citing [2, 3], where [2] contains "P05".
@@ -1290,6 +1295,11 @@ check other than these two.
   is flagged digit by digit.
 - A marker before a sentence that opens with a digit is credited to the
   sentence before.
+- Declines worded "No source provides…" or "The documentation does not
+  specify…" are still read as uncited claims: seven distinct sentences in
+  gpt-oss and gemma3 runs, none in the default-configuration sets. A variant
+  that adds them was sized (13 sentences) and not applied, because it was
+  written after seeing those sentences.
 
 **The re-judge** (`ask/eval/results/checks-rejudge-rr149.md`). All 36
 stored sets in the repo (1,836 runs) and the 8 RR-144 sets in
@@ -1335,14 +1345,15 @@ Counts are the first seeded run's, as the reports give them.
   first, so neither decline rule matches it. Decision 20's gpt-oss
   comparison stands, and so does decision 16.
 
-**Predictions, written before the re-judge.** Four of six matched.
-Predictions 1 ("change 1 moves exactly 9 records") and 6 ("no other
-sentence changes") missed on one record:
+**Predictions, written before the re-judge.** Predictions 2, 3 and 4
+matched. Prediction 5 (a "may") didn't happen. Predictions 1 ("change 1
+moves exactly 9 records") and 6 ("no other sentence changes") missed on one
+record:
 `behavior-list-scenarios`, `scenario-documentation-pain-points`, unseeded 2.
 It's the same "avg." sentence as the two in-repo "avg." rows. The miss is
 one of scope: the predictions came from investigating the 36 in-repo sets,
 and the re-judge also covered `~/rr144-results`. No check was changed for
-it. Prediction 5 (gpt-oss `audit-burnout-share` might pass) didn't happen,
+it. Prediction 5 (gpt-oss `audit-burnout-share` may pass) didn't happen,
 for the reason above.
 
 **List format stays off.** Decision 19's rule, under the new checks:
@@ -1367,10 +1378,15 @@ the default. Its counted regression against step 5 is recorded:
 `checks-control` (decision 20's correction to decision 19).
 
 **Corrections to decisions 16, 19 and 20** (left as written):
-- Decision 20 said "P05" is flagged as "05". It isn't under the current
-  checks, nor at ff5ce49: no sentence in the 44 sets has "05" unsupported.
-  RR-148's quote handling puts the P05 text in a sentence citing [2, 3],
-  and [2] contains "P05".
+- Decision 20 said "P05" is flagged as "05". Only `ask/checks.js` before
+  RR-148 (`1c7d86a^`) flagged it: in six care-coordinator runs (seeded 0–2
+  in `behavior-decline-list-scenarios` and `checks-decline-list-scenarios`)
+  the quote split left its end and the P05 attribution in a sentence of
+  their own ("I don't need it to think for me." — Care Coordinator (float
+  pool), P05 The triage ranking works…"), citing only [3]. At ff5ce49
+  (decision 20's checks) and under the new checks, no sentence in the 44
+  sets has "05" unsupported: RR-148's quote handling puts the P05 text in a
+  sentence citing [2, 3], and [2] contains "P05".
 - Decision 20's re-judge ("30 sets, 1,530 runs") was right when it ran.
   The repo now holds 36 sets and 1,836 runs because decision 20 added six.
 - Decision 16's gpt-oss 2 of 10 and 1 of 7 (from 0 and 0) came from a

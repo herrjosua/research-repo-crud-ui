@@ -136,6 +136,9 @@ against step 5, `audit-onboarding-steps-order` at 1 of 3 unseeded in
 
 ## Predictions, written before the re-judge
 
+Predictions 2, 3 and 4 matched. Prediction 5 (a "may") didn't happen.
+Predictions 1 and 6 missed on one record.
+
 1. Change 1 moves exactly 9 records. **Missed by one**: it moves 10. The 9
    predicted moved as predicted. The tenth is `behavior-list-scenarios`
    (`~/rr144-results`), above. None of the default sets moved, as
