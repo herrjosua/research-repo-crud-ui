@@ -1,0 +1,2545 @@
+{
+  "metadata": {
+    "harnessVersion": 1,
+    "label": "rr145-linked-open-items",
+    "createdAt": "2026-10-02T19:08:57.978Z",
+    "corpusCommit": "4ba145f717683ee7f6192a9f4429eee9fa4f7353",
+    "appCommit": "30116eb1b47c10082866c5e6f98b1deeb5125c33",
+    "model": "gemma2:9b",
+    "embedModel": "nomic-embed-text",
+    "ollamaVersion": "0.35.0",
+    "modelDigest": "ff02c3702f322b9e075e9568332d96c0a7028002f1a5a056e0a6784320a4db0b",
+    "embedModelDigest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+    "capabilities": [
+      "completion"
+    ],
+    "thinking": {
+      "capable": false,
+      "think": null,
+      "handling": "no think parameter sent (the model has no thinking capability); the answer is message.content only"
+    },
+    "seed": 42,
+    "temperature": 0.2,
+    "chatOptions": {
+      "temperature": 0.2,
+      "num_ctx": 8192
+    },
+    "topK": 6,
+    "retrieval": {
+      "topK": 6,
+      "metadataSections": "excluded",
+      "provenanceSlot": false,
+      "passagesPerRaw": 2,
+      "wholeRawNotes": 0,
+      "followUps": "linked"
+    },
+    "promptBehaviors": {
+      "premiseCheck": false,
+      "openItems": true,
+      "declineWithEvidence": true,
+      "listFormat": false
+    },
+    "seededRuns": 3,
+    "unseededRuns": 3,
+    "wallSecs": 43,
+    "memory": {
+      "source": "Ollama /api/ps after each question",
+      "peakBytes": 6565396479,
+      "peakVramBytes": 6565396479
+    }
+  },
+  "questions": [
+    {
+      "id": "scenario-care-coordinator-gaps",
+      "question": "What haven't we learned yet about care coordinators?",
+      "project": null,
+      "ranking": [
+        {
+          "recordId": "deliverable:mental-models/care-coordinator-alert-ranking",
+          "kind": "deliverable",
+          "score": 0.717
+        },
+        {
+          "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+          "kind": "raw",
+          "score": 0.717
+        },
+        {
+          "recordId": "finding:care-coordination-triage",
+          "kind": "finding",
+          "score": 0.709
+        },
+        {
+          "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+          "kind": "raw",
+          "score": 0.683
+        },
+        {
+          "recordId": "finding:scope-boundaries-and-workflow-fit",
+          "kind": "finding",
+          "score": 0.648
+        },
+        {
+          "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+          "kind": "raw",
+          "score": 0.646
+        },
+        {
+          "recordId": "finding:clinician-experience-documentation-burden",
+          "kind": "finding",
+          "score": 0.634
+        },
+        {
+          "recordId": "deliverable:accessibility-screenings/status-indicator-remediation-screening",
+          "kind": "deliverable",
+          "score": 0.625
+        },
+        {
+          "recordId": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline",
+          "kind": "raw",
+          "score": 0.624
+        },
+        {
+          "recordId": "raw:2025-10-21-interview-training-department-rollout-change-management",
+          "kind": "raw",
+          "score": 0.623
+        },
+        {
+          "recordId": "deliverable:wireflows/alert-triage-override-reason-capture",
+          "kind": "deliverable",
+          "score": 0.622
+        },
+        {
+          "recordId": "finding:rollout-and-change-management",
+          "kind": "finding",
+          "score": 0.622
+        },
+        {
+          "recordId": "raw:2025-02-11-survey-nursing-attitudes-ai-documentation",
+          "kind": "raw",
+          "score": 0.621
+        },
+        {
+          "recordId": "component:chart-review-summary-panel",
+          "kind": "component",
+          "score": 0.62
+        },
+        {
+          "recordId": "finding:prior-authorization",
+          "kind": "finding",
+          "score": 0.618
+        },
+        {
+          "recordId": "raw:2025-01-14-stakeholder-interview-ai-strategy-kickoff",
+          "kind": "raw",
+          "score": 0.612
+        },
+        {
+          "recordId": "finding:governance-and-phi",
+          "kind": "finding",
+          "score": 0.609
+        },
+        {
+          "recordId": "raw:2025-05-06-usability-test-clinician-dashboard-redesign-v1",
+          "kind": "raw",
+          "score": 0.602
+        },
+        {
+          "recordId": "raw:2025-12-02-survey-allstaff-ai-readiness-pulse",
+          "kind": "raw",
+          "score": 0.602
+        },
+        {
+          "recordId": "deliverable:personas/dana-overwhelmed-new-admin",
+          "kind": "deliverable",
+          "score": 0.599
+        },
+        {
+          "recordId": "raw:2025-08-12-interview-cmio-ai-generated-content-governance",
+          "kind": "raw",
+          "score": 0.597
+        },
+        {
+          "recordId": "finding:him-coding-and-billing",
+          "kind": "finding",
+          "score": 0.595
+        },
+        {
+          "recordId": "component:care-gap-badge",
+          "kind": "component",
+          "score": 0.592
+        },
+        {
+          "recordId": "deliverable:topline-summaries/ambient-scribe-ga-adoption-first-4-weeks",
+          "kind": "deliverable",
+          "score": 0.591
+        },
+        {
+          "recordId": "deliverable:service-topology/prior-auth-drafting-v2",
+          "kind": "deliverable",
+          "score": 0.59
+        },
+        {
+          "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+          "kind": "raw",
+          "score": 0.588
+        },
+        {
+          "recordId": "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption",
+          "kind": "raw",
+          "score": 0.588
+        },
+        {
+          "recordId": "deliverable:storyboards/ed-intake-peak-hour-interruption",
+          "kind": "deliverable",
+          "score": 0.587
+        },
+        {
+          "recordId": "deliverable:personas/physician-longitudinal-scribe-user",
+          "kind": "deliverable",
+          "score": 0.587
+        },
+        {
+          "recordId": "raw:2025-07-15-contextual-inquiry-him-release-of-information",
+          "kind": "raw",
+          "score": 0.585
+        },
+        {
+          "recordId": "component:clinician-dashboard",
+          "kind": "component",
+          "score": 0.585
+        },
+        {
+          "recordId": "raw:2025-11-04-usability-test-prior-auth-ai-v2",
+          "kind": "raw",
+          "score": 0.582
+        },
+        {
+          "recordId": "analytics:onboarding-funnel-dropoff",
+          "kind": "analytics",
+          "score": 0.582
+        },
+        {
+          "recordId": "raw:2025-04-08-usability-test-prior-auth-ai-v1",
+          "kind": "raw",
+          "score": 0.582
+        },
+        {
+          "recordId": "finding:patient-scheduling-chatbot",
+          "kind": "finding",
+          "score": 0.58
+        },
+        {
+          "recordId": "component:patient-chatbot-widget",
+          "kind": "component",
+          "score": 0.579
+        },
+        {
+          "recordId": "deliverable:mindsets/skeptical-verifier",
+          "kind": "deliverable",
+          "score": 0.577
+        },
+        {
+          "recordId": "deliverable:journey-maps/longitudinal-physician-ambient-scribe",
+          "kind": "deliverable",
+          "score": 0.569
+        },
+        {
+          "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+          "kind": "raw",
+          "score": 0.567
+        },
+        {
+          "recordId": "deliverable:research-readouts/onboarding-flow-q1-readout",
+          "kind": "deliverable",
+          "score": 0.567
+        },
+        {
+          "recordId": "raw:2026-01-19-onboarding-usability-test",
+          "kind": "raw",
+          "score": 0.567
+        },
+        {
+          "recordId": "raw:2025-06-03-survey-patient-portal-ai-chatbot-trust",
+          "kind": "raw",
+          "score": 0.566
+        },
+        {
+          "recordId": "finding:accessibility-cross-cutting",
+          "kind": "finding",
+          "score": 0.565
+        },
+        {
+          "recordId": "deliverable:design-system/v4-1-status-indicator-component",
+          "kind": "deliverable",
+          "score": 0.562
+        },
+        {
+          "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+          "kind": "raw",
+          "score": 0.561
+        },
+        {
+          "recordId": "deliverable:research-plans/onboarding-usability-study-q1",
+          "kind": "deliverable",
+          "score": 0.561
+        },
+        {
+          "recordId": "raw:2025-06-17-usability-test-patient-chatbot-prototype",
+          "kind": "raw",
+          "score": 0.559
+        },
+        {
+          "recordId": "finding:onboarding",
+          "kind": "finding",
+          "score": 0.558
+        },
+        {
+          "recordId": "raw:2025-07-29-usability-test-ai-coding-billing-suggestions",
+          "kind": "raw",
+          "score": 0.557
+        },
+        {
+          "recordId": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+          "kind": "raw",
+          "score": 0.555
+        },
+        {
+          "recordId": "deliverable:accessibility-screenings/example-accessibility-screening",
+          "kind": "deliverable",
+          "score": 0.554
+        },
+        {
+          "recordId": "deliverable:topline-summaries/example-topline-summary",
+          "kind": "deliverable",
+          "score": 0.553
+        },
+        {
+          "recordId": "component:coding-suggestion-panel",
+          "kind": "component",
+          "score": 0.553
+        },
+        {
+          "recordId": "deliverable:facilitation-guides/onboarding-usability-guide",
+          "kind": "deliverable",
+          "score": 0.553
+        },
+        {
+          "recordId": "raw:2025-11-18-accessibility-audit-mobile-clinician-app",
+          "kind": "raw",
+          "score": 0.552
+        },
+        {
+          "recordId": "deliverable:journey-maps/example-journey-map",
+          "kind": "deliverable",
+          "score": 0.551
+        },
+        {
+          "recordId": "deliverable:wireframes/workspace-setup-step4-invite-team",
+          "kind": "deliverable",
+          "score": 0.549
+        },
+        {
+          "recordId": "component:ed-intake-form",
+          "kind": "component",
+          "score": 0.549
+        },
+        {
+          "recordId": "component:prior-auth-drafting-panel",
+          "kind": "component",
+          "score": 0.548
+        },
+        {
+          "recordId": "deliverable:mindsets/example-mindset",
+          "kind": "deliverable",
+          "score": 0.547
+        },
+        {
+          "recordId": "finding:ambient-scribe",
+          "kind": "finding",
+          "score": 0.546
+        },
+        {
+          "recordId": "deliverable:heuristic-evaluations/ambient-scribe-encounter-view-pre-ga",
+          "kind": "deliverable",
+          "score": 0.546
+        },
+        {
+          "recordId": "deliverable:service-topology/example-service-topology",
+          "kind": "deliverable",
+          "score": 0.545
+        },
+        {
+          "recordId": "deliverable:mental-models/example-mental-model",
+          "kind": "deliverable",
+          "score": 0.545
+        },
+        {
+          "recordId": "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate",
+          "kind": "raw",
+          "score": 0.545
+        },
+        {
+          "recordId": "finding:ambient-scribe-post-ga-refinements",
+          "kind": "finding",
+          "score": 0.54
+        },
+        {
+          "recordId": "deliverable:storyboards/example-storyboard",
+          "kind": "deliverable",
+          "score": 0.54
+        },
+        {
+          "recordId": "deliverable:heuristic-evaluations/example-heuristic-evaluation",
+          "kind": "deliverable",
+          "score": 0.538
+        },
+        {
+          "recordId": "raw:2025-03-24-interview-privacy-officer-deidentification-requirements",
+          "kind": "raw",
+          "score": 0.537
+        },
+        {
+          "recordId": "component:sso-mfa-login",
+          "kind": "component",
+          "score": 0.536
+        },
+        {
+          "recordId": "deliverable:wireframes/ambient-scribe-medication-flag",
+          "kind": "deliverable",
+          "score": 0.535
+        },
+        {
+          "recordId": "deliverable:thumbnails/medication-flag-placement-explorations",
+          "kind": "deliverable",
+          "score": 0.535
+        },
+        {
+          "recordId": "deliverable:wireflows/example-wireflow",
+          "kind": "deliverable",
+          "score": 0.534
+        },
+        {
+          "recordId": "raw:2025-03-10-accessibility-audit-legacy-extjs-admin-console",
+          "kind": "raw",
+          "score": 0.531
+        },
+        {
+          "recordId": "deliverable:user-flows/onboarding-flow",
+          "kind": "deliverable",
+          "score": 0.531
+        },
+        {
+          "recordId": "deliverable:thumbnails/example-thumbnail",
+          "kind": "deliverable",
+          "score": 0.531
+        },
+        {
+          "recordId": "deliverable:mockups/example-mockups",
+          "kind": "deliverable",
+          "score": 0.524
+        },
+        {
+          "recordId": "component:design-system-form-field",
+          "kind": "component",
+          "score": 0.515
+        },
+        {
+          "recordId": "deliverable:prototypes/example-prototype",
+          "kind": "deliverable",
+          "score": 0.515
+        },
+        {
+          "recordId": "raw:2025-02-25-usability-test-ambient-scribe-v01",
+          "kind": "raw",
+          "score": 0.514
+        },
+        {
+          "recordId": "raw:2026-02-17-session-lock-during-dictation",
+          "kind": "raw",
+          "score": 0.514
+        },
+        {
+          "recordId": "component:scheduling-widget",
+          "kind": "component",
+          "score": 0.513
+        },
+        {
+          "recordId": "deliverable:mockups/confidence-highlighted-draft-review",
+          "kind": "deliverable",
+          "score": 0.513
+        },
+        {
+          "recordId": "component:design-system-modal",
+          "kind": "component",
+          "score": 0.512
+        },
+        {
+          "recordId": "component:admin-console-grid",
+          "kind": "component",
+          "score": 0.51
+        },
+        {
+          "recordId": "raw:2025-09-23-usability-test-ambient-scribe-v02",
+          "kind": "raw",
+          "score": 0.509
+        },
+        {
+          "recordId": "component:encounter-view",
+          "kind": "component",
+          "score": 0.505
+        },
+        {
+          "recordId": "raw:2025-07-01-accessibility-audit-new-design-system-components",
+          "kind": "raw",
+          "score": 0.505
+        },
+        {
+          "recordId": "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+          "kind": "deliverable",
+          "score": 0.505
+        },
+        {
+          "recordId": "component:alert-badge",
+          "kind": "component",
+          "score": 0.505
+        },
+        {
+          "recordId": "component:ambient-scribe-widget",
+          "kind": "component",
+          "score": 0.505
+        },
+        {
+          "recordId": "component:alert-triage-queue",
+          "kind": "component",
+          "score": 0.502
+        },
+        {
+          "recordId": "deliverable:prototypes/ambient-scribe-ga-candidate-clickthrough",
+          "kind": "deliverable",
+          "score": 0.499
+        },
+        {
+          "recordId": "deliverable:design-system/example-design-system",
+          "kind": "deliverable",
+          "score": 0.499
+        },
+        {
+          "recordId": "component:roi-redaction-tool",
+          "kind": "component",
+          "score": 0.494
+        },
+        {
+          "recordId": "deliverable:style-guide/foundations-v3",
+          "kind": "deliverable",
+          "score": 0.459
+        },
+        {
+          "recordId": "component:mobile-app-alert-list",
+          "kind": "component",
+          "score": 0.458
+        }
+      ],
+      "seeded": [
+        {
+          "secs": 6.9,
+          "answer": "- Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist. [1]\n- Revisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity. [1]",
+          "stats": {
+            "promptTokens": 2164,
+            "evalTokens": 55,
+            "promptSecs": 4.430435,
+            "evalSecs": 2.015806,
+            "loadSecs": 0.004104417,
+            "totalSecs": 6.756704958
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1",
+              "excerpt": "Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist.\nRevisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity.",
+              "score": 0.691
+            }
+          ],
+          "promptChars": 9104,
+          "promptTokens": 2164,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "deliverable:mental-models/care-coordinator-alert-ranking",
+              "kind": "deliverable",
+              "passage": "deliverable:mental-models/care-coordinator-alert-ranking#0"
+            },
+            {
+              "n": 2,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#2"
+            },
+            {
+              "n": 3,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#4"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6"
+            },
+            {
+              "n": 5,
+              "recordId": "finding:care-coordination-triage",
+              "kind": "finding",
+              "passage": "finding:care-coordination-triage#1"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#4"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#5"
+            },
+            {
+              "n": 8,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6"
+            },
+            {
+              "n": 9,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#0"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#4"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#5"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 14,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 15,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            }
+          ]
+        },
+        {
+          "secs": 2.4,
+          "answer": "- Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist. [1]\n- Revisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity. [1]",
+          "stats": {
+            "promptTokens": 2164,
+            "evalTokens": 55,
+            "promptSecs": 0.172621,
+            "evalSecs": 2.028469,
+            "loadSecs": 0.0053615,
+            "totalSecs": 2.231130875
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1",
+              "excerpt": "Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist.\nRevisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity.",
+              "score": 0.691
+            }
+          ],
+          "promptChars": 9104,
+          "promptTokens": 2164,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "deliverable:mental-models/care-coordinator-alert-ranking",
+              "kind": "deliverable",
+              "passage": "deliverable:mental-models/care-coordinator-alert-ranking#0"
+            },
+            {
+              "n": 2,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#2"
+            },
+            {
+              "n": 3,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#4"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6"
+            },
+            {
+              "n": 5,
+              "recordId": "finding:care-coordination-triage",
+              "kind": "finding",
+              "passage": "finding:care-coordination-triage#1"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#4"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#5"
+            },
+            {
+              "n": 8,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6"
+            },
+            {
+              "n": 9,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#0"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#4"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#5"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 14,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 15,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            }
+          ]
+        },
+        {
+          "secs": 2.6,
+          "answer": "- Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist. [1]\n- Revisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity. [1]",
+          "stats": {
+            "promptTokens": 2164,
+            "evalTokens": 55,
+            "promptSecs": 0.146103,
+            "evalSecs": 2.117777,
+            "loadSecs": 0.008210375,
+            "totalSecs": 2.316978916
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1",
+              "excerpt": "Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist.\nRevisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity.",
+              "score": 0.691
+            }
+          ],
+          "promptChars": 9104,
+          "promptTokens": 2164,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "deliverable:mental-models/care-coordinator-alert-ranking",
+              "kind": "deliverable",
+              "passage": "deliverable:mental-models/care-coordinator-alert-ranking#0"
+            },
+            {
+              "n": 2,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#2"
+            },
+            {
+              "n": 3,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#4"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6"
+            },
+            {
+              "n": 5,
+              "recordId": "finding:care-coordination-triage",
+              "kind": "finding",
+              "passage": "finding:care-coordination-triage#1"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#4"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#5"
+            },
+            {
+              "n": 8,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6"
+            },
+            {
+              "n": 9,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#0"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#4"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#5"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 14,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 15,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            }
+          ]
+        }
+      ],
+      "unseeded": [
+        {
+          "secs": 2.6,
+          "answer": "- Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist. [1]\n- Revisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity. [1]",
+          "stats": {
+            "promptTokens": 2164,
+            "evalTokens": 55,
+            "promptSecs": 0.145186,
+            "evalSecs": 2.114643999,
+            "loadSecs": 0.006424667,
+            "totalSecs": 2.289243584
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1",
+              "excerpt": "Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist.\nRevisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity.",
+              "score": 0.691
+            }
+          ],
+          "promptChars": 9104,
+          "promptTokens": 2164,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "deliverable:mental-models/care-coordinator-alert-ranking",
+              "kind": "deliverable",
+              "passage": "deliverable:mental-models/care-coordinator-alert-ranking#0"
+            },
+            {
+              "n": 2,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#2"
+            },
+            {
+              "n": 3,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#4"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6"
+            },
+            {
+              "n": 5,
+              "recordId": "finding:care-coordination-triage",
+              "kind": "finding",
+              "passage": "finding:care-coordination-triage#1"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#4"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#5"
+            },
+            {
+              "n": 8,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6"
+            },
+            {
+              "n": 9,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#0"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#4"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#5"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 14,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 15,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            }
+          ]
+        },
+        {
+          "secs": 2.5,
+          "answer": "- Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist. [1]\n- Revisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity. [1]",
+          "stats": {
+            "promptTokens": 2164,
+            "evalTokens": 55,
+            "promptSecs": 0.141958,
+            "evalSecs": 2.106491,
+            "loadSecs": 0.005730875,
+            "totalSecs": 2.277046166
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1",
+              "excerpt": "Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist.\nRevisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity.",
+              "score": 0.691
+            }
+          ],
+          "promptChars": 9104,
+          "promptTokens": 2164,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "deliverable:mental-models/care-coordinator-alert-ranking",
+              "kind": "deliverable",
+              "passage": "deliverable:mental-models/care-coordinator-alert-ranking#0"
+            },
+            {
+              "n": 2,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#2"
+            },
+            {
+              "n": 3,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#4"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6"
+            },
+            {
+              "n": 5,
+              "recordId": "finding:care-coordination-triage",
+              "kind": "finding",
+              "passage": "finding:care-coordination-triage#1"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#4"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#5"
+            },
+            {
+              "n": 8,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6"
+            },
+            {
+              "n": 9,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#0"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#4"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#5"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 14,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 15,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            }
+          ]
+        },
+        {
+          "secs": 2.7,
+          "answer": "- Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist. [1]\n- Revisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity. [1]",
+          "stats": {
+            "promptTokens": 2164,
+            "evalTokens": 55,
+            "promptSecs": 0.130876,
+            "evalSecs": 2.260429,
+            "loadSecs": 0.006520667,
+            "totalSecs": 2.418251667
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1",
+              "excerpt": "Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist.\nRevisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity.",
+              "score": 0.691
+            }
+          ],
+          "promptChars": 9104,
+          "promptTokens": 2164,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6",
+              "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "deliverable:mental-models/care-coordinator-alert-ranking",
+              "kind": "deliverable",
+              "passage": "deliverable:mental-models/care-coordinator-alert-ranking#0"
+            },
+            {
+              "n": 2,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#2"
+            },
+            {
+              "n": 3,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#4"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6"
+            },
+            {
+              "n": 5,
+              "recordId": "finding:care-coordination-triage",
+              "kind": "finding",
+              "passage": "finding:care-coordination-triage#1"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#4"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#5"
+            },
+            {
+              "n": 8,
+              "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+              "kind": "raw",
+              "passage": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6"
+            },
+            {
+              "n": 9,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#0"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#4"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#5"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 14,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 15,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scenario-session-timeout-open",
+      "question": "What is unresolved about the session timeout?",
+      "project": null,
+      "ranking": [
+        {
+          "recordId": "finding:ambient-scribe-post-ga-refinements",
+          "kind": "finding",
+          "score": 0.727
+        },
+        {
+          "recordId": "finding:scope-boundaries-and-workflow-fit",
+          "kind": "finding",
+          "score": 0.721
+        },
+        {
+          "recordId": "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+          "kind": "deliverable",
+          "score": 0.72
+        },
+        {
+          "recordId": "raw:2026-02-17-session-lock-during-dictation",
+          "kind": "raw",
+          "score": 0.715
+        },
+        {
+          "recordId": "component:encounter-view",
+          "kind": "component",
+          "score": 0.705
+        },
+        {
+          "recordId": "component:sso-mfa-login",
+          "kind": "component",
+          "score": 0.687
+        },
+        {
+          "recordId": "raw:2026-01-19-onboarding-usability-test",
+          "kind": "raw",
+          "score": 0.676
+        },
+        {
+          "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+          "kind": "raw",
+          "score": 0.668
+        },
+        {
+          "recordId": "component:patient-chatbot-widget",
+          "kind": "component",
+          "score": 0.663
+        },
+        {
+          "recordId": "deliverable:research-readouts/onboarding-flow-q1-readout",
+          "kind": "deliverable",
+          "score": 0.662
+        },
+        {
+          "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+          "kind": "raw",
+          "score": 0.655
+        },
+        {
+          "recordId": "finding:onboarding",
+          "kind": "finding",
+          "score": 0.652
+        },
+        {
+          "recordId": "finding:patient-scheduling-chatbot",
+          "kind": "finding",
+          "score": 0.65
+        },
+        {
+          "recordId": "deliverable:heuristic-evaluations/ambient-scribe-encounter-view-pre-ga",
+          "kind": "deliverable",
+          "score": 0.648
+        },
+        {
+          "recordId": "deliverable:journey-maps/longitudinal-physician-ambient-scribe",
+          "kind": "deliverable",
+          "score": 0.647
+        },
+        {
+          "recordId": "deliverable:mindsets/example-mindset",
+          "kind": "deliverable",
+          "score": 0.64
+        },
+        {
+          "recordId": "raw:2025-09-23-usability-test-ambient-scribe-v02",
+          "kind": "raw",
+          "score": 0.64
+        },
+        {
+          "recordId": "deliverable:topline-summaries/example-topline-summary",
+          "kind": "deliverable",
+          "score": 0.637
+        },
+        {
+          "recordId": "finding:governance-and-phi",
+          "kind": "finding",
+          "score": 0.637
+        },
+        {
+          "recordId": "raw:2025-11-04-usability-test-prior-auth-ai-v2",
+          "kind": "raw",
+          "score": 0.636
+        },
+        {
+          "recordId": "deliverable:wireflows/alert-triage-override-reason-capture",
+          "kind": "deliverable",
+          "score": 0.635
+        },
+        {
+          "recordId": "finding:him-coding-and-billing",
+          "kind": "finding",
+          "score": 0.635
+        },
+        {
+          "recordId": "deliverable:heuristic-evaluations/example-heuristic-evaluation",
+          "kind": "deliverable",
+          "score": 0.633
+        },
+        {
+          "recordId": "component:ambient-scribe-widget",
+          "kind": "component",
+          "score": 0.626
+        },
+        {
+          "recordId": "raw:2025-06-17-usability-test-patient-chatbot-prototype",
+          "kind": "raw",
+          "score": 0.626
+        },
+        {
+          "recordId": "finding:rollout-and-change-management",
+          "kind": "finding",
+          "score": 0.626
+        },
+        {
+          "recordId": "deliverable:personas/physician-longitudinal-scribe-user",
+          "kind": "deliverable",
+          "score": 0.626
+        },
+        {
+          "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+          "kind": "raw",
+          "score": 0.625
+        },
+        {
+          "recordId": "raw:2025-03-10-accessibility-audit-legacy-extjs-admin-console",
+          "kind": "raw",
+          "score": 0.622
+        },
+        {
+          "recordId": "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate",
+          "kind": "raw",
+          "score": 0.62
+        },
+        {
+          "recordId": "raw:2025-04-08-usability-test-prior-auth-ai-v1",
+          "kind": "raw",
+          "score": 0.619
+        },
+        {
+          "recordId": "raw:2025-10-21-interview-training-department-rollout-change-management",
+          "kind": "raw",
+          "score": 0.618
+        },
+        {
+          "recordId": "raw:2025-02-25-usability-test-ambient-scribe-v01",
+          "kind": "raw",
+          "score": 0.618
+        },
+        {
+          "recordId": "finding:prior-authorization",
+          "kind": "finding",
+          "score": 0.617
+        },
+        {
+          "recordId": "deliverable:research-plans/onboarding-usability-study-q1",
+          "kind": "deliverable",
+          "score": 0.617
+        },
+        {
+          "recordId": "deliverable:service-topology/prior-auth-drafting-v2",
+          "kind": "deliverable",
+          "score": 0.617
+        },
+        {
+          "recordId": "deliverable:thumbnails/example-thumbnail",
+          "kind": "deliverable",
+          "score": 0.615
+        },
+        {
+          "recordId": "deliverable:storyboards/example-storyboard",
+          "kind": "deliverable",
+          "score": 0.615
+        },
+        {
+          "recordId": "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption",
+          "kind": "raw",
+          "score": 0.612
+        },
+        {
+          "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+          "kind": "raw",
+          "score": 0.609
+        },
+        {
+          "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+          "kind": "raw",
+          "score": 0.607
+        },
+        {
+          "recordId": "finding:care-coordination-triage",
+          "kind": "finding",
+          "score": 0.606
+        },
+        {
+          "recordId": "deliverable:wireframes/workspace-setup-step4-invite-team",
+          "kind": "deliverable",
+          "score": 0.605
+        },
+        {
+          "recordId": "raw:2025-12-02-survey-allstaff-ai-readiness-pulse",
+          "kind": "raw",
+          "score": 0.605
+        },
+        {
+          "recordId": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+          "kind": "raw",
+          "score": 0.604
+        },
+        {
+          "recordId": "analytics:onboarding-funnel-dropoff",
+          "kind": "analytics",
+          "score": 0.601
+        },
+        {
+          "recordId": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline",
+          "kind": "raw",
+          "score": 0.601
+        },
+        {
+          "recordId": "raw:2025-06-03-survey-patient-portal-ai-chatbot-trust",
+          "kind": "raw",
+          "score": 0.6
+        },
+        {
+          "recordId": "raw:2025-05-06-usability-test-clinician-dashboard-redesign-v1",
+          "kind": "raw",
+          "score": 0.599
+        },
+        {
+          "recordId": "component:scheduling-widget",
+          "kind": "component",
+          "score": 0.598
+        },
+        {
+          "recordId": "raw:2025-07-15-contextual-inquiry-him-release-of-information",
+          "kind": "raw",
+          "score": 0.597
+        },
+        {
+          "recordId": "component:roi-redaction-tool",
+          "kind": "component",
+          "score": 0.596
+        },
+        {
+          "recordId": "finding:ambient-scribe",
+          "kind": "finding",
+          "score": 0.596
+        },
+        {
+          "recordId": "finding:clinician-experience-documentation-burden",
+          "kind": "finding",
+          "score": 0.595
+        },
+        {
+          "recordId": "deliverable:storyboards/ed-intake-peak-hour-interruption",
+          "kind": "deliverable",
+          "score": 0.594
+        },
+        {
+          "recordId": "raw:2025-08-12-interview-cmio-ai-generated-content-governance",
+          "kind": "raw",
+          "score": 0.594
+        },
+        {
+          "recordId": "finding:accessibility-cross-cutting",
+          "kind": "finding",
+          "score": 0.593
+        },
+        {
+          "recordId": "component:alert-triage-queue",
+          "kind": "component",
+          "score": 0.593
+        },
+        {
+          "recordId": "deliverable:accessibility-screenings/example-accessibility-screening",
+          "kind": "deliverable",
+          "score": 0.593
+        },
+        {
+          "recordId": "deliverable:wireframes/ambient-scribe-medication-flag",
+          "kind": "deliverable",
+          "score": 0.592
+        },
+        {
+          "recordId": "component:clinician-dashboard",
+          "kind": "component",
+          "score": 0.591
+        },
+        {
+          "recordId": "component:coding-suggestion-panel",
+          "kind": "component",
+          "score": 0.591
+        },
+        {
+          "recordId": "raw:2025-01-14-stakeholder-interview-ai-strategy-kickoff",
+          "kind": "raw",
+          "score": 0.588
+        },
+        {
+          "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+          "kind": "raw",
+          "score": 0.587
+        },
+        {
+          "recordId": "raw:2025-11-18-accessibility-audit-mobile-clinician-app",
+          "kind": "raw",
+          "score": 0.586
+        },
+        {
+          "recordId": "deliverable:accessibility-screenings/status-indicator-remediation-screening",
+          "kind": "deliverable",
+          "score": 0.586
+        },
+        {
+          "recordId": "deliverable:topline-summaries/ambient-scribe-ga-adoption-first-4-weeks",
+          "kind": "deliverable",
+          "score": 0.585
+        },
+        {
+          "recordId": "deliverable:service-topology/example-service-topology",
+          "kind": "deliverable",
+          "score": 0.584
+        },
+        {
+          "recordId": "deliverable:personas/dana-overwhelmed-new-admin",
+          "kind": "deliverable",
+          "score": 0.584
+        },
+        {
+          "recordId": "component:admin-console-grid",
+          "kind": "component",
+          "score": 0.582
+        },
+        {
+          "recordId": "deliverable:prototypes/example-prototype",
+          "kind": "deliverable",
+          "score": 0.581
+        },
+        {
+          "recordId": "component:design-system-form-field",
+          "kind": "component",
+          "score": 0.581
+        },
+        {
+          "recordId": "deliverable:wireflows/example-wireflow",
+          "kind": "deliverable",
+          "score": 0.576
+        },
+        {
+          "recordId": "deliverable:design-system/v4-1-status-indicator-component",
+          "kind": "deliverable",
+          "score": 0.576
+        },
+        {
+          "recordId": "component:design-system-modal",
+          "kind": "component",
+          "score": 0.574
+        },
+        {
+          "recordId": "raw:2025-07-29-usability-test-ai-coding-billing-suggestions",
+          "kind": "raw",
+          "score": 0.573
+        },
+        {
+          "recordId": "raw:2025-07-01-accessibility-audit-new-design-system-components",
+          "kind": "raw",
+          "score": 0.573
+        },
+        {
+          "recordId": "deliverable:mental-models/care-coordinator-alert-ranking",
+          "kind": "deliverable",
+          "score": 0.569
+        },
+        {
+          "recordId": "component:chart-review-summary-panel",
+          "kind": "component",
+          "score": 0.567
+        },
+        {
+          "recordId": "component:prior-auth-drafting-panel",
+          "kind": "component",
+          "score": 0.566
+        },
+        {
+          "recordId": "raw:2025-03-24-interview-privacy-officer-deidentification-requirements",
+          "kind": "raw",
+          "score": 0.566
+        },
+        {
+          "recordId": "raw:2025-02-11-survey-nursing-attitudes-ai-documentation",
+          "kind": "raw",
+          "score": 0.565
+        },
+        {
+          "recordId": "component:ed-intake-form",
+          "kind": "component",
+          "score": 0.564
+        },
+        {
+          "recordId": "deliverable:mockups/example-mockups",
+          "kind": "deliverable",
+          "score": 0.564
+        },
+        {
+          "recordId": "component:mobile-app-alert-list",
+          "kind": "component",
+          "score": 0.564
+        },
+        {
+          "recordId": "deliverable:prototypes/ambient-scribe-ga-candidate-clickthrough",
+          "kind": "deliverable",
+          "score": 0.563
+        },
+        {
+          "recordId": "component:care-gap-badge",
+          "kind": "component",
+          "score": 0.563
+        },
+        {
+          "recordId": "deliverable:mental-models/example-mental-model",
+          "kind": "deliverable",
+          "score": 0.561
+        },
+        {
+          "recordId": "deliverable:facilitation-guides/onboarding-usability-guide",
+          "kind": "deliverable",
+          "score": 0.559
+        },
+        {
+          "recordId": "component:alert-badge",
+          "kind": "component",
+          "score": 0.548
+        },
+        {
+          "recordId": "deliverable:design-system/example-design-system",
+          "kind": "deliverable",
+          "score": 0.548
+        },
+        {
+          "recordId": "deliverable:journey-maps/example-journey-map",
+          "kind": "deliverable",
+          "score": 0.544
+        },
+        {
+          "recordId": "deliverable:mindsets/skeptical-verifier",
+          "kind": "deliverable",
+          "score": 0.537
+        },
+        {
+          "recordId": "deliverable:user-flows/onboarding-flow",
+          "kind": "deliverable",
+          "score": 0.535
+        },
+        {
+          "recordId": "deliverable:thumbnails/medication-flag-placement-explorations",
+          "kind": "deliverable",
+          "score": 0.53
+        },
+        {
+          "recordId": "deliverable:mockups/confidence-highlighted-draft-review",
+          "kind": "deliverable",
+          "score": 0.529
+        },
+        {
+          "recordId": "deliverable:style-guide/foundations-v3",
+          "kind": "deliverable",
+          "score": 0.483
+        }
+      ],
+      "seeded": [
+        {
+          "secs": 8.1,
+          "answer": "- The impact of the \"paused, draft preserved\" UI state on clinician behavior needs to be re-tested after it is implemented. [1]\n- It needs to be confirmed whether the \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe. [1]",
+          "stats": {
+            "promptTokens": 1723,
+            "evalTokens": 66,
+            "promptSecs": 4.671685,
+            "evalSecs": 2.607014,
+            "loadSecs": 0.00276375,
+            "totalSecs": 7.923607375
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2026-02-17-session-lock-during-dictation#7",
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+              "excerpt": "Confirm with IT Security whether the same \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe.\nRe-test the abandon-and-redictate behavior once the explicit paused state ships, to confirm it actually changes clinician behavior and not just their stated understanding.",
+              "score": 0.683
+            }
+          ],
+          "promptChars": 7274,
+          "promptTokens": 1723,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2026-02-17-session-lock-during-dictation#7",
+              "raw:2026-02-10-ambient-scribe-medication-flag-concept#6",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "finding:ambient-scribe-post-ga-refinements",
+              "kind": "finding",
+              "passage": "finding:ambient-scribe-post-ga-refinements#2"
+            },
+            {
+              "n": 2,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#3"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+              "kind": "deliverable",
+              "passage": "deliverable:user-flows/ambient-scribe-session-lock-recovery#0"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#4"
+            },
+            {
+              "n": 5,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#5"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#7"
+            },
+            {
+              "n": 7,
+              "recordId": "component:encounter-view",
+              "kind": "component",
+              "passage": "component:encounter-view#2"
+            },
+            {
+              "n": 8,
+              "recordId": "component:sso-mfa-login",
+              "kind": "component",
+              "passage": "component:sso-mfa-login#2"
+            },
+            {
+              "n": 9,
+              "recordId": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+              "kind": "raw",
+              "passage": "raw:2026-02-10-ambient-scribe-medication-flag-concept#6"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            }
+          ]
+        },
+        {
+          "secs": 2.9,
+          "answer": "- The impact of the \"paused, draft preserved\" UI state on clinician behavior needs to be re-tested after it is implemented. [1]\n- It needs to be confirmed whether the \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe. [1]",
+          "stats": {
+            "promptTokens": 1723,
+            "evalTokens": 66,
+            "promptSecs": 0.157107,
+            "evalSecs": 2.510847,
+            "loadSecs": 0.005252791,
+            "totalSecs": 2.691935708
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2026-02-17-session-lock-during-dictation#7",
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+              "excerpt": "Confirm with IT Security whether the same \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe.\nRe-test the abandon-and-redictate behavior once the explicit paused state ships, to confirm it actually changes clinician behavior and not just their stated understanding.",
+              "score": 0.683
+            }
+          ],
+          "promptChars": 7274,
+          "promptTokens": 1723,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2026-02-17-session-lock-during-dictation#7",
+              "raw:2026-02-10-ambient-scribe-medication-flag-concept#6",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "finding:ambient-scribe-post-ga-refinements",
+              "kind": "finding",
+              "passage": "finding:ambient-scribe-post-ga-refinements#2"
+            },
+            {
+              "n": 2,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#3"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+              "kind": "deliverable",
+              "passage": "deliverable:user-flows/ambient-scribe-session-lock-recovery#0"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#4"
+            },
+            {
+              "n": 5,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#5"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#7"
+            },
+            {
+              "n": 7,
+              "recordId": "component:encounter-view",
+              "kind": "component",
+              "passage": "component:encounter-view#2"
+            },
+            {
+              "n": 8,
+              "recordId": "component:sso-mfa-login",
+              "kind": "component",
+              "passage": "component:sso-mfa-login#2"
+            },
+            {
+              "n": 9,
+              "recordId": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+              "kind": "raw",
+              "passage": "raw:2026-02-10-ambient-scribe-medication-flag-concept#6"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            }
+          ]
+        },
+        {
+          "secs": 3,
+          "answer": "- The impact of the \"paused, draft preserved\" UI state on clinician behavior needs to be re-tested after it is implemented. [1]\n- It needs to be confirmed whether the \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe. [1]",
+          "stats": {
+            "promptTokens": 1723,
+            "evalTokens": 66,
+            "promptSecs": 0.132835,
+            "evalSecs": 2.612867,
+            "loadSecs": 0.004870666,
+            "totalSecs": 2.7617775
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2026-02-17-session-lock-during-dictation#7",
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+              "excerpt": "Confirm with IT Security whether the same \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe.\nRe-test the abandon-and-redictate behavior once the explicit paused state ships, to confirm it actually changes clinician behavior and not just their stated understanding.",
+              "score": 0.683
+            }
+          ],
+          "promptChars": 7274,
+          "promptTokens": 1723,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2026-02-17-session-lock-during-dictation#7",
+              "raw:2026-02-10-ambient-scribe-medication-flag-concept#6",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "finding:ambient-scribe-post-ga-refinements",
+              "kind": "finding",
+              "passage": "finding:ambient-scribe-post-ga-refinements#2"
+            },
+            {
+              "n": 2,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#3"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+              "kind": "deliverable",
+              "passage": "deliverable:user-flows/ambient-scribe-session-lock-recovery#0"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#4"
+            },
+            {
+              "n": 5,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#5"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#7"
+            },
+            {
+              "n": 7,
+              "recordId": "component:encounter-view",
+              "kind": "component",
+              "passage": "component:encounter-view#2"
+            },
+            {
+              "n": 8,
+              "recordId": "component:sso-mfa-login",
+              "kind": "component",
+              "passage": "component:sso-mfa-login#2"
+            },
+            {
+              "n": 9,
+              "recordId": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+              "kind": "raw",
+              "passage": "raw:2026-02-10-ambient-scribe-medication-flag-concept#6"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            }
+          ]
+        }
+      ],
+      "unseeded": [
+        {
+          "secs": 2.9,
+          "answer": "- The impact of the \"paused, draft preserved\" UI state on clinician behavior needs to be re-tested once it is implemented. [1]\n- It is unclear whether the \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe. [1]",
+          "stats": {
+            "promptTokens": 1723,
+            "evalTokens": 64,
+            "promptSecs": 0.1376,
+            "evalSecs": 2.449728,
+            "loadSecs": 0.008105292,
+            "totalSecs": 2.615637375
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2026-02-17-session-lock-during-dictation#7",
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+              "excerpt": "Confirm with IT Security whether the same \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe.\nRe-test the abandon-and-redictate behavior once the explicit paused state ships, to confirm it actually changes clinician behavior and not just their stated understanding.",
+              "score": 0.683
+            }
+          ],
+          "promptChars": 7274,
+          "promptTokens": 1723,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2026-02-17-session-lock-during-dictation#7",
+              "raw:2026-02-10-ambient-scribe-medication-flag-concept#6",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "finding:ambient-scribe-post-ga-refinements",
+              "kind": "finding",
+              "passage": "finding:ambient-scribe-post-ga-refinements#2"
+            },
+            {
+              "n": 2,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#3"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+              "kind": "deliverable",
+              "passage": "deliverable:user-flows/ambient-scribe-session-lock-recovery#0"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#4"
+            },
+            {
+              "n": 5,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#5"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#7"
+            },
+            {
+              "n": 7,
+              "recordId": "component:encounter-view",
+              "kind": "component",
+              "passage": "component:encounter-view#2"
+            },
+            {
+              "n": 8,
+              "recordId": "component:sso-mfa-login",
+              "kind": "component",
+              "passage": "component:sso-mfa-login#2"
+            },
+            {
+              "n": 9,
+              "recordId": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+              "kind": "raw",
+              "passage": "raw:2026-02-10-ambient-scribe-medication-flag-concept#6"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            }
+          ]
+        },
+        {
+          "secs": 3,
+          "answer": "- The impact of the \"paused, draft preserved\" UI state on clinician behavior needs to be re-tested once it is implemented [1].\n- It is unclear whether the same \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe [1].",
+          "stats": {
+            "promptTokens": 1723,
+            "evalTokens": 63,
+            "promptSecs": 0.142723,
+            "evalSecs": 2.548082,
+            "loadSecs": 0.004926041,
+            "totalSecs": 2.706817125
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2026-02-17-session-lock-during-dictation#7",
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+              "excerpt": "Confirm with IT Security whether the same \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe.\nRe-test the abandon-and-redictate behavior once the explicit paused state ships, to confirm it actually changes clinician behavior and not just their stated understanding.",
+              "score": 0.683
+            }
+          ],
+          "promptChars": 7274,
+          "promptTokens": 1723,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2026-02-17-session-lock-during-dictation#7",
+              "raw:2026-02-10-ambient-scribe-medication-flag-concept#6",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "finding:ambient-scribe-post-ga-refinements",
+              "kind": "finding",
+              "passage": "finding:ambient-scribe-post-ga-refinements#2"
+            },
+            {
+              "n": 2,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#3"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+              "kind": "deliverable",
+              "passage": "deliverable:user-flows/ambient-scribe-session-lock-recovery#0"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#4"
+            },
+            {
+              "n": 5,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#5"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#7"
+            },
+            {
+              "n": 7,
+              "recordId": "component:encounter-view",
+              "kind": "component",
+              "passage": "component:encounter-view#2"
+            },
+            {
+              "n": 8,
+              "recordId": "component:sso-mfa-login",
+              "kind": "component",
+              "passage": "component:sso-mfa-login#2"
+            },
+            {
+              "n": 9,
+              "recordId": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+              "kind": "raw",
+              "passage": "raw:2026-02-10-ambient-scribe-medication-flag-concept#6"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            }
+          ]
+        },
+        {
+          "secs": 2.9,
+          "answer": "- The impact of the \"paused, draft preserved\" UI state on clinician behavior needs to be re-tested after it is implemented. [1]\n- It is unclear whether the \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe. [1]",
+          "stats": {
+            "promptTokens": 1723,
+            "evalTokens": 64,
+            "promptSecs": 0.133487,
+            "evalSecs": 2.465755,
+            "loadSecs": 0.006942583,
+            "totalSecs": 2.625529042
+          },
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2026-02-17-session-lock-during-dictation#7",
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "recordKind": "raw",
+              "recordType": "contextual-inquiry",
+              "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+              "section": "Follow-ups / Open Questions",
+              "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+              "excerpt": "Confirm with IT Security whether the same \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe.\nRe-test the abandon-and-redictate behavior once the explicit paused state ships, to confirm it actually changes clinician behavior and not just their stated understanding.",
+              "score": 0.683
+            }
+          ],
+          "promptChars": 7274,
+          "promptTokens": 1723,
+          "followUps": {
+            "fired": true,
+            "attached": [
+              "raw:2026-02-17-session-lock-during-dictation#7",
+              "raw:2026-02-10-ambient-scribe-medication-flag-concept#6",
+              "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6",
+              "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6",
+              "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6",
+              "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            ]
+          },
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "finding:ambient-scribe-post-ga-refinements",
+              "kind": "finding",
+              "passage": "finding:ambient-scribe-post-ga-refinements#2"
+            },
+            {
+              "n": 2,
+              "recordId": "finding:scope-boundaries-and-workflow-fit",
+              "kind": "finding",
+              "passage": "finding:scope-boundaries-and-workflow-fit#3"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+              "kind": "deliverable",
+              "passage": "deliverable:user-flows/ambient-scribe-session-lock-recovery#0"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#4"
+            },
+            {
+              "n": 5,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#5"
+            },
+            {
+              "n": 6,
+              "recordId": "raw:2026-02-17-session-lock-during-dictation",
+              "kind": "raw",
+              "passage": "raw:2026-02-17-session-lock-during-dictation#7"
+            },
+            {
+              "n": 7,
+              "recordId": "component:encounter-view",
+              "kind": "component",
+              "passage": "component:encounter-view#2"
+            },
+            {
+              "n": 8,
+              "recordId": "component:sso-mfa-login",
+              "kind": "component",
+              "passage": "component:sso-mfa-login#2"
+            },
+            {
+              "n": 9,
+              "recordId": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+              "kind": "raw",
+              "passage": "raw:2026-02-10-ambient-scribe-medication-flag-concept#6"
+            },
+            {
+              "n": 10,
+              "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+              "kind": "raw",
+              "passage": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6"
+            },
+            {
+              "n": 11,
+              "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+              "kind": "raw",
+              "passage": "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6"
+            },
+            {
+              "n": 12,
+              "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+              "kind": "raw",
+              "passage": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6"
+            },
+            {
+              "n": 13,
+              "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+              "kind": "raw",
+              "passage": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
