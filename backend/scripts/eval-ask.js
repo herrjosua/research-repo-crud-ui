@@ -8,7 +8,8 @@
 //   node scripts/eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed 42]
 //                                [--temperature 0.2] [--seeded-runs 3] [--unseeded-runs 3]
 //                                [--set regression|scenario] [--only id,id]
-//                                [--whole-raw-notes N] [--behaviors none|name,name]
+//                                [--whole-raw-notes N] [--follow-ups shown|linked]
+//                                [--behaviors none|name,name]
 //   node scripts/eval-ask.js report BEFORE [AFTER]
 //   node scripts/eval-ask.js compare --label NAME BASE [OTHER ...]
 //   node scripts/eval-ask.js prompt-sources
@@ -33,6 +34,13 @@
 //         set to N for this process only (ask/pipeline.js: the whole notes of
 //         the top N raw sessions instead of their passages); the metadata's
 //         `retrieval` records it.
+//         --follow-ups shown|linked runs with RETRIEVAL.followUps set to
+//         that for this process only (ask/pipeline.js: a question that asks
+//         what is unresolved is also shown the Follow-ups / Open Questions
+//         passages of its raw sessions, and with linked those of the raw
+//         sessions linked to its two best-ranked synthesis records). The
+//         metadata's `retrieval` records it, and each run `followUps`:
+//         whether the question fired the trigger and the passage ids added.
 //         --behaviors runs with exactly the named prompt behaviors on and
 //         the rest off (ask/answer.js PROMPT_BEHAVIORS: premise-check,
 //         open-items, decline-with-evidence, list-format; `none` turns them
@@ -99,6 +107,9 @@ const PROMPT_SOURCES_DIR = path.join(__dirname, '..', 'ask', 'eval', 'prompt-sou
 // Nor did the prompt-size guard: runs also store `promptTokens`, the
 // count the pipeline's warning used (the same number as
 // `stats.promptTokens`), optional like the rest.
+// Nor did --follow-ups: runs made with it also store `followUps`
+// ({ fired, attached }), and the metadata `retrieval` its value; the
+// attached passages are ordinary shown passages.
 const EVAL_HARNESS_VERSION = 1;
 
 // ---------------------------------------------------------------------------
@@ -394,8 +405,19 @@ function recordingClient(ollama) {
     return client;
 }
 
+// The retrieval for a run, which its metadata records: RETRIEVAL with
+// --whole-raw-notes and --follow-ups, when given, for this process only.
+function runRetrieval({ wholeRawNotes = null, followUps = null }) {
+    if (wholeRawNotes === null && followUps === null) return RETRIEVAL;
+    return {
+        ...RETRIEVAL,
+        ...(wholeRawNotes === null ? {} : { wholeRawNotes }),
+        ...(followUps === null ? {} : { followUps }),
+    };
+}
+
 async function run({
-    label, model, think: thinkLevel, seed, temperature, seededRuns, unseededRuns, set, only, wholeRawNotes, behaviors,
+    label, model, think: thinkLevel, seed, temperature, seededRuns, unseededRuns, set, only, wholeRawNotes, followUps, behaviors,
 }) {
     if (!label) throw new Error('run needs --label NAME');
     const repoRoot = process.env.AGENTIC_REPO_ROOT;
@@ -424,7 +446,7 @@ async function run({
         : ollama;
     const recording = recordingClient(chatClient);
     const index = createEmbeddingIndex({ embed: ollama.embed, loadRecords });
-    const retrieval = wholeRawNotes === null ? RETRIEVAL : { ...RETRIEVAL, wholeRawNotes };
+    const retrieval = runRetrieval({ wholeRawNotes, followUps });
     const promptBehaviors = withBehaviors(behaviors);
     const seeded = createAskPipeline({
         ollama: withChatOptions(recording, { seed, temperature }), index, retrieval, promptBehaviors,
@@ -496,6 +518,7 @@ async function run({
                 sources: result.sources.map(storedSource),
                 promptChars: result.promptChars,
                 promptTokens: result.promptTokens,
+                ...(result.followUps ? { followUps: result.followUps } : {}),
                 shown: result.ranked.map(({ passage }, i) => ({
                     n: i + 1, recordId: passage.record.id, kind: passage.record.kind, passage: `${passage.record.id}#${passage.chunk.index}`,
                 })),
@@ -951,7 +974,7 @@ function withBehaviors(names) {
 function parseArgs(argv) {
     const [command, ...rest] = argv;
     const options = {
-        command, label: null, model: null, think: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, wholeRawNotes: null, behaviors: null, labels: [],
+        command, label: null, model: null, think: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, wholeRawNotes: null, followUps: null, behaviors: null, labels: [],
     };
     const count = (arg, raw, min) => {
         const n = Number(raw);
@@ -990,6 +1013,9 @@ function parseArgs(argv) {
             options.only = value().split(',').map((id) => id.trim()).filter(Boolean);
         } else if (arg === '--whole-raw-notes') {
             options.wholeRawNotes = count(arg, value(), 1);
+        } else if (arg === '--follow-ups') {
+            options.followUps = value();
+            if (!['shown', 'linked'].includes(options.followUps)) throw new Error('--follow-ups must be shown or linked');
         } else if (arg === '--behaviors') {
             const names = value().split(',').map((name) => name.trim()).filter(Boolean);
             const none = names.join() === 'none';
@@ -1015,7 +1041,7 @@ async function main() {
     if (options.command === 'report') return report(options);
     if (options.command === 'compare') return compare(options);
     if (options.command === 'prompt-sources') return promptSources();
-    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] [--whole-raw-notes N] [--behaviors none|name,name] | report BEFORE [AFTER] | compare --label NAME BASE OTHER... | prompt-sources');
+    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] [--whole-raw-notes N] [--follow-ups shown|linked] [--behaviors none|name,name] | report BEFORE [AFTER] | compare --label NAME BASE OTHER... | prompt-sources');
 }
 
 if (require.main === module) {
@@ -1026,5 +1052,5 @@ if (require.main === module) {
 }
 
 module.exports = {
-    judgeRun, claimText, renderReport, renderComparison, parseArgs, thinkRequest, withBehaviors, withPromptSources, EVAL_HARNESS_VERSION,
+    judgeRun, claimText, renderReport, renderComparison, parseArgs, thinkRequest, withBehaviors, withPromptSources, runRetrieval, EVAL_HARNESS_VERSION,
 };

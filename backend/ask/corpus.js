@@ -123,6 +123,10 @@ const METADATA_SECTIONS = {
 // section, with no " — <title>", is prose evidence ("6 participants, all
 // first-time admins…") and stays retrievable.
 const RESEARCHER_LINE_RE = /^Researcher:[^\n]*$/;
+// A raw session's own list of what it left open. It's evidence, retrieved
+// like any section; the pipeline's followUps option (ask/pipeline.js) also
+// attaches it by this heading when a question asks what is unresolved.
+const FOLLOW_UPS_HEADING = 'Follow-ups / Open Questions';
 
 function isMetadataPassage(record, passage) {
     if (record.kind === 'raw' && !passage.heading && RESEARCHER_LINE_RE.test(passage.text)) return true;
@@ -247,6 +251,7 @@ module.exports = {
     htmlToBlocks,
     chunkRecord,
     METADATA_SECTIONS,
+    FOLLOW_UPS_HEADING,
     isMetadataPassage,
     participantsHeader,
     wholeNotesText,

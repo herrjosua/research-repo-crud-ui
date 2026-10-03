@@ -1413,3 +1413,212 @@ checks results.
 **Kept in `backend/ask/eval/results/`:** `checks-rejudge-rr149.md`. No runs
 were made. The reports stored before this decision are left as written,
 under the checks of their time. `report` re-judges any of them under these.
+
+## 22. Follow-ups attachment for 'what's unresolved' questions: measured, off by default (v1.3.6.44)
+
+**Date:** 2026-10-03. **Status:** Measured. The option stays in the code,
+off by default, and no default changes. Ticket RR-145. Follows decisions
+18 (whole raw notes), 19 (prompt behaviors) and 21 (the checks it is
+judged by).
+
+**What was built:** `RETRIEVAL.followUps` in `ask/pipeline.js`: `false`
+(the default), `'shown'` or `'linked'`.
+- `'shown'` adds the `Follow-ups / Open Questions` chunk
+  (`FOLLOW_UPS_HEADING` in `ask/corpus.js`) of each raw session already
+  selected, next to that session's own passages.
+- `'linked'` does the same, and also adds the Follow-ups of each raw
+  session linked, through `provenanceLinks`, to the first two synthesis
+  records in the ranking (findings and analytics, as `sourceClass`
+  defines it). A linked session that isn't otherwise shown goes after the
+  selected records.
+- A chunk already selected is skipped, a session shown whole
+  (`wholeRawNotes`) is skipped, and the question's project filter is
+  honored. The onboarding sessions record has no Follow-ups section and
+  gets no attachment.
+- It applies only when the question matches the trigger,
+  `asksWhatIsUnresolved()`. The pattern is P1 from the RR-145
+  investigation, frozen for the ticket and copied verbatim into the code.
+  It matches case-insensitively, after curly apostrophes (U+2018, U+2019)
+  are read as straight ones. It fires on "unresolved", "undecided",
+  "unanswered", "outstanding", "still open", "open questions / items /
+  issues", "haven't / hasn't … learned / decided / confirmed…", "not (yet)
+  known / resolved…" and "still unknown / unclear / don't know".
+- `scripts/eval-ask.js run --follow-ups shown|linked` sets it, and
+  `metadata.retrieval` records it. When the option is on, each run stores
+  an optional `followUps: { fired, attached }` field (`attached` is the
+  list of chunk ids). `EVAL_HARNESS_VERSION` stays 1, and stored runs and
+  reports are unchanged.
+- **Side effect:** `RETRIEVAL` now has the key, so new runs record
+  `followUps: false` in `metadata.retrieval` even with the option off.
+  The compare command warns about different retrieval when a new run set
+  is compared with an older one, as it did when `wholeRawNotes` was added.
+
+**What was measured:** gemma2:9b (digest `ff02c3702f32…`) and
+nomic-embed-text (`0a109f422b47…`) on Ollama 0.35.0, corpus 4ba145f, seed
+42, temperature 0.2, 3 seeded and 3 unseeded runs, app commit 30116eb.
+Two target entries only: `scenario-care-coordinator-gaps` and
+`scenario-session-timeout-open`. Five configurations, each with decline
+with evidence on (the default):
+- the control (option off);
+- `shown`;
+- `linked`;
+- `shown` with the open-items behavior also on;
+- `linked` with the open-items behavior also on.
+
+Open items here is decision 19's rule. But decision 19's open-items run had
+decline with evidence off, so it isn't a like-for-like comparison.
+
+**The control check.** The control reproduced the stored
+`checks-control-scenarios` byte for byte. For both targets, all three
+seeded runs match on answer text, cited sources, shown passages and prompt
+size. The corpus commit, both model digests, the Ollama version, the seed
+and the temperature also match.
+
+**Result.** Each cell is the first seeded run, as the reports judge it.
+All seeded runs were identical in every configuration. Prompt sizes are in
+characters, care / timeout. Cold latency is mean / max over the two
+targets.
+
+| Configuration | Care coordinator | Session timeout | Prompt chars | Cold latency (s) | Cold tokens/s, mean / max |
+|---|---|---|---|---|---|
+| Control | FAIL: missing float-pool and AVS-frequency items; forbidden decline | FAIL: doesn't cite 05-20; missing the dispute and badge-tap | 6,399 / 4,361 | 5.6 / 5.7 | 38.3 / 38.7 |
+| `shown` | FAIL: cites no supporting record and not 01-29; missing float-pool, AVS frequency and what the data shows; forbidden decline | FAIL: same three reasons as the control | 7,734 / 4,912 | 6.7 / 7.3 | 38.2 / 39.5 |
+| `linked` | FAIL: missing float-pool and AVS-frequency items; forbidden decline | FAIL: doesn't cite 05-20; missing the dispute, badge-tap and the paused-state / re-test item | 8,812 / 6,982 | 7.1 / 7.2 | 37.4 / 38.1 |
+| `shown` + open items | FAIL: missing what the data shows | FAIL: doesn't cite 05-20; missing the dispute, badge-tap and fixed policy / draft survives | 8,026 / 5,204 | 5.8 / 6.0 | 36.5 / 37.2 |
+| `linked` + open items | FAIL: missing what the data shows | FAIL: doesn't cite 05-20; missing the dispute and badge-tap | 9,104 / 7,274 | 7.5 / 8.1 | 26.3 / 27.3 |
+
+- **Checks:** in every configuration, the first seeded run of each target
+  has 0 uncited sentences, 0 unsupported figures and 0 stacks of 3+. The
+  reports judge only that run, so these counts don't cover the other
+  runs. No run of the 60 returned thinking text.
+- **Prompt size:** the open-items rule adds 292 characters to each
+  prompt. Token counts are Ollama's `promptTokens` for the first seeded
+  run. Ollama can report fewer tokens when a prompt is cached from the run
+  before, but here all six runs of each target agree in every
+  configuration. The largest prompt is 2,164 tokens (`linked` + open
+  items, care), 26% of `num_ctx` 8192. Every prompt stays far below the
+  85% guard (6,963 tokens).
+- **Trigger:** the trigger fired, and its attachments were the same, in
+  all six runs of each target in every treatment configuration.
+  - Care, `shown`: the 01-29, 08-26 and 12-16 Follow-ups.
+  - Care, `linked`: the same three, then 04-22, 05-20 and 10-07.
+  - Timeout, `shown`: 02-17.
+  - Timeout, `linked`: 02-17, then 02-10, 04-22, 05-20, 10-07 and 12-16.
+- **Unrelated records under `linked`:** `linked` added the Follow-ups of
+  two records unrelated to either question,
+  `raw:2025-04-22-contextual-inquiry-ed-intake-shadowing` and
+  `raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes`.
+  They came in because `finding:scope-boundaries-and-workflow-fit` is one
+  of the first two synthesis records for both questions, and it links to
+  them, as the investigation predicted.
+
+**Predictions, written before the build and before any run:**
+1. The trigger fires on exactly the two targets among the 17 gold
+   questions, and the other 15 prompts are byte-identical to the
+   control's. **Matched.** Run again against `gold.json` for this
+   decision, it fires on exactly the two. The byte-identical prompts come
+   from the build's no-model check, with stored rankings and a stub
+   embedder, and weren't run again here.
+2. The control reproduces the stored seeded answers. **Matched** (above).
+3. Prompt sizes match the investigation, all under 25% of the window.
+   **Sizes matched exactly:** care +1,335 (`shown`) and +2,413 (`linked`);
+   timeout +551 and +2,621. **The 25% part didn't match.** By Ollama's
+   counts (first seeded run), `linked` care is 2,098 tokens (25.6%). The
+   largest prompt, 2,164 tokens (26.4%), is from `linked` + open items,
+   which the prediction didn't cover. Every prompt stays far below the
+   85% guard (6,963 tokens).
+4. In every treatment, the care prompt holds the 01-29 Follow-ups chunk.
+   **Matched.** `#6` is shown in all four, beside `#2` and `#4`.
+5. Care passes seeded in at least one of the four treatments. **Not
+   matched.** It fails in all four. The open-items runs narrow it to one
+   failure reason.
+6. Timeout stays FAIL in all five. **Matched.** Under `linked`, the
+   answers were expected to include badge-tap and the re-test item and to
+   cite 05-20 in at least one seeded run. **Not matched.** The 05-20
+   Follow-ups chunk was in the prompt (source 11 for timeout, 14 for care),
+   but none of the 60 runs cites 05-20, and no answer names badge-tap.
+7. With open items on, answers may be list-shaped and may open lines with
+   a marker. They were lists. No line in any run opens with a marker, so
+   the checks had nothing to misread.
+8. Prompt size and latency are reported, and none comes near the guard.
+   **Matched.**
+
+**Decision rule (set in advance):** a gain is the care entry passing its
+seeded run and at least 2 of its 3 unseeded runs under a treatment. The
+timeout entry can't flip by design (its claim 0, the 15-minute against
+4-hour dispute, isn't in any Follow-ups section). No configuration passed
+the care entry's seeded run, so there is no gain. The attachment stays
+off, no default changes, and no gold entry or check was changed.
+
+**What the result says:**
+- **The open items reach the prompt.** In all four treatments, the care
+  prompt holds the 01-29 Follow-ups with the float-pool and AVS-frequency
+  items.
+- **With decline with evidence alone, the model doesn't use them.**
+  - Under `shown`, the care answer still opens with a decline. It cites
+    `finding:scope-boundaries-and-workflow-fit` and the December executive
+    retro ("don't build this yet…") instead of 01-29, and it loses the
+    data claim the control made. The capture script flags its citations
+    as possibly unrelated.
+  - Under `linked`, the answer is again a decline plus what the data
+    shows, citing 01-29 and 08-26, and it still misses both open items.
+- **With open items on, the model uses them, then drops "what the data
+  shows".** In every seeded run of both open-items configurations, and in
+  11 of their 12 runs, the care answer is exactly the two 01-29 Follow-ups
+  bullets ("Quantify how often the AVS tool has missed medication
+  changes…", "Revisit with float-pool coordinators specifically…"), cited
+  to that Follow-ups passage, with no decline. The exception is one
+  unseeded run of `shown` + open items, which adds a third bullet from the
+  08-26 Follow-ups (sharing the override-capture idea with the Data
+  Science team), cited to that passage. That meets both open-item claims
+  and removes the forbidden decline. The judged answer (the first seeded
+  run) has nothing else, so it fails on the gold entry's other half, what
+  the data does show.
+- **On timeout, the open-items answers list the 02-17 Follow-ups items**
+  (re-test the abandon-and-redictate behavior; extend the "paused,
+  preserved" pattern) and cite that record. No run uses or cites the 05-20
+  interview.
+
+**The held-out check.** The owner wrote eight questions in their own
+wording, before seeing the pattern, and they were checked against
+`asksWhatIsUnresolved` with no model:
+- **Five N questions** (ordinary questions about decisions, pain points,
+  success rates, files and personas): none fires.
+- **Three Y questions** ("What information is missing about the pain
+  points…", "What is the biggest area of research that we are missing
+  about this flow?…", "Do we have enough information about the
+  burnout?"): none fires either. Recall is 0 of 3.
+
+The pattern has no "missing", "enough information" or "gap" wording. It
+isn't changed here: a widened pattern would be a new one, with new
+held-out questions and a new measurement.
+
+**Not checked:**
+- The unseeded runs' verdicts, and the stop rule's unseeded counts. They
+  weren't needed, since no seeded run passed, and weren't computed. The
+  reports count only distinct unseeded answers.
+- Why `linked` + open items generated at about 26 tokens per second cold
+  (mean), against means of 36.5 to 38.3 for the other four.
+- The checks' counts (uncited sentences, unsupported figures, stacks) for
+  any run other than the first seeded run of each configuration.
+- The full sets, for any configuration (none gained). So the full-set
+  before/after table and the stop rule's unseeded counts in RR-145's
+  acceptance criteria are met only in part, by design.
+- Other models.
+
+**Follow-ups, named, not filed:**
+- An open-items prompt that asks for both the open items and what the
+  data shows. That needs its own measured round on prompt wording.
+- Coverage questions ("what is missing", "do we have enough") are a
+  different kind of question from the open items a session lists, and go
+  to RR-153.
+
+**Kept in `backend/ask/eval/results/`:**
+- `rr145-control`, `rr145-shown`, `rr145-linked`,
+  `rr145-shown-open-items` and `rr145-linked-open-items` (`.json` and
+  `.md`).
+- Six reports: control against each of the four, and `shown` and
+  `linked` each against its open-items pair.
+
+The 4ba145f prompt-sources file gains the attached passages: 2 records and
+8 passages, with no entry removed or changed.

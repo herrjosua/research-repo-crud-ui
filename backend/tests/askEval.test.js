@@ -1,7 +1,7 @@
 const { GOLD_FILE, loadGold, validateGold } = require('../ask/eval/gold');
 const { answerSentences, analyseAnswer } = require('../ask/checks');
 const {
-    judgeRun, claimText, renderReport, renderComparison, parseArgs, withBehaviors, thinkRequest, withPromptSources,
+    judgeRun, claimText, renderReport, renderComparison, parseArgs, withBehaviors, thinkRequest, withPromptSources, runRetrieval,
 } = require('../scripts/eval-ask');
 const { createOllamaClient, finalAnswer } = require('../ask/ollama');
 const { withChatOptions, chatOverrides } = require('../scripts/capture-static-answers');
@@ -423,6 +423,26 @@ describe('eval --whole-raw-notes', () => {
         expect(parseArgs(['run', '--label', 'x', '--whole-raw-notes', '2']).wholeRawNotes).toBe(2);
         expect(() => parseArgs(['run', '--label', 'x', '--whole-raw-notes', '0'])).toThrow(/--whole-raw-notes/);
         expect(() => parseArgs(['run', '--label', 'x', '--whole-raw-notes', 'two'])).toThrow(/--whole-raw-notes/);
+    });
+});
+
+describe('eval --follow-ups', () => {
+    const { RETRIEVAL } = require('../ask/pipeline');
+
+    it('takes shown or linked, and is unset by default', () => {
+        expect(parseArgs(['run', '--label', 'x']).followUps).toBeNull();
+        expect(parseArgs(['run', '--label', 'x', '--follow-ups', 'shown']).followUps).toBe('shown');
+        expect(parseArgs(['run', '--label', 'x', '--follow-ups', 'linked']).followUps).toBe('linked');
+        expect(() => parseArgs(['run', '--label', 'x', '--follow-ups', 'both'])).toThrow(/--follow-ups must be shown or linked/);
+        expect(() => parseArgs(['run', '--label', 'x', '--follow-ups', 'false'])).toThrow(/--follow-ups/);
+        expect(() => parseArgs(['run', '--label', 'x', '--follow-ups'])).toThrow(/--follow-ups needs a value/);
+    });
+
+    it("is recorded in the run's retrieval, and without it the retrieval is the default", () => {
+        expect(runRetrieval({ wholeRawNotes: null, followUps: null })).toBe(RETRIEVAL);
+        expect(runRetrieval({ wholeRawNotes: null, followUps: 'linked' })).toEqual({ ...RETRIEVAL, followUps: 'linked' });
+        expect(runRetrieval({ wholeRawNotes: 4, followUps: 'shown' })).toEqual({ ...RETRIEVAL, wholeRawNotes: 4, followUps: 'shown' });
+        expect(runRetrieval({ wholeRawNotes: 2, followUps: null })).toEqual({ ...RETRIEVAL, wholeRawNotes: 2 });
     });
 });
 

@@ -256,3 +256,174 @@ describe('wholeRawNotes: whole notes for the top raw sessions', () => {
         })]);
     });
 });
+
+describe('followUps: Follow-ups passages for "what is unresolved" questions', () => {
+    const { createAskPipeline, asksWhatIsUnresolved, RETRIEVAL } = require('../ask/pipeline');
+    const { chunkRecord, isMetadataPassage } = require('../ask/corpus');
+    const { loadGold } = require('../ask/eval/gold');
+
+    // A raw session like the real ones: Objective #0, Key Findings #1,
+    // Follow-ups / Open Questions #2, then Related #3 and the roster #4
+    // (metadata, never retrieved).
+    const session = (slug, title, related, tags = ['scribe']) => ({
+        id: `raw:${slug}`, kind: 'raw', type: 'usability-test', title, tags,
+        html: `<h1>${title}</h1><h2>Objective</h2><p>objective of ${slug}</p>`
+            + `<h2>Key Findings</h2><p>findings of ${slug}</p>`
+            + `<h2>Follow-ups / Open Questions</h2><ul><li>open one of ${slug}</li><li>open two of ${slug}</li></ul>`
+            + `<h2>Related</h2><ul><li>${related}</li></ul>`
+            + `<h2>Participants — ${title}</h2><p>Count: 2</p>`,
+    });
+    const finding = (slug, html = '<p>x</p>') => ({
+        id: `finding:${slug}`, kind: 'finding', type: 'synthesis', title: `Finding ${slug}`, tags: ['scribe'], html: `<h2>Overview</h2>${html}`,
+    });
+    const doc = (slug) => ({
+        id: `deliverable:docs/${slug}`, kind: 'deliverable', type: 'user-flows', title: `Doc ${slug}`, tags: ['scribe'], html: '<h2>Overview</h2><p>doc</p>',
+    });
+    // An index over `records` whose ranking is `scores`: a record's score, or
+    // per passage as { '<chunk index>': score }, the rest 0.1 below the best.
+    const indexOf = (records, scores) => {
+        const passages = records.flatMap((record) => {
+            const chunks = chunkRecord(record);
+            return chunks.filter((chunk) => !isMetadataPassage(record, chunk)).map((chunk) => {
+                const given = scores[record.id];
+                const s = typeof given === 'number' ? given : (given[chunk.index] ?? Math.max(...Object.values(given)) - 0.1);
+                return {
+                    record, chunk, vector: [s, Math.sqrt(1 - s * s)], participants: record.kind === 'raw' ? 'Participants: 2' : null, previous: null, next: null,
+                };
+            });
+        });
+        return { refresh: async () => ({ passages, records }), embedQuery: async () => [1, 0] };
+    };
+    const ids = (selection) => selection.map(({ passage }) => `${passage.record.id}#${passage.chunk.index}`);
+    const selectWith = async (index, retrieval, question, project = null) => ids(await createAskPipeline({ ollama: {}, index, retrieval }).select(question, project));
+
+    // Shaped like the care-coordinator question: two raw sessions in the top
+    // k, one shown by Objective and Key Findings (its Follow-ups not shown),
+    // the other by Key Findings and its Follow-ups.
+    const CARE_Q = "What haven't we learned yet about care coordinators?";
+    const careBase = session('2025-01-29-chart-review', 'Chart review baseline', 'Synthesized into: triage.md');
+    const careTest = session('2025-08-26-alert-triage', 'Alert triage test', 'Synthesized into: triage.md');
+    const careRecords = [doc('alert-ranking'), careBase, finding('triage'), careTest];
+    const careIndex = indexOf(careRecords, {
+        'deliverable:docs/alert-ranking': 0.72,
+        [careBase.id]: { 0: 0.717, 1: 0.7, 2: 0.5 },
+        'finding:triage': 0.709,
+        [careTest.id]: { 0: 0.4, 1: 0.6, 2: 0.683 },
+    });
+    const care = { ...RETRIEVAL, topK: 4 };
+
+    // Shaped like the session-timeout question: one raw session in the top
+    // k; the best synthesis record is built from it and two sessions below
+    // the cut-off, the second (below the cut-off too) from a third, the third
+    // from one more that is never added.
+    const TIMEOUT_Q = 'What is unresolved about the session timeout?';
+    const lock = session('2026-02-17-lock', 'Lock test', 'Synthesized into: scribe.md');
+    const medflag = session('2026-02-10-medflag', 'Medication flag', 'Synthesized into: scribe.md');
+    const dictation = session('2026-02-03-dictation', 'Dictation', 'Synthesized into: scribe.md');
+    const itsec = session('2025-05-20-itsec', 'IT Security', 'none', ['security']);
+    const ed = session('2025-04-22-ed', 'ED intake', 'Synthesized into: third.md');
+    const timeoutRecords = [
+        doc('lock-recovery'), lock, finding('scribe'), medflag,
+        finding('scope', '<p>See <a href="../raw/2025-05-20-itsec/session-notes.md">the interview</a></p>'),
+        dictation, itsec, finding('third'), ed,
+    ];
+    const timeoutIndex = indexOf(timeoutRecords, {
+        'deliverable:docs/lock-recovery': 0.8,
+        [lock.id]: { 0: 0.77, 1: 0.78, 2: 0.3 },
+        'finding:scribe': 0.75,
+        [medflag.id]: 0.7,
+        'finding:scope': 0.68,
+        [dictation.id]: 0.66,
+        [itsec.id]: 0.64,
+        'finding:third': 0.6,
+        [ed.id]: 0.5,
+    });
+    const timeout = { ...RETRIEVAL, topK: 3 };
+
+    describe('the trigger', () => {
+        const gold = loadGold().entries;
+        const TARGETS = ['scenario-care-coordinator-gaps', 'scenario-session-timeout-open'];
+
+        it('fires on the two open-questions gold entries and none of the other 15', () => {
+            expect(gold).toHaveLength(17);
+            expect(gold.filter((e) => asksWhatIsUnresolved(e.question)).map((e) => e.id).sort()).toEqual(TARGETS);
+        });
+
+        it('ignores case and reads curly apostrophes as straight ones', () => {
+            expect(asksWhatIsUnresolved('WHAT IS UNRESOLVED ABOUT X?')).toBe(true);
+            expect(asksWhatIsUnresolved('What haven’t we learned yet about care coordinators?')).toBe(true);
+        });
+
+        it("doesn't fire on what was decided or found", () => {
+            expect(asksWhatIsUnresolved('What did IT Security decide about the idle timeout?')).toBe(false);
+            expect(asksWhatIsUnresolved('What gaps did new admins hit in the onboarding flow?')).toBe(false);
+        });
+    });
+
+    it('is off by default: absent, false, or on for a question that does not fire, the selection is unchanged', async () => {
+        expect(RETRIEVAL.followUps).toBe(false);
+        const { followUps, ...absent } = care;
+        const question = 'What did care coordinators find?';
+        const off = await createAskPipeline({ ollama: {}, index: careIndex, retrieval: { ...care, followUps: false } }).select(question, null);
+        expect(await createAskPipeline({ ollama: {}, index: careIndex, retrieval: absent }).select(question, null)).toEqual(off);
+        expect(await createAskPipeline({ ollama: {}, index: careIndex, retrieval: { ...care, followUps: 'linked' } }).select(question, null)).toEqual(off);
+        // The trigger alone changes nothing while the option is off.
+        expect(await createAskPipeline({ ollama: {}, index: careIndex, retrieval: { ...care, followUps: false } }).select(CARE_Q, null)).toEqual(off);
+        expect(ids(off)).toEqual([
+            'deliverable:docs/alert-ranking#0', `${careBase.id}#0`, `${careBase.id}#1`, 'finding:triage#0', `${careTest.id}#1`, `${careTest.id}#2`,
+        ]);
+    });
+
+    it("'shown' adds a shown session's Follow-ups among its passages, once, and never one already shown", async () => {
+        expect(await selectWith(careIndex, { ...care, followUps: 'shown' }, CARE_Q)).toEqual([
+            'deliverable:docs/alert-ranking#0',
+            `${careBase.id}#0`, `${careBase.id}#1`, `${careBase.id}#2`, // added, in record order
+            'finding:triage#0',
+            `${careTest.id}#1`, `${careTest.id}#2`, // already shown: not repeated
+        ]);
+    });
+
+    it("'linked' adds the Follow-ups of sessions linked to the two best-ranked synthesis records, after the selection", async () => {
+        expect(await selectWith(timeoutIndex, { ...timeout, followUps: 'linked' }, TIMEOUT_Q)).toEqual([
+            'deliverable:docs/lock-recovery#0',
+            `${lock.id}#0`, `${lock.id}#1`, `${lock.id}#2`, // its two passages, and its Follow-ups added
+            'finding:scribe#0',
+            // finding:scribe's sessions in link order (lock is shown), then
+            // finding:scope's, though neither finding:scope nor they are in
+            // the top k; finding:third is the third synthesis record, so ed
+            // isn't added.
+            `${medflag.id}#2`, `${dictation.id}#2`, `${itsec.id}#2`,
+        ]);
+        // 'shown' leaves the linked sessions out.
+        expect(await selectWith(timeoutIndex, { ...timeout, followUps: 'shown' }, TIMEOUT_Q))
+            .toEqual(['deliverable:docs/lock-recovery#0', `${lock.id}#0`, `${lock.id}#1`, `${lock.id}#2`, 'finding:scribe#0']);
+    });
+
+    it('skips a session shown whole, and never adds a linked session outside the project filter', async () => {
+        expect(await selectWith(timeoutIndex, { ...timeout, wholeRawNotes: 1, followUps: 'linked' }, TIMEOUT_Q)).toEqual([
+            'deliverable:docs/lock-recovery#0', `${lock.id}#notes`, 'finding:scribe#0', `${medflag.id}#2`, `${dictation.id}#2`, `${itsec.id}#2`,
+        ]);
+        expect(await selectWith(timeoutIndex, { ...timeout, followUps: 'linked' }, TIMEOUT_Q, 'scribe')).toEqual([
+            'deliverable:docs/lock-recovery#0', `${lock.id}#0`, `${lock.id}#1`, `${lock.id}#2`, 'finding:scribe#0', `${medflag.id}#2`, `${dictation.id}#2`,
+        ]);
+    });
+
+    it('shows the added passages as ordinary sources, and ask() says what it did only when the option is on', async () => {
+        let prompt = null;
+        const ollama = { chatModel: 'test', chat: async (messages) => { prompt = messages[1].content; return 'Still open [4].'; } };
+        const result = await createAskPipeline({ ollama, index: timeoutIndex, retrieval: { ...timeout, followUps: 'linked' } }).ask(TIMEOUT_Q, null);
+        expect(result.followUps).toEqual({ fired: true, attached: [`${lock.id}#2`, `${medflag.id}#2`, `${dictation.id}#2`, `${itsec.id}#2`] });
+        expect(prompt).toContain(`[4] RAW SESSION · usability test — Lock test — Follow-ups / Open Questions\nParticipants: 2\nopen one of 2026-02-17-lock\nopen two of 2026-02-17-lock\n\n[5]`);
+        expect(result.sources).toEqual([expect.objectContaining({ id: `${lock.id}#2`, section: 'Follow-ups / Open Questions' })]);
+
+        const notFired = await createAskPipeline({ ollama, index: timeoutIndex, retrieval: { ...timeout, followUps: 'shown' } }).ask('What did IT Security decide about the idle timeout?', null);
+        expect(notFired.followUps).toEqual({ fired: false, attached: [] });
+        const off = await createAskPipeline({ ollama, index: timeoutIndex, retrieval: timeout }).ask(TIMEOUT_Q, null);
+        expect(off).not.toHaveProperty('followUps');
+    });
+
+    it('refuses any other value', () => {
+        expect(() => createAskPipeline({ ollama: {}, index: careIndex, retrieval: { ...care, followUps: 'link' } })).toThrow(/followUps/);
+        expect(() => createAskPipeline({ ollama: {}, index: careIndex, retrieval: { ...care, followUps: true } })).toThrow(/followUps/);
+    });
+});
