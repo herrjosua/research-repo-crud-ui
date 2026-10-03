@@ -216,6 +216,11 @@
       "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
       "date": "Apr 8, 2025"
     },
+    "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing": {
+      "title": "Contextual Inquiry — Emergency Department Intake Shadowing",
+      "participants": "Participants: 2 — ED Intake Nurse ×1, ED Registration Clerk ×1",
+      "date": "Apr 22, 2025"
+    },
     "raw:2025-05-06-usability-test-clinician-dashboard-redesign-v1": {
       "title": "Usability Test — Clinician Dashboard Redesign (v1)",
       "participants": "Participants: 6 — Physician, Nurse Practitioner, Physician Assistant",
@@ -245,6 +250,11 @@
       "title": "Usability Test — Ambient AI Scribe Prototype v0.2 (Follow-up)",
       "participants": "Participants: 5 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner",
       "date": "Sep 23, 2025"
+    },
+    "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes": {
+      "title": "Contextual Inquiry — Behavioral Health Unit, Sensitive Note Handling",
+      "participants": "Participants: 2 — Behavioral Health Clinician ×1, Behavioral Health Unit Charge Nurse ×1",
+      "date": "Oct 7, 2025"
     },
     "raw:2025-10-21-interview-training-department-rollout-change-management": {
       "title": "Interview — Training & Education Dept on Rollout/Change Management Planning",
@@ -657,6 +667,13 @@
       "excerpt": "\"I don't trust the summary the system spits out. I've been burned by it missing a med change, so now I just re-check everything myself, which kind of defeats the point.\" — Care Coordinator, P03\n\"If it could just tell me what changed since I last touched this chart, that alone would save me time. I don't need it to think for me.\" — Care Coordinator (float pool), P05",
       "date": "Jan 29, 2025"
     },
+    "raw:2025-01-29-contextual-inquiry-chart-review-baseline#6": {
+      "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1",
+      "excerpt": "Quantify how often the AVS tool has missed medication changes — pull incident/complaint logs if they exist.\nRevisit with float-pool coordinators specifically; they may have different pain points due to less system familiarity.",
+      "date": "Jan 29, 2025"
+    },
     "raw:2025-01-29-contextual-inquiry-chart-review-baseline#notes": {
       "title": "Contextual Inquiry — Manual Chart Review Baseline (Care Coordinators)",
       "section": null,
@@ -741,6 +758,13 @@
       "excerpt": "Objective\nTest whether an AI-drafted prior authorization request (pulling from chart data to pre-fill medical necessity justification) speeds up the process without introducing errors that could cause denials.\nMethod\nMethod: Moderated usability test, 4 realistic case scenarios, 60 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (accuracy) In 2 of 4 cases, the AI draft cited outdated diagnosis codes still present elsewhere in the chart rather than the most recent/active ones, which participants said would likely cause a payer denial if submitted as-is.\n[HIGH] (liability concern) The supervisor was firm that nurses would still need to read every AI-drafted justification in full before submission, since a wrongly submitted prior auth can delay patient care by days — no shortcut is acceptable here.\n[HIGH] (time savings (positive)) Despite the above, participants estimated the draft cut initial drafting time from ~15 minutes to ~5 minutes per straightforward case when the citation was correct, which was seen as a real win if accuracy improves.\n[MEDIUM] (transparency) Participants wanted to see which specific chart entries the AI pulled from, inline, rather than trusting a black-box summary — 'show your work' was mentioned unprompted by 3 of 4.\nRepresentative Quotes\n\"Five minutes saved is great until it's the case that gets denied and now I'm on the phone with the payer for 40 minutes instead. Show me where it got that info.\" — Utilization Review Nurse, P17\n\"I actually really liked this for the boring, obvious cases. Just don't let it near the complicated ones yet.\" — Utilization Review Nurse, P19\nRecommendations\nFix the outdated-diagnosis-code issue before any further piloting; this is a correctness bug, not a UX issue.\nAdd inline source citations (chart entry + date) for every claim in the generated justification.\nConsider limiting initial pilot scope to 'straightforward' case types the nurses themselves can help define, deferring complex cases.\nFollow-ups / Open Questions\nWork with engineering to confirm whether the outdated-code issue is a data-freshness bug or a model retrieval issue.\nAsk supervisor to help define what counts as a 'straightforward' case for a narrower v2 pilot scope.",
       "date": "Apr 8, 2025"
     },
+    "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing#6": {
+      "title": "Contextual Inquiry — Emergency Department Intake Shadowing",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 2 — ED Intake Nurse ×1, ED Registration Clerk ×1",
+      "excerpt": "Talk to IT about actual system slowness frequency/root cause — is it a known, trackable issue?\nExplore insurance-card OCR pre-fill as a smaller, separate low-risk pilot candidate.",
+      "date": "Apr 22, 2025"
+    },
     "raw:2025-05-06-usability-test-clinician-dashboard-redesign-v1#2": {
       "title": "Usability Test — Clinician Dashboard Redesign (v1)",
       "section": "Key Findings",
@@ -768,6 +792,13 @@
       "participants": "Participants: 6 — Physician, Nurse Practitioner, Physician Assistant",
       "excerpt": "Objective\nTest a redesigned clinician home dashboard that surfaces AI-flagged items (abnormal results, care gaps) alongside the standard patient list, to see if the new information hierarchy helps or adds noise.\nMethod\nMethod: Moderated usability test, task-based, 50 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (alert fatigue) 5 of 6 participants said the new AI-flagged 'care gap' badges would likely become background noise within a week if the flagging threshold isn't tuned, since 2 of the 3 example flags shown were judged clinically low-value.\n[MEDIUM] (information architecture) Participants generally liked having flags inline with the patient list rather than in a separate panel, but wanted a way to dismiss/snooze a flag per patient.\n[MEDIUM] (trust) Participants wanted to know the flag's underlying logic ('why is this flagged?') available on hover/click, not just the flag itself.\n[MEDIUM] (visual design) Badge color scheme was confused with existing acuity color-coding already used elsewhere in the EHR, creating a risk of misreading a documentation-quality flag as a clinical-acuity flag.\n[LOW] (positive signal) Participants responded well to the reduced number of clicks to get from dashboard to chart (2 clicks vs. 4 in the current system).\nRepresentative Quotes\n\"If two out of three of these flags are junk, I'm going to start ignoring all of them, including the one that actually matters. That's worse than no flag at all.\" — Physician, P27\n\"Don't reuse red/yellow/green for this. That already means something else to me on this exact screen.\" — Nurse Practitioner, P29\nRecommendations\nDo not ship the care-gap flagging feature until precision is meaningfully improved and validated against clinical review, given the explicit alert-fatigue risk raised.\nChange the flag badge visual system to something clearly distinct from the existing acuity color convention.\nAdd a 'why flagged' explanation and per-flag dismiss/snooze control before next round of testing.\nFollow-ups / Open Questions\nGet current false-positive rate on the care-gap model from Data Science before scheduling v2 testing.\nCoordinate with design system team on a non-conflicting badge treatment.",
       "date": "May 6, 2025"
+    },
+    "raw:2025-05-20-interview-it-security-sso-mfa-modernization#6": {
+      "title": "Interview — IT Security on SSO/MFA Modernization Impact",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 1 — IT Security Engineer ×1",
+      "excerpt": "Confirm badge-tap hardware compatibility with new MFA plan.\nGet the ambient scribe team's answer on session-loss behavior into a future usability test script.",
+      "date": "May 20, 2025"
     },
     "raw:2025-05-20-interview-it-security-sso-mfa-modernization#notes": {
       "title": "Interview — IT Security on SSO/MFA Modernization Impact",
@@ -811,6 +842,13 @@
       "excerpt": "Add a lightweight 'why did you reprioritize' capture on override, both to improve the model and to give coordinators a sense of agency the current design lacks.\nInvestigate incorporating patient history/continuity signals into ranking logic, not just recency, before wider testing.",
       "date": "Aug 26, 2025"
     },
+    "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#6": {
+      "title": "Usability Test — AI Alert Triage for Care Coordination",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 5 — Care Coordinator, Care Coordinator Supervisor",
+      "excerpt": "Share the override-capture idea with the Data Science team working on the care-gap flagging model (May findings) — likely the same underlying tuning problem.",
+      "date": "Aug 26, 2025"
+    },
     "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination#notes": {
       "title": "Usability Test — AI Alert Triage for Care Coordination",
       "section": null,
@@ -845,6 +883,13 @@
       "participants": "Participants: 5 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner",
       "excerpt": "Objective\nRe-test the ambient scribe after v0.1 fixes (medication dosage accuracy, inline correction, auto-listening, and the draft-retention/Security review from February) to see whether the critical and high findings were resolved.\nMethod\nMethod: Moderated usability test, simulated patient encounters, 45 min/session — follow-up with 3 returning + 2 new participants\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[LOW] (phi-handling (resolved)) The draft-retention issue from v0.1 (critical finding, Feb) has been fixed — drafts now auto-expire from the editable state after 10 minutes of inactivity and the behavior is documented for Compliance; verified in all 5 sessions.\n[MEDIUM] (accuracy (improved but not resolved)) Medication dosage errors dropped from 3/5 to 1/5 sessions — a clear improvement, but the remaining error type (misheard similar-sounding drug names) is a known class of error the team should track going forward.\n[HIGH] (trust calibration (unchanged)) Despite accuracy improvements, all 5 participants still read every line before accepting — the returning 3 participants said their behavior from v0.1 hadn't changed at all in the interim, suggesting trust doesn't shift from accuracy improvements alone without something like a track record or confidence indicator.\n[MEDIUM] (interaction (resolved)) In-place line correction (requested in v0.1) works well; all participants successfully corrected a wrong line without regenerating the full note.\nRepresentative Quotes\n\"It's better, no question. But I still read every line, same as last time. Getting it right once doesn't mean I trust it yet.\" — Physician, Internal Medicine, P09 (returning from v0.1)\n\"The fix where I can just click and edit one line? That's the difference between me using this and not.\" — Physician, Family Medicine, P11 (returning from v0.1)\nRecommendations\nSince accuracy fixes alone haven't shifted trust/skim behavior, explore an explicit confidence indicator per line (e.g., highlighting low-confidence transcriptions) as the next trust-building lever, rather than continuing to chase raw accuracy alone.\nAdd a specific test/tracking metric for similar-sounding medication name errors going forward, since it's now the dominant remaining error type.\nFollow-ups / Open Questions\nDesign and test a per-line confidence indicator concept for v0.3.\nCheck with engineering whether a medication name pronunciation dictionary/fine-tune could reduce the sound-alike error class.",
       "date": "Sep 23, 2025"
+    },
+    "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes#6": {
+      "title": "Contextual Inquiry — Behavioral Health Unit, Sensitive Note Handling",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 2 — Behavioral Health Clinician ×1, Behavioral Health Unit Charge Nurse ×1",
+      "excerpt": "Confirm with Legal whether a consent review for this population is even on a timeline, or needs to be requested.",
+      "date": "Oct 7, 2025"
     },
     "raw:2025-10-21-interview-training-department-rollout-change-management#0": {
       "title": "Interview — Training & Education Dept on Rollout/Change Management Planning",
@@ -942,6 +987,13 @@
       "section": "Representative Quotes",
       "participants": "Participants: 4 — Chief Information Officer ×1, VP Clinical Informatics ×1, Chief Privacy Officer ×1, Chief Medical Information Officer ×1",
       "excerpt": "\"A year ago we couldn't agree on what success even meant. Now we at least agree on the two numbers we're arguing about. That's real progress.\" — Chief Information Officer, P01 (returning from January)\n\"The stuff you told us not to build yet mattered as much as the stuff you told us to build.\" — VP Clinical Informatics, P02 (returning from January)",
+      "date": "Dec 16, 2025"
+    },
+    "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#7": {
+      "title": "Executive Steering Committee — Year-End Retro & 2026 Roadmap Input",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 4 — Chief Information Officer ×1, VP Clinical Informatics ×1, Chief Privacy Officer ×1, Chief Medical Information Officer ×1",
+      "excerpt": "Draft the formal metrics document and route for exec sign-off in January 2026.\nRetrofit a 'cross-cutting findings' index into the research repo covering 2025 (e.g., color-only status, transparency/citation requests, Part 2 flagging gap).",
       "date": "Dec 16, 2025"
     },
     "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro#notes": {
@@ -1042,6 +1094,13 @@
       "excerpt": "Method: Moderated usability test, 6 simulated encounters seeded with known sound-alike pairs (e.g. hydralazine/hydroxyzine, clonidine/Klonopin), 40 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder",
       "date": "Feb 10, 2026"
     },
+    "raw:2026-02-10-ambient-scribe-medication-flag-concept#6": {
+      "title": "Usability Test — Ambient Scribe Sound-Alike Medication Flag Concept",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 6 — Physician, Nurse Practitioner",
+      "excerpt": "Needs a larger-N validation pass before this moves from concept test to build-ready spec.\nOver-trust-on-unflagged risk should be checked again once the post-GA monitoring dashboard (recommended 2026-01-13) has real error-rate data to compare against self-reported behavior.",
+      "date": "Feb 10, 2026"
+    },
     "raw:2026-02-10-ambient-scribe-medication-flag-concept#notes": {
       "title": "Usability Test — Ambient Scribe Sound-Alike Medication Flag Concept",
       "section": null,
@@ -1061,6 +1120,13 @@
       "section": "Representative Quotes",
       "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
       "excerpt": "\"I genuinely thought I'd lost it. I've just gotten used to starting over when the screen locks, so I didn't even try to check.\" — Physician, Family Medicine, P31\n\"If it said 'paused, nothing lost, just log back in,' I'd believe it and wait. Right now it just looks broken.\" — Nurse Practitioner, P33\n\"The timeout window itself is a hard policy constraint, but what the screen tells the clinician during that window is entirely a product decision — that part isn't locked down.\" — IT Security stakeholder",
+      "date": "Feb 17, 2026"
+    },
+    "raw:2026-02-17-session-lock-during-dictation#7": {
+      "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+      "excerpt": "Confirm with IT Security whether the same \"paused, preserved\" messaging pattern should extend to other session-timeout-adjacent surfaces beyond ambient scribe.\nRe-test the abandon-and-redictate behavior once the explicit paused state ships, to confirm it actually changes clinician behavior and not just their stated understanding.",
       "date": "Feb 17, 2026"
     },
     "raw:2026-02-17-session-lock-during-dictation#notes": {
