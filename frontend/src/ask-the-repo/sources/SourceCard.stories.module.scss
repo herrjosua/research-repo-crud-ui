@@ -25,3 +25,10 @@
 .forceHover > article {
     background: vars.$background-hover;
 }
+
+// The card's width in the sources rail at the md floor: the md=2 Column
+// at a 672px viewport (8.5rem, as SourcesPanel.stories.module.scss's
+// `.narrow`), ~107px of card content.
+.mdFloor {
+    max-inline-size: 8.5rem;
+}

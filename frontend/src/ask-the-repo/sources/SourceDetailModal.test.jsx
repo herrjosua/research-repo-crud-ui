@@ -87,6 +87,21 @@ describe('SourceDetailModal', () => {
         expect(onClose).toHaveBeenCalled();
     });
 
+    it('tags a correction source beside the kind tag, with "Corrected <date>" after its date, and no other source', () => {
+        const { rerender } = renderModal({ source: { ...transcript, correction: { date: '2026-09-27' } } });
+        const tag = screen.getByText('Correction');
+        expect(tag.closest('.cds--tag').previousElementSibling).toHaveTextContent('Transcript');
+        const date = screen.getByText(transcript.date);
+        expect(date.nextElementSibling).toHaveTextContent('·');
+        expect(date.nextElementSibling.nextElementSibling).toHaveTextContent('Corrected Sep 27, 2026');
+
+        rerender(
+            <SourceDetailModal open source={transcript} onClose={() => {}} onTogglePin={() => {}} onToggleSave={() => {}} />
+        );
+        expect(screen.queryByText(/Correct/)).not.toBeInTheDocument();
+        expect(screen.queryByText('·')).not.toBeInTheDocument();
+    });
+
     it('renders nothing without a source', () => {
         const { container } = renderModal({ source: null });
 

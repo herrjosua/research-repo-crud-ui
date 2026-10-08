@@ -4,7 +4,7 @@ import SourceCard from './SourceCard';
 import { INITIAL_MESSAGES_BY_CONVERSATION } from '../fixtures/messages';
 import styles from './SourceCard.module.scss';
 
-const [interview, , , synthesis] = INITIAL_MESSAGES_BY_CONVERSATION.c1[1].sources;
+const [interview, , transcript, synthesis] = INITIAL_MESSAGES_BY_CONVERSATION.c1[1].sources;
 
 describe('SourceCard', () => {
     it('renders the kind tag, page, title, excerpt, and project/date', () => {
@@ -69,5 +69,23 @@ describe('SourceCard', () => {
         render(<SourceCard source={interview} selected onOpen={() => {}} onTogglePin={() => {}} />);
 
         expect(screen.getByRole('article')).toHaveClass(styles.selected);
+    });
+
+    it('tags a correction source beside the kind tag, with its date on a line below the meta line, and no other source', () => {
+        const { rerender, container } = render(
+            <SourceCard source={{ ...transcript, correction: { date: '2026-09-27' } }} projectLabel="Checkout Redesign" onOpen={() => {}} onTogglePin={() => {}} />
+        );
+        const tag = screen.getByText('Correction');
+        expect(tag.closest(`.${styles.tags}`)).toContainElement(screen.getByText('Transcript'));
+        // Its text is its name: no aria-label repeating it.
+        expect(container.querySelector('[aria-label*="Correction"]')).toBeNull();
+        const corrected = screen.getByText('Corrected Sep 27, 2026');
+        expect(corrected).toHaveClass(styles.meta);
+        expect(corrected.previousElementSibling).toHaveTextContent(`Checkout Redesign · ${transcript.date}`);
+
+        rerender(<SourceCard source={{ ...transcript, correction: null }} projectLabel="Checkout Redesign" onOpen={() => {}} onTogglePin={() => {}} />);
+        expect(screen.queryByText(/Correct/)).not.toBeInTheDocument();
+        expect(container.querySelector(`.${styles.tags}`)).toBeNull();
+        expect(container.querySelectorAll(`.${styles.meta}`)).toHaveLength(1);
     });
 });
