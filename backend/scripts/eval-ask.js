@@ -9,7 +9,7 @@
 //                                [--temperature 0.2] [--seeded-runs 3] [--unseeded-runs 3]
 //                                [--set regression|scenario] [--only id,id]
 //                                [--whole-raw-notes N] [--follow-ups shown|linked]
-//                                [--behaviors none|name,name]
+//                                [--corrections shown|off] [--behaviors none|name,name]
 //   node scripts/eval-ask.js report BEFORE [AFTER]
 //   node scripts/eval-ask.js compare --label NAME BASE [OTHER ...]
 //   node scripts/eval-ask.js prompt-sources
@@ -41,6 +41,11 @@
 //         sessions linked to its two best-ranked synthesis records). The
 //         metadata's `retrieval` records it, and each run `followUps`:
 //         whether the question fired the trigger and the passage ids added.
+//         --corrections shown|off runs with RETRIEVAL.corrections set to
+//         that for this process only (ask/pipeline.js: a shown raw session
+//         also shows all its correction passages; shown is the default, so
+//         off is the one that changes anything). The metadata's `retrieval`
+//         records it.
 //         --behaviors runs with exactly the named prompt behaviors on and
 //         the rest off (ask/answer.js PROMPT_BEHAVIORS: premise-check,
 //         open-items, decline-with-evidence, list-format; `none` turns them
@@ -406,18 +411,20 @@ function recordingClient(ollama) {
 }
 
 // The retrieval for a run, which its metadata records: RETRIEVAL with
-// --whole-raw-notes and --follow-ups, when given, for this process only.
-function runRetrieval({ wholeRawNotes = null, followUps = null }) {
-    if (wholeRawNotes === null && followUps === null) return RETRIEVAL;
+// --whole-raw-notes, --follow-ups and --corrections, when given, for this
+// process only.
+function runRetrieval({ wholeRawNotes = null, followUps = null, corrections = null }) {
+    if (wholeRawNotes === null && followUps === null && corrections === null) return RETRIEVAL;
     return {
         ...RETRIEVAL,
         ...(wholeRawNotes === null ? {} : { wholeRawNotes }),
         ...(followUps === null ? {} : { followUps }),
+        ...(corrections === null ? {} : { corrections }),
     };
 }
 
 async function run({
-    label, model, think: thinkLevel, seed, temperature, seededRuns, unseededRuns, set, only, wholeRawNotes, followUps, behaviors,
+    label, model, think: thinkLevel, seed, temperature, seededRuns, unseededRuns, set, only, wholeRawNotes, followUps, corrections, behaviors,
 }) {
     if (!label) throw new Error('run needs --label NAME');
     const repoRoot = process.env.AGENTIC_REPO_ROOT;
@@ -446,7 +453,7 @@ async function run({
         : ollama;
     const recording = recordingClient(chatClient);
     const index = createEmbeddingIndex({ embed: ollama.embed, loadRecords });
-    const retrieval = runRetrieval({ wholeRawNotes, followUps });
+    const retrieval = runRetrieval({ wholeRawNotes, followUps, corrections });
     const promptBehaviors = withBehaviors(behaviors);
     const seeded = createAskPipeline({
         ollama: withChatOptions(recording, { seed, temperature }), index, retrieval, promptBehaviors,
@@ -974,7 +981,7 @@ function withBehaviors(names) {
 function parseArgs(argv) {
     const [command, ...rest] = argv;
     const options = {
-        command, label: null, model: null, think: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, wholeRawNotes: null, followUps: null, behaviors: null, labels: [],
+        command, label: null, model: null, think: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, wholeRawNotes: null, followUps: null, corrections: null, behaviors: null, labels: [],
     };
     const count = (arg, raw, min) => {
         const n = Number(raw);
@@ -1016,6 +1023,9 @@ function parseArgs(argv) {
         } else if (arg === '--follow-ups') {
             options.followUps = value();
             if (!['shown', 'linked'].includes(options.followUps)) throw new Error('--follow-ups must be shown or linked');
+        } else if (arg === '--corrections') {
+            options.corrections = value();
+            if (!['shown', 'off'].includes(options.corrections)) throw new Error('--corrections must be shown or off');
         } else if (arg === '--behaviors') {
             const names = value().split(',').map((name) => name.trim()).filter(Boolean);
             const none = names.join() === 'none';
@@ -1041,7 +1051,7 @@ async function main() {
     if (options.command === 'report') return report(options);
     if (options.command === 'compare') return compare(options);
     if (options.command === 'prompt-sources') return promptSources();
-    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] [--whole-raw-notes N] [--follow-ups shown|linked] [--behaviors none|name,name] | report BEFORE [AFTER] | compare --label NAME BASE OTHER... | prompt-sources');
+    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] [--whole-raw-notes N] [--follow-ups shown|linked] [--corrections shown|off] [--behaviors none|name,name] | report BEFORE [AFTER] | compare --label NAME BASE OTHER... | prompt-sources');
 }
 
 if (require.main === module) {

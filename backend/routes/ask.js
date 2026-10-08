@@ -62,6 +62,8 @@ const { readProjectList, recordProjectTag } = require('../projects');
 //     participants: string | null, // a raw session's roster, one line, as the model
 //                                  // was shown it ("Participants: 3 — Care
 //                                  // Coordinator ×2, …"); null for other records
+//     correction: { date: string } | null, // { date: "YYYY-MM-DD" } when the excerpt is
+//                                  // from a raw session's correction file; else null
 //     recordId: string,            // e.g. "raw:2025-01-14-…", for GET /api/records/:id
 //     recordKind: string,          // raw | finding | component | analytics | deliverable
 //     recordType: string | null,   // e.g. "usability-test", "personas"
