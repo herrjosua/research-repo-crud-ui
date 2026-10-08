@@ -143,8 +143,10 @@ sequenceDiagram
   runs in static mode, so it doesn't: it serves the pre-generated answers
   through the question picker. How the public host is configured lives
   outside this repo.
-- Correction files in `raw/` aren't read by the export scripts, so
-  retrieval can still cite a number that a correction has fixed.
+- Closed: since agentic-repo RR-97 (merge `291ff63`), the export scripts
+  read correction files in `raw/`. Each is appended to its session's html
+  under a `Correction (YYYY-MM-DD)` heading and listed in a `corrections`
+  field.
 - Retrieval quality: numbered lists lose their numbers when chunked, and
   the model occasionally states figures that aren't in the sources.
   `backend/scripts/eval-ask.js` measures this against a gold set; the

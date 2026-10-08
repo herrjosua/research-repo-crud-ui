@@ -459,10 +459,10 @@ describe('eval --corrections', () => {
     });
 
     it("is recorded in the run's retrieval, and without it the retrieval is the default", () => {
-        expect(RETRIEVAL.corrections).toBe('shown');
+        expect(RETRIEVAL.corrections).toBe('off');
         expect(runRetrieval({ wholeRawNotes: null, followUps: null, corrections: null })).toBe(RETRIEVAL);
-        expect(runRetrieval({ corrections: 'off' })).toEqual({ ...RETRIEVAL, corrections: 'off' });
-        expect(runRetrieval({ followUps: 'shown', corrections: 'off' })).toEqual({ ...RETRIEVAL, followUps: 'shown', corrections: 'off' });
+        expect(runRetrieval({ corrections: 'shown' })).toEqual({ ...RETRIEVAL, corrections: 'shown' });
+        expect(runRetrieval({ followUps: 'shown', corrections: 'shown' })).toEqual({ ...RETRIEVAL, followUps: 'shown', corrections: 'shown' });
     });
 });
 

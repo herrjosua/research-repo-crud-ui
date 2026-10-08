@@ -45,16 +45,17 @@ const { checkAnswer } = require('./checks');
 //                   (ask/provenance.js) to the two best-ranked synthesis
 //                   records (withFollowUps). Off, or when the question
 //                   doesn't ask that, the selection is unchanged.
-//   corrections     'shown' (the default) or 'off': with 'shown', every
+//   corrections     'off' (the default) or 'shown': with 'shown', every
 //                   raw session in the selection also shows its correction
 //                   passages (ask/corpus.js CORRECTION_HEADING_RE), after
 //                   its other passages, in record order (withCorrections),
 //                   so a corrected figure is never shown without its
 //                   correction. With 'off', or when no shown session has
-//                   a correction, the selection is unchanged.
+//                   a correction, the selection is unchanged: a correction
+//                   passage is shown only when it ranks on its own.
 // The evaluation harness records this with every result.
 const RETRIEVAL = {
-    topK: 6, metadataSections: 'excluded', provenanceSlot: false, passagesPerRaw: 2, wholeRawNotes: 0, followUps: false, corrections: 'shown',
+    topK: 6, metadataSections: 'excluded', provenanceSlot: false, passagesPerRaw: 2, wholeRawNotes: 0, followUps: false, corrections: 'off',
 };
 const TOP_K = RETRIEVAL.topK;
 // Low temperature: this is retrieval-grounded summarization, not writing.
@@ -221,8 +222,8 @@ function createAskPipeline({
     if (retrieval.corrections !== undefined && !CORRECTIONS_MODES.includes(retrieval.corrections)) {
         throw new Error(`retrieval.corrections must be 'shown' or 'off', not ${JSON.stringify(retrieval.corrections)}`);
     }
-    // Absent is the default, 'shown'.
-    const attachCorrections = retrieval.corrections !== 'off';
+    // Absent is the default, 'off'.
+    const attachCorrections = retrieval.corrections === 'shown';
 
     async function rankInScope(question, project) {
         const { passages, records } = await index.refresh();

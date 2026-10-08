@@ -43,8 +43,8 @@
 //         whether the question fired the trigger and the passage ids added.
 //         --corrections shown|off runs with RETRIEVAL.corrections set to
 //         that for this process only (ask/pipeline.js: a shown raw session
-//         also shows all its correction passages; shown is the default, so
-//         off is the one that changes anything). The metadata's `retrieval`
+//         also shows all its correction passages; off is the default, so
+//         shown is the one that changes anything). The metadata's `retrieval`
 //         records it.
 //         --behaviors runs with exactly the named prompt behaviors on and
 //         the rest off (ask/answer.js PROMPT_BEHAVIORS: premise-check,

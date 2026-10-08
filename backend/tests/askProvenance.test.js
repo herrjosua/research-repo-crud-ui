@@ -428,7 +428,7 @@ describe('followUps: Follow-ups passages for "what is unresolved" questions', ()
     });
 });
 
-describe('corrections: a shown session always shows its correction passages', () => {
+describe("corrections: with 'shown', a shown session always shows its correction passages", () => {
     const { createAskPipeline, RETRIEVAL } = require('../ask/pipeline');
     const { chunkRecord, isMetadataPassage } = require('../ask/corpus');
 
@@ -473,7 +473,7 @@ describe('corrections: a shown session always shows its correction passages', ()
     const other = session('2026-02-10-other');
     const plain = session('2026-02-17-lock', false);
     const records = [finding('scribe'), lock, other];
-    const base = { ...RETRIEVAL, topK: 2 };
+    const base = { ...RETRIEVAL, topK: 2, corrections: 'shown' };
     // lock is shown by Objective and Key Findings; its corrections rank
     // below both. other is third, outside the top k.
     const scores = {
@@ -481,10 +481,11 @@ describe('corrections: a shown session always shows its correction passages', ()
     };
     const index = indexOf(records, scores);
 
-    it("is on by default ('shown'), and absent means the default", async () => {
-        expect(RETRIEVAL.corrections).toBe('shown');
+    it("is off by default ('off'), and absent means the default", async () => {
+        expect(RETRIEVAL.corrections).toBe('off');
         const { corrections, ...absent } = base;
-        expect(await selectWith(index, absent)).toEqual(await selectWith(index, base));
+        expect(await selectWith(index, absent)).toEqual(await selectWith(index, { ...base, corrections: 'off' }));
+        expect(await selectWith(index, absent)).toEqual(['finding:scribe#0', `${lock.id}#0`, `${lock.id}#1`]);
     });
 
     it("attaches a shown session's corrections after its two best passages, in record order, and none of a session not shown", async () => {
