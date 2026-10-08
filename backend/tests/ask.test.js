@@ -195,6 +195,8 @@ describe('POST /api/ask', () => {
                 section: source.section === null ? null : expect.any(String),
                 // A raw session's roster line; null for every other record.
                 participants: source.recordKind === 'raw' ? expect.stringMatching(/^Participants: /) : null,
+                // These scripts may show raw corrections; this corpus has none.
+                correction: null,
                 recordId: expect.stringMatching(/^(raw|finding|component|analytics|deliverable):/),
                 recordKind: expect.any(String),
                 recordType: source.recordType === null ? null : expect.any(String),

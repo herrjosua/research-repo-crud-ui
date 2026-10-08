@@ -45,9 +45,17 @@ const { checkAnswer } = require('./checks');
 //                   (ask/provenance.js) to the two best-ranked synthesis
 //                   records (withFollowUps). Off, or when the question
 //                   doesn't ask that, the selection is unchanged.
+//   corrections     'off' (the default) or 'shown': with 'shown', every
+//                   raw session in the selection also shows its correction
+//                   passages (ask/corpus.js CORRECTION_HEADING_RE), after
+//                   its other passages, in record order (withCorrections),
+//                   so a corrected figure is never shown without its
+//                   correction. With 'off', or when no shown session has
+//                   a correction, the selection is unchanged: a correction
+//                   passage is shown only when it ranks on its own.
 // The evaluation harness records this with every result.
 const RETRIEVAL = {
-    topK: 6, metadataSections: 'excluded', provenanceSlot: false, passagesPerRaw: 2, wholeRawNotes: 0, followUps: false,
+    topK: 6, metadataSections: 'excluded', provenanceSlot: false, passagesPerRaw: 2, wholeRawNotes: 0, followUps: false, corrections: 'off',
 };
 const TOP_K = RETRIEVAL.topK;
 // Low temperature: this is retrieval-grounded summarization, not writing.
@@ -153,6 +161,39 @@ function withFollowUps(ranked, selection, mode, links) {
     return { selection: out, attached: out.filter((p) => !selected.has(idOf(p))).map(idOf) };
 }
 
+const CORRECTIONS_MODES = ['shown', 'off'];
+
+// The corrections attachment (RETRIEVAL above), given the in-scope ranking
+// and the selection. Each raw session in the selection gets its correction
+// passages among its own, in record order; a session's corrections are
+// the last sections of its record, so they come after the rest, together
+// with one already among its best passages. They're the ranking's own
+// { passage, score } entries. Skipped: a passage already selected, and a
+// session shown whole (wholeRawNotes), whose notes already hold its
+// corrections. `attached` is the added passages' ids, "<record id>#<chunk
+// index>", in [n] order.
+function withCorrections(ranked, selection) {
+    const byId = new Map(ranked.map((r) => [r.record.id, r]));
+    const idOf = ({ passage }) => `${passage.record.id}#${passage.chunk.index}`;
+    const selected = new Set(selection.map(idOf));
+    const corrections = (recordId) => (byId.get(recordId)?.passages || [])
+        .filter((p) => p.passage.chunk.correction && !selected.has(idOf(p)))
+        .sort((a, b) => a.passage.chunk.index - b.passage.chunk.index);
+
+    const out = [];
+    for (let i = 0; i < selection.length;) {
+        const { record } = selection[i].passage;
+        let end = i;
+        while (end < selection.length && selection[end].passage.record === record) end += 1;
+        const group = selection.slice(i, end);
+        const whole = group.some(({ passage }) => passage.chunk.index === 'notes');
+        out.push(...(record.kind !== 'raw' || whole ? group : [...group, ...corrections(record.id)]
+            .sort((a, b) => a.passage.chunk.index - b.passage.chunk.index)));
+        i = end;
+    }
+    return { selection: out, attached: out.filter((p) => !selected.has(idOf(p))).map(idOf) };
+}
+
 // `ollama` is an ask/ollama.js client; `index` an embedding index built on it
 // (ask/retrieval.js). ask() resolves to the response body POST /api/ask
 // sends, plus `raw` (the model's unprocessed reply, or null when the model
@@ -178,6 +219,11 @@ function createAskPipeline({
     if (retrieval.followUps !== undefined && !FOLLOW_UPS_MODES.includes(retrieval.followUps)) {
         throw new Error(`retrieval.followUps must be false, 'shown' or 'linked', not ${JSON.stringify(retrieval.followUps)}`);
     }
+    if (retrieval.corrections !== undefined && !CORRECTIONS_MODES.includes(retrieval.corrections)) {
+        throw new Error(`retrieval.corrections must be 'shown' or 'off', not ${JSON.stringify(retrieval.corrections)}`);
+    }
+    // Absent is the default, 'off'.
+    const attachCorrections = retrieval.corrections === 'shown';
 
     async function rankInScope(question, project) {
         const { passages, records } = await index.refresh();
@@ -204,9 +250,13 @@ function createAskPipeline({
     }
 
     // The selection, and with followUps on, what it did ({ fired, attached }).
+    // Corrections are attached first, so only the selected sessions get
+    // them, not one 'linked' adds for its Follow-ups; a session's correction
+    // sections come last in its record, so they stay after its Follow-ups.
     async function selectWithFollowUps(question, project) {
         const { ranked, records } = await rankInScope(question, project);
-        const selection = selectFrom(ranked, records);
+        const chosen = selectFrom(ranked, records);
+        const selection = attachCorrections ? withCorrections(ranked, chosen).selection : chosen;
         if (!retrieval.followUps) return { selection, followUps: null };
         if (!asksWhatIsUnresolved(question)) return { selection, followUps: { fired: false, attached: [] } };
         const links = retrieval.followUps === 'linked' ? provenanceLinks(records) : new Map();
@@ -266,5 +316,5 @@ function createAskPipeline({
 }
 
 module.exports = {
-    createAskPipeline, promptSizeWarning, asksWhatIsUnresolved, TOP_K, RETRIEVAL, CHAT_OPTIONS, PROMPT_WARN_SHARE,
+    createAskPipeline, promptSizeWarning, asksWhatIsUnresolved, withCorrections, TOP_K, RETRIEVAL, CHAT_OPTIONS, PROMPT_WARN_SHARE,
 };

@@ -23,11 +23,18 @@ const { recordProjectTag } = require('../projects');
 //                        items have an order.
 // With all four off the prompt is exactly what it was before they existed.
 // The evaluation harness records this with every result.
+//
+// Separately, the corrections rule (CORRECTIONS_RULE) is added only when a
+// source is a correction passage (ask/corpus.js CORRECTION_HEADING_RE), so
+// a prompt without one is exactly what it was before corrections existed.
 const PROMPT_BEHAVIORS = {
     premiseCheck: false, openItems: false, declineWithEvidence: true, listFormat: false,
 };
 
-function systemPrompt(behaviors = PROMPT_BEHAVIORS) {
+const CORRECTIONS_RULE = 'A source labelled "Correction (date)" corrects the original notes of the same session: where they disagree, the correction is right. Use the corrected fact and cite the correction.';
+
+// `corrections`: whether any source is a correction passage.
+function systemPrompt(behaviors = PROMPT_BEHAVIORS, { corrections = false } = {}) {
     return [
         'You answer questions about a UX research repository for a healthcare product team.',
         'Use ONLY the numbered sources provided. Do not use outside knowledge.',
@@ -37,6 +44,7 @@ function systemPrompt(behaviors = PROMPT_BEHAVIORS) {
             : []),
         'Be specific: name the concrete evidence the sources give (which step or feature, how many participants, figures, quotes) rather than summarizing vaguely.',
         'For quotes, participant counts and other figures, prefer RAW SESSION sources and take them from the session notes as written; use SYNTHESIS and DOC sources for the wider picture.',
+        ...(corrections ? [CORRECTIONS_RULE] : []),
         'Cite every sentence that makes a claim with the one or two sources that best support it, in bracketed numbers like [1] or [2][3]. Never cite more than two sources in one sentence.',
         ...(behaviors.openItems
             ? ['If the question asks what is unresolved, still open or not yet known, list each open question, follow-up or unconfirmed item the sources state, one per list item, each with its own citation. Do not answer that the sources don\'t say what is open when they record open questions or follow-ups.']
@@ -95,7 +103,7 @@ function formatSourceBlock(ranked) {
 // `behaviors` overrides PROMPT_BEHAVIORS, for the evaluation and tests.
 function buildMessages(question, ranked, behaviors = PROMPT_BEHAVIORS) {
     return [
-        { role: 'system', content: systemPrompt(behaviors) },
+        { role: 'system', content: systemPrompt(behaviors, { corrections: ranked.some(({ passage }) => passage.chunk.correction) }) },
         {
             role: 'user',
             content: `Sources:\n\n${formatSourceBlock(ranked)}\n\nQuestion: ${question}`,
@@ -162,6 +170,7 @@ function toSource({ passage, score }, project) {
         contextAfter: next ? clip(next.text, CONTEXT_CHARS) : null,
         section: chunk.heading && chunk.heading !== record.title ? chunk.heading : null,
         participants: passage.participants || null,
+        correction: chunk.correction || null,
         recordId: record.id,
         recordKind: record.kind,
         recordType: record.type || null,
@@ -170,5 +179,5 @@ function toSource({ passage, score }, project) {
 }
 
 module.exports = {
-    SYSTEM_PROMPT, PROMPT_BEHAVIORS, systemPrompt, sourceClass, sourceLabel, buildMessages, renumberCitations, toSource,
+    SYSTEM_PROMPT, PROMPT_BEHAVIORS, CORRECTIONS_RULE, systemPrompt, sourceClass, sourceLabel, buildMessages, renumberCitations, toSource,
 };

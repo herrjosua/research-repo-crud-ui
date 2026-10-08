@@ -79,8 +79,9 @@ searched there.
 **Why:** Raw notes are the tie-breaker when other records disagree. Editing
 them would weaken the rule every other fix relies on.
 
-**Known gap:** The export scripts don't read correction files, so retrieval
-can still surface the uncorrected fact.
+**Known gap (closed):** Since agentic-repo RR-97 (merge `291ff63`), the
+export scripts read correction files: each is appended to its session's html
+under a `Correction (YYYY-MM-DD)` heading and listed in a `corrections` field.
 
 ## 6. Saved insights come from cited sources only
 

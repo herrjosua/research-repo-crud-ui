@@ -1,5 +1,7 @@
 import { Pin, PinFilled } from '@carbon/icons-react';
 import KindTag from './KindTag';
+import CorrectionTag from './CorrectionTag';
+import { correctedLabel } from './correctedLabel';
 import { PINNABLE_KINDS } from './kindMeta';
 import styles from './SourceCard.module.scss';
 
@@ -34,15 +36,26 @@ import styles from './SourceCard.module.scss';
  * `selected` (bool — the source whose detail modal is open, or was opened
  * last), `onOpen(event)`, `pinned` (bool), `onTogglePin()`. The meta line
  * shows whichever of project and date exist, and is left out when neither
- * does.
+ * does. A source from a raw session's correction file (`source.correction`,
+ * `{ date }`) gets a CorrectionTag beside its KindTag and a "Corrected
+ * <date>" line below the meta line; every other source renders exactly as
+ * before.
  */
 export default function SourceCard({ source, projectLabel = null, selected = false, onOpen, pinned = false, onTogglePin }) {
     const pinnable = PINNABLE_KINDS.has(source.kind);
+    const corrected = source.correction ? correctedLabel(source.correction) : null;
 
     return (
         <article className={selected ? `${styles.card} ${styles.selected}` : styles.card}>
             <div className={styles.row}>
-                <KindTag kind={source.kind} />
+                {source.correction ? (
+                    <span className={styles.tags}>
+                        <KindTag kind={source.kind} />
+                        <CorrectionTag />
+                    </span>
+                ) : (
+                    <KindTag kind={source.kind} />
+                )}
                 {source.page && <span className={styles.page}>p. {source.page}</span>}
             </div>
             <button type="button" className={styles.open} aria-haspopup="dialog" onClick={onOpen}>
@@ -59,6 +72,7 @@ export default function SourceCard({ source, projectLabel = null, selected = fal
                     {source.date}
                 </p>
             )}
+            {corrected && <p className={styles.meta}>{corrected}</p>}
             {pinnable && (
                 <button type="button" className={styles.pin} aria-pressed={pinned} onClick={onTogglePin}>
                     {pinned ? <PinFilled size={16} aria-hidden="true" /> : <Pin size={16} aria-hidden="true" />}

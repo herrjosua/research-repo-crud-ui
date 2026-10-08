@@ -1,6 +1,8 @@
 import { Modal, Button, InlineNotification } from '@carbon/react';
 import { Pin, PinFilled, Bookmark, BookmarkFilled } from '@carbon/icons-react';
 import KindTag from './KindTag';
+import CorrectionTag from './CorrectionTag';
+import { correctedLabel } from './correctedLabel';
 import { PINNABLE_KINDS } from './kindMeta';
 import styles from './SourceDetailModal.module.scss';
 
@@ -29,6 +31,8 @@ const VERBATIM_KINDS = new Set(['interview', 'transcript']);
  * `open` (bool), `source` (a POST /api/ask source, with
  * `contextBefore`/`contextAfter`; see `../fixtures/messages.js`),
  * `projectLabel` (display name of `source.recordProject`, or null),
+ * `source.correction` (`{ date }`, a raw session's correction file) adds a
+ * CorrectionTag beside the KindTag and "Corrected <date>" after the date.
  * `onClose()`, `pinned` / `onTogglePin()`,
  * `saved` / `onToggleSave()`, `launcherButtonRef` (passed through to
  * Carbon's `Modal`, which returns focus there on close).
@@ -47,6 +51,7 @@ export default function SourceDetailModal({
     if (!source) return null;
 
     const pinnable = PINNABLE_KINDS.has(source.kind);
+    const corrected = source.correction ? correctedLabel(source.correction) : null;
     const excerptClass = VERBATIM_KINDS.has(source.kind)
         ? `${styles.excerpt} ${styles.verbatim}`
         : styles.excerpt;
@@ -63,10 +68,13 @@ export default function SourceDetailModal({
         >
             <div className={styles.meta}>
                 <KindTag kind={source.kind} />
+                {source.correction && <CorrectionTag />}
                 {source.page && <span className={styles.page}>p. {source.page}</span>}
                 {projectLabel && <span>{projectLabel}</span>}
                 {projectLabel && source.date && <span aria-hidden="true">·</span>}
                 {source.date && <span>{source.date}</span>}
+                {corrected && (projectLabel || source.date) && <span aria-hidden="true">·</span>}
+                {corrected && <span>{corrected}</span>}
             </div>
 
             <div className={styles.document}>

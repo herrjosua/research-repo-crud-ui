@@ -923,3 +923,52 @@ describe('Generated design-token components are read-only', () => {
         expect(res.body.error).toMatch(/folder/);
     });
 });
+
+describe('a raw session with a correction file', () => {
+    const recordId = 'raw:2026-02-17-session-lock-test';
+    const sessionDir = () => path.join(testRepoPath, 'research', 'raw', '2026-02-17-session-lock-test');
+    const CORRECTED = 'all 4 clinicians assumed the draft was lost';
+
+    beforeAll(() => {
+        const { cpSync } = require('fs');
+        const { execFileSync } = require('child_process');
+        cpSync(path.join(__dirname, 'fixtures', 'correction-session', 'research'), path.join(testRepoPath, 'research'), { recursive: true });
+        execFileSync('git', ['add', '-A'], { cwd: testRepoPath });
+        execFileSync('git', ['commit', '-m', 'Add the correction fixture session'], { cwd: testRepoPath });
+        // Earlier describe blocks spend most of writeLimiter's budget.
+        require('../middleware/rateLimiter')._resetForTests();
+    });
+
+    it('shows the correction in html, never in rawContent', async () => {
+        const res = await agent.get(`/api/records/${recordId}`);
+        expect(res.status).toBe(200);
+        expect(res.body.html).toMatch(/<h2>Correction \(2026-09-27\)<\/h2>/);
+        expect(res.body.html).toContain(CORRECTED);
+        expect(res.body.corrections).toEqual([
+            { path: 'raw/2026-02-17-session-lock-test/correction-2026-09-27.md', date: '2026-09-27', title: 'Correction — Session lock test' },
+        ]);
+        expect(res.body.rawContent).toContain('4 of 5 clinicians assumed the draft was lost.');
+        expect(res.body.rawContent).not.toMatch(/correction/i);
+        expect(res.body.rawContent).not.toContain(CORRECTED);
+    });
+
+    it('saves the notes back without the correction, and leaves the correction file alone', async () => {
+        const correctionBefore = await fs.readFile(path.join(sessionDir(), 'correction-2026-09-27.md'), 'utf8');
+        const { body: record } = await agent.get(`/api/records/${recordId}`);
+        const res = await agent.put(`/api/records/${recordId}`).send({
+            frontmatter: { title: 'Session lock test' },
+            content: record.rawContent,
+        });
+        expect(res.status).toBe(200);
+
+        const notes = await fs.readFile(path.join(sessionDir(), 'session-notes.md'), 'utf8');
+        expect(notes).toContain('4 of 5 clinicians assumed the draft was lost.');
+        expect(notes).not.toMatch(/correction/i);
+        expect(notes).not.toContain(CORRECTED);
+        expect(await fs.readFile(path.join(sessionDir(), 'correction-2026-09-27.md'), 'utf8')).toBe(correctionBefore);
+
+        const { body: after } = await agent.get(`/api/records/${recordId}`);
+        expect(after.rawContent).toBe(record.rawContent);
+        expect(after.html).toContain(CORRECTED);
+    });
+});

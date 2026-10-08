@@ -934,6 +934,7 @@ identifying the real record:
 | `contextAfter`  | string \| null   | The record text just after it. |
 | `section`       | string \| null   | The heading the excerpt sits under. |
 | `participants`  | string \| null   | A raw session's roster as one line, exactly as the model was shown it, e.g. `"Participants: 3 — Care Coordinator ×2, Care Coordinator (float pool) ×1"`; `null` for every other record and for a session without a roster. |
+| `correction`    | object \| null   | `{ date: "YYYY-MM-DD" }` when the excerpt is from a raw session's correction file (its section is `Correction (YYYY-MM-DD)…`); `null` otherwise. The sources panel tags it `Correction · YYYY-MM-DD`. |
 | `recordId`      | string           | For `GET /api/records/:id`, e.g. `raw:2025-02-25-usability-test-…`. |
 | `recordKind`    | string           | `raw` \| `finding` \| `component` \| `analytics` \| `deliverable`. |
 | `recordType`    | string \| null   | e.g. `usability-test`, `personas`. |
@@ -1012,6 +1013,25 @@ evaluation harness records them with every result:
   prompt about 20–25% longer (mean 4,837 regression and 5,521 scenario
   characters, max 7,378). See decision 15.
 
+- **Off by default: corrections** (`corrections`: `'off'` or `'shown'`).
+  A raw session's correction files (`raw/<session>/correction-*.md`) are
+  appended to its record by `export_records.py`, under a
+  `Correction (YYYY-MM-DD)` heading, and their passages are marked
+  `correction: { date }` (`ask/corpus.js`, `CORRECTION_HEADING_RE`). They
+  are ranked like any other passage, so with `'off'` a correction is shown
+  when it ranks on its own. With `'shown'`, every raw session in the
+  selection also shows all its correction passages, after its other
+  passages in record order, so a corrected figure is never shown without
+  its correction. Never added: a passage already shown, a session shown
+  whole (`wholeRawNotes`, whose notes hold its corrections), or a session
+  `followUps: 'linked'` adds. When any shown passage is a correction, the
+  system prompt gets one more rule (`ask/answer.js`, `CORRECTIONS_RULE`);
+  without one, the prompt is unchanged. In the evaluation (corpus
+  `291ff63`), `'shown'` changed one verdict, `audit-session-timeout`, from
+  pass to fail: the session-lock session's four correction passages
+  lengthened its prompt and the answer stopped citing that session. With
+  `'off'`, the session-lock draft-loss question still answered "all 4"
+  from the correction passage, which ranked on its own.
 - **Off by default: whole raw notes** (`wholeRawNotes`). Set to N, the raw
   sessions in the top k are dropped and the top N raw sessions of the whole
   ranking are shown instead, each as its whole notes: every section of its

@@ -84,9 +84,23 @@ function cleanInline(fragment) {
     return decodeEntities(fragment.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
 }
 
+// A raw session's correction file, as export_records.py appends it after
+// the session's own sections: an <h2> "Correction (YYYY-MM-DD)", and the
+// correction's own headings as <h3> "Correction (YYYY-MM-DD): …". A passage
+// under either is marked { date }; the pipeline's corrections option
+// (ask/pipeline.js) attaches them to a shown session. An ordinary heading
+// that only mentions the word ("Corrections to the flow") doesn't match.
+const CORRECTION_HEADING_RE = /^Correction \((\d{4}-\d{2}-\d{2})\)(?::|$)/;
+
+function correctionOf(heading) {
+    const match = CORRECTION_HEADING_RE.exec(heading || '');
+    return match ? { date: match[1] } : null;
+}
+
 // Packs a record's blocks into passages of up to MAX_PASSAGE_CHARS, never
 // letting one passage straddle two headings (so each passage's section label
-// is accurate).
+// is accurate). Each passage carries `correction`: { date } under a
+// correction heading, else null.
 function chunkRecord(record) {
     const passages = [];
     let current = null;
@@ -101,7 +115,7 @@ function chunkRecord(record) {
             passages.push(current);
         }
     }
-    return passages.map((passage, index) => ({ ...passage, index }));
+    return passages.map((passage, index) => ({ ...passage, index, correction: correctionOf(passage.heading) }));
 }
 
 // Sections that describe a record rather than hold its evidence: who took
@@ -250,6 +264,7 @@ module.exports = {
     decodeEntities,
     htmlToBlocks,
     chunkRecord,
+    CORRECTION_HEADING_RE,
     METADATA_SECTIONS,
     FOLLOW_UPS_HEADING,
     isMetadataPassage,

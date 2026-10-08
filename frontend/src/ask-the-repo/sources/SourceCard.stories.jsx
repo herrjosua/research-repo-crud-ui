@@ -126,3 +126,47 @@ export const MissingDate = {
     </div>
   ),
 };
+
+// A source from a raw session's correction file (POST /api/ask's
+// `source.correction`): its CorrectionTag beside the KindTag and its
+// "Corrected <date>" line below the meta line, on each of the card's
+// backgrounds, and at the md floor's width, where the CorrectionTag wraps
+// below the KindTag rather than overflow the card.
+const CORRECTION_SOURCE = {
+  ...SOURCES[2],
+  id: 'raw:2026-02-17-session-lock#6',
+  title: 'Contextual Inquiry — Session Lock During Dictation',
+  excerpt: 'Only the 4 shadowed clinicians went through a lock during dictation, so all 4 clinicians assumed the draft was lost.',
+  date: 'Feb 17, 2026',
+  page: undefined,
+  section: 'Correction (2026-09-27): Draft-loss result',
+  correction: { date: '2026-09-27' },
+};
+
+const CORRECTION_STATES = [
+  { label: 'Default', className: undefined },
+  { label: 'Hover', className: styles.forceHover },
+  { label: 'Selected', selected: true },
+  { label: 'md floor (672px viewport)', className: styles.mdFloor },
+];
+
+export const Correction = {
+  render: () => (
+    <div className={styles.states}>
+      {CORRECTION_STATES.map(({ label, className, selected }) => (
+        <div key={label}>
+          <p className={styles.stateLabel}>{label}</p>
+          <div className={className}>
+            <SourceCard
+              source={CORRECTION_SOURCE}
+              projectLabel={projectLabelFor(CORRECTION_SOURCE.recordProject)}
+              selected={selected}
+              onOpen={() => {}}
+              onTogglePin={() => {}}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  ),
+};

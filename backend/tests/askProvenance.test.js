@@ -427,3 +427,116 @@ describe('followUps: Follow-ups passages for "what is unresolved" questions', ()
         expect(() => createAskPipeline({ ollama: {}, index: careIndex, retrieval: { ...care, followUps: true } })).toThrow(/followUps/);
     });
 });
+
+describe("corrections: with 'shown', a shown session always shows its correction passages", () => {
+    const { createAskPipeline, RETRIEVAL } = require('../ask/pipeline');
+    const { chunkRecord, isMetadataPassage } = require('../ask/corpus');
+
+    // A raw session like the real ones: Objective #0, Key Findings #1,
+    // Follow-ups #2, Related #3 and the roster #4 (metadata), then, with
+    // `corrected`, a correction file as export_records.py appends it: its
+    // filing note #5 and one section of its own #6.
+    const session = (slug, corrected = true) => ({
+        id: `raw:${slug}`, kind: 'raw', type: 'contextual-inquiry', title: `Session ${slug}`, tags: ['scribe'],
+        html: `<h1>Session ${slug}</h1><h2>Objective</h2><p>objective of ${slug}</p>`
+            + `<h2>Key Findings</h2><p>4 of 5 clinicians in ${slug}</p>`
+            + `<h2>Follow-ups / Open Questions</h2><ul><li>open one of ${slug}</li></ul>`
+            + '<h2>Related</h2><ul><li>Synthesized into: scribe.md</li></ul>'
+            + `<h1>Participants — Session ${slug}</h1><p>Count: 5</p>`
+            + (corrected
+                ? '<h2>Correction (2026-09-27)</h2><p>Filed 2026-09-27 as <code>correction-2026-09-27.md</code>.</p>'
+                    + `<h3>Correction (2026-09-27): Draft-loss result</h3><p>All 4 clinicians in ${slug}</p>`
+                : ''),
+    });
+    const finding = (slug) => ({
+        id: `finding:${slug}`, kind: 'finding', type: 'synthesis', title: `Finding ${slug}`, tags: ['scribe'], html: '<h2>Overview</h2><p>x</p>',
+    });
+    // As in the followUps tests: a record's score, or per passage as
+    // { '<chunk index>': score }, the rest 0.1 below the best.
+    const indexOf = (records, scores) => {
+        const passages = records.flatMap((record) => chunkRecord(record)
+            .filter((chunk) => !isMetadataPassage(record, chunk)).map((chunk) => {
+                const given = scores[record.id];
+                const s = typeof given === 'number' ? given : (given[chunk.index] ?? Math.max(...Object.values(given)) - 0.1);
+                return {
+                    record, chunk, vector: [s, Math.sqrt(1 - s * s)], participants: 'Participants: 5', previous: null, next: null,
+                };
+            }));
+        return { refresh: async () => ({ passages, records }), embedQuery: async () => [1, 0] };
+    };
+    const ids = (selection) => selection.map(({ passage }) => `${passage.record.id}#${passage.chunk.index}`);
+    const selectWith = async (index, retrieval, question = 'How many clinicians lost the draft?') => ids(
+        await createAskPipeline({ ollama: {}, index, retrieval }).select(question, null),
+    );
+
+    const lock = session('2026-02-17-lock');
+    const other = session('2026-02-10-other');
+    const plain = session('2026-02-17-lock', false);
+    const records = [finding('scribe'), lock, other];
+    const base = { ...RETRIEVAL, topK: 2, corrections: 'shown' };
+    // lock is shown by Objective and Key Findings; its corrections rank
+    // below both. other is third, outside the top k.
+    const scores = {
+        'finding:scribe': 0.8, [lock.id]: { 0: 0.75, 1: 0.78, 2: 0.4, 5: 0.3, 6: 0.35 }, [other.id]: 0.7,
+    };
+    const index = indexOf(records, scores);
+
+    it("is off by default ('off'), and absent means the default", async () => {
+        expect(RETRIEVAL.corrections).toBe('off');
+        const { corrections, ...absent } = base;
+        expect(await selectWith(index, absent)).toEqual(await selectWith(index, { ...base, corrections: 'off' }));
+        expect(await selectWith(index, absent)).toEqual(['finding:scribe#0', `${lock.id}#0`, `${lock.id}#1`]);
+    });
+
+    it("attaches a shown session's corrections after its two best passages, in record order, and none of a session not shown", async () => {
+        expect(await selectWith(index, base)).toEqual([
+            'finding:scribe#0', `${lock.id}#0`, `${lock.id}#1`, `${lock.id}#5`, `${lock.id}#6`,
+        ]);
+    });
+
+    it('does not repeat a correction already among the best passages', async () => {
+        const best = indexOf(records, { ...scores, [lock.id]: { 0: 0.5, 1: 0.78, 5: 0.3, 6: 0.79 } });
+        expect(await selectWith(best, base)).toEqual([
+            'finding:scribe#0', `${lock.id}#1`, `${lock.id}#5`, `${lock.id}#6`,
+        ]);
+    });
+
+    it("'off' gives exactly the selection without correction files", async () => {
+        const off = await selectWith(index, { ...base, corrections: 'off' });
+        expect(off).toEqual(['finding:scribe#0', `${lock.id}#0`, `${lock.id}#1`]);
+        expect(off).toEqual(await selectWith(indexOf([finding('scribe'), plain, other], scores), base));
+        // With topK 3 the other session is shown too, and gets its own.
+        expect(await selectWith(index, { ...base, topK: 3 })).toEqual([
+            'finding:scribe#0', `${lock.id}#0`, `${lock.id}#1`, `${lock.id}#5`, `${lock.id}#6`,
+            `${other.id}#0`, `${other.id}#1`, `${other.id}#5`, `${other.id}#6`,
+        ]);
+    });
+
+    it("keeps a session's corrections after its Follow-ups, skips a session shown whole, and never adds them to a 'linked' session", async () => {
+        const unresolved = 'What is unresolved about the session lock?';
+        expect(await selectWith(index, { ...base, followUps: 'shown' }, unresolved)).toEqual([
+            'finding:scribe#0', `${lock.id}#0`, `${lock.id}#1`, `${lock.id}#2`, `${lock.id}#5`, `${lock.id}#6`,
+        ]);
+        expect(await selectWith(index, { ...base, wholeRawNotes: 1 })).toEqual(['finding:scribe#0', `${lock.id}#notes`]);
+        const linkedRecords = [{ ...finding('scribe'), html: '<h2>Overview</h2><p>See <a href="../raw/2026-02-10-other/session-notes.md">other</a></p>' }, lock, other];
+        expect(await selectWith(indexOf(linkedRecords, scores), { ...base, followUps: 'linked' }, unresolved)).toEqual([
+            'finding:scribe#0', `${lock.id}#0`, `${lock.id}#1`, `${lock.id}#2`, `${lock.id}#5`, `${lock.id}#6`, `${other.id}#2`,
+        ]);
+    });
+
+    it('shows the attached corrections as ordinary sources, with the corrections rule', async () => {
+        let system = null;
+        const ollama = { chatModel: 'test', chat: async (messages) => { system = messages[0].content; return 'All 4 lost the draft [5].'; } };
+        const result = await createAskPipeline({ ollama, index, retrieval: base }).ask('How many clinicians lost the draft?', null);
+        expect(system).toContain('A source labelled "Correction (date)"');
+        expect(result.sources).toEqual([expect.objectContaining({
+            id: `${lock.id}#6`, section: 'Correction (2026-09-27): Draft-loss result', correction: { date: '2026-09-27' },
+        })]);
+        expect(result.checks).toMatchObject({ uncited: [], unsupportedFigures: [] });
+    });
+
+    it('refuses any other value', () => {
+        expect(() => createAskPipeline({ ollama: {}, index, retrieval: { ...base, corrections: false } })).toThrow(/corrections/);
+        expect(() => createAskPipeline({ ollama: {}, index, retrieval: { ...base, corrections: 'linked' } })).toThrow(/corrections/);
+    });
+});

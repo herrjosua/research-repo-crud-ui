@@ -62,6 +62,23 @@
     > :first-child {
         flex-shrink: 0;
     }
+
+    // A correction source's KindTag and CorrectionTag, kept together at the
+    // start of the row. Unlike a lone KindTag this group may shrink, so at
+    // the md floor the CorrectionTag wraps below the KindTag within the card
+    // instead of overflowing it; each tag keeps its natural width.
+    > .tags {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem;
+        flex-shrink: 1;
+        min-inline-size: 0;
+
+        > * {
+            flex-shrink: 0;
+        }
+    }
 }
 
 // `$text-secondary`, not `$text-helper`, for every piece of secondary text
