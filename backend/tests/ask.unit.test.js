@@ -1,10 +1,12 @@
 const { cosineSimilarity, rankPassages, createEmbeddingIndex } = require('../ask/retrieval');
 const {
     MAX_PASSAGE_CHARS, sourceKind, formatDate, decodeEntities, htmlToBlocks, chunkRecord, clip,
-    isMetadataPassage, participantsHeader,
+    isMetadataPassage, participantsHeader, CORRECTION_HEADING_RE,
 } = require('../ask/corpus');
 const { toPlainText } = require('../ask/plainText');
-const { renumberCitations, sourceLabel, sourceClass } = require('../ask/answer');
+const {
+    renumberCitations, sourceLabel, sourceClass, buildMessages, toSource, CORRECTIONS_RULE,
+} = require('../ask/answer');
 const { resolveProvider } = require('../ask/config');
 
 describe('cosineSimilarity', () => {
@@ -245,6 +247,75 @@ describe('participantsHeader', () => {
         expect(participantsHeader(rawSession({ count: 'N/A', roles: [] }))).toBe('Participants: N/A');
         expect(participantsHeader({ kind: 'raw', html: '<h2>Key Findings</h2><p>x</p>' })).toBeNull();
         expect(participantsHeader({ ...rawSession(), kind: 'finding' })).toBeNull();
+    });
+});
+
+// A raw session with a correction file, as export_records.py renders it:
+// the notes, the participants file, then one block per correction, its
+// own headings prefixed and its <h1> dropped.
+function correctedSession() {
+    return {
+        ...rawSession(),
+        html: [
+            rawSession().html,
+            '<h2>Correction (2026-09-27)</h2>',
+            '<p>Filed 2026-09-27 as <code>correction-2026-09-27.md</code> in this session\'s folder. The original notes above are unchanged.</p>',
+            '<h3>Correction (2026-09-27): Participant count</h3>',
+            '<p><strong>Correct count:</strong> 3 coordinators, not 4.</p>',
+            '<h3>Correction (2026-09-27): Cross-referencing</h3>',
+            '<p>All 3 coordinators cross-referenced four systems.</p>',
+        ].join('\n'),
+    };
+}
+
+describe('correction passages', () => {
+    it('marks passages under a correction heading with its date, keeping their section labels and retrievable', () => {
+        const record = correctedSession();
+        const corrections = chunkRecord(record).filter((p) => p.correction);
+        expect(corrections.map((p) => [p.index, p.heading, p.correction])).toEqual([
+            [3, 'Correction (2026-09-27)', { date: '2026-09-27' }],
+            [4, 'Correction (2026-09-27): Participant count', { date: '2026-09-27' }],
+            [5, 'Correction (2026-09-27): Cross-referencing', { date: '2026-09-27' }],
+        ]);
+        expect(corrections.some((p) => isMetadataPassage(record, p))).toBe(false);
+        // The session's own passages are as they were, indexes included.
+        expect(chunkRecord(record).slice(0, 3)).toEqual(chunkRecord(rawSession()));
+    });
+
+    it('marks every passage of a record without one null', () => {
+        const passages = chunkRecord(rawSession());
+        expect(passages.length).toBeGreaterThan(0);
+        expect(passages.every((p) => p.correction === null)).toBe(true);
+    });
+
+    it('matches the <h2> label and a prefixed <h3> label, not a heading that only mentions corrections', () => {
+        expect(CORRECTION_HEADING_RE.exec('Correction (2026-09-27)')[1]).toBe('2026-09-27');
+        expect(CORRECTION_HEADING_RE.exec('Correction (2026-09-27): Participant count')[1]).toBe('2026-09-27');
+        for (const heading of ['Corrections to the flow', 'Correction', 'Correction of the count', 'Error correction (2026-09-27)', 'Correction (Sept 27)', 'Correction (2026-09-27) notes']) {
+            expect(CORRECTION_HEADING_RE.test(heading)).toBe(false);
+        }
+    });
+
+    const shown = (record, chunk) => ({ passage: { record, chunk, previous: null, next: null, participants: null }, score: 0.5 });
+
+    it('adds the corrections rule to the prompt, and labels the passage by its section, only when a correction is shown', () => {
+        const record = correctedSession();
+        const [findings, , , filed, count] = chunkRecord(record);
+        const [system, user] = buildMessages('How many?', [shown(record, findings), shown(record, count)]);
+        expect(system.content).toContain(CORRECTIONS_RULE);
+        expect(user.content).toContain('[2] RAW SESSION · contextual inquiry — Chart Review Baseline — Correction (2026-09-27): Participant count\n');
+        expect(buildMessages('How many?', [shown(record, filed)])[0].content).toContain(CORRECTIONS_RULE);
+        expect(buildMessages('How many?', [shown(record, findings)])[0].content).not.toContain(CORRECTIONS_RULE);
+        expect(CORRECTIONS_RULE).toBe('A source labelled "Correction (date)" corrects the original notes of the same session: where they disagree, the correction is right. Use the corrected fact and cite the correction.');
+    });
+
+    it('passes the correction through toSource', () => {
+        const record = correctedSession();
+        const [findings, , , , count] = chunkRecord(record);
+        expect(toSource(shown(record, count), null)).toMatchObject({
+            id: `${record.id}#4`, section: 'Correction (2026-09-27): Participant count', correction: { date: '2026-09-27' },
+        });
+        expect(toSource(shown(record, findings), null).correction).toBeNull();
     });
 });
 

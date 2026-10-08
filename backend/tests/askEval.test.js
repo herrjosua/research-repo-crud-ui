@@ -446,6 +446,26 @@ describe('eval --follow-ups', () => {
     });
 });
 
+describe('eval --corrections', () => {
+    const { RETRIEVAL } = require('../ask/pipeline');
+
+    it('takes shown or off, and is unset by default', () => {
+        expect(parseArgs(['run', '--label', 'x']).corrections).toBeNull();
+        expect(parseArgs(['run', '--label', 'x', '--corrections', 'shown']).corrections).toBe('shown');
+        expect(parseArgs(['run', '--label', 'x', '--corrections', 'off']).corrections).toBe('off');
+        expect(() => parseArgs(['run', '--label', 'x', '--corrections', 'linked'])).toThrow(/--corrections must be shown or off/);
+        expect(() => parseArgs(['run', '--label', 'x', '--corrections', 'false'])).toThrow(/--corrections/);
+        expect(() => parseArgs(['run', '--label', 'x', '--corrections'])).toThrow(/--corrections needs a value/);
+    });
+
+    it("is recorded in the run's retrieval, and without it the retrieval is the default", () => {
+        expect(RETRIEVAL.corrections).toBe('shown');
+        expect(runRetrieval({ wholeRawNotes: null, followUps: null, corrections: null })).toBe(RETRIEVAL);
+        expect(runRetrieval({ corrections: 'off' })).toEqual({ ...RETRIEVAL, corrections: 'off' });
+        expect(runRetrieval({ followUps: 'shown', corrections: 'off' })).toEqual({ ...RETRIEVAL, followUps: 'shown', corrections: 'off' });
+    });
+});
+
 describe('eval --behaviors', () => {
     it('takes none or prompt behavior names, and is unset by default', () => {
         expect(parseArgs(['run', '--label', 'x']).behaviors).toBeNull();
