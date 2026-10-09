@@ -1,4 +1,5 @@
 const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 let testRepoPath;
 let app, sessionDb, clearSessionInterval;
@@ -22,7 +23,7 @@ beforeAll(async () => {
     // supertest bind and tear down a brand-new ephemeral TCP listener for
     // every single assertion, which raced intermittently under this suite's
     // concurrent git/python3 subprocess and bcrypt load.
-    server = app.listen(0);
+    server = await listenOnLoopback(app);
     delete process.env.DEMO_MODE; // reset to the "off" baseline every test in this file assumes, regardless of what backend/.env currently has
 
     // Records routes require a logged-in session — sign up and log in once

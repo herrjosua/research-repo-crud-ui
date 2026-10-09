@@ -3,6 +3,7 @@ const express = require('express');
 const supertest = require('supertest');
 const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
 const { startFakeOllama } = require('./helpers/fakeOllama');
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 // The dev-only provider switch (routes/dev.js) end to end: the server starts
 // with LLM_PROVIDER unset (Ask off), DEV_TOOLS_ENABLED=true, a fake Ollama,
@@ -32,7 +33,7 @@ beforeAll(async () => {
 
     ({ app, sessionDb, clearSessionInterval } = require('../app'));
     db = require('../db');
-    server = app.listen(0);
+    server = await listenOnLoopback(app);
     delete process.env.DEMO_MODE;
 
     db.prepare('DELETE FROM users WHERE username = ?').run('dev-provider-tester');

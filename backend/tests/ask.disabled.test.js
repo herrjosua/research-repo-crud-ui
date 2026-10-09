@@ -1,4 +1,5 @@
 const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 // POST /api/ask with LLM_PROVIDER unset: the route exists but is switched off.
 // Its own file because routes/ask.js reads LLM_PROVIDER once, at load time.
@@ -16,7 +17,7 @@ beforeAll(async () => {
     const request = require('supertest');
     ({ app, sessionDb, clearSessionInterval } = require('../app'));
     db = require('../db');
-    server = app.listen(0);
+    server = await listenOnLoopback(app);
     delete process.env.DEMO_MODE;
 
     db.prepare('DELETE FROM users WHERE username = ?').run('ask-disabled-tester');

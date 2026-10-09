@@ -2,6 +2,7 @@ const express = require('express');
 const request = require('supertest');
 const { devToolsGate, mountDevTools } = require('../devTools');
 const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
+const { listenOnLoopback, viaLoopback } = require('./helpers/loopbackServer');
 
 // The dev-tools gate: /api/dev is registered only with DEV_TOOLS_ENABLED=true
 // and NODE_ENV development or test, and never exists otherwise. Tested from
@@ -62,8 +63,8 @@ describe('mountDevTools', () => {
         const { app, mounted } = appWith(env);
         expect(mounted).toBe(false);
         for (const res of [
-            await request(app).post('/api/dev/provider').send({ provider: 'static' }),
-            await request(app).get('/api/dev/provider'),
+            await viaLoopback(app, (r) => r.post('/api/dev/provider').send({ provider: 'static' })),
+            await viaLoopback(app, (r) => r.get('/api/dev/provider')),
         ]) {
             expect(res.status).toBe(404);
             expect(res.body).toEqual({ error: 'not found' });
@@ -87,7 +88,7 @@ describe('mountDevTools', () => {
         const { app, mounted, warn } = appWith({ NODE_ENV: nodeEnv, DEV_TOOLS_ENABLED: 'true' });
         expect(mounted).toBe(true);
         expect(warn).not.toHaveBeenCalled();
-        expect((await request(app).post('/api/dev/provider').send({ provider: 'static' })).status).toBe(401);
+        expect((await viaLoopback(app, (r) => r.post('/api/dev/provider').send({ provider: 'static' }))).status).toBe(401);
     });
 });
 
@@ -102,7 +103,7 @@ describe('app.js without DEV_TOOLS_ENABLED', () => {
         process.env.DEV_TOOLS_ENABLED = '';
         ({ app, sessionDb, clearSessionInterval } = require('../app'));
         db = require('../db');
-        server = app.listen(0);
+        server = await listenOnLoopback(app);
         delete process.env.DEMO_MODE;
 
         db.prepare('DELETE FROM users WHERE username = ?').run('dev-tools-off-tester');

@@ -3,6 +3,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const matter = require('gray-matter');
 const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 // Commits made by the write routes must contain exactly the files the request
 // touched, never unrelated working-tree changes (token sync output, hand
@@ -44,7 +45,7 @@ beforeAll(async () => {
     request = require('supertest');
     ({ app, sessionDb, clearSessionInterval } = require('../app'));
     db = require('../db');
-    server = app.listen(0);
+    server = await listenOnLoopback(app);
     delete process.env.DEMO_MODE;
 
     db.prepare('DELETE FROM users WHERE username = ?').run('git-scope-tester');

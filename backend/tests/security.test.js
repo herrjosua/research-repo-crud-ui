@@ -6,6 +6,7 @@ const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
 const fs = require('fs/promises');
 const path = require('path');
 const os = require('os');
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 let testRepoPath;
 let app, sessionDb, clearSessionInterval;
@@ -24,7 +25,7 @@ beforeAll(async () => {
     // supertest bind and tear down a brand-new ephemeral TCP listener for
     // every single assertion, which raced intermittently under this suite's
     // concurrent git/python3 subprocess and bcrypt load.
-    server = app.listen(0);
+    server = await listenOnLoopback(app);
     delete process.env.DEMO_MODE;
 
     db.prepare('DELETE FROM users WHERE username = ?').run('security-tester');

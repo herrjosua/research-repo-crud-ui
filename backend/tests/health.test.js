@@ -10,11 +10,12 @@ process.env.AGENTIC_REPO_ROOT = testRepoPath;
 const { app, sessionDb, clearSessionInterval } = require('../app');
 const db = require('../db');
 const { version } = require('../package.json');
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 let server;
 
-beforeAll(() => {
-    server = app.listen(0);
+beforeAll(async () => {
+    server = await listenOnLoopback(app);
 });
 
 afterAll(async () => {

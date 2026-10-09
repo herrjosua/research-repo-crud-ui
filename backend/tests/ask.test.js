@@ -2,6 +2,7 @@ const path = require('path');
 const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
 const { startFakeOllama } = require('./helpers/fakeOllama');
 const { TOP_K } = require('../ask/pipeline');
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 // Integration test for POST /api/ask: the real app, the real
 // export_records.py over E2E's fixed corpus (real repo content), and a fake
@@ -45,7 +46,7 @@ beforeAll(async () => {
     request = require('supertest');
     ({ app, sessionDb, clearSessionInterval } = require('../app'));
     db = require('../db');
-    server = app.listen(0);
+    server = await listenOnLoopback(app);
     delete process.env.DEMO_MODE; // backend/.env may turn it on, which disables signup
 
     db.prepare('DELETE FROM users WHERE username = ?').run('ask-tester');
