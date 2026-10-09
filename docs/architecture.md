@@ -32,6 +32,8 @@ isn't in the production build, and its route isn't registered in production
 | End-to-end tests | this repo, `e2e/` | Playwright, run against a throwaway repo built from `e2e/fixtures/corpus/` |
 | Corpus + scripts | `agentic-repo` (separate repo) | Markdown records plus `export_records.py`, `build_index.py`, `build_search_ui.py` |
 | Local dev clone | a sibling clone, `agentic-repo-dev` | Push disabled. The backend's `AGENTIC_REPO_ROOT` points here so local use can't commit to the real repo |
+| Demo corpus | `research-repo-demo` (separate, private repo) | A copy of agentic-repo's corpus and scripts, kept in sync by agentic-repo's `sync-demo.yml` workflow, which moves the `demo-baseline` tag onto each synced commit |
+| Demo server checkout | a checkout of `research-repo-demo` on the public demo's server | The demo backend's `AGENTIC_REPO_ROOT` points here. Reset to `demo-baseline` every hour, so visitor edits don't last. A corpus change reaches it by merging in agentic-repo, then the next sync, then the next reset: see [the merge-to-live chain](https://github.com/herrjosua/agentic-repo/blob/main/docs/demo-deploy.md#merge-to-live-chain) |
 | Models | Ollama, on the developer's machine | `gemma2:9b` for answers, `nomic-embed-text` for embeddings |
 
 Corpus edits are made in the real `agentic-repo` checkout, never in the dev
