@@ -65,3 +65,37 @@ Every new story is a new Chromatic change, so it goes through the review
 above before the pull request can merge. How to run Storybook, the theme
 toolbar and the addons are in
 [`frontend/README.md`](./frontend/README.md#storybook).
+
+## Secret scanning
+
+The `secret-scan` job in [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)
+runs [gitleaks](https://github.com/gitleaks/gitleaks) through
+`gitleaks/gitleaks-action` on every push to `main` and every pull request.
+The action scans the commits each event brings in: on a push, the pushed
+commits; on a pull request, the PR's commits. It needs full history to do
+that, so the job checks out with `fetch-depth: 0`. The repository's history
+up to this job was scanned in full and came back clean, so every later
+commit is covered by the scan of the PR or push that brings it in. Secrets
+belong in environment variables on the server, never in git.
+
+To scan the full history locally (install with `brew install gitleaks`):
+
+```sh
+gitleaks detect --source . --redact --verbose
+```
+
+`--redact` keeps secret values out of the output; keep it on, and when you
+report a finding, give only the file, rule, commit and line.
+
+**On a finding, treat it as a real secret until proven otherwise.** Rotate
+or revoke the credential first, at its provider, since anything pushed to
+GitHub may already have been copied. Only then clean up: remove it from the
+code, and from history if it was committed. Removing the commit alone
+doesn't make a leaked secret safe again.
+
+**A false positive** (a placeholder or test fixture that only looks like a
+secret) goes in a `.gitleaks.toml` at the repo root, which gitleaks and the
+action pick up on their own. Extend the default rules with
+`[extend] useDefault = true`, and allowlist each false positive as narrowly
+as you can: match its path and a regex for the value, never a whole
+directory, with a one-line comment saying why it isn't a secret.
