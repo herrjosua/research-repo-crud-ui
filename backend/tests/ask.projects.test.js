@@ -2,6 +2,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
 const { startFakeOllama } = require('./helpers/fakeOllama');
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 // Ask the Repo against a corpus with project tagging on (research/projects.yml;
 // see tests/fixtures/projects-corpus/README.md): GET /api/ask/config's project
@@ -27,7 +28,7 @@ beforeAll(async () => {
     request = require('supertest');
     ({ app, sessionDb, clearSessionInterval } = require('../app'));
     db = require('../db');
-    server = app.listen(0);
+    server = await listenOnLoopback(app);
     delete process.env.DEMO_MODE;
 
     db.prepare('DELETE FROM users WHERE username = ?').run('ask-projects-tester');

@@ -13,6 +13,7 @@ const { startFakeOllama } = require('./helpers/fakeOllama');
 const CORPUS_DIR = path.join(__dirname, 'fixtures', 'projects-corpus');
 const ANSWERS_FIXTURE = path.join(__dirname, 'fixtures', 'static-answers', 'answers.json');
 const fixture = require(ANSWERS_FIXTURE);
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 let testRepoPath;
 let fakeOllama;
@@ -29,7 +30,7 @@ beforeAll(async () => {
     request = require('supertest');
     ({ app, sessionDb, clearSessionInterval } = require('../app'));
     db = require('../db');
-    server = app.listen(0);
+    server = await listenOnLoopback(app);
     delete process.env.DEMO_MODE;
 
     db.prepare('DELETE FROM users WHERE username = ?').run('ask-static-tester');

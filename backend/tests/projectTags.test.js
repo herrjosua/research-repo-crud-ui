@@ -5,6 +5,7 @@ const os = require('os');
 const { execFileSync } = require('child_process');
 const matter = require('gray-matter');
 const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 // Project tagging (agentic-repo's docs/projects.md) is only on in a checkout
 // with research/projects.yml, so this file runs against its own corpus that
@@ -30,7 +31,7 @@ beforeAll(async () => {
     request = require('supertest');
     ({ app, sessionDb, clearSessionInterval } = require('../app'));
     db = require('../db');
-    server = app.listen(0);
+    server = await listenOnLoopback(app);
     delete process.env.DEMO_MODE;
 
     db.prepare('DELETE FROM users WHERE username = ?').run('project-tags-tester');

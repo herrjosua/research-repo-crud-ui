@@ -10,6 +10,7 @@ process.env.AGENTIC_REPO_ROOT = testRepoPath;
 const { app, sessionDb, clearSessionInterval } = require('../app');
 const db = require('../db');
 const { seedDemoUsers } = require('../seedDemoUsers');
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 delete process.env.DEMO_MODE; // reset to the "off" baseline every test in this file assumes, regardless of what backend/.env currently has
 
@@ -24,10 +25,14 @@ delete process.env.DEMO_MODE; // reset to the "off" baseline every test in this 
 // nondeterministic failures here — wrong status codes, wrong bodies, even raw
 // HTTP parse errors — never the same one twice and never reproducible
 // running a file alone. Listening once up front removes the churn entirely.
+// (RR-131 later found the real cause of those failures: it wasn't the churn.
+// A request to 127.0.0.1:<port> could be answered by another program's server
+// that held the same port on macOS. Every test server now listens on 127.0.0.1
+// explicitly; see helpers/loopbackServer.js.)
 let server;
 
-beforeAll(() => {
-    server = app.listen(0);
+beforeAll(async () => {
+    server = await listenOnLoopback(app);
 });
 
 // Runs before every single test in this file, in every describe block below.

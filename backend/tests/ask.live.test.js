@@ -1,5 +1,6 @@
 const path = require('path');
 const { createTestRepo, destroyTestRepo } = require('./helpers/setupTestRepo');
+const { listenOnLoopback } = require('./helpers/loopbackServer');
 
 // POST /api/ask end to end against a REAL local Ollama (nomic-embed-text +
 // gemma2:9b) over E2E's fixed corpus. Skipped unless OLLAMA_LIVE=1, since CI
@@ -27,7 +28,7 @@ const CORPUS_DIR = path.join(__dirname, '..', '..', 'e2e', 'fixtures', 'corpus')
         const request = require('supertest');
         ({ app, sessionDb, clearSessionInterval } = require('../app'));
         db = require('../db');
-        server = app.listen(0);
+        server = await listenOnLoopback(app);
         delete process.env.DEMO_MODE;
 
         db.prepare('DELETE FROM users WHERE username = ?').run('ask-live-tester');
