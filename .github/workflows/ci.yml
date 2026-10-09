@@ -86,6 +86,31 @@ jobs:
       - run: scripts/tests/deploy.test.sh
       - run: scripts/tests/ssh-retry-classify.test.sh
 
+  # Fails if a commit adds a secret (keys, tokens, passwords). Its own job so
+  # a failure elsewhere can't hide it. On a push the action scans the pushed
+  # commits; on a pull request, the PR's commits. fetch-depth: 0 gives it
+  # the history those ranges need. A false positive is allowlisted in
+  # .gitleaks.toml at the repo root, which gitleaks picks up on its own.
+  # See CONTRIBUTING.md.
+  secret-scan:
+    runs-on: ubuntu-latest
+    # pull-requests: read lets the action list a PR's commits. Without
+    # write it can't post inline review comments, so they're turned off;
+    # a finding still fails the job and shows in the job summary.
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
+          # Same gitleaks as a local run; the action's default is older.
+          GITLEAKS_VERSION: 8.30.1
+
   # Builds and publishes Storybook to Chromatic. fetch-depth: 0 gives
   # Chromatic full git history, which it needs for baseline detection and is
   # a prerequisite if we later turn on TurboSnap/onlyChanged as usage
