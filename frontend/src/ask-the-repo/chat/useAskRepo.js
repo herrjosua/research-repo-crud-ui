@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { askRepo } from '../../api/ask';
 import { ERROR_COPY, UNAVAILABLE_COPY } from './askCopy';
+import { answerAnnouncement } from './announcements';
 
 // After this long without an answer, ChatPanel adds the "first question can
 // take up to 20 seconds" line (the backend embeds the corpus on the first
@@ -41,11 +42,6 @@ function errorKind(err) {
     if (err.status === 401) return 'session';
     if (err.status === 502) return 'model';
     return 'unknown';
-}
-
-function sourcesPhrase(count) {
-    if (count === 0) return 'no sources cited';
-    return `${count} source${count === 1 ? '' : 's'} cited`;
 }
 
 /**
@@ -145,7 +141,7 @@ export function useAskRepo({ ask = askRepo } = {}) {
                 conv.id === conversationId ? { ...conv, lastMessage: previewFrom(answer), time } : conv
             )));
             setRequest(conversationId, IDLE);
-            announce(`Answer received, ${sourcesPhrase(sources?.length ?? 0)}.`);
+            announce(answerAnnouncement(answer, sources?.length ?? 0));
         } catch (err) {
             if (controller.signal.aborted) return;
             if (err.status === 503) {

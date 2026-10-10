@@ -49,7 +49,9 @@ describe('useAskRepo', () => {
         const reply = latestAssistantMessage(result.current.getMessages(id));
         expect(reply).toMatchObject({ role: 'assistant', content: ANSWER.answer, sources: [SOURCE], model: 'gemma2:9b' });
         expect(result.current.conversations[0].lastMessage).toBe('Drafts cited outdated codes.');
-        expect(result.current.announcement.trim()).toBe('Answer received, 1 source cited.');
+        expect(result.current.announcement.trim()).toBe(
+            'Answer received. Drafts cited outdated codes. Second line. 1 source cited. Tab to a citation to open its source, or ask another question.',
+        );
     });
 
     it('adds later questions to the same conversation, newest conversations first', async () => {
