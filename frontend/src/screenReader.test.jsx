@@ -6,6 +6,8 @@ import RecordDetail from './RecordDetail';
 import CreateSessionForm from './CreateSessionForm';
 import AssistantMessage from './ask-the-repo/chat/AssistantMessage';
 import ChatPanel from './ask-the-repo/chat/ChatPanel';
+import QuestionPicker from './ask-the-repo/chat/QuestionPicker';
+import ProjectSwitcher from './ask-the-repo/rails/ProjectSwitcher';
 import { ERROR_COPY, LOADING_TEXT, SLOW_TEXT } from './ask-the-repo/chat/askCopy';
 import { useRecords, useRecord, useDeleteRecord, useRecordHistory, useCreateSession } from './api/records';
 import { useMe, useUsers } from './api/auth';
@@ -253,5 +255,40 @@ describe('screen reader — Ask tab', () => {
         expect(spoken.filter((phrase) => phrase === title)).toHaveLength(1);
         expect(spoken.filter((phrase) => phrase === subtitle)).toHaveLength(1);
         expect(spoken).toContain('status');
+    });
+});
+
+describe('screen reader — Carbon dropdown pickers', () => {
+    beforeAll(() => {
+        Element.prototype.scrollIntoView = () => {};
+    });
+
+    // Carbon's chevron is labelled "Open menu" / "Close menu"; the pickers hide it
+    // (src/carbonDropdown.js) because the combobox already says it can be opened.
+    const hasMenuLabel = (spoken) => spoken.some((phrase) => /(open|close) menu/i.test(phrase));
+
+    it('reads the project switcher as one labelled combobox, without "Open menu"', async () => {
+        const projects = [
+            { id: 'all', label: 'All Projects', count: 247 },
+            { id: 'checkout', label: 'Checkout Redesign', count: 84 },
+        ];
+        render(<ProjectSwitcher projects={projects} activeProjectId="checkout" onSelectProject={vi.fn()} />);
+        await startReader();
+
+        const spoken = await readAll();
+
+        expect(spoken.some((phrase) => phrase.startsWith('combobox, Project'))).toBe(true);
+        expect(spoken).toContain('Checkout Redesign');
+        expect(hasMenuLabel(spoken)).toBe(false);
+    });
+
+    it('reads the question picker as one labelled combobox, without "Open menu"', async () => {
+        render(<QuestionPicker questions={[{ id: 'q1', question: 'What slows onboarding?', project: 'all' }]} onPick={vi.fn()} />);
+        await startReader();
+
+        const spoken = await readAll();
+
+        expect(spoken.some((phrase) => phrase.startsWith('combobox'))).toBe(true);
+        expect(hasMenuLabel(spoken)).toBe(false);
     });
 });
