@@ -79,6 +79,8 @@ describe('screen reader — record detail modal', () => {
         expect(spoken).toContain('dialog, Example finding, modal');
         expect(spoken).toContain('heading, Example finding, level 2');
         expect(spoken).toEqual(expect.arrayContaining(['button, Close', 'button, Edit', 'button, Delete', 'button, View history', 'Body']));
+        // Carbon's default focus-wrap markup; the app turns it off (src/carbonFlags.js).
+        expect(spoken.some((phrase) => /focus sentinel/i.test(phrase))).toBe(false);
     });
 
     it('speaks the backend warning and puts the reader on Edit after a save with a warning', async () => {
