@@ -175,16 +175,21 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
     <Modal
       open
       className={styles.modal}
-      modalLabel={record.data && (
-        <span className={styles.label}>
-          <RecordKindTag kind={record.data.kind} />
-          <span>{record.data.date} · {record.data.type}</span>
-        </span>
-      )}
       modalHeading={record.data ? record.data.title : 'Loading…'}
       passiveModal
       onRequestClose={onClose}
     >
+      {/* Kind, date and type sit right under the title as plain text. They used
+          to be the Modal's modalLabel, which Carbon renders as a second h2 and
+          makes the dialog's accessible name, so a screen reader heard a heading
+          for the metadata before the record's title (v1.3.6.56). */}
+      {record.data && (
+        <p className={styles.meta}>
+          <RecordKindTag kind={record.data.kind} />
+          <span>{record.data.date} · {record.data.type}</span>
+        </p>
+      )}
+
       {record.isLoading && <p>Loading…</p>}
 
       {record.isError && (

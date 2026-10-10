@@ -13,14 +13,18 @@
   gap: vars.$spacing-action-gap;
 }
 
-// Modal label (above the title): the record's kind tag, then its date and
-// type — Direction B v2's detail header. The Tag's own outer margin would
-// offset it from the text beside it.
-.label {
-  display: inline-flex;
+// Record metadata (under the title): the record's kind tag, then its date and
+// type. Plain text, not the Modal's label, so the dialog has one heading (the
+// title). The Tag's own outer margin would offset it from the text beside it.
+.meta {
+  @include type.type-style('label-01');
+
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: vars.$spacing-action-gap;
+  margin-block-end: spacing.$spacing-05;
+  color: vars.$text-secondary;
 
   :global(.cds--tag) {
     margin: 0;

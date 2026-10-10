@@ -81,6 +81,12 @@ describe('screen reader — record detail modal', () => {
         expect(spoken).toContain('dialog, Example finding, modal');
         expect(spoken).toContain('heading, Example finding, level 2');
         expect(spoken).toEqual(expect.arrayContaining(['button, Close', 'button, Edit', 'button, Delete', 'button, View history', 'Body']));
+        // One heading, the record title; the kind, date and type follow it as text
+        // (v1.3.6.56), not as a second heading ahead of it.
+        const headings = spoken.filter((phrase) => phrase.startsWith('heading,'));
+        expect(headings).toEqual(['heading, Example finding, level 2']);
+        const afterTitle = spoken.slice(spoken.indexOf(headings[0]) + 1, spoken.indexOf('button, Edit'));
+        expect(afterTitle).toEqual(expect.arrayContaining(['Finding', '2026-01-02', 'synthesis']));
         // Carbon's default focus-wrap markup; the app turns it off (src/carbonFlags.js).
         expect(spoken.some((phrase) => /focus sentinel/i.test(phrase))).toBe(false);
     });
