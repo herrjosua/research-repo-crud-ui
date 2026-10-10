@@ -138,3 +138,50 @@ describe('CreateSessionForm — researcher attribution', () => {
         expect(screen.getByLabelText('Researcher')).toHaveValue('Priya Patel');
     });
 });
+
+describe('CreateSessionForm — validation', () => {
+    function renderForm() {
+        useMe.mockReturnValue({ data: { git_name: 'Priya Patel', is_lead: 0 } });
+        useUsers.mockReturnValue({ data: [] });
+        const mutate = vi.fn();
+        useCreateSession.mockReturnValue({ mutate, isPending: false, isError: false });
+        renderWithQueryClient(<CreateSessionForm onClose={vi.fn()} />);
+        return mutate;
+    }
+
+    // The fields are `required`, and Carbon's Dropdown renders a native
+    // <select required>. Without noValidate on the form the browser's own
+    // check blocked the submit first, so none of this showed.
+    it('shows the invalid fields and the summary when a required field is empty, and does not submit', async () => {
+        const user = userEvent.setup();
+        const mutate = renderForm();
+
+        await user.click(screen.getByRole('button', { name: /create session/i }));
+
+        expect(screen.getByText('Title is required.')).toBeInTheDocument();
+        expect(screen.getByText('Choose a type.')).toBeInTheDocument();
+        expect(screen.getByText('Please fix the highlighted fields')).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Title/)).toHaveAttribute('aria-invalid', 'true');
+        expect(mutate).not.toHaveBeenCalled();
+    });
+
+    it('flags only the type when the title is filled in and no type is chosen', async () => {
+        const user = userEvent.setup();
+        const mutate = renderForm();
+
+        await user.type(screen.getByLabelText(/^Title/), 'Home health interviews');
+        await user.click(screen.getByRole('button', { name: /create session/i }));
+
+        expect(screen.getByText('Choose a type.')).toBeInTheDocument();
+        expect(screen.queryByText('Title is required.')).not.toBeInTheDocument();
+        expect(screen.getByText('Please fix the highlighted fields')).toBeInTheDocument();
+        expect(mutate).not.toHaveBeenCalled();
+    });
+
+    it('still marks the required fields as required for assistive technology', () => {
+        renderForm();
+
+        expect(screen.getByLabelText(/^Title/)).toBeRequired();
+        expect(screen.getByLabelText(/^Topic slug/)).toBeRequired();
+    });
+});
