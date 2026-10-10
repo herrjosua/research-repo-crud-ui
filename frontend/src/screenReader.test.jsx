@@ -81,6 +81,8 @@ describe('screen reader — record detail modal', () => {
         expect(spoken).toContain('dialog, Example finding, modal');
         expect(spoken).toContain('heading, Example finding, level 2');
         expect(spoken).toEqual(expect.arrayContaining(['button, Close', 'button, Edit', 'button, Delete', 'button, View history', 'Body']));
+        // Carbon's default focus-wrap markup; the app turns it off (src/carbonFlags.js).
+        expect(spoken.some((phrase) => /focus sentinel/i.test(phrase))).toBe(false);
     });
 
     it('speaks the backend warning and puts the reader on Edit after a save with a warning', async () => {
@@ -163,6 +165,22 @@ describe('screen reader — Create Session form', () => {
             'Failed to create session',
             'topic_slug must be lowercase kebab-case',
         ]));
+    });
+    it('speaks the invalid fields and the validation summary after submitting an empty form', async () => {
+        const user = userEvent.setup();
+        renderForm();
+        await user.click(screen.getByRole('button', { name: 'Create session' }));
+        await startReader();
+
+        const spoken = await readForm();
+
+        expect(spoken).toEqual(expect.arrayContaining([
+            'textbox, Title (required), e.g. Contextual Inquiry — Home Health Nurses, 1 error message, invalid, placeholder e.g. Contextual Inquiry — Home Health Nurses, required',
+            'Title is required.',
+            'Choose a type.',
+            'Please fix the highlighted fields',
+        ]));
+        expect(spoken.filter((phrase) => phrase.startsWith('combobox, Type (required)') && phrase.includes('invalid, required'))).toHaveLength(1);
     });
 });
 
