@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { Dropdown } from '@carbon/react';
+import { hideMenuIconLabel } from '../../carbonDropdown';
 import styles from './ProjectSwitcher.module.scss';
 
 /**
@@ -46,6 +47,7 @@ export default function ProjectSwitcher({ projects, activeProjectId, onSelectPro
                 titleText="Project"
                 label="Choose a project"
                 size="sm"
+                translateWithId={hideMenuIconLabel}
                 items={projects}
                 selectedItem={selectedProject}
                 helperText={searchScope(selectedProject)}

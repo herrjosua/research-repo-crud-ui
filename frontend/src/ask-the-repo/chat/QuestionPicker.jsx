@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { Dropdown } from '@carbon/react';
+import { hideMenuIconLabel } from '../../carbonDropdown';
 import { PICKER_LABEL } from './askCopy';
 import styles from './QuestionPicker.module.scss';
 
@@ -28,6 +29,7 @@ export default function QuestionPicker({ questions, disabled = false, onPick }) 
                 // Controlled and always empty: a pick is an action, not a
                 // setting, so nothing stays selected.
                 selectedItem={null}
+                translateWithId={hideMenuIconLabel}
                 itemToString={(question) => question?.question ?? ''}
                 // The row sits at the bottom of the panel; opening upward
                 // keeps the list over the thread instead of off the page.
