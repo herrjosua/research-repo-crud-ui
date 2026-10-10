@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { randomUUID } from 'node:crypto';
+import { announcement, conversation } from '../support/askLocators.js';
 
 // The real backend and retrieval over the fixture corpus, answered by the
 // fake Ollama support/start-backend.js starts (its fixed reply cites [1] and
@@ -38,8 +39,11 @@ test('asks a question, opens a cited source from the answer, and saves it as an 
     await page.getByRole('button', { name: 'Send' }).click();
 
     // --- The answer renders, with its citations, sources and conversation ---
-    // A paragraph, not the rail's preview of the same first line.
-    await expect(page.locator('p', { hasText: 'Physicians did not trust the draft enough to skim it' })).toBeVisible();
+    // A paragraph in the thread, not the rail's preview of the same first line.
+    await expect(conversation(page).locator('p', { hasText: 'Physicians did not trust the draft enough to skim it' })).toBeVisible();
+    // A screen reader hears the answer, the source count and the next steps.
+    await expect(announcement(page)).toContainText('Answer received. Physicians did not trust the draft enough to skim it');
+    await expect(announcement(page)).toContainText('Tab to a citation to open its source');
     const citation = page.getByRole('button', { name: /^Source 1: / });
     await expect(citation).toBeVisible();
     await expect(page.getByRole('button', { name: /^Source 2: / })).toBeVisible();

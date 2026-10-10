@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { conversation } from '../support/askLocators.js';
 
 // The demo config runs LLM_PROVIDER=static, like the public demo: there is
 // no model, and visitors pick from captured questions. support/
@@ -71,7 +72,7 @@ test('Ask the Repo offers only captured questions, filters them by project, and 
     await questionButton(question).click();
     expect((await askRequest).postDataJSON()).toEqual({ questionId: 'all-scribe-draft-trust' });
 
-    await expect(page.locator('p', { hasText: 'Physicians read every line of the draft before accepting it' })).toBeVisible();
+    await expect(conversation(page).locator('p', { hasText: 'Physicians read every line of the draft before accepting it' })).toBeVisible();
     const citation = page.getByRole('button', { name: /^Source 1: / });
     await expect(citation).toBeVisible();
     await expect(page.getByRole('button', { name: /^Source 2: / })).toBeVisible();
@@ -108,7 +109,7 @@ test('Ask the Repo offers only captured questions, filters them by project, and 
     // --- A second question from the dropdown, in the same conversation ---
     await questionDropdown.click();
     await page.getByRole('option', { name: 'How do nurses feel about AI-generated documentation?' }).click();
-    await expect(page.locator('p', { hasText: 'Most respondents were neutral to skeptical' })).toBeVisible();
+    await expect(conversation(page).locator('p', { hasText: 'Most respondents were neutral to skeptical' })).toBeVisible();
     await expect(questionDropdown).toContainText('Choose a question');
 
     // --- The insight is in the Saved Insights tab, under its project ---
@@ -186,7 +187,7 @@ test('at 672px the question dropdown wraps long questions instead of clipping th
 
     // A wrapped option is still picked like any other.
     await options.nth(questions.indexOf('How much drafting time did the AI save on prior auth cases?')).click();
-    await expect(page.locator('p', { hasText: 'drafting time from about 15 minutes to about 5' })).toBeVisible();
+    await expect(conversation(page).locator('p', { hasText: 'drafting time from about 15 minutes to about 5' })).toBeVisible();
 });
 
 // The pre-generated banner is the chat panel's first row, outside the
@@ -218,7 +219,7 @@ for (const width of [1280, 672]) {
 
         const question = page.getByRole('button', { name: "Why didn't physicians trust the ambient scribe's draft notes?", exact: true });
         await question.click();
-        await expect(page.locator('p', { hasText: 'Physicians read every line of the draft before accepting it' })).toBeVisible();
+        await expect(conversation(page).locator('p', { hasText: 'Physicians read every line of the draft before accepting it' })).toBeVisible();
         await expect(banner).toBeInViewport({ ratio: 1 });
         await expectNoHorizontalOverflow();
     });

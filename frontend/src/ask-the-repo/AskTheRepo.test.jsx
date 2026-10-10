@@ -508,7 +508,7 @@ describe('AskTheRepo in static mode', () => {
         expect(await screen.findByRole('button', { name: `Source 1: ${V1.title}` })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /What made the prior auth drafts hard to review\?.*Drafts cited outdated codes\./ })).toHaveAttribute('aria-current', 'true');
         expect(within(rail()).getAllByRole('article')).toHaveLength(2);
-        expect(screen.getByText('Answer received, 2 sources cited.', { exact: false })).toBeInTheDocument();
+        expect(screen.getByText('Answer received. Drafts cited outdated codes. Nurses wanted the chart text. 2 sources cited.', { exact: false })).toBeInTheDocument();
         // No slow-answer hint in static mode.
         expect(screen.queryByText(/can take up to 20 seconds/)).not.toBeInTheDocument();
 

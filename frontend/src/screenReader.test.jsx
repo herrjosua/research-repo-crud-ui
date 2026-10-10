@@ -8,6 +8,7 @@ import AssistantMessage from './ask-the-repo/chat/AssistantMessage';
 import ChatPanel from './ask-the-repo/chat/ChatPanel';
 import QuestionPicker from './ask-the-repo/chat/QuestionPicker';
 import ProjectSwitcher from './ask-the-repo/rails/ProjectSwitcher';
+import { answerAnnouncement } from './ask-the-repo/chat/announcements';
 import { ERROR_COPY, LOADING_TEXT, SLOW_TEXT } from './ask-the-repo/chat/askCopy';
 import { useRecords, useRecord, useDeleteRecord, useRecordHistory, useCreateSession } from './api/records';
 import { useMe, useUsers } from './api/auth';
@@ -227,16 +228,19 @@ describe('screen reader — Ask tab', () => {
         expect(spoken).toContain('button, Source 1: Checkout Usability Study — Wave 2, has popup dialog');
     });
 
-    it('exposes the conversation as a labeled region and the answer announcement as a live region', async () => {
-        renderPanel({ announcement: 'Answer received, 2 sources cited.' });
+    it('exposes the conversation as a labeled region, and reads the answer and what to do next from a live region', async () => {
+        const announcement = answerAnnouncement('Drafts cited outdated codes [1].\nNurses wanted the chart text [2].', 2);
+        renderPanel({ announcement });
         await startReader();
 
         const spoken = await readAll();
 
         expect(spoken).toContain('region, Conversation');
-        expect(spoken).toContain('Answer received, 2 sources cited.');
-        // Not the answer itself: only a count is announced (RR-55 open decision).
-        expect(screen.getByText('Answer received, 2 sources cited.')).toHaveAttribute('aria-live', 'polite');
+        // The answer itself (no [n] markers), the source count, then the next steps (v1.3.6.57).
+        expect(spoken).toContain(
+            'Answer received. Drafts cited outdated codes. Nurses wanted the chart text. 2 sources cited. Tab to a citation to open its source, or ask another question.',
+        );
+        expect(screen.getByText(/^Answer received\./)).toHaveAttribute('aria-live', 'polite');
     });
 
     it('speaks the searching line, and the slow-start hint with it', async () => {
