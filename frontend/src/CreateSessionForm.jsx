@@ -116,7 +116,12 @@ export default function CreateSessionForm({ onClose }) {
     }
 
     return (
-        <Form onSubmit={handleSubmit} aria-label="Create new research session">
+        // noValidate: the fields are `required` (so they are announced as required),
+        // but without it the browser's own check runs first. Carbon's Dropdown renders
+        // a native <select required>, so a missing type, title or slug made the
+        // browser block the submit before handleSubmit ran, and the form's own
+        // invalid states and summary below never showed.
+        <Form noValidate onSubmit={handleSubmit} aria-label="Create new research session">
             <Stack gap={6}>
                 <TextInput
                     id="title"
