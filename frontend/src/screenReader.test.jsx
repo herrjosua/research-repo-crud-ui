@@ -162,6 +162,22 @@ describe('screen reader — Create Session form', () => {
             'topic_slug must be lowercase kebab-case',
         ]));
     });
+    it('speaks the invalid fields and the validation summary after submitting an empty form', async () => {
+        const user = userEvent.setup();
+        renderForm();
+        await user.click(screen.getByRole('button', { name: 'Create session' }));
+        await startReader();
+
+        const spoken = await readForm();
+
+        expect(spoken).toEqual(expect.arrayContaining([
+            'textbox, Title (required), e.g. Contextual Inquiry — Home Health Nurses, 1 error message, invalid, placeholder e.g. Contextual Inquiry — Home Health Nurses, required',
+            'Title is required.',
+            'Choose a type.',
+            'Please fix the highlighted fields',
+        ]));
+        expect(spoken.filter((phrase) => phrase.startsWith('combobox, Type (required)') && phrase.includes('invalid, required'))).toHaveLength(1);
+    });
 });
 
 describe('screen reader — Ask tab', () => {
