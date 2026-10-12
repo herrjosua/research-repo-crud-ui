@@ -3,7 +3,8 @@ import { Grid, Column, Tabs, TabList, Tab, TabPanels, TabPanel } from '@carbon/r
 import { useQueryClient } from '@tanstack/react-query';
 import BreadcrumbBar from './shell/BreadcrumbBar';
 import LeftRail from './rails/LeftRail';
-import ChatPanel from './chat/ChatPanel';
+import ChatPanel, { CONVERSATION_ID } from './chat/ChatPanel';
+import SkipLink from '../SkipLink';
 import { useAskRepo, latestAssistantMessage } from './chat/useAskRepo';
 import { startersFor } from './chat/starters';
 import { captureNote } from './chat/askCopy';
@@ -291,6 +292,9 @@ export default function AskTheRepo() {
                                     now) makes the rail/content Columns below
                                     match each other's height correctly, by
                                     construction. */}
+                                {/* The rail ahead of the chat is a project picker and the
+                                    conversation list; this jumps past it (v1.3.6.63). */}
+                                <SkipLink targetId={CONVERSATION_ID}>Skip to conversation</SkipLink>
                                 <Grid narrow className={styles.railRow}>
                                     <Column lg={4} md={2} sm={4}>
                                         <LeftRail

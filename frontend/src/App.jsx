@@ -7,6 +7,7 @@ import DemoDisclaimer from './DemoDisclaimer';
 import Dashboard from './Dashboard';
 import AskTheRepo from './ask-the-repo/AskTheRepo';
 import AppHeader from './Header';
+import SkipLink from './SkipLink';
 
 import styles from './App.module.scss';
 
@@ -19,6 +20,10 @@ function App() {
     const isDemo = demoUsers.data?.length > 0;
 
     let content;
+    // Outside <main>: a <header> inside <main> is not a banner landmark, so the
+    // screen reader would not list it as one (v1.3.6.63). The header is fixed,
+    // so where it sits in the DOM does not move it.
+    let header = null;
     // Only Ask the Repo fills the viewport (its rail/chat row scrolls
     // internally); every other page grows with its content and lets the
     // page scroll. See `.fillViewport` in App.module.scss.
@@ -38,9 +43,14 @@ function App() {
             : <LoginForm onLoginSuccess={() => me.refetch()} />;
     } else {
         fillsViewport = activeSection === 'ask-the-repo';
+        header = (
+            <>
+                <SkipLink targetId="main-content">Skip to main content</SkipLink>
+                <AppHeader activeSection={activeSection} onNavigate={setActiveSection} />
+            </>
+        );
         content = (
             <>
-                <AppHeader activeSection={activeSection} onNavigate={setActiveSection} />
                 {isDemo && (
                     <Grid>
                         <Column sm={4} md={8} lg={16}>
@@ -55,7 +65,9 @@ function App() {
 
     return (
         <>
-            <main className={fillsViewport ? `${styles.main} ${styles.fillViewport}` : styles.main}>
+            {header}
+            {/* tabIndex -1: the skip link's target. */}
+            <main id="main-content" tabIndex={-1} className={fillsViewport ? `${styles.main} ${styles.fillViewport}` : styles.main}>
                 {content}
             </main>
             <footer className={styles.footer}>v{__APP_VERSION__}</footer>

@@ -4,6 +4,12 @@
     padding-top: vars.$header-height;
 }
 
+// The skip link's target: it takes focus from the link, not from Tab, so it
+// needs no ring (the page's own controls keep theirs).
+.main:focus {
+    outline: none;
+}
+
 // Ask the Repo only (App.jsx sets this when that section is showing): the
 // top of the bounded-height chain its rail/chat row scrolls inside (see
 // AskTheRepo.module.scss's `.page`). `main` becomes exactly the viewport

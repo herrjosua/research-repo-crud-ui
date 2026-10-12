@@ -5,6 +5,7 @@ import { useRecords } from './api/records';
 import RecordDetail from './RecordDetail';
 import RecordsRail from './RecordsRail';
 import RecordKindTag from './RecordKindTag';
+import SkipLink from './SkipLink';
 import BreadcrumbBar from './ask-the-repo/shell/BreadcrumbBar';
 import { RECORD_KIND_IDS } from './recordKinds';
 
@@ -122,6 +123,10 @@ export default function Dashboard() {
         current="Research Records"
         meta={`${filtered.length} of ${records.data.length} records`}
       />
+      {/* After the breadcrumb, before the filter rail: the rail is about 25
+          stops, so a keyboard or screen reader user can jump past it to the
+          records (v1.3.6.63). */}
+      <SkipLink targetId="records-heading">Skip to records</SkipLink>
       <Grid>
         <Column sm={4} md={8} lg={16} className={styles.rowInset}>
           <Grid narrow className={styles.row}>
@@ -141,55 +146,65 @@ export default function Dashboard() {
             </Column>
 
             <Column lg={12} md={6} sm={4} className={styles.content}>
-              <h1 ref={headingRef} tabIndex={-1} className={styles.heading}>Research Records</h1>
-              {deleteWarning && (
-                  <InlineNotification
-                      kind="warning"
-                      title="Deleted, but the index reported issues"
-                      subtitle={deleteWarning}
-                      lowContrast
-                      onClose={() => setDeleteWarning(null)}
-                  />
-              )}
-              {filtered.length === 0 && (
-                  <InlineNotification
-                      kind="info"
-                      title="No matching records"
-                      subtitle="Try unchecking a filter or clearing your search."
-                      lowContrast
-                  />
-              )}
-              {/* The cards sit one layer above the content surface
-                  (`$layer-01`), so Carbon's Layer gives ClickableTile the
-                  next layer's background, hover and border tokens. */}
-              <Layer>
-                {filtered.map((record, index) => (
-                    // Carbon's ClickableTile without an href is an <a> with no link
-                    // role, which a screen reader reads as plain text, not as
-                    // something to open (v1.3.6.59). So it is a button that opens
-                    // a dialog, named by the title first, then the kind, date and
-                    // type, then the tags, all text that is on the card.
-                    <ClickableTile
-                        key={record.id}
-                        role="button"
-                        aria-haspopup="dialog"
-                        aria-labelledby={`${tileId}-${index}-title ${tileId}-${index}-meta ${tileId}-${index}-tags`}
-                        onClick={() => setSelectedId(record.id)}
-                        className={`${styles.tile} ${styles[record.kind] ?? ''}`}
-                    >
-                      <div id={`${tileId}-${index}-meta`} className={styles.meta}>
-                        <RecordKindTag kind={record.kind} />
-                        <span>{record.date} · {highlightMatch(record.type, searchQuery)}</span>
-                      </div>
-                      <h2 id={`${tileId}-${index}-title`} className={styles.title}>{highlightMatch(record.title, searchQuery)}</h2>
-                      <div id={`${tileId}-${index}-tags`} className={styles.tags}>
-                        {record.tags.map((tag) => (
-                          <Tag key={tag} type="gray" size="sm">{tag}</Tag>
-                        ))}
-                      </div>
-                    </ClickableTile>
-                ))}
-              </Layer>
+              {/* A region named by its heading, and the cards in a list, so the
+                  results are something a screen reader can find and count
+                  (v1.3.6.63). */}
+              <section aria-labelledby="records-heading">
+                <h1 id="records-heading" ref={headingRef} tabIndex={-1} className={styles.heading}>Research Records</h1>
+                {deleteWarning && (
+                    <InlineNotification
+                        kind="warning"
+                        title="Deleted, but the index reported issues"
+                        subtitle={deleteWarning}
+                        lowContrast
+                        onClose={() => setDeleteWarning(null)}
+                    />
+                )}
+                {filtered.length === 0 && (
+                    <InlineNotification
+                        kind="info"
+                        title="No matching records"
+                        subtitle="Try unchecking a filter or clearing your search."
+                        lowContrast
+                    />
+                )}
+                {/* The cards sit one layer above the content surface
+                    (`$layer-01`), so Carbon's Layer gives ClickableTile the
+                    next layer's background, hover and border tokens. */}
+                <Layer>
+                  {filtered.length > 0 && (
+                    <ul className={styles.list}>
+                      {filtered.map((record, index) => (
+                        <li key={record.id}>
+                          {/* Carbon's ClickableTile without an href is an <a> with no link
+                              role, which a screen reader reads as plain text, not as
+                              something to open (v1.3.6.59). So it is a button that opens
+                              a dialog, named by the title first, then the kind, date and
+                              type, then the tags, all text that is on the card. */}
+                          <ClickableTile
+                              role="button"
+                              aria-haspopup="dialog"
+                              aria-labelledby={`${tileId}-${index}-title ${tileId}-${index}-meta ${tileId}-${index}-tags`}
+                              onClick={() => setSelectedId(record.id)}
+                              className={`${styles.tile} ${styles[record.kind] ?? ''}`}
+                          >
+                            <div id={`${tileId}-${index}-meta`} className={styles.meta}>
+                              <RecordKindTag kind={record.kind} />
+                              <span>{record.date} · {highlightMatch(record.type, searchQuery)}</span>
+                            </div>
+                            <h2 id={`${tileId}-${index}-title`} className={styles.title}>{highlightMatch(record.title, searchQuery)}</h2>
+                            <div id={`${tileId}-${index}-tags`} className={styles.tags}>
+                              {record.tags.map((tag) => (
+                                <Tag key={tag} type="gray" size="sm">{tag}</Tag>
+                              ))}
+                            </div>
+                          </ClickableTile>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Layer>
+              </section>
             </Column>
           </Grid>
         </Column>
