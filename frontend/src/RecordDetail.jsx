@@ -5,6 +5,7 @@ import EditRecordForm from './EditRecordForm';
 import RecordKindTag from './RecordKindTag';
 import { createPortal } from 'react-dom';
 import styles from './RecordDetail.module.scss';
+import { closeOnEscapeFromCloseButton } from './closeOnEscape';
 
 function cleanRecordHtml(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -129,6 +130,7 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
   const [isEditing, setIsEditing] = useState(false);
   const [saveWarning, setSaveWarning] = useState(null);
   const editButtonRef = useRef(null);
+  const titleRef = useRef(null);
   const returnFocusToEdit = useRef(false);
   const deleteRecord = useDeleteRecord();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -162,6 +164,17 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
     return () => document.removeEventListener('focusout', suppressOuterBlurIntoConfirmDialog, true);
   }, []);
 
+  // The record's title is where a screen reader should start (v1.3.6.60), but a
+  // record that isn't cached arrives after the dialog opened, when Carbon has
+  // already put focus on Close. Move it to the title once the record is there,
+  // unless the user has already moved focus somewhere else.
+  const loadedId = record.data?.id;
+  useEffect(() => {
+    if (!loadedId) return;
+    const active = document.activeElement;
+    if (!active || active === document.body || active.closest('.cds--modal-close')) titleRef.current?.focus();
+  }, [loadedId]);
+
   // The edit form unmounts on save, taking focus with it. Put focus back on
   // the Edit button that opened it, now remounted in the record view.
   useEffect(() => {
@@ -175,13 +188,18 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
     <Modal
       open
       className={styles.modal}
+      // Carbon names the dialog from a string heading only, and the heading below
+      // is an element, so the name is given here.
       aria-label={record.data ? record.data.title : 'Loading…'}
-      // Focus starts on Close, as in the other dialogs, so a screen reader says
-      // "<title>, dialog, Close" on open. Putting focus on the title (v1.3.6.60)
-      // made Chrome read only the title (or "empty group") and not the dialog.
-      modalHeading={record.data ? record.data.title : 'Loading…'}
+      // The title takes focus when the dialog opens (the span is Carbon's
+      // primary-focus target, and the effect above covers data that arrives
+      // after opening), so a screen reader starts at the record, not at Close.
+      modalHeading={record.data ? (
+        <span ref={titleRef} data-modal-primary-focus tabIndex={-1}>{record.data.title}</span>
+      ) : 'Loading…'}
       passiveModal
       onRequestClose={onClose}
+      onKeyDownCapture={closeOnEscapeFromCloseButton(onClose)}
     >
       {/* Kind, date and type sit right under the title as plain text. They used
           to be the Modal's modalLabel, which Carbon renders as a second h2 and

@@ -5,6 +5,7 @@ import CorrectionTag from './CorrectionTag';
 import { correctedLabel } from './correctedLabel';
 import { PINNABLE_KINDS } from './kindMeta';
 import styles from './SourceDetailModal.module.scss';
+import { closeOnEscapeFromCloseButton } from '../../closeOnEscape';
 
 // Spoken/verbatim kinds read as quotes, so their excerpt is italicized —
 // same rule as the reference's SourceDetailModal.tsx.
@@ -64,6 +65,7 @@ export default function SourceDetailModal({
             passiveModal
             size="md"
             onRequestClose={onClose}
+            onKeyDownCapture={closeOnEscapeFromCloseButton(onClose)}
             launcherButtonRef={launcherButtonRef}
         >
             <div className={styles.meta}>

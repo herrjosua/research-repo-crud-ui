@@ -224,3 +224,24 @@ for (const width of [1280, 672]) {
         await expectNoHorizontalOverflow();
     });
 }
+
+// Escape from a source dialog's Close button closes it in one press, and focus
+// returns to the citation (v1.3.6.64). Close's tooltip used to swallow the first
+// Escape, so a keyboard or screen reader user had to press it twice.
+test('a source dialog closes with one Escape and returns focus to its citation', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /Priya Patel/ }).click();
+    await page.getByRole('link', { name: 'Ask the Repo' }).click();
+    await page.getByRole('button', { name: "Why didn't physicians trust the ambient scribe's draft notes?", exact: true }).click();
+    await expect(conversation(page).locator('p', { hasText: 'Physicians read every line of the draft' })).toBeVisible();
+
+    const citation = page.getByRole('button', { name: /^Source 1: / });
+    await citation.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.waitForTimeout(500);
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(citation).toBeFocused();
+});

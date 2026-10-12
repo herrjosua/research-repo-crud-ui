@@ -3,6 +3,7 @@ import { Grid, Column, Tag, ClickableTile, InlineNotification, Layer, Modal } fr
 import CreateSessionForm from './CreateSessionForm';
 import { useRecords } from './api/records';
 import RecordDetail from './RecordDetail';
+import { closeOnEscapeFromCloseButton } from './closeOnEscape';
 import RecordsRail from './RecordsRail';
 import RecordKindTag from './RecordKindTag';
 import SkipLink from './SkipLink';
@@ -232,7 +233,11 @@ export default function Dashboard() {
               open
               modalHeading="New research session"
               passiveModal
+              // Focus starts on the Title field, the first thing to fill in,
+              // rather than on Close (v1.3.6.64).
+              selectorPrimaryFocus="#title"
               onRequestClose={() => setShowCreateForm(false)}
+              onKeyDownCapture={closeOnEscapeFromCloseButton(() => setShowCreateForm(false))}
           >
             <CreateSessionForm onClose={() => setShowCreateForm(false)} />
           </Modal>

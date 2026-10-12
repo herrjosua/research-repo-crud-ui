@@ -165,6 +165,27 @@ describe('CreateSessionForm — validation', () => {
         expect(mutate).not.toHaveBeenCalled();
     });
 
+    // The summary alone was not announced. Moving focus to the field that needs
+    // fixing makes a screen reader say which one and why (v1.3.6.64).
+    it('moves focus to the Title field when it is the first one to fix', async () => {
+        const user = userEvent.setup();
+        renderForm();
+
+        await user.click(screen.getByRole('button', { name: /create session/i }));
+
+        expect(screen.getByLabelText(/^Title/)).toHaveFocus();
+    });
+
+    it('moves focus to the type when the title is fine and the type is missing', async () => {
+        const user = userEvent.setup();
+        renderForm();
+
+        await user.type(screen.getByLabelText(/^Title/), 'Home health interviews');
+        await user.click(screen.getByRole('button', { name: /create session/i }));
+
+        expect(screen.getByLabelText(/^Type/)).toHaveFocus();
+    });
+
     it('flags only the type when the title is filled in and no type is chosen', async () => {
         const user = userEvent.setup();
         const mutate = renderForm();

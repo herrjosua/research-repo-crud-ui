@@ -102,15 +102,17 @@ describe('RecordDetail — generated (read-only) records', () => {
     });
 });
 
-describe('RecordDetail — where focus starts (v1.3.6.64)', () => {
-    it('starts on Close, with the dialog named by the record title', () => {
+describe('RecordDetail — where focus starts (v1.3.6.60)', () => {
+    const titleHeading = () => screen.getByRole('heading', { name: 'Example finding' });
+
+    it('puts focus on the record title when the dialog opens, not on Close', () => {
         render(<RecordDetail id={record.id} onClose={vi.fn()} onDeleted={vi.fn()} />);
 
-        expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+        expect(titleHeading()).toContainElement(document.activeElement);
         expect(screen.getByRole('dialog', { name: 'Example finding' })).toBeInTheDocument();
     });
 
-    it('keeps focus where it is when the record arrives after the dialog opened', () => {
+    it('moves focus from Close to the title when the record arrives after the dialog opened', () => {
         useRecord.mockReturnValue({ isLoading: true, isError: false, data: undefined });
         const { rerender } = render(<RecordDetail id={record.id} onClose={vi.fn()} onDeleted={vi.fn()} />);
         expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
@@ -118,6 +120,20 @@ describe('RecordDetail — where focus starts (v1.3.6.64)', () => {
         useRecord.mockReturnValue({ isLoading: false, isError: false, data: record });
         rerender(<RecordDetail id={record.id} onClose={vi.fn()} onDeleted={vi.fn()} />);
 
-        expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+        expect(titleHeading()).toContainElement(document.activeElement);
+    });
+
+    it('leaves focus alone when the user has already moved it before the record arrives', () => {
+        useRecord.mockReturnValue({ isLoading: true, isError: false, data: undefined });
+        const { rerender } = render(<RecordDetail id={record.id} onClose={vi.fn()} onDeleted={vi.fn()} />);
+        const outside = document.createElement('button');
+        document.body.append(outside);
+        outside.focus();
+
+        useRecord.mockReturnValue({ isLoading: false, isError: false, data: record });
+        rerender(<RecordDetail id={record.id} onClose={vi.fn()} onDeleted={vi.fn()} />);
+
+        expect(outside).toHaveFocus();
+        outside.remove();
     });
 });
