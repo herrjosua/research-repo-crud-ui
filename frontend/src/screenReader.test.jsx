@@ -114,6 +114,36 @@ describe('screen reader — record detail modal', () => {
     });
 });
 
+describe('screen reader — dashboard record cards', () => {
+    const CARD = 'Raw One Finding 2026-01-01 · usability-test onboarding usability';
+
+    beforeEach(() => {
+        useRecords.mockReturnValue({
+            isLoading: false,
+            isError: false,
+            data: [{ id: record.id, kind: record.kind, title: 'Raw One', date: '2026-01-01', type: 'usability-test', tags: ['onboarding', 'usability'] }],
+        });
+    });
+
+    it('speaks a card as a button that opens a dialog, named by its title first', async () => {
+        render(<Dashboard />);
+        await startReader();
+
+        screen.getByRole('button', { name: CARD }).focus();
+
+        expect(await lastSpoken()).toBe(`button, ${CARD}, has popup dialog`);
+    });
+
+    it('opens the record from the keyboard with Enter', async () => {
+        const user = userEvent.setup();
+        render(<Dashboard />);
+
+        screen.getByRole('button', { name: CARD }).focus();
+        await user.keyboard('{Enter}');
+        expect(await screen.findByRole('dialog', { name: 'Example finding' })).toBeInTheDocument();
+    });
+});
+
 describe('screen reader — delete with a warning', () => {
     it('puts the reader on the "Research Records" heading and speaks the warning', async () => {
         useRecords.mockReturnValue({

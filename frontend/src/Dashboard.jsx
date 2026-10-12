@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useId } from 'react';
 import { Grid, Column, Tag, ClickableTile, InlineNotification, Layer, Modal } from '@carbon/react';
 import CreateSessionForm from './CreateSessionForm';
 import { useRecords } from './api/records';
@@ -13,6 +13,8 @@ import styles from './Dashboard.module.scss';
 const ALL_KINDS = RECORD_KIND_IDS;
 
 export default function Dashboard() {
+  // Unique per instance: the record cards' accessible names point at their own parts by id.
+  const tileId = useId();
   const records = useRecords();
   const [activeKinds, setActiveKinds] = useState(new Set(ALL_KINDS));
 
@@ -161,18 +163,26 @@ export default function Dashboard() {
                   (`$layer-01`), so Carbon's Layer gives ClickableTile the
                   next layer's background, hover and border tokens. */}
               <Layer>
-                {filtered.map((record) => (
+                {filtered.map((record, index) => (
+                    // Carbon's ClickableTile without an href is an <a> with no link
+                    // role, which a screen reader reads as plain text, not as
+                    // something to open (v1.3.6.59). So it is a button that opens
+                    // a dialog, named by the title first, then the kind, date and
+                    // type, then the tags, all text that is on the card.
                     <ClickableTile
                         key={record.id}
+                        role="button"
+                        aria-haspopup="dialog"
+                        aria-labelledby={`${tileId}-${index}-title ${tileId}-${index}-meta ${tileId}-${index}-tags`}
                         onClick={() => setSelectedId(record.id)}
                         className={`${styles.tile} ${styles[record.kind] ?? ''}`}
                     >
-                      <div className={styles.meta}>
+                      <div id={`${tileId}-${index}-meta`} className={styles.meta}>
                         <RecordKindTag kind={record.kind} />
                         <span>{record.date} · {highlightMatch(record.type, searchQuery)}</span>
                       </div>
-                      <h2 className={styles.title}>{highlightMatch(record.title, searchQuery)}</h2>
-                      <div className={styles.tags}>
+                      <h2 id={`${tileId}-${index}-title`} className={styles.title}>{highlightMatch(record.title, searchQuery)}</h2>
+                      <div id={`${tileId}-${index}-tags`} className={styles.tags}>
                         {record.tags.map((tag) => (
                           <Tag key={tag} type="gray" size="sm">{tag}</Tag>
                         ))}
