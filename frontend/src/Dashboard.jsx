@@ -37,15 +37,26 @@ export default function Dashboard() {
   const [deleteWarning, setDeleteWarning] = useState(null);
   const headingRef = useRef(null);
   const focusHeadingAfterDelete = useRef(false);
+  const returnFocusTo = useRef(null);
 
-  // The deleted record's tile is gone, so there's no launcher to return focus
-  // to. Focus the list heading once the detail modal has unmounted.
+  // Both dialogs here are mounted only while open, so Carbon never gets to
+  // return focus to what opened them, and focus fell to the page (v1.3.6.64).
+  // A screen reader then read the page title instead of the card it had just
+  // left. Remember the opener and focus it again once the dialog has closed.
+  // A deleted record's tile is gone, so there's no launcher to return focus
+  // to; focus the list heading instead.
   useEffect(() => {
-    if (!selectedId && focusHeadingAfterDelete.current) {
+    if (selectedId || showCreateForm) return;
+    if (focusHeadingAfterDelete.current) {
       focusHeadingAfterDelete.current = false;
+      returnFocusTo.current = null;
       headingRef.current?.focus();
+      return;
     }
-  }, [selectedId]);
+    const opener = returnFocusTo.current;
+    returnFocusTo.current = null;
+    if (opener?.isConnected) opener.focus();
+  }, [selectedId, showCreateForm]);
 
   const allTags = useMemo(() => {
     if (!records.data) return [];
@@ -132,7 +143,10 @@ export default function Dashboard() {
           <Grid narrow className={styles.row}>
             <Column lg={4} md={2} sm={4}>
               <RecordsRail
-                onNewSession={() => setShowCreateForm(true)}
+                onNewSession={(event) => {
+                  returnFocusTo.current = event?.currentTarget ?? document.activeElement;
+                  setShowCreateForm(true);
+                }}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 activeKinds={activeKinds}
@@ -185,7 +199,10 @@ export default function Dashboard() {
                               role="button"
                               aria-haspopup="dialog"
                               aria-labelledby={`${tileId}-${index}-title ${tileId}-${index}-meta ${tileId}-${index}-tags`}
-                              onClick={() => setSelectedId(record.id)}
+                              onClick={(event) => {
+                                returnFocusTo.current = event.currentTarget;
+                                setSelectedId(record.id);
+                              }}
                               className={`${styles.tile} ${styles[record.kind] ?? ''}`}
                           >
                             <div id={`${tileId}-${index}-meta`} className={styles.meta}>

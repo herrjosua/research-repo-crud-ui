@@ -12,9 +12,10 @@ vi.mock('./CreateSessionForm', () => ({
 }));
 
 vi.mock('./RecordDetail', () => ({
-    default: ({ id, onDeleted }) => (
+    default: ({ id, onClose, onDeleted }) => (
         <div>
             Mock RecordDetail for {id}
+            <button onClick={onClose}>Close mock detail</button>
             <button onClick={() => onDeleted('dangling related_findings link')}>Delete with warning</button>
             <button onClick={() => onDeleted(undefined)}>Delete cleanly</button>
         </div>
@@ -128,5 +129,33 @@ describe('Dashboard — delete warning', () => {
         expect(screen.queryByText(/Mock RecordDetail/)).not.toBeInTheDocument();
         expect(screen.queryByRole('status')).not.toBeInTheDocument();
         expect(screen.getByRole('heading', { name: 'Research Records' })).toHaveFocus();
+    });
+});
+
+describe('Dashboard — focus after a dialog closes (v1.3.6.64)', () => {
+    it('returns focus to the record card that opened the dialog', async () => {
+        useRecords.mockReturnValue({ isLoading: false, isError: false, data: sampleRecords });
+        const user = userEvent.setup();
+        render(<Dashboard />);
+
+        const card = screen.getByRole('button', { name: /Raw One/ });
+        await user.click(card);
+        await user.click(screen.getByRole('button', { name: 'Close mock detail' }));
+
+        expect(screen.queryByText(/Mock RecordDetail/)).not.toBeInTheDocument();
+        expect(card).toHaveFocus();
+    });
+
+    it('returns focus to New session when that dialog closes', async () => {
+        useRecords.mockReturnValue({ isLoading: false, isError: false, data: sampleRecords });
+        const user = userEvent.setup();
+        render(<Dashboard />);
+
+        const opener = screen.getByRole('button', { name: 'New session' });
+        await user.click(opener);
+        await user.click(screen.getByRole('button', { name: 'Close' }));
+
+        expect(screen.queryByText('Mock CreateSessionForm')).not.toBeInTheDocument();
+        expect(opener).toHaveFocus();
     });
 });
