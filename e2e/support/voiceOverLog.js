@@ -60,9 +60,12 @@ export async function tabUntil(voiceOver, pattern, max = 25) {
 /** The headings VoiceOver finds, in order, with its heading command (VO+Command+H). */
 export async function headingsInOrder(voiceOver, max = 8) {
     const found = [];
-    for (let i = 0; i < max; i += 1) {
+    // The first command can leave the cursor where it was, so anything that is
+    // not a heading is skipped rather than counted.
+    for (let i = 0; i < max + 3 && found.length < max; i += 1) {
         await voiceOver.perform(voiceOver.keyboardCommands.findNextHeading);
-        found.push(await voiceOver.itemText());
+        const item = await voiceOver.itemText();
+        if (/heading level/.test(item)) found.push(item);
     }
     return found;
 }

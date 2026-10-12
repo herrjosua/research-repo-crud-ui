@@ -14,7 +14,6 @@ test('New session opens a named dialog and an empty submit says what is missing'
     await focusOn(page, voiceOver, page.getByRole('button', { name: 'New session' }), { follow: false });
     await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
-    await followFocus(page, voiceOver);
     await settle(page);
     const onOpen = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'new-session-on-open', onOpen);
@@ -22,7 +21,6 @@ test('New session opens a named dialog and an empty submit says what is missing'
 
     await focusOn(page, voiceOver, page.getByRole('button', { name: 'Create session' }), { follow: false });
     await voiceOver.press('Enter');
-    await followFocus(page, voiceOver);
     await settle(page);
     const afterSubmit = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'new-session-empty-submit', afterSubmit);

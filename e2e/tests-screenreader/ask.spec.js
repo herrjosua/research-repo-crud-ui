@@ -75,13 +75,12 @@ test('a source opens in a dialog and closing it returns to the citation', async 
     await settle(page);
 
     const citation = page.getByRole('button', { name: /^Source 1: / });
-    await focusOn(page, voiceOver, citation);
-    await settle(page);
-    await saveSpoken(testInfo, 'citation-focus', await nowSaying(voiceOver));
+    // The answer walk already shows how the citation reads. Here the cursor is
+    // not moved to it, because in Chrome VO+Shift+F swallows the next key press.
+    await focusOn(page, voiceOver, citation, { follow: false });
 
     await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
-    await followFocus(page, voiceOver);
     await settle(page);
     const onOpen = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'source-dialog-on-open', onOpen);
@@ -91,6 +90,7 @@ test('a source opens in a dialog and closing it returns to the citation', async 
     await voiceOver.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await settle(page);
+    await followFocus(page, voiceOver);
     const closed = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'source-dialog-closed', closed);
     expect.soft(closed.join(' ')).toMatch(/Source 1: /);

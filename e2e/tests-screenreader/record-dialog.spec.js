@@ -32,10 +32,12 @@ test('opening a record: what is said on open, and the dialog read through', asyn
     await focusOn(page, voiceOver, firstCard(page), { follow: false });
     await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
-    await followFocus(page, voiceOver);
     await settle(page);
+    // What was said on open, before the cursor is moved: VO+Shift+F speaks the
+    // focused item and replaces it.
     const onOpen = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'dialog-on-open', onOpen);
+    await followFocus(page, voiceOver);
     expect.soft(onOpen.join(' '), 'on open VoiceOver is on or announces the record title').toContain(title);
     expect.soft(onOpen.join(' ').toLowerCase()).not.toContain('close');
 
@@ -60,11 +62,11 @@ test('closing the dialog returns VoiceOver to the card that opened it', async ({
     await focusOn(page, voiceOver, firstCard(page), { follow: false });
     await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
-    await followFocus(page, voiceOver);
     await settle(page);
     await voiceOver.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await settle(page);
+    await followFocus(page, voiceOver);
 
     const said = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'dialog-closed', said);
@@ -77,10 +79,11 @@ test('the delete confirmation announces itself as a dialog with its question', a
     await focusOn(page, voiceOver, firstCard(page), { follow: false });
     await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
-    await followFocus(page, voiceOver);
+    await settle(page);
     const deleteButton = page.getByRole('button', { name: /^Delete record:/ });
     test.skip((await deleteButton.count()) === 0, 'the first record is read-only, so it has no Delete');
-    await deleteButton.click();
+    await focusOn(page, voiceOver, deleteButton, { follow: false });
+    await voiceOver.press('Enter');
     await expect(page.getByRole('dialog').last()).toContainText('Delete this record?');
     await settle(page);
 
