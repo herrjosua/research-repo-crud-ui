@@ -51,7 +51,7 @@ export async function stepUntil(voiceOver, pattern, max = 60) {
 export async function tabUntil(voiceOver, pattern, max = 25) {
     for (let i = 0; i < max; i += 1) {
         await voiceOver.press('Tab');
-        if (pattern.test(await voiceOver.lastSpokenPhrase())) return true;
+        if (pattern.test(await voiceOver.lastSpokenPhrase()) || pattern.test(await voiceOver.itemText())) return true;
     }
     return false;
 }
@@ -68,3 +68,17 @@ export async function headingsInOrder(voiceOver, max = 8) {
 
 /** Waits for the page to settle after something that opens a dialog or moves focus. */
 export const settle = (page) => page.waitForTimeout(1500);
+
+/**
+ * Puts keyboard focus on `locator` and has VoiceOver follow it. In Safari the
+ * cursor follows focus by itself; in Chrome it often stays where it was, so
+ * the cursor is moved to the keyboard focus explicitly, as a person would with
+ * VO+Shift+F, before reading what is said.
+ */
+export async function focusOn(page, voiceOver, locator) {
+    await page.bringToFront();
+    await locator.focus();
+    await settle(page);
+    await voiceOver.perform(voiceOver.keyboardCommands.moveCursorToKeyboardFocus);
+    await settle(page);
+}

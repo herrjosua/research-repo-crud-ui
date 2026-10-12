@@ -1,6 +1,6 @@
 import { voiceOverTest as test } from '@guidepup/playwright';
 import { expect } from '@playwright/test';
-import { saveSpoken, stepThrough, nowSaying, settle } from '../support/voiceOverLog.js';
+import { saveSpoken, stepThrough, nowSaying, settle, focusOn } from '../support/voiceOverLog.js';
 
 // The record card and the record dialog (v1.3.6.56, .59, .60, .61, .64).
 
@@ -16,7 +16,7 @@ const firstCard = (page) => page.locator('main ul li [role="button"]').first();
 test('a record card is read as a button that opens a dialog, named by its title first', async ({ page, voiceOver }, testInfo) => {
     await openDashboard(page, voiceOver);
 
-    await firstCard(page).focus();
+    await focusOn(page, voiceOver, firstCard(page));
     await settle(page);
     const said = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'card-focus', said);
@@ -29,7 +29,7 @@ test('opening a record: what is said on open, and the dialog read through', asyn
     await openDashboard(page, voiceOver);
     const title = await firstCard(page).locator('h2').innerText();
 
-    await firstCard(page).focus();
+    await focusOn(page, voiceOver, firstCard(page));
     await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
     await settle(page);
@@ -56,7 +56,7 @@ test('closing the dialog returns VoiceOver to the card that opened it', async ({
     await openDashboard(page, voiceOver);
     const title = await firstCard(page).locator('h2').innerText();
 
-    await firstCard(page).focus();
+    await focusOn(page, voiceOver, firstCard(page));
     await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
     await settle(page);
@@ -72,7 +72,7 @@ test('closing the dialog returns VoiceOver to the card that opened it', async ({
 test('the delete confirmation announces itself as a dialog with its question', async ({ page, voiceOver }, testInfo) => {
     await openDashboard(page, voiceOver);
 
-    await firstCard(page).focus();
+    await focusOn(page, voiceOver, firstCard(page));
     await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
     const deleteButton = page.getByRole('button', { name: /^Delete record:/ });

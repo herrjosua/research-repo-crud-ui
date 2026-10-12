@@ -45,7 +45,9 @@ test('the dashboard starts with a skip link, then banner, navigation, main, head
         expect.soft(all, `VoiceOver announces a ${landmark}`).toContain(landmark);
     }
     expect.soft(all).toContain('demonstration environment');
-    expect.soft(all).not.toContain('text field');
+    // Only the part before the filters: the search box there is a real text field.
+    const banner = all.slice(0, all.indexOf('breadcrumb navigation'));
+    expect.soft(banner, 'the banner is not read as a text field').not.toContain('text field');
 });
 
 test('the headings list starts with the page heading, and cards are titled h2s', async ({ page, voiceOver }, testInfo) => {

@@ -1,6 +1,6 @@
 import { voiceOverTest as test } from '@guidepup/playwright';
 import { expect } from '@playwright/test';
-import { saveSpoken, stepThrough, stepUntil, nowSaying, tabUntil, settle } from '../support/voiceOverLog.js';
+import { saveSpoken, stepThrough, stepUntil, nowSaying, tabUntil, settle, focusOn } from '../support/voiceOverLog.js';
 import { conversation } from '../support/askLocators.js';
 
 // The Ask tab (v1.3.6.54, .55, .57, .62, .63), in the demo's pick-a-question
@@ -71,7 +71,7 @@ test('a source opens in a dialog and closing it returns to the citation', async 
     await settle(page);
 
     const citation = page.getByRole('button', { name: /^Source 1: / });
-    await citation.focus();
+    await focusOn(page, voiceOver, citation);
     await settle(page);
     await saveSpoken(testInfo, 'citation-focus', await nowSaying(voiceOver));
 
@@ -94,7 +94,7 @@ test('a source opens in a dialog and closing it returns to the citation', async 
 test('the question dropdown and project picker read as one labelled combobox, without "Open menu"', async ({ page, voiceOver }, testInfo) => {
     await openAsk(page, voiceOver);
 
-    await page.getByRole('combobox', { name: /Project/ }).focus();
+    await focusOn(page, voiceOver, page.getByRole('combobox', { name: /Project/ }));
     await settle(page);
     const project = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'project-picker', project);
@@ -102,7 +102,7 @@ test('the question dropdown and project picker read as one labelled combobox, wi
     expect.soft(project.join(' ').toLowerCase()).not.toContain('open menu');
 
     await askQuestion(page);
-    await page.getByRole('combobox', { name: 'Choose a question' }).focus();
+    await focusOn(page, voiceOver, page.getByRole('combobox', { name: 'Choose a question' }));
     await settle(page);
     const questions = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'question-picker', questions);
@@ -120,7 +120,7 @@ test('a saved insight has Remove and Show more buttons that name their insight',
     await expect(page.getByRole('button', { name: /^Remove insight: / })).toBeVisible();
     await settle(page);
 
-    await page.getByRole('button', { name: /^Remove insight: / }).focus();
+    await focusOn(page, voiceOver, page.getByRole('button', { name: /^Remove insight: / }));
     await settle(page);
     const said = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'insight-remove', said);
@@ -129,7 +129,7 @@ test('a saved insight has Remove and Show more buttons that name their insight',
     // Show more only exists for long insights.
     const more = page.getByRole('button', { name: /^Show more: / });
     if (await more.count()) {
-        await more.first().focus();
+        await focusOn(page, voiceOver, more.first());
         await settle(page);
         const readMore = await nowSaying(voiceOver);
         await saveSpoken(testInfo, 'insight-show-more', readMore);
