@@ -12,7 +12,7 @@ test('New session opens a named dialog and an empty submit says what is missing'
     await voiceOver.navigateToWebContent();
 
     await focusOn(page, voiceOver, page.getByRole('button', { name: 'New session' }));
-    await voiceOver.press('Enter');
+    await voiceOver.act();
     await expect(page.getByRole('dialog')).toBeVisible();
     await settle(page);
     const onOpen = await nowSaying(voiceOver);
@@ -20,7 +20,7 @@ test('New session opens a named dialog and an empty submit says what is missing'
     expect.soft(onOpen.join(' ')).toMatch(/New research session|Title/);
 
     await focusOn(page, voiceOver, page.getByRole('button', { name: 'Create session' }));
-    await voiceOver.press('Enter');
+    await voiceOver.act();
     await settle(page);
     const afterSubmit = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'new-session-empty-submit', afterSubmit);

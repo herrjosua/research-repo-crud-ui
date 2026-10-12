@@ -42,6 +42,10 @@ test('a new answer is spoken once and focus lands on it', async ({ page, voiceOv
 
     await askQuestion(page);
     await settle(page);
+    // Chrome leaves the VoiceOver cursor where it was when the page moves
+    // focus, so follow the keyboard focus, which is where a Tab would go next.
+    await voiceOver.perform(voiceOver.keyboardCommands.moveCursorToKeyboardFocus);
+    await settle(page);
     const said = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'answer-on-arrival', said);
 
@@ -75,7 +79,7 @@ test('a source opens in a dialog and closing it returns to the citation', async 
     await settle(page);
     await saveSpoken(testInfo, 'citation-focus', await nowSaying(voiceOver));
 
-    await voiceOver.press('Enter');
+    await voiceOver.act();
     await expect(page.getByRole('dialog')).toBeVisible();
     await settle(page);
     const onOpen = await nowSaying(voiceOver);

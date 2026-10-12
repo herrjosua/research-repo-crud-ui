@@ -30,7 +30,7 @@ test('opening a record: what is said on open, and the dialog read through', asyn
     const title = await firstCard(page).locator('h2').innerText();
 
     await focusOn(page, voiceOver, firstCard(page));
-    await voiceOver.press('Enter');
+    await voiceOver.act();
     await expect(page.getByRole('dialog')).toBeVisible();
     await settle(page);
     const onOpen = await nowSaying(voiceOver);
@@ -57,7 +57,7 @@ test('closing the dialog returns VoiceOver to the card that opened it', async ({
     const title = await firstCard(page).locator('h2').innerText();
 
     await focusOn(page, voiceOver, firstCard(page));
-    await voiceOver.press('Enter');
+    await voiceOver.act();
     await expect(page.getByRole('dialog')).toBeVisible();
     await settle(page);
     await voiceOver.press('Escape');
@@ -73,7 +73,7 @@ test('the delete confirmation announces itself as a dialog with its question', a
     await openDashboard(page, voiceOver);
 
     await focusOn(page, voiceOver, firstCard(page));
-    await voiceOver.press('Enter');
+    await voiceOver.act();
     await expect(page.getByRole('dialog')).toBeVisible();
     const deleteButton = page.getByRole('button', { name: /^Delete record:/ });
     test.skip((await deleteButton.count()) === 0, 'the first record is read-only, so it has no Delete');

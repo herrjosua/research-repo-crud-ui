@@ -49,6 +49,7 @@ export async function stepUntil(voiceOver, pattern, max = 60) {
 
 /** Presses Tab until VoiceOver's last phrase matches `pattern`; false if `max` presses pass first. */
 export async function tabUntil(voiceOver, pattern, max = 25) {
+    if (pattern.test(await voiceOver.itemText())) return true;
     for (let i = 0; i < max; i += 1) {
         await voiceOver.press('Tab');
         if (pattern.test(await voiceOver.lastSpokenPhrase()) || pattern.test(await voiceOver.itemText())) return true;
