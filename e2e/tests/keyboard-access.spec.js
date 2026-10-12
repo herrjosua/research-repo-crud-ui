@@ -40,7 +40,7 @@ test('dashboard, record detail, and delete confirmation are all keyboard-operabl
     expect(results.violations).toEqual([]);
 
     // --- Open the delete confirmation via keyboard ---
-    await detailModal.getByRole('button', { name: 'Delete' }).focus();
+    await detailModal.getByRole('button', { name: /^Delete record:/ }).focus();
     await page.keyboard.press('Enter');
 
     const confirmDialogs = page.getByRole('dialog');
@@ -131,7 +131,7 @@ test.describe('the record detail modal only shows a focus ring on the record dia
 
         // The record's content loads separately from the list, and the trap's
         // tabbable set must be stable before the wrap presses below.
-        await expect(page.getByRole('dialog').getByRole('button', { name: 'View history' })).toBeVisible();
+        await expect(page.getByRole('dialog').getByRole('button', { name: /^View history of/ })).toBeVisible();
 
         const closeButton = page.getByRole('dialog').getByRole('button', { name: 'Close' });
         await page.keyboard.press('Shift+Tab');

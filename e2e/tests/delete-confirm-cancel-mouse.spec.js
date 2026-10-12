@@ -62,7 +62,7 @@ for (const width of [672, 1400]) {
         const detailModal = page.getByRole('dialog');
         await expect(detailModal).toBeVisible();
 
-        await detailModal.getByRole('button', { name: 'Delete' }).click();
+        await detailModal.getByRole('button', { name: /^Delete record:/ }).click();
         const dialogs = page.getByRole('dialog');
         await expect(dialogs).toHaveCount(2); // the detail modal, plus the nested confirm dialog on top of it
         const confirmDialog = dialogs.last();
@@ -74,7 +74,7 @@ for (const width of [672, 1400]) {
         await expect(dialogs).toHaveCount(1);
         // ...and the detail modal is still open underneath, not also closed.
         await expect(detailModal).toBeVisible();
-        await expect(detailModal.getByRole('button', { name: 'Delete' })).toBeVisible();
+        await expect(detailModal.getByRole('button', { name: /^Delete record:/ })).toBeVisible();
 
         // Backdrop-click-to-close on the outer detail modal still works normally
         // when no confirm dialog is open on top of it.
@@ -86,7 +86,7 @@ for (const width of [672, 1400]) {
         // closing both IS correct behavior.
         await tile.click();
         await expect(detailModal).toBeVisible();
-        await detailModal.getByRole('button', { name: 'Delete' }).click();
+        await detailModal.getByRole('button', { name: /^Delete record:/ }).click();
         await expect(dialogs).toHaveCount(2);
         await dialogs.last().getByRole('button', { name: 'Delete' }).click();
         await expect(dialogs).toHaveCount(0);
