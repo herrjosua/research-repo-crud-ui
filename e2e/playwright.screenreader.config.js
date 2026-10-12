@@ -23,10 +23,15 @@ export default defineConfig({
     },
     // Chrome first: it is what people use, and VoiceOver speaks differently in
     // Chrome and in Safari. `--project=chrome` or `--project=webkit` runs one.
+    // This is Playwright's own "Google Chrome for Testing", the same engine as
+    // Chrome. Not `channel: 'chrome'` (the installed Chrome): Guidepup brings
+    // the browser to the front by the name "Google Chrome For Testing", so the
+    // installed Chrome is never found and every test fails in
+    // navigateToWebContent().
     projects: [
         {
             name: 'chrome',
-            use: { ...devices['Desktop Chrome'], channel: 'chrome', headless: false },
+            use: { ...devices['Desktop Chrome'], headless: false },
         },
         {
             name: 'webkit',

@@ -218,7 +218,8 @@ what shows what VoiceOver actually says.
 - It runs in Chrome (the browser people use) and in Safari, and VoiceOver speaks
   differently in each, so the output files are named by browser
   (`chrome-…`, `webkit-…`). `npm run test:screenreader -- --project=chrome` runs
-  one. Chrome must be installed.
+  one. The Chrome project is Playwright's own "Google Chrome for Testing" (the
+  same engine as Chrome), installed with `npx playwright install chromium`.
 - The specs are in `tests-screenreader/`: `structure` (banner, skip links,
   landmarks, headings), `record-dialog` (card, dialog, focus return, delete
   confirmation), `ask` (skip link, new answer, citations, source dialog,
