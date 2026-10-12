@@ -1,6 +1,6 @@
 import { voiceOverTest as test } from '@guidepup/playwright';
 import { expect } from '@playwright/test';
-import { saveSpoken, nowSaying, settle, focusOn } from '../support/voiceOverLog.js';
+import { saveSpoken, nowSaying, settle, focusOn, followFocus } from '../support/voiceOverLog.js';
 
 // The New session dialog (RR-55 layer 1 items): the dialog is named, required
 // fields are announced as required, and submitting empty says what is wrong.
@@ -11,16 +11,18 @@ test('New session opens a named dialog and an empty submit says what is missing'
     await expect(page.getByRole('heading', { name: 'Research Records', level: 1 })).toBeVisible();
     await voiceOver.navigateToWebContent();
 
-    await focusOn(page, voiceOver, page.getByRole('button', { name: 'New session' }));
-    await voiceOver.act();
+    await focusOn(page, voiceOver, page.getByRole('button', { name: 'New session' }), { follow: false });
+    await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
+    await followFocus(page, voiceOver);
     await settle(page);
     const onOpen = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'new-session-on-open', onOpen);
     expect.soft(onOpen.join(' ')).toMatch(/New research session|Title/);
 
-    await focusOn(page, voiceOver, page.getByRole('button', { name: 'Create session' }));
-    await voiceOver.act();
+    await focusOn(page, voiceOver, page.getByRole('button', { name: 'Create session' }), { follow: false });
+    await voiceOver.press('Enter');
+    await followFocus(page, voiceOver);
     await settle(page);
     const afterSubmit = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'new-session-empty-submit', afterSubmit);

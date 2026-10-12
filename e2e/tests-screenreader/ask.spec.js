@@ -1,6 +1,6 @@
 import { voiceOverTest as test } from '@guidepup/playwright';
 import { expect } from '@playwright/test';
-import { saveSpoken, stepThrough, stepUntil, nowSaying, tabUntil, settle, focusOn } from '../support/voiceOverLog.js';
+import { saveSpoken, stepThrough, stepUntil, nowSaying, tabUntil, settle, focusOn, followFocus } from '../support/voiceOverLog.js';
 import { conversation } from '../support/askLocators.js';
 
 // The Ask tab (v1.3.6.54, .55, .57, .62, .63), in the demo's pick-a-question
@@ -79,8 +79,9 @@ test('a source opens in a dialog and closing it returns to the citation', async 
     await settle(page);
     await saveSpoken(testInfo, 'citation-focus', await nowSaying(voiceOver));
 
-    await voiceOver.act();
+    await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
+    await followFocus(page, voiceOver);
     await settle(page);
     const onOpen = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'source-dialog-on-open', onOpen);

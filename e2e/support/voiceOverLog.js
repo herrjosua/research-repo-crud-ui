@@ -76,10 +76,18 @@ export const settle = (page) => page.waitForTimeout(1500);
  * the cursor is moved to the keyboard focus explicitly, as a person would with
  * VO+Shift+F, before reading what is said.
  */
-export async function focusOn(page, voiceOver, locator) {
+export async function focusOn(page, voiceOver, locator, { follow = true } = {}) {
     await page.bringToFront();
     await locator.focus();
     await settle(page);
+    // Moving the cursor first and then pressing Enter stopped Enter from
+    // activating the button in Chrome, so tests that go on to press a key pass
+    // follow: false and use followFocus afterwards, once the page has reacted.
+    if (follow) await followFocus(page, voiceOver);
+}
+
+/** Moves the VoiceOver cursor to wherever keyboard focus is now (VO+Shift+F). */
+export async function followFocus(page, voiceOver) {
     await voiceOver.perform(voiceOver.keyboardCommands.moveCursorToKeyboardFocus);
     await settle(page);
 }

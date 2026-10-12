@@ -1,6 +1,6 @@
 import { voiceOverTest as test } from '@guidepup/playwright';
 import { expect } from '@playwright/test';
-import { saveSpoken, stepThrough, nowSaying, settle, focusOn } from '../support/voiceOverLog.js';
+import { saveSpoken, stepThrough, nowSaying, settle, focusOn, followFocus } from '../support/voiceOverLog.js';
 
 // The record card and the record dialog (v1.3.6.56, .59, .60, .61, .64).
 
@@ -29,9 +29,10 @@ test('opening a record: what is said on open, and the dialog read through', asyn
     await openDashboard(page, voiceOver);
     const title = await firstCard(page).locator('h2').innerText();
 
-    await focusOn(page, voiceOver, firstCard(page));
-    await voiceOver.act();
+    await focusOn(page, voiceOver, firstCard(page), { follow: false });
+    await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
+    await followFocus(page, voiceOver);
     await settle(page);
     const onOpen = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'dialog-on-open', onOpen);
@@ -56,9 +57,10 @@ test('closing the dialog returns VoiceOver to the card that opened it', async ({
     await openDashboard(page, voiceOver);
     const title = await firstCard(page).locator('h2').innerText();
 
-    await focusOn(page, voiceOver, firstCard(page));
-    await voiceOver.act();
+    await focusOn(page, voiceOver, firstCard(page), { follow: false });
+    await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
+    await followFocus(page, voiceOver);
     await settle(page);
     await voiceOver.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -72,9 +74,10 @@ test('closing the dialog returns VoiceOver to the card that opened it', async ({
 test('the delete confirmation announces itself as a dialog with its question', async ({ page, voiceOver }, testInfo) => {
     await openDashboard(page, voiceOver);
 
-    await focusOn(page, voiceOver, firstCard(page));
-    await voiceOver.act();
+    await focusOn(page, voiceOver, firstCard(page), { follow: false });
+    await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
+    await followFocus(page, voiceOver);
     const deleteButton = page.getByRole('button', { name: /^Delete record:/ });
     test.skip((await deleteButton.count()) === 0, 'the first record is read-only, so it has no Delete');
     await deleteButton.click();
