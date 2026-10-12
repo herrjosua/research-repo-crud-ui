@@ -31,7 +31,7 @@ describe('SavedInsightsView', () => {
         const onRemove = vi.fn();
         render(<SavedInsightsView insights={SAMPLE_INSIGHTS.slice(0, 1)} projects={PROJECTS} onRemove={onRemove} />);
 
-        await user.click(screen.getByRole('button', { name: 'Remove insight' }));
+        await user.click(screen.getByRole('button', { name: `Remove insight: ${SAMPLE_INSIGHTS[0].title}` }));
 
         expect(onRemove).toHaveBeenCalledWith(SAMPLE_INSIGHTS[0].id);
     });

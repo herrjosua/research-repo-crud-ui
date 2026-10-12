@@ -49,6 +49,7 @@ export default function RecordsRail({
                 <Search
                     size="md"
                     labelText="Search records"
+                    closeButtonLabelText="Clear record search"
                     placeholder="Search records"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
@@ -101,6 +102,7 @@ export default function RecordsRail({
                         <Search
                             size="sm"
                             labelText="Filter tags"
+                            closeButtonLabelText="Clear tag filter"
                             placeholder="Filter tags"
                             value={tagQuery}
                             onChange={(e) => onTagQueryChange(e.target.value)}

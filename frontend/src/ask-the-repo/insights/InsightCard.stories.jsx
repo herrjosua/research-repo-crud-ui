@@ -58,7 +58,7 @@ export const LongCollapsed = {
 export const LongExpanded = {
   args: LongCollapsed.args,
   play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Show more' }));
+    await userEvent.click(within(canvasElement).getByRole('button', { name: `Show more: ${LONG_INSIGHT.title}` }));
   },
 };
 

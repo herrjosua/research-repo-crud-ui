@@ -6,6 +6,9 @@ import RecordDetail from './RecordDetail';
 import CreateSessionForm from './CreateSessionForm';
 import AssistantMessage from './ask-the-repo/chat/AssistantMessage';
 import ChatPanel from './ask-the-repo/chat/ChatPanel';
+import RecordsRail from './RecordsRail';
+import InsightCard, { PREVIEW_LENGTH } from './ask-the-repo/insights/InsightCard';
+import { SAMPLE_INSIGHTS } from './ask-the-repo/fixtures/insights';
 import QuestionPicker from './ask-the-repo/chat/QuestionPicker';
 import ProjectSwitcher from './ask-the-repo/rails/ProjectSwitcher';
 import { answerAnnouncement } from './ask-the-repo/chat/announcements';
@@ -81,12 +84,12 @@ describe('screen reader — record detail modal', () => {
 
         expect(spoken).toContain('dialog, Example finding, modal');
         expect(spoken).toContain('heading, Example finding, level 2');
-        expect(spoken).toEqual(expect.arrayContaining(['button, Close', 'button, Edit', 'button, Delete', 'button, View history', 'Body']));
+        expect(spoken).toEqual(expect.arrayContaining(['button, Close', 'button, Edit record: Example finding', 'button, Delete record: Example finding', 'button, View history of Example finding', 'Body']));
         // One heading, the record title; the kind, date and type follow it as text
         // (v1.3.6.56), not as a second heading ahead of it.
         const headings = spoken.filter((phrase) => phrase.startsWith('heading,'));
         expect(headings).toEqual(['heading, Example finding, level 2']);
-        const afterTitle = spoken.slice(spoken.indexOf(headings[0]) + 1, spoken.indexOf('button, Edit'));
+        const afterTitle = spoken.slice(spoken.indexOf(headings[0]) + 1, spoken.indexOf('button, Edit record: Example finding'));
         expect(afterTitle).toEqual(expect.arrayContaining(['Finding', '2026-01-02', 'synthesis']));
         // Carbon's default focus-wrap markup; the app turns it off (src/carbonFlags.js).
         expect(spoken.some((phrase) => /focus sentinel/i.test(phrase))).toBe(false);
@@ -95,12 +98,12 @@ describe('screen reader — record detail modal', () => {
     it('speaks the backend warning and puts the reader on Edit after a save with a warning', async () => {
         const user = userEvent.setup();
         render(<RecordDetail id={record.id} onClose={vi.fn()} onDeleted={vi.fn()} />);
-        await user.click(screen.getByRole('button', { name: 'Edit' }));
+        await user.click(screen.getByRole('button', { name: 'Edit record: Example finding' }));
         await startReader();
 
         await user.click(screen.getByRole('button', { name: 'Save with warning' }));
 
-        expect(await lastSpoken()).toBe('button, Edit');
+        expect(await lastSpoken()).toBe('button, Edit record: Example finding');
         // Focus moved the reader's cursor to Edit, below the warning. Start a
         // fresh pass to read the dialog from its top.
         await stopReader();
@@ -159,7 +162,7 @@ describe('screen reader — delete with a warning', () => {
         const user = userEvent.setup();
         render(<Dashboard />);
         await user.click(screen.getByText('Raw One'));
-        await user.click(screen.getByRole('button', { name: 'Delete' }));
+        await user.click(screen.getByRole('button', { name: 'Delete record: Example finding' }));
         await startReader();
 
         await user.click(within(screen.getByRole('dialog', { name: 'Delete this record?' })).getByRole('button', { name: 'Delete' }));
@@ -354,5 +357,43 @@ describe('screen reader — Carbon dropdown pickers', () => {
 
         expect(spoken.some((phrase) => phrase.startsWith('combobox'))).toBe(true);
         expect(hasMenuLabel(spoken)).toBe(false);
+    });
+});
+
+describe('screen reader — buttons say what they act on (v1.3.6.61)', () => {
+    it('tells the two search clear buttons apart', async () => {
+        render(
+            <RecordsRail
+                onNewSession={vi.fn()}
+                searchQuery="onboarding"
+                onSearchChange={vi.fn()}
+                activeKinds={new Set()}
+                onToggleKind={vi.fn()}
+                tags={['usability']}
+                activeTags={new Set()}
+                onToggleTag={vi.fn()}
+                tagQuery="usa"
+                onTagQueryChange={vi.fn()}
+            />,
+        );
+        await startReader();
+
+        const spoken = await readAll();
+
+        expect(spoken).toEqual(expect.arrayContaining(['button, Clear record search', 'button, Clear tag filter']));
+        expect(spoken).not.toContain('button, Clear search input');
+    });
+
+    it('names the saved insight on its Remove and Show more buttons', async () => {
+        const long = SAMPLE_INSIGHTS.find((insight) => insight.content.length > PREVIEW_LENGTH);
+        render(<InsightCard insight={long} onRemove={vi.fn()} />);
+        await startReader();
+
+        const spoken = await readAll();
+
+        expect(spoken).toEqual(expect.arrayContaining([
+            `button, Remove insight: ${long.title}`,
+            `button, Show more: ${long.title}, 1 control, not expanded`,
+        ]));
     });
 });

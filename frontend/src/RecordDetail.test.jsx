@@ -54,24 +54,24 @@ describe('RecordDetail — save warning', () => {
         const user = userEvent.setup();
         render(<RecordDetail id={record.id} onClose={vi.fn()} onDeleted={vi.fn()} />);
 
-        await user.click(screen.getByRole('button', { name: 'Edit' }));
+        await user.click(screen.getByRole('button', { name: 'Edit record: Example finding' }));
         await user.click(screen.getByRole('button', { name: 'Save with warning' }));
 
         const status = screen.getByRole('status');
         expect(within(status).getByText('Saved, but the index reported issues')).toBeInTheDocument();
         expect(within(status).getByText('unknown tag "onbaording"')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Edit' })).toHaveFocus();
+        expect(screen.getByRole('button', { name: 'Edit record: Example finding' })).toHaveFocus();
     });
 
     it('shows no warning after a clean save', async () => {
         const user = userEvent.setup();
         render(<RecordDetail id={record.id} onClose={vi.fn()} onDeleted={vi.fn()} />);
 
-        await user.click(screen.getByRole('button', { name: 'Edit' }));
+        await user.click(screen.getByRole('button', { name: 'Edit record: Example finding' }));
         await user.click(screen.getByRole('button', { name: 'Save cleanly' }));
 
         expect(screen.queryByRole('status')).not.toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Edit' })).toHaveFocus();
+        expect(screen.getByRole('button', { name: 'Edit record: Example finding' })).toHaveFocus();
     });
 });
 
@@ -84,20 +84,20 @@ describe('RecordDetail — generated (read-only) records', () => {
         });
         render(<RecordDetail id="component:button" onClose={vi.fn()} onDeleted={vi.fn()} />);
 
-        expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Edit record: Example finding' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Delete record: Example finding' })).not.toBeInTheDocument();
         const note = screen.getByRole('status');
         expect(within(note).getByText('Generated from Figma')).toBeInTheDocument();
         expect(within(note).getByText(/edit it in Figma and re-run the token sync/)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'View history' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'View history of Example finding' })).toBeInTheDocument();
     });
 
     it('shows Edit and Delete for a normal record', () => {
         useRecord.mockReturnValue({ isLoading: false, isError: false, data: { ...record, read_only: false } });
         render(<RecordDetail id={record.id} onClose={vi.fn()} onDeleted={vi.fn()} />);
 
-        expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Edit record: Example finding' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Delete record: Example finding' })).toBeInTheDocument();
         expect(screen.queryByText('Generated from Figma')).not.toBeInTheDocument();
     });
 });

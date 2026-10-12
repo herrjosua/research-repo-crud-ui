@@ -199,7 +199,7 @@ describe('AskTheRepo', () => {
         expect(within(group).getByRole('heading', { name: V1.title })).toBeInTheDocument();
 
         // Removing it there clears the saved state in the modal.
-        await user.click(within(group).getByRole('button', { name: 'Remove insight' }));
+        await user.click(within(group).getByRole('button', { name: `Remove insight: ${V1.title}` }));
         await user.click(screen.getByRole('tab', { name: 'Ask' }));
         await user.click(within(rail()).getByRole('button', { name: V1.title }));
         expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save as insight' })).toHaveAttribute('aria-pressed', 'false');
