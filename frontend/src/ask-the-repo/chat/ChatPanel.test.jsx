@@ -322,3 +322,65 @@ describe('ChatPanel with a question picker (static mode)', () => {
         expect(banner()).toBeNull();
     });
 });
+
+describe('ChatPanel focus when a result arrives (v1.3.6.62)', () => {
+    const SOURCE = { id: 'finding:one', kind: 'interview', title: 'Drafts were slow to review', excerpt: 'x', project: null };
+    const userMessage = { id: 'm1', role: 'user', content: QUESTION, timestamp: '10:00' };
+    const answer = { id: 'm2', role: 'assistant', content: 'Drafts were slow [1].', sources: [SOURCE], model: 'gemma2:9b', timestamp: '10:01' };
+
+    it('moves focus from the composer to the new answer, so Tab reaches its first citation', async () => {
+        const user = userEvent.setup();
+        const { rerender } = renderPanel({ messages: [userMessage], status: 'loading' });
+        composer().focus();
+
+        rerender(
+            <ChatPanel messages={[userMessage, answer]} starters={STARTERS} onSend={() => {}} onRetry={() => {}} onSignIn={() => {}} onOpenSource={() => {}} />,
+        );
+
+        expect(screen.getByRole('article', { name: 'Answer from Ask the Repo' })).toHaveFocus();
+        await user.tab();
+        expect(screen.getByRole('button', { name: `Source 1: ${SOURCE.title}` })).toHaveFocus();
+    });
+
+    it('leaves focus alone when it is outside the panel', () => {
+        const { rerender } = renderPanel({ messages: [userMessage], status: 'loading' });
+        const elsewhere = document.createElement('button');
+        document.body.append(elsewhere);
+        elsewhere.focus();
+
+        rerender(
+            <ChatPanel messages={[userMessage, answer]} starters={STARTERS} onSend={() => {}} onRetry={() => {}} onSignIn={() => {}} onOpenSource={() => {}} />,
+        );
+
+        expect(elsewhere).toHaveFocus();
+        elsewhere.remove();
+    });
+
+    it('does not take focus for an answer that was already there', () => {
+        renderPanel({ messages: [userMessage, answer] });
+        expect(screen.getByRole('article', { name: 'Answer from Ask the Repo' })).not.toHaveFocus();
+    });
+
+    it('moves focus to the error, so Tab reaches Try again', async () => {
+        const user = userEvent.setup();
+        const { rerender } = renderPanel({ messages: [userMessage], status: 'loading' });
+        composer().focus();
+
+        rerender(
+            <ChatPanel
+                messages={[userMessage]}
+                status="error"
+                error={{ kind: 'model', question: QUESTION }}
+                starters={STARTERS}
+                onSend={() => {}}
+                onRetry={() => {}}
+                onSignIn={() => {}}
+                onOpenSource={() => {}}
+            />,
+        );
+
+        expect(screen.getByRole('group', { name: "Couldn't get an answer." })).toHaveFocus();
+        await user.tab();
+        expect(screen.getByRole('button', { name: 'Try again' })).toHaveFocus();
+    });
+});

@@ -243,6 +243,30 @@ describe('screen reader — Ask tab', () => {
         expect(screen.getByText(/^Answer received\./)).toHaveAttribute('aria-live', 'polite');
     });
 
+    it('puts the reader on the new answer, not in the composer, so the citations come next', async () => {
+        const question = { id: 'm1', role: 'user', content: 'Why were drafts slow?', timestamp: '10:00' };
+        const answer = {
+            id: 'm2',
+            role: 'assistant',
+            content: 'Drafts were slow to review [1].',
+            sources: [{ id: 'interview:one', kind: 'interview', title: 'Checkout Usability Study — Wave 2', excerpt: 'x', project: null }],
+            timestamp: '10:01',
+        };
+        const panel = (messages, status) => (
+            <ChatPanel messages={messages} status={status} starters={STARTERS} onSend={() => {}} onRetry={() => {}} onSignIn={() => {}} onOpenSource={() => {}} />
+        );
+        const { rerender } = render(panel([question], 'loading'));
+        await startReader();
+        screen.getByRole('textbox', { name: 'Ask a question about the research' }).focus();
+
+        rerender(panel([question, answer], 'idle'));
+
+        expect(await lastSpoken()).toBe('article, Answer from Ask the Repo');
+        const user = userEvent.setup();
+        await user.tab();
+        expect(await lastSpoken()).toBe('button, Source 1: Checkout Usability Study — Wave 2, has popup dialog');
+    });
+
     it('speaks the searching line, and the slow-start hint with it', async () => {
         renderPanel({ status: 'loading', slow: true });
         await startReader();
