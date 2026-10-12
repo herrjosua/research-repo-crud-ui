@@ -44,6 +44,8 @@ test('asks a question, opens a cited source from the answer, and saves it as an 
     // A screen reader hears the answer, the source count and the next steps.
     await expect(announcement(page)).toContainText('Answer received. Physicians did not trust the draft enough to skim it');
     await expect(announcement(page)).toContainText('Tab to a citation to open its source');
+    // Focus moved to the answer, so Tab goes on into its citations (v1.3.6.62).
+    await expect(page.getByRole('article', { name: 'Answer from Ask the Repo' })).toBeFocused();
     const citation = page.getByRole('button', { name: /^Source 1: / });
     await expect(citation).toBeVisible();
     await expect(page.getByRole('button', { name: /^Source 2: / })).toBeVisible();

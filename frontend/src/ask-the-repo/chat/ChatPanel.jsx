@@ -56,6 +56,13 @@ import styles from './ChatPanel.module.scss';
  * 100%` (ChatPanel.module.scss) resolving against the real, non-auto
  * height the CSS chain in AskTheRepo.jsx/.scss gives its Column.
  */
+// True when focus is inside `panel` or nowhere in particular (the page body,
+// as after the composer is disabled while a question is on its way).
+function focusIsHere(panel) {
+    const active = document.activeElement;
+    return !active || active === document.body || Boolean(panel?.contains(active));
+}
+
 export default function ChatPanel({
     messages,
     starters = [],
@@ -80,6 +87,11 @@ export default function ChatPanel({
     const [restoredError, setRestoredError] = useState(null);
     const composerRef = useRef(null);
     const bottomRef = useRef(null);
+    const panelRef = useRef(null);
+    // The newest answer's row and the error block: where focus goes when one
+    // arrives (see the effects below).
+    const answerRef = useRef(null);
+    const errorRef = useRef(null);
 
     const loading = status === 'loading';
     // A 503 still wins: with no answers to give, the usual notice and
@@ -96,6 +108,27 @@ export default function ChatPanel({
         setRestoredError(error);
         if (errorCopy?.retry) setInput(error.question);
     }
+
+    // After a question is sent, focus is still in the composer, below the
+    // thread, so Tab leads away from the new answer and its citation buttons
+    // above it (v1.3.6.62). Move focus to the answer, or to the error with its
+    // "Try again", so the next Tab is the first thing the user can act on.
+    // Only when focus is already in this panel (or nowhere): a user who has
+    // moved on, say to a source dialog or the rail, keeps their place. An
+    // answer already there when the panel mounts or the conversation switches
+    // doesn't count as new.
+    const lastMessage = messages[messages.length - 1];
+    const newAnswerId = lastMessage?.role === 'assistant' ? lastMessage.id : null;
+    const seenAnswerId = useRef(newAnswerId);
+    useEffect(() => {
+        if (newAnswerId === seenAnswerId.current) return;
+        seenAnswerId.current = newAnswerId;
+        if (newAnswerId && focusIsHere(panelRef.current)) answerRef.current?.focus({ preventScroll: true });
+    }, [newAnswerId]);
+
+    useEffect(() => {
+        if (error && focusIsHere(panelRef.current)) errorRef.current?.focus({ preventScroll: true });
+    }, [error]);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -150,7 +183,7 @@ export default function ChatPanel({
     );
 
     return (
-        <div className={picking ? `${styles.panel} ${styles.panelWithBanner}` : styles.panel}>
+        <div ref={panelRef} className={picking ? `${styles.panel} ${styles.panelWithBanner}` : styles.panel}>
             {/* Static mode's disclosure, in its own row above the thread so
                 it stays in view before and after a question is picked
                 (the thread scrolls to its end after each answer). A Callout,
@@ -222,6 +255,7 @@ export default function ChatPanel({
                     messages.map((message) => (
                         <ChatMessage
                             key={message.id}
+                            ref={message.id === newAnswerId ? answerRef : undefined}
                             message={message}
                             saved={savedMessageIds.has(message.id)}
                             onToggleSave={() => handleToggleSave(message.id)}
@@ -239,7 +273,13 @@ export default function ChatPanel({
                     </div>
                 )}
                 {errorCopy && (
-                    <div className={styles.requestError}>
+                    <div
+                        ref={errorRef}
+                        className={styles.requestError}
+                        role="group"
+                        aria-label={errorCopy.title}
+                        tabIndex={-1}
+                    >
                         <InlineNotification
                             kind="error"
                             title={errorCopy.title}
