@@ -29,6 +29,13 @@
   background: vars.$surface;
 }
 
+// The cards' list: the list's own bullets and indent are not wanted.
+.list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
 .heading {
   @include type.type-style('heading-04');
 

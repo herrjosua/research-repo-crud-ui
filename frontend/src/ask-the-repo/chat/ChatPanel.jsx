@@ -58,6 +58,9 @@ import styles from './ChatPanel.module.scss';
  */
 // True when focus is inside `panel` or nowhere in particular (the page body,
 // as after the composer is disabled while a question is on its way).
+// The id of the conversation region, so a skip link can move focus to it.
+export const CONVERSATION_ID = 'ask-conversation';
+
 function focusIsHere(panel) {
     const active = document.activeElement;
     return !active || active === document.body || Boolean(panel?.contains(active));
@@ -220,7 +223,7 @@ export default function ChatPanel({
                 when nothing inside it is focusable (an empty conversation
                 while unavailable has no starters) — axe's
                 scrollable-region-focusable. */}
-            <div className={styles.messages} role="region" aria-label="Conversation" tabIndex={0}>
+            <div id={CONVERSATION_ID} className={styles.messages} role="region" aria-label="Conversation" tabIndex={0}>
                 {messages.length === 0 && unavailableNotice}
                 {messages.length === 0 && configLoading && (
                     // Same polite-region pattern as the answer's loading
