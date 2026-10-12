@@ -47,7 +47,7 @@ export default function InsightCard({ insight, onRemove }) {
                 <IconButton
                     kind="ghost"
                     size="sm"
-                    label="Remove insight"
+                    label={`Remove insight: ${insight.title}`}
                     align="left"
                     className={styles.remove}
                     onClick={onRemove}
@@ -64,6 +64,7 @@ export default function InsightCard({ insight, onRemove }) {
                     kind="ghost"
                     size="sm"
                     className={styles.toggle}
+                    aria-label={`${expanded ? 'Show less' : 'Show more'}: ${insight.title}`}
                     aria-expanded={expanded}
                     aria-controls={contentId}
                     onClick={() => setExpanded((wasExpanded) => !wasExpanded)}

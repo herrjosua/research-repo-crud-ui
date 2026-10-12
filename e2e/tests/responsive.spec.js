@@ -125,9 +125,9 @@ for (const width of MD_WIDTHS) {
 
         // The three action buttons live in their own wrapping row underneath
         // the tags, instead of trailing inline off the end of the tag row.
-        const edit = detailModal.getByRole('button', { name: 'Edit' });
-        const del = detailModal.getByRole('button', { name: 'Delete' });
-        const history = detailModal.getByRole('button', { name: 'View history' });
+        const edit = detailModal.getByRole('button', { name: /^Edit record:/ });
+        const del = detailModal.getByRole('button', { name: /^Delete record:/ });
+        const history = detailModal.getByRole('button', { name: /^View history of/ });
         for (const button of [edit, del, history]) {
             await expectWithinViewport(button, width);
             await expectClickable(button);

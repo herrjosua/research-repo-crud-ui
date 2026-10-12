@@ -251,6 +251,7 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
                 <Button
                   ref={editButtonRef}
                   kind="primary"
+                  aria-label={`Edit record: ${record.data.title}`}
                   onClick={() => {
                     setSaveWarning(null);
                     setIsEditing(true);
@@ -258,12 +259,20 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
                 >
                   Edit
                 </Button>
-                <Button kind="danger--tertiary" onClick={() => setShowDeleteConfirm(true)}>
+                <Button
+                  kind="danger--tertiary"
+                  aria-label={`Delete record: ${record.data.title}`}
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
                   Delete
                 </Button>
               </>
             )}
-            <Button kind="tertiary" onClick={() => setShowHistory(true)}>
+            <Button
+              kind="tertiary"
+              aria-label={`View history of ${record.data.title}`}
+              onClick={() => setShowHistory(true)}
+            >
               View history
             </Button>
           </div>
