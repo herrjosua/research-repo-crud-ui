@@ -38,7 +38,15 @@ test('opening a record from the dashboard', async ({ page, voiceOver }, testInfo
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await page.waitForTimeout(2000);
-    const onOpen = await voiceOver.spokenPhraseLog();
+    // Guidepup's log only holds speech that followed one of its own commands,
+    // so speech the page caused (focus moving into the dialog) is not in it.
+    // The last phrase and the item under the cursor are read from VoiceOver
+    // itself, so they are what it said and where it is.
+    const onOpen = [
+        `last spoken phrase: ${await voiceOver.lastSpokenPhrase()}`,
+        `item under the cursor: ${await voiceOver.itemText()}`,
+        ...(await voiceOver.spokenPhraseLog()),
+    ];
     await saveSpoken(testInfo, 'record-on-open', onOpen);
 
     // Then what the user hears moving through it with the VoiceOver cursor.
@@ -50,4 +58,19 @@ test('opening a record from the dashboard', async ({ page, voiceOver }, testInfo
     const body = (await dialog.locator('[class*="body"]').first().innerText()).trim();
     const firstWords = body.split(/\s+/).slice(0, 4).join(' ');
     expect.soft(`${onOpen.join(' ')} ${walked.join(' ')}`).toContain(firstWords);
+});
+
+test('the demonstration banner on the dashboard after login', async ({ page, voiceOver }, testInfo) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /Priya Patel/ }).click();
+    await expect(page.getByRole('heading', { name: 'Research Records', level: 1 })).toBeVisible();
+
+    await voiceOver.navigateToWebContent();
+    await stepThrough(voiceOver, 20);
+
+    const spoken = await voiceOver.spokenPhraseLog();
+    await saveSpoken(testInfo, 'dashboard-top', spoken);
+
+    expect.soft(spoken.join(' ')).toContain('fictional sample data');
+    expect.soft(spoken.join(' ').toLowerCase()).not.toContain('text field');
 });
