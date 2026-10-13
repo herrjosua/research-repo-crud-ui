@@ -19,4 +19,26 @@ function resolveProvider(env) {
     return value;
 }
 
-module.exports = { resolveProvider, SUPPORTED_PROVIDERS };
+const DEFAULT_ASK_SEED = 42;
+
+// ASK_SEED is the chat model's seed for live answers, so the same question
+// on the same corpus gets the same text (on the same hardware and Ollama
+// build). Unset (or empty) means DEFAULT_ASK_SEED. "random" sends no seed,
+// for seeing how answers vary. Any other value that isn't an integer refuses
+// to start, like an unsupported LLM_PROVIDER. Returns the seed, or undefined
+// for "random".
+function resolveAskSeed(env) {
+    const value = (env.ASK_SEED || '').trim();
+    if (!value) return DEFAULT_ASK_SEED;
+    if (value.toLowerCase() === 'random') return undefined;
+    if (!/^-?\d+$/.test(value) || !Number.isSafeInteger(Number(value))) {
+        throw new Error(
+            `ASK_SEED=${env.ASK_SEED} is not supported. Use an integer, or "random" for no seed, or leave it unset for ${DEFAULT_ASK_SEED}.`,
+        );
+    }
+    return Number(value);
+}
+
+module.exports = {
+    resolveProvider, resolveAskSeed, SUPPORTED_PROVIDERS, DEFAULT_ASK_SEED,
+};
