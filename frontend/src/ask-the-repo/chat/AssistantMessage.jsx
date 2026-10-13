@@ -98,7 +98,7 @@ export default function AssistantMessage({ message, saved, onToggleSave, onOpenS
             {sources.length > 0 ? (
                 <div className={styles.sources}>
                     <p className={styles.sourcesLabel}>{sources.length} sources cited</p>
-                    <ul className={styles.sourceList}>
+                    <ul role="list" className={styles.sourceList}>
                         {sources.map((source) => (
                             <li key={source.id} className={styles.sourceItem}>
                                 <KindTag kind={source.kind} />

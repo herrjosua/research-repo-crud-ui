@@ -200,3 +200,32 @@ app — none were hypothetical or contrived to demonstrate the tooling:
    questions, so nothing in the scrolling area could take focus. Fixed by
    making the thread itself a focusable region named "Conversation", with a
    visible focus ring.
+
+## Real VoiceOver (Guidepup), run by hand
+
+`tests-screenreader/` drives the real VoiceOver on a Mac with
+[Guidepup](https://www.guidepup.dev) (RR-55, layer 2). The Virtual Screen
+Reader in the frontend unit tests follows the specs, not VoiceOver, so this is
+what shows what VoiceOver actually says.
+
+- macOS only, not run in CI, and not part of `npm test` or `npm run test:demo`.
+- One-time setup: `npx @guidepup/setup` (it asks for the permissions VoiceOver
+  automation needs).
+- Run: `npm run test:screenreader`. A visible Safari window opens and VoiceOver
+  speaks; leave the keyboard and mouse alone until it ends.
+- It uses the demo setup (fixtures and the demonstration banner), so it needs no
+  agentic-repo checkout.
+- It runs in Chrome (the browser people use) and in Safari, and VoiceOver speaks
+  differently in each, so the output files are named by browser
+  (`chrome-…`, `webkit-…`). `npm run test:screenreader -- --project=chrome` runs
+  one. The Chrome project is Playwright's own "Google Chrome for Testing" (the
+  same engine as Chrome), installed with `npx playwright install chromium`.
+- The specs are in `tests-screenreader/`: `structure` (banner, skip links,
+  landmarks, headings), `record-dialog` (card, dialog, focus return, delete
+  confirmation), `ask` (skip link, new answer, citations, source dialog,
+  pickers, saved insights) and `create-session`.
+- The expectations are soft (`expect.soft`): a failure means VoiceOver did not
+  say what a user should hear, not that the test is broken. Read the files in
+  `test-results/voiceover/` either way.
+- What VoiceOver spoke is written, one phrase per line, to
+  `test-results/voiceover/` and attached to the Playwright report.

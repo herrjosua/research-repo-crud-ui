@@ -21,7 +21,7 @@ export default function ConversationList({ conversations, activeConversationId, 
     }
 
     return (
-        <ul className={styles.list}>
+        <ul role="list" className={styles.list}>
             {conversations.map((conv) => {
                 const isActive = conv.id === activeConversationId;
                 return (

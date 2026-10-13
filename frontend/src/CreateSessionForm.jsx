@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
     Form, Stack, TextInput, TextArea, Select, SelectItem, Dropdown,
@@ -91,16 +91,33 @@ export default function CreateSessionForm({ onClose }) {
     const [date, setDate] = useState('');
     const [content, setContent] = useState(STARTER_CONTENT);
     const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+    const [failedSubmits, setFailedSubmits] = useState(0);
+    const titleRef = useRef(null);
+    const typeRef = useRef(null);
+    const topicSlugRef = useRef(null);
 
     const titleInvalid = attemptedSubmit && title.trim() === '';
     const typeInvalid = attemptedSubmit && type === '';
     const topicSlugInvalid = attemptedSubmit && !SLUG_PATTERN.test(topicSlug);
+
+    // An empty submit moves focus to the first field that needs fixing, after
+    // the fields have been marked invalid, so a screen reader says which field
+    // and why. The summary alone was not announced (v1.3.6.64).
+    useEffect(() => {
+        if (failedSubmits === 0) return;
+        if (title.trim() === '') titleRef.current?.focus();
+        else if (type === '') typeRef.current?.focus();
+        else topicSlugRef.current?.focus();
+        // Only when a submit fails, not as the fields change.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [failedSubmits]);
 
     function handleSubmit(event) {
         event.preventDefault();
         setAttemptedSubmit(true);
 
         if (title.trim() === '' || type === '' || !SLUG_PATTERN.test(topicSlug)) {
+            setFailedSubmits((count) => count + 1);
             return;
         }
 
@@ -125,6 +142,7 @@ export default function CreateSessionForm({ onClose }) {
             <Stack gap={6}>
                 <TextInput
                     id="title"
+                    ref={titleRef}
                     labelText="Title (required)"
                     placeholder="e.g. Contextual Inquiry — Home Health Nurses"
                     value={title}
@@ -139,6 +157,7 @@ export default function CreateSessionForm({ onClose }) {
 
                 <Select
                     id="type"
+                    ref={typeRef}
                     labelText="Type (required)"
                     helperText="What kind of research activity this is"
                     value={type}
@@ -155,6 +174,7 @@ export default function CreateSessionForm({ onClose }) {
 
                 <TextInput
                     id="topicSlug"
+                    ref={topicSlugRef}
                     labelText="Topic slug (auto-generated from title) (required)"
                     helperText="Lowercase letters, numbers, and hyphens only"
                     value={topicSlug}
