@@ -30,14 +30,17 @@ test('New session opens a named dialog and an empty submit says what is missing'
     await saveSpoken(testInfo, 'new-session-focused', focused);
     expect.soft(focused.join(' '), 'focus is on the Title field').toMatch(/Title/);
 
+    // Safari ignored the VoiceOver Enter here: it came right after the follow-focus
+    // key, and nothing was submitted (Title never became invalid). The page's own
+    // keyboard does the activation; what VoiceOver says afterwards is still read.
     await focusOn(page, voiceOver, page.getByRole('button', { name: 'Create session' }), { follow: false });
-    await voiceOver.press('Enter');
+    await page.keyboard.press('Enter');
     await settle(page);
     const afterSubmit = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'new-session-empty-submit', afterSubmit);
     // The page, not the speech: the failed submit leaves focus on Title, marked invalid.
-    await expect(titleField).toBeFocused();
     await expect(titleField).toHaveAttribute('aria-invalid', 'true');
+    await expect(titleField).toBeFocused();
     // Safari left the cursor on the button, as Chrome does for page-caused focus
     // moves, so read Title by following focus (last step: keys fail after this).
     await followFocus(page, voiceOver);
