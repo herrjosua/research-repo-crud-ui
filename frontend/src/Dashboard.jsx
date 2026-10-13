@@ -188,7 +188,7 @@ export default function Dashboard() {
                     next layer's background, hover and border tokens. */}
                 <Layer>
                   {filtered.length > 0 && (
-                    <ul className={styles.list}>
+                    <ul role="list" className={styles.list}>
                       {filtered.map((record, index) => (
                         <li key={record.id}>
                           {/* Carbon's ClickableTile without an href is an <a> with no link

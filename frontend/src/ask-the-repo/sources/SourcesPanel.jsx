@@ -54,7 +54,7 @@ export default function SourcesPanel({
                         LeftRail's) even at the md floor, where this line
                         wraps. */}
                     <p className={styles.context}>Cited in reply · {message.timestamp}</p>
-                    <ul className={styles.list}>
+                    <ul role="list" className={styles.list}>
                         {sources.map((source) => (
                             <li key={source.id}>
                                 <SourceCard

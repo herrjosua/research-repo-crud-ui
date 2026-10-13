@@ -16,7 +16,7 @@ function InsightGroup({ label, items, onRemove }) {
                 <span className={styles.rule} aria-hidden="true" />
                 <span className={styles.groupCount}>{countLabel(items.length)}</span>
             </div>
-            <ul className={styles.list}>
+            <ul role="list" className={styles.list}>
                 {items.map((insight) => (
                     <li key={insight.id}>
                         <InsightCard insight={insight} onRemove={() => onRemove(insight.id)} />

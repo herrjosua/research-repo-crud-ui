@@ -65,6 +65,8 @@ test('the answer reads through, with its citations as buttons that open a dialog
     const all = walked.join(' ');
     expect.soft(all).toContain('Physicians read every line of the draft');
     expect.soft(all).toMatch(/Source 1: /);
+    // Safari said "2 SOURCES CITED TRANSCRIPT" with no list when the role was missing.
+    expect.soft(all, 'the sources are announced as a list').toMatch(/list 2 items/);
     const times = all.split('Physicians read every line of the draft').length - 1;
     expect.soft(times, 'the answer text is read once while walking the page').toBeLessThanOrEqual(1);
 });

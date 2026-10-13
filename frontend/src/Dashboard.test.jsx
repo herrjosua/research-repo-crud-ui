@@ -43,6 +43,14 @@ describe('Dashboard', () => {
         expect(screen.getByText('Component One')).toBeInTheDocument();
     });
 
+    // Safari drops a list's semantics when its bullets are removed with CSS,
+    // so VoiceOver stops saying "list, 2 items" unless the role is explicit.
+    it('keeps the cards a list for Safari, which ignores the list when bullets are hidden', () => {
+        useRecords.mockReturnValue({ isLoading: false, isError: false, data: sampleRecords });
+        const { container } = render(<Dashboard />);
+        expect(container.querySelector('ul[role="list"]')).toBeInTheDocument();
+    });
+
     it('filters out a kind when its checkbox is unchecked', async () => {
         useRecords.mockReturnValue({ isLoading: false, isError: false, data: sampleRecords });
         const user = userEvent.setup();
