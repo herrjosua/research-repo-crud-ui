@@ -60,6 +60,12 @@ const RETRIEVAL = {
 const TOP_K = RETRIEVAL.topK;
 // Low temperature: this is retrieval-grounded summarization, not writing.
 const CHAT_OPTIONS = { temperature: 0.2, num_ctx: 8192 };
+// CHAT_OPTIONS plus `seed` when there is one. The live route passes ASK_SEED
+// (ask/config.js); the evaluation and capture scripts pass none and set
+// their own seed per run, so their unseeded runs stay unseeded.
+function chatOptions(seed) {
+    return seed === undefined ? CHAT_OPTIONS : { ...CHAT_OPTIONS, seed };
+}
 // A prompt past num_ctx isn't refused: Ollama keeps what fits and answers,
 // without saying so. ask() warns when Ollama's count of the prompt's tokens
 // (prompt_eval_count, which counts the whole prompt even when Ollama reuses
@@ -213,8 +219,9 @@ function withCorrections(ranked, selection) {
 // PROMPT_BEHAVIORS (ask/answer.js), for the evaluation and tests. With
 // followUps on, ask() also resolves to `followUps`: { fired, attached },
 // whether the question set the trigger off and the passage ids added.
+// `seed` is the chat seed (see chatOptions); without one, none is sent.
 function createAskPipeline({
-    ollama, index, retrieval = RETRIEVAL, promptBehaviors = PROMPT_BEHAVIORS,
+    ollama, index, retrieval = RETRIEVAL, promptBehaviors = PROMPT_BEHAVIORS, seed,
 }) {
     if (retrieval.followUps !== undefined && !FOLLOW_UPS_MODES.includes(retrieval.followUps)) {
         throw new Error(`retrieval.followUps must be false, 'shown' or 'linked', not ${JSON.stringify(retrieval.followUps)}`);
@@ -224,6 +231,7 @@ function createAskPipeline({
     }
     // Absent is the default, 'off'.
     const attachCorrections = retrieval.corrections === 'shown';
+    const options = chatOptions(seed);
 
     async function rankInScope(question, project) {
         const { passages, records } = await index.refresh();
@@ -288,7 +296,7 @@ function createAskPipeline({
         }
 
         const messages = buildMessages(question, ranked, promptBehaviors);
-        const { content: raw, promptTokens } = await chatWithPromptTokens(ollama, messages, CHAT_OPTIONS);
+        const { content: raw, promptTokens } = await chatWithPromptTokens(ollama, messages, options);
         const warning = promptSizeWarning(promptTokens);
         if (warning) console.warn(warning);
         const { text, cited } = renumberCitations(toPlainText(raw), ranked.length);
@@ -316,5 +324,5 @@ function createAskPipeline({
 }
 
 module.exports = {
-    createAskPipeline, promptSizeWarning, asksWhatIsUnresolved, withCorrections, TOP_K, RETRIEVAL, CHAT_OPTIONS, PROMPT_WARN_SHARE,
+    createAskPipeline, promptSizeWarning, asksWhatIsUnresolved, withCorrections, chatOptions, TOP_K, RETRIEVAL, CHAT_OPTIONS, PROMPT_WARN_SHARE,
 };

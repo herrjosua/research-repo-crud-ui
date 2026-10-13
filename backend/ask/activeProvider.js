@@ -10,7 +10,7 @@
 // they're needed and then kept, so switching back to ollama reuses the
 // embeddings already computed.
 
-const { resolveProvider } = require('./config');
+const { resolveProvider, resolveAskSeed } = require('./config');
 const { createOllamaClient, OLLAMA_DEFAULTS } = require('./ollama');
 const { loadRecords } = require('./corpus');
 const { createEmbeddingIndex } = require('./retrieval');
@@ -25,6 +25,9 @@ const answersFile = process.env.NODE_ENV === 'test' && process.env.ASK_STATIC_AN
     : ANSWERS_FILE;
 
 let provider = resolveProvider(process.env);
+// Checked at startup whatever the provider, so a bad ASK_SEED can't wait
+// for a later switch to ollama to surface.
+const askSeed = resolveAskSeed(process.env);
 let ollama = null;
 let pipeline = null;
 let staticAnswers = null;
@@ -43,7 +46,9 @@ function getOllama() {
 function getPipeline() {
     if (!pipeline) {
         const client = getOllama();
-        pipeline = createAskPipeline({ ollama: client, index: createEmbeddingIndex({ embed: client.embed, loadRecords }) });
+        pipeline = createAskPipeline({
+            ollama: client, index: createEmbeddingIndex({ embed: client.embed, loadRecords }), seed: askSeed,
+        });
     }
     return pipeline;
 }

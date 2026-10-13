@@ -7,7 +7,7 @@ const { toPlainText } = require('../ask/plainText');
 const {
     renumberCitations, sourceLabel, sourceClass, buildMessages, toSource, CORRECTIONS_RULE,
 } = require('../ask/answer');
-const { resolveProvider } = require('../ask/config');
+const { resolveProvider, resolveAskSeed, DEFAULT_ASK_SEED } = require('../ask/config');
 
 describe('cosineSimilarity', () => {
     it('is 1 for identical direction regardless of magnitude', () => {
@@ -459,5 +459,73 @@ describe('resolveProvider', () => {
 
     it('refuses an unsupported provider', () => {
         expect(() => resolveProvider({ LLM_PROVIDER: 'bedrock' })).toThrow(/not supported/);
+    });
+});
+
+describe('resolveAskSeed', () => {
+    it('is 42 when ASK_SEED is unset or blank', () => {
+        expect(DEFAULT_ASK_SEED).toBe(42);
+        expect(resolveAskSeed({})).toBe(42);
+        expect(resolveAskSeed({ ASK_SEED: '' })).toBe(42);
+        expect(resolveAskSeed({ ASK_SEED: '  ' })).toBe(42);
+    });
+
+    it('takes an integer', () => {
+        expect(resolveAskSeed({ ASK_SEED: '7' })).toBe(7);
+        expect(resolveAskSeed({ ASK_SEED: ' 123 ' })).toBe(123);
+        expect(resolveAskSeed({ ASK_SEED: '0' })).toBe(0);
+        expect(resolveAskSeed({ ASK_SEED: '-1' })).toBe(-1);
+    });
+
+    it('sends no seed for "random", case-insensitively', () => {
+        expect(resolveAskSeed({ ASK_SEED: 'random' })).toBeUndefined();
+        expect(resolveAskSeed({ ASK_SEED: 'Random' })).toBeUndefined();
+    });
+
+    it('refuses anything else', () => {
+        for (const bad of ['abc', '1.5', '42abc', '1e3', '0x10', '99999999999999999999']) {
+            expect(() => resolveAskSeed({ ASK_SEED: bad })).toThrow(`ASK_SEED=${bad} is not supported`);
+        }
+    });
+});
+
+// ask/activeProvider.js reads ASK_SEED when it loads, like LLM_PROVIDER.
+describe('ASK_SEED at startup', () => {
+    const saved = { ...process.env };
+    afterEach(() => {
+        process.env = { ...saved };
+        jest.dontMock('../ask/pipeline');
+    });
+
+    // The seed the live pipeline is built with, from a fresh copy of the
+    // provider state (createAskPipeline stubbed, so no Ollama or corpus).
+    function liveSeed() {
+        let seen;
+        jest.isolateModules(() => {
+            jest.doMock('../ask/pipeline', () => ({
+                createAskPipeline: (args) => { seen = args; return {}; },
+            }));
+            require('../ask/activeProvider').getPipeline();
+        });
+        return seen.seed;
+    }
+
+    it('builds the live pipeline with 42 by default, a set seed, or none for random', () => {
+        process.env.LLM_PROVIDER = 'ollama';
+        delete process.env.ASK_SEED;
+        expect(liveSeed()).toBe(42);
+        process.env.ASK_SEED = '7';
+        expect(liveSeed()).toBe(7);
+        process.env.ASK_SEED = 'random';
+        expect(liveSeed()).toBeUndefined();
+    });
+
+    it('refuses to start with an invalid ASK_SEED, whatever the provider', () => {
+        for (const provider of ['ollama', 'static', '']) {
+            process.env.LLM_PROVIDER = provider;
+            process.env.ASK_SEED = 'abc';
+            expect(() => jest.isolateModules(() => require('../ask/activeProvider')))
+                .toThrow('ASK_SEED=abc is not supported. Use an integer, or "random" for no seed, or leave it unset for 42.');
+        }
     });
 });

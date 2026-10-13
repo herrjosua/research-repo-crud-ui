@@ -89,7 +89,13 @@ curl http://localhost:11434/api/tags
 ```
 Everything stays on this machine: no cloud calls, no API keys.
 `OLLAMA_BASE_URL`, `OLLAMA_EMBED_MODEL` and `OLLAMA_CHAT_MODEL` override the
-defaults. `LLM_PROVIDER=static` serves captured answers instead (next
+defaults. `ASK_SEED` is the chat model's seed for live answers (default `42`),
+so the same question on the same corpus gets the same text. A seed only
+guarantees that on the same hardware and Ollama version: another machine or
+Ollama release can answer differently. `ASK_SEED=random` sends no seed, to
+see how answers vary; any other value that isn't an integer refuses to
+start. The evaluation and capture scripts below ignore `ASK_SEED` and set
+their own seed per run. `LLM_PROVIDER=static` serves captured answers instead (next
 section); any other value refuses to start. Leave `LLM_PROVIDER` unset in
 production, or set it to `static` for the public demo; unset, the endpoint
 returns `503`.
@@ -197,7 +203,8 @@ records, including a raw session). Whether a cited record actually supports
 its claim is still for a person to judge.
 
 `capture --seed N --temperature T` fixes the chat model's seed and temperature
-for that capture only; the pipeline's own options (no seed, temperature 0.2)
+for that capture only; the pipeline's own options (no seed, temperature 0.2;
+the live route's `ASK_SEED` doesn't apply here)
 are unchanged, and so are the defaults. Every capture records the Ollama
 version, both models' digests, the seed and the temperature in `runs.json`
 and at the top of the report, because a seed only reproduces an answer on
