@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Modal, Tag, InlineNotification, Button } from '@carbon/react';
 import { useRecord, useDeleteRecord, useRecordHistory } from './api/records';
 import EditRecordForm from './EditRecordForm';
@@ -131,6 +131,14 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
   const [saveWarning, setSaveWarning] = useState(null);
   const editButtonRef = useRef(null);
   const titleRef = useRef(null);
+  // Carbon renders the heading, so it is reached from the span inside it.
+  const markHeadingAsFocusTarget = useCallback((span) => {
+    const heading = span?.closest('h1, h2, h3, h4, h5, h6');
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.setAttribute('data-modal-primary-focus', '');
+    titleRef.current = heading;
+  }, []);
   const returnFocusToEdit = useRef(false);
   const deleteRecord = useDeleteRecord();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -191,12 +199,12 @@ export default function RecordDetail({ id, onClose, onDeleted }) {
       // Carbon names the dialog from a string heading only, and the heading below
       // is an element, so the name is given here.
       aria-label={record.data ? record.data.title : 'Loading…'}
-      // The title takes focus when the dialog opens (the span is Carbon's
-      // primary-focus target, and the effect above covers data that arrives
-      // after opening), so a screen reader starts at the record, not at Close.
-      modalHeading={record.data ? (
-        <span ref={titleRef} data-modal-primary-focus tabIndex={-1}>{record.data.title}</span>
-      ) : 'Loading…'}
+      // The title takes focus when the dialog opens (Carbon's primary-focus
+      // target, and the effect above covers data that arrives after opening), so
+      // a screen reader starts at the record, not at Close. The target is the
+      // heading itself, so Chrome says "<title>, heading level 2"; on a plain
+      // span it said "<title>, empty group" (v1.3.6.64).
+      modalHeading={record.data ? <span ref={markHeadingAsFocusTarget}>{record.data.title}</span> : 'Loading…'}
       passiveModal
       onRequestClose={onClose}
       onKeyDownCapture={closeOnEscapeFromCloseButton(onClose)}
