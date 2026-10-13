@@ -15,6 +15,11 @@ test('New session opens a named dialog and an empty submit says what is missing'
     await voiceOver.press('Enter');
     await expect(page.getByRole('dialog')).toBeVisible();
     await settle(page);
+    // Opening the dialog must not count as a submit. Safari once read the Title
+    // as "invalid data" before anything was submitted, so this checks the page
+    // itself rather than only what was spoken.
+    const titleField = page.getByRole('dialog').getByRole('textbox', { name: /^Title/ });
+    await expect(titleField, 'Title is not marked invalid just by opening the dialog').not.toHaveAttribute('aria-invalid', 'true');
     const onOpen = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'new-session-on-open', onOpen);
     // Chrome did not speak when this dialog opened, though focus is on the Title
@@ -30,7 +35,15 @@ test('New session opens a named dialog and an empty submit says what is missing'
     await settle(page);
     const afterSubmit = await nowSaying(voiceOver);
     await saveSpoken(testInfo, 'new-session-empty-submit', afterSubmit);
-    expect.soft(afterSubmit.join(' ')).toMatch(/Title is required|invalid|required/i);
+    // The page, not the speech: the failed submit leaves focus on Title, marked invalid.
+    await expect(titleField).toBeFocused();
+    await expect(titleField).toHaveAttribute('aria-invalid', 'true');
+    // Safari left the cursor on the button, as Chrome does for page-caused focus
+    // moves, so read Title by following focus (last step: keys fail after this).
+    await followFocus(page, voiceOver);
+    const followed = await nowSaying(voiceOver);
+    await saveSpoken(testInfo, 'new-session-empty-submit-followed', followed);
+    expect.soft(followed.join(' ')).toMatch(/Title.*(required|invalid)/i);
 
-    await voiceOver.press('Escape');
+    await page.keyboard.press('Escape');
 });
