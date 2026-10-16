@@ -20,8 +20,8 @@
       "requiredRawRecord": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
       "mustClaims": [
         {
-          "description": "Practice Administrators were unsure when the invite email goes out (when they finish the step or at Review & finish), or didn't want staff emailed before champion training is booked; worry, uncertainty or hesitation wording, not a statement of when the email is sent",
-          "pattern": "(worr|concern|unsure|uncertain|not sure|n't sure|unclear|not clear|wonder|hesita|reluctan|afraid|nervous|anxi|didn't want|did not want|don't want|do not want|not want)[^.]{0,120}((whether|when)[^.]{0,60}(email|invit)[^.]{0,60}(sent|send|go(es)? out|went out|would go)|(email|invit)[^.]{0,60}(at (that|the|this) step or|or (only )?at review)|before (any(one)? |the )?(champion )?training|training (is |was |had been |has been |were |gets )?(booked|scheduled))"
+          "description": "Practice Administrators were unsure when the invite email goes out (when they finish the step or at Review & finish, or when staff would be emailed, invited or notified), or didn't want staff emailed before champion training is booked; worry, uncertainty or hesitation wording, not a statement of when the email is sent",
+          "pattern": "(worr|concern|unsure|uncertain|not sure|n't sure|unclear|not clear|wonder|hesita|reluctan|afraid|nervous|anxi|didn't want|did not want|don't want|do not want|not want)[^.]{0,120}((whether|when)[^.]{0,60}\\b(emailed|invited|notified)\\b|(whether|when)[^.]{0,60}(email|invit)[^.]{0,60}(sent|send|go(es)? out|went out|would go)|(email|invit)[^.]{0,60}(at (that|the|this) step or|or (only )?at review)|before (any(one)? |the )?(champion )?training|training (is |was |had been |has been |were |gets )?(booked|scheduled))"
         }
       ],
       "mustNotClaims": [
@@ -55,14 +55,14 @@
           "pattern": "calendar[^.]{0,80}((?<!not |n't )\\brequired|mandatory|can(no|')t be skipped|cannot be skipped|can(no|')t skip|not optional|only way past)|((?<!not |n't )\\brequired|mandatory)[^.]{0,120}calendar|\\bsteps? (3|three)\\b[^.]{0,40}((?<!not |n't )\\brequired|mandatory|can(no|')t be skipped|cannot be skipped)"
         },
         {
-          "description": "Every step is required: all five, not only Connect calendar or steps 3 and 4",
-          "pattern": "(?<!not )\\b(every|each) (setup )?step\\b[^.]{0,30}((?<!not |n't )\\b(required|mandatory))|\\ball (five |5 |of the |the )*(steps|five|5)\\b[^.]{0,30}((?<!not |n't )\\b(required|mandatory))|\\b(required|mandatory)\\b[^.]{0,20}(?<!not )\\b(every|each) step|(can(no|')t|cannot|can not) skip (a|any) step|\\b(no|none of the) (\\w+ ){0,2}steps? (is |are |can be )?(optional|skippable|skipped)"
+          "description": "Every step is required: all five, not only Connect calendar or steps 3 and 4 (also \"none of them can be skipped\", \"no step can be skipped\", \"nothing can be skipped\" or \"can't be skipped\" said of all the steps)",
+          "pattern": "(?<!not )\\b(every|each) (setup )?step\\b[^.]{0,30}((?<!not |n't )\\b(required|mandatory))|\\ball (five |5 |of the |the )*(steps|five|5)\\b[^.]{0,30}((?<!not |n't )\\b(required|mandatory))|\\b(required|mandatory)\\b[^.]{0,20}(?<!not )\\b(every|each) step|(can(no|')t|cannot|can not) skip (a|any) step|\\b(no|none of the) (\\w+ ){0,2}steps? (is |are |can be )?(optional|skippable|skipped)|\\bno (setup )?steps? (can|could|may) (be )?skip(ped)?|\\b(all|every|each|five|5)\\b (of )?(the )?(\\w+ )?steps?\\b[^.]{0,60}\\b(none|nothing|no (\\w+ )?steps?)( of (them|these|those|the (\\w+ )?steps))? (can|could|may) (be )?skip(ped)?|\\b(all|every|each|five|5)\\b (of )?(the )?(\\w+ )?steps?\\b[^.]{0,30}(can(no|')t|cannot|can not) be skipped"
         }
       ],
       "mustNotClaims": [
         {
-          "description": "Says a step is optional or can be skipped, or that a \"Connect later\" or \"Skip for now\" option exists; a negation such as There is no \"Connect later\" and no \"Skip for now\" doesn't count",
-          "pattern": "(?<!(?:\\b(?:no|not|never|none|nor|neither|without|cannot)\\b|n't)[^.]{0,40})\\b(optional|skippable|can (be )?skip(ped)?|could (be )?skip(ped)?|may (be )?skip(ped)?)\\b|(?<!(?:\\b(?:no|not|never|none|nor|neither|without|cannot)\\b|n't)[^.]{0,60})(connect later|skip for now)"
+          "description": "Says a step is optional or can be skipped, or that a \"Connect later\" or \"Skip for now\" option exists; a negation such as There is no \"Connect later\" and no \"Skip for now\", or a participant's question (\"wondered if it was optional\", \"asked whether\"), doesn't count",
+          "pattern": "(?<!(?:\\b(?:no|not|never|none|nothing|nor|neither|without|cannot|whether)\\b|n't|\\bwonder\\w* (?:if|whether)\\b|\\bask\\w* (?:if|whether)\\b)[^.]{0,40})\\b(optional|skippable|can (be )?skip(ped)?|could (be )?skip(ped)?|may (be )?skip(ped)?)\\b|(?<!(?:\\b(?:no|not|never|none|nothing|nor|neither|without|cannot|whether)\\b|n't|\\bwonder\\w* (?:if|whether)\\b|\\bask\\w* (?:if|whether)\\b)[^.]{0,60})(connect later|skip for now)"
         }
       ],
       "evidence": "Every step is required. Raw dashboard review 2026-01-20 (research/raw/2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md, manual dashboard review, no participants, `:27`, `:62`): `:34-35` \"Every step is required in this build; a setup can't skip a step, it can only be left open at it.\" Required because it is the only raw record that says every step is required. Raw usability test 2026-02-03 (research/raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md): `:36-37` \"Steps 3 and 4 are required in this build. There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it.\" (steps 3 and 4 only). The five-step user flow quotes both (`:29-32`); finding:compass-ai-practice-setup: \"five steps, all required in the build studied\" (`:37`); the readout (`:27`) and the funnel summary (`:13`): \"where every step is required\". The topline (`:66`, \"The calendar step is required\") and the wireflow (`:59-61`, no skip branch on Connect calendar) state the calendar step only. Every \"Connect later\" and \"Skip for now\" in the corpus is inside a negation, so the must-not mustn't fire on one. Limit: the every-step statement comes from a dashboard review with no participants, describing the build; no session watched anyone try to skip a step. The old Basics/Signup, step-4-required and \"all other steps required\" must-nots are removed: those step names are retired, and step 4 and every other step are now required."
@@ -153,8 +153,8 @@
           "pattern": "(step\\s*3|(^|\\n)\\s*3[.)])\\s*[-—:(]?\\s*\"?\\s*invite"
         },
         {
-          "description": "Names a step Basics, Signup or Preferences, the retired six-step flow's names",
-          "pattern": "\\b(basics|sign[- ]?up|preferences)\\b"
+          "description": "Names a step Basics, Signup or Preferences, the retired six-step flow's names; Preferences only as a numbered or named step (\"5. Preferences\", \"step 5: Preferences\", \"the Preferences step\"), so \"preferences\" in other prose, such as notification preferences, doesn't count",
+          "pattern": "\\b(basics|sign[- ]?up)\\b|(^|\\n|\\s)\\d[.)]\\s*\"?\\s*preferences\\b|\\bstep\\s*\\d\\s*[-—:(]?\\s*\"?\\s*preferences\\b|\\bpreferences step\\b"
         }
       ],
       "evidence": "Raw usability test 2026-02-03 (research/raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md): `:33-35` \"Steps tested, in order: 1 Sign in with Meridian SSO; 2 Practice details; 3 Connect calendar (read access to the practice's appointment schedule); 4 Invite your team (gives clinicians and staff access to Compass AI and sends them an email); 5 Review & finish.\" Required because it is the raw session that lists the steps in order. The five-step user flow (`:24`, `:38-55`), finding:compass-ai-practice-setup (`:37-41`) and the journey map (`:31-61`) give the same order; the 2026-01-20 dashboard review lists the same five (research/raw/2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:33-34). The must-nots catch dropping the sign-in, Invite your team as step 3, and the retired six-step names, which no Compass AI setup record uses."
@@ -390,8 +390,8 @@
       "requiredRawRecord": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
       "mustClaims": [
         {
-          "description": "When the invite email is sent was unclear to them (when they finish the step or at Review & finish), or they didn't want staff emailed before champion training is booked; given as their uncertainty or worry, not as when the email is sent",
-          "pattern": "(worr|concern|unsure|uncertain|not sure|n't sure|unclear|not clear|wonder|hesita|reluctan|afraid|nervous|anxi|didn't want|did not want|don't want|do not want|not want)[^.]{0,120}((whether|when)[^.]{0,60}(email|invit)[^.]{0,60}(sent|send|go(es)? out|went out|would go)|(email|invit)[^.]{0,60}(at (that|the|this) step or|or (only )?at review)|before (any(one)? |the )?(champion )?training|training (is |was |had been |has been |were |gets )?(booked|scheduled))"
+          "description": "When the invite email is sent was unclear to them (when they finish the step or at Review & finish, or when staff would be emailed, invited or notified), or they didn't want staff emailed before champion training is booked; given as their uncertainty or worry, not as when the email is sent",
+          "pattern": "(worr|concern|unsure|uncertain|not sure|n't sure|unclear|not clear|wonder|hesita|reluctan|afraid|nervous|anxi|didn't want|did not want|don't want|do not want|not want)[^.]{0,120}((whether|when)[^.]{0,60}\\b(emailed|invited|notified)\\b|(whether|when)[^.]{0,60}(email|invit)[^.]{0,60}(sent|send|go(es)? out|went out|would go)|(email|invit)[^.]{0,60}(at (that|the|this) step or|or (only )?at review)|before (any(one)? |the )?(champion )?training|training (is |was |had been |has been |were |gets )?(booked|scheduled))"
         }
       ],
       "mustNotClaims": [

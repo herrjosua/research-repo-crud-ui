@@ -112,6 +112,19 @@ describe('gold claim patterns', () => {
             expect(matches(worry, 'Staff are emailed before training is booked [1].')).toBe(false);
         });
 
+        it('accepts unsure when staff would be emailed, invited or notified', () => {
+            const answers = [
+                'P154, P156 and P157 hesitated because they were unsure when staff would be emailed [1].',
+                'They weren’t sure whether staff would be invited before champion training [1].',
+                'Practice Administrators wondered when staff would be notified [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(worry, answer)).toBe(true);
+                expect(anyForbidden('onboarding-invite-worry', answer)).toEqual([]);
+            }
+            expect(matches(worry, 'Staff are notified when the setup is finished [1].')).toBe(false);
+        });
+
         it('forbids all, every or each Practice Administrator, but not a negation of it', () => {
             expect(anyForbidden('onboarding-invite-worry', 'All Practice Administrators were unsure whether the invite email goes out at the step or at Review & finish [1].')).toHaveLength(1);
             expect(anyForbidden('onboarding-invite-worry', 'Every Practice Administrator worried staff would be emailed before training was booked [1].')).toHaveLength(1);
@@ -142,9 +155,34 @@ describe('gold claim patterns', () => {
             expect(matches(calendar, 'Every step is required in this build [1].')).toBe(false);
         });
 
+        it('accepts none, no step or nothing can be skipped, said of all the steps', () => {
+            const answers = [
+                'The setup has five steps and none can be skipped; Connect calendar is required [1].',
+                'All five steps are required; nothing can be skipped [1].',
+                'No step can be skipped in this build [1].',
+                'All five steps can’t be skipped [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(everyStep, answer)).toBe(true);
+                expect(anyForbidden('onboarding-required-steps', answer)).toEqual([]);
+            }
+            expect(matches(everyStep, 'Steps 3 and 4 can’t be skipped [1].')).toBe(false);
+            expect(matches(everyStep, 'Steps 3 and 4 are required, and none can be skipped [1].')).toBe(false);
+        });
+
         it('forbids an optional or skippable step and a “Connect later” or “Skip for now” option', () => {
             expect(anyForbidden('onboarding-required-steps', 'Invite your team is optional [1].')).toHaveLength(1);
             expect(anyForbidden('onboarding-required-steps', 'Connect calendar has a "Connect later" option, and you can choose "Skip for now" at Invite your team [1].')).toHaveLength(1);
+            expect(anyForbidden('onboarding-required-steps', 'a setup could skip Invite your team [1].')).toHaveLength(1);
+        });
+
+        it('doesn’t forbid a participant’s question about whether a step was optional', () => {
+            const answers = [
+                'Participants wondered if Connect calendar was optional; it is required, and every step is required [1].',
+                'Practice Administrators asked whether Invite your team was optional; every step is required [1].',
+                'Nothing in the build is optional: every step is required [1].',
+            ];
+            for (const answer of answers) expect(anyForbidden('onboarding-required-steps', answer)).toEqual([]);
         });
     });
 
@@ -192,6 +230,14 @@ describe('gold claim patterns', () => {
             expect(anyForbidden('audit-onboarding-steps-order', '1. Signup\n2. Basics\n3. Connect calendar\n4. Invite your team\n5. Preferences\n6. Review & finish\n[1]')).toEqual([
                 expect.stringMatching(/^Names a step Basics, Signup or Preferences/),
             ]);
+            expect(anyForbidden('audit-onboarding-steps-order', '1. Signup 2. Basics 3. Connect calendar 4. Invite your team 5. Preferences 6. Review & finish [1]')).toHaveLength(1);
+            expect(anyForbidden('audit-onboarding-steps-order', 'Step 5: Preferences [1].')).toHaveLength(1);
+            expect(anyForbidden('audit-onboarding-steps-order', 'The Preferences step comes after Invite your team [1].')).toHaveLength(1);
+        });
+
+        it('doesn’t forbid “preferences” in other prose, or the sign-in step', () => {
+            expect(anyForbidden('audit-onboarding-steps-order', 'Practice Administrators can change notification preferences after setup [1].')).toEqual([]);
+            expect(anyForbidden('audit-onboarding-steps-order', steps('Sign in with Meridian SSO', 'Review & finish'))).toEqual([]);
         });
     });
 
@@ -291,6 +337,12 @@ describe('gold claim patterns', () => {
 
         it('doesn’t reward a statement of when the email is sent', () => {
             expect(matches(expectation, 'They expected the invite email to go out at Review & finish, and it does [1].')).toBe(false);
+            expect(matches(expectation, 'The invite email is sent at Review & finish [1].')).toBe(false);
+            expect(matches(expectation, 'Staff are emailed before training is booked [1].')).toBe(false);
+        });
+
+        it('accepts unsure when staff would be emailed', () => {
+            expect(matches(expectation, 'P154, P156 and P157 hesitated because they were unsure when staff would be emailed [1].')).toBe(true);
         });
 
         it('forbids generalizing the 3 of 4 to every Practice Administrator', () => {
