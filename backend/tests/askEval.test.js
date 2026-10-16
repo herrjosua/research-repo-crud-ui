@@ -82,7 +82,7 @@ describe('gold claim patterns', () => {
     const anyForbidden = (id, answer) => entry(id).mustNotClaims.filter((claim) => matches(claim, answer)).map((c) => c.description);
 
     it('has every entry reviewed', () => {
-        expect(gold.entries.filter((e) => e.set === 'regression')).toHaveLength(9);
+        expect(gold.entries.filter((e) => e.set === 'regression')).toHaveLength(10);
         expect(gold.entries.filter((e) => e.set === 'scenario')).toHaveLength(7);
         expect(gold.entries.filter((e) => e.status !== 'reviewed').map((e) => e.id)).toEqual([]);
     });
@@ -238,6 +238,60 @@ describe('gold claim patterns', () => {
         it('doesn’t forbid “preferences” in other prose, or the sign-in step', () => {
             expect(anyForbidden('audit-onboarding-steps-order', 'Practice Administrators can change notification preferences after setup [1].')).toEqual([]);
             expect(anyForbidden('audit-onboarding-steps-order', steps('Sign in with Meridian SSO', 'Review & finish'))).toEqual([]);
+        });
+    });
+
+    describe('audit-session-lock-draft-loss-count', () => {
+        const [allFour] = entry('audit-session-lock-draft-loss-count').mustClaims;
+        const forbidden = (answer) => anyForbidden('audit-session-lock-draft-loss-count', answer);
+
+        it('accepts all 4 shadowed clinicians, including beside the original figure framed as uncorrected', () => {
+            const answers = [
+                'All 4 shadowed clinicians assumed the draft was lost and started dictating again after re-authenticating [1].',
+                'All four observed clinicians thought the lock had destroyed their draft, though it survives server-side [1][2].',
+                '4 of the 4 shadowed clinicians assumed their draft was lost [1].',
+                'Four of four clinicians assumed the draft was gone [1].',
+                'Every one of the four shadowed clinicians believed the draft was lost [1].',
+                'All 4 shadowed clinicians assumed the draft was lost; the original notes said 4 of 5 because they counted the IT Security stakeholder as a clinician [1].',
+                'The session notes say 4 of 5 clinicians, but the correction says all 4 shadowed clinicians assumed the draft was lost [1].',
+                'There were 5 participants: 4 shadowed clinicians and 1 IT Security stakeholder; all 4 clinicians assumed the draft was lost [1].',
+                'All four clinicians (not four of five) assumed the draft was lost [1].',
+                'All 4 shadowed clinicians assumed the draft was lost [1]. The IT Security stakeholder was interviewed, not shadowed, and did not go through a lock [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(allFour, answer)).toBe(true);
+                expect(forbidden(answer)).toEqual([]);
+            }
+            expect(forbidden('`session-notes.md` says "4 of 5 clinicians assumed the draft was lost." Only the 4 shadowed clinicians went through a lock during dictation, so all 4 clinicians assumed the draft was lost [1].')).toEqual([]);
+        });
+
+        it('forbids 4 of 5 or 5 clinicians given as the result', () => {
+            const answers = [
+                '4 of 5 clinicians assumed the draft was lost [1].',
+                'Four of five clinicians assumed their draft was lost and re-dictated [1].',
+                '5 clinicians were shadowed, and 4 of them assumed the draft was lost [1].',
+                'According to the session notes, 4 of 5 clinicians assumed the draft was lost [1].',
+                '4 of 5 clinicians mistakenly assumed the draft was lost [1].',
+                'Most clinicians (4/5) assumed the draft was lost [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(allFour, answer)).toBe(false);
+                expect(forbidden(answer)).toEqual([expect.stringMatching(/^Presents "4 of 5"/)]);
+            }
+        });
+
+        it('doesn’t count not all 4, or all 4 without the draft loss', () => {
+            expect(matches(allFour, 'Not all 4 clinicians assumed the draft was lost [1].')).toBe(false);
+            expect(matches(allFour, 'All 4 clinicians re-authenticated quickly [1].')).toBe(false);
+        });
+
+        it('forbids the IT Security stakeholder, or all five participants, assuming the draft was lost', () => {
+            expect(forbidden('All 4 clinicians and the IT Security stakeholder assumed the draft was lost [1].')).toEqual([expect.stringMatching(/^Says the IT Security stakeholder/)]);
+            expect(forbidden('The IT Security stakeholder also assumed the draft was lost [1].')).toHaveLength(1);
+            expect(forbidden('All five participants assumed the draft was lost [1].')).toHaveLength(1);
+            expect(forbidden('The IT Security stakeholder did not assume the draft was lost; they were not shadowed [1].')).toEqual([]);
+            expect(forbidden('IT Security confirmed the draft is preserved server-side and is not lost [1].')).toEqual([]);
+            expect(forbidden('The notes counted the IT Security stakeholder, so all 4 clinicians assumed the draft was lost [1].')).toEqual([]);
         });
     });
 

@@ -272,6 +272,37 @@
       "evidence": "Raw 2025-12-02 pulse survey: \"Only 34% of non-clinical staff reported being aware Compass AI initiatives were underway at all, versus 71% of clinical staff.\" finding:rollout-and-change-management repeats it. The audit logged a fabricated \"69%/31%\" readiness split."
     },
     {
+      "id": "audit-session-lock-draft-loss-count",
+      "set": "regression",
+      "status": "reviewed",
+      "question": "How many clinicians assumed their draft was lost when the session locked during dictation?",
+      "project": null,
+      "supportingRecords": [
+        "raw:2026-02-17-session-lock-during-dictation",
+        "finding:ambient-scribe-post-ga-refinements",
+        "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+        "raw:2026-04-28-interview-nurse-practitioner-session-lock-shared-workstations"
+      ],
+      "requiredRawRecord": "raw:2026-02-17-session-lock-during-dictation",
+      "mustClaims": [
+        {
+          "description": "All 4 (shadowed or observed) clinicians assumed the draft was lost: \"all 4\", \"all four\", \"4 of the 4\", \"four of four\" or \"every one of the four\", with an assumed/thought/believed verb; \"not all 4\" doesn't count",
+          "pattern": "(?<!\\bnot )\\b(all (4|four)|(4|four) (out )?of (the )?(4|four)|every one of the (4|four)|each of the (4|four))\\b[^.]{0,120}\\b(assum|thought|believ|conclud|presum|misread|mistook|took it|interpreted|reacted as if)\\w*[^.]{0,80}\\b(lost|loss|gone|destroy\\w*|deleted|disappeared|wiped)\\b"
+        }
+      ],
+      "mustNotClaims": [
+        {
+          "description": "Presents \"4 of 5\", \"four of five\", \"4/5\" or \"5 clinicians\" as the result; a sentence that frames it as the uncorrected figure (correct/correction, uncorrected, original(ly), \"the session notes say\", the raw or original notes, counted the IT Security stakeholder, miscount, or \"not\"/\"rather than\"/\"instead of\" right before it) doesn't count, but \"according to the session notes, 4 of 5\" does",
+          "pattern": "(?<!(\\bcorrect(ed|ion|ions)?\\b|\\buncorrected\\b|\\boriginal(ly)?\\b|\\bsession[- ]notes(\\.md)?[`\"']? (say|says|said|state|states|stated|report|reports|reported|record|recorded|count|counted|gave|give|had)\\b|\\b(raw|original|uncorrected) notes\\b|\\bcount(ed|ing)? the IT Security|\\bmis-?count\\w*|\\bover-?count\\w*)[^.]{0,200})(?<!\\b(not|rather than|instead of|than) [\"(]?)(\\b(4|four) (out )?of (5|five)\\b|\\b4/5\\b|\\b(5|five) (shadowed |observed )?clinicians\\b)(?![^.]{0,200}(\\bcorrect(ed|ion|ions)?\\b|\\buncorrected\\b|\\boriginal(ly)?\\b|\\bsession[- ]notes\\b|\\b(raw|original|uncorrected) notes\\b|\\bcount(ed|ing)? the IT Security|\\bIT Security (stakeholder )?(as a|was counted)|\\bmis-?count\\w*|\\bover-?count\\w*))"
+        },
+        {
+          "description": "Says the IT Security stakeholder assumed the draft was lost, or that all five participants did; a negation (did not assume) or a clinician named between doesn't count",
+          "pattern": "\\bIT Security( stakeholder| engineer| participant| person| representative)?\\b(?:(?!\\b(?:not|never|no|neither|nor|clinicians?|physicians?|nurses?)\\b|n't)[^.,;:]){0,40}\\b(assum|thought|believ|presum|conclud)\\w*(?:(?!\\bnot\\b|n't)[^.]){0,60}\\b(lost|loss|gone|destroy\\w*|deleted|disappeared|wiped)\\b|\\b(all|every one of the|each of the) (5|five)( participants| people)?\\b[^.]{0,80}\\b(assum|thought|believ|presum)\\w*[^.]{0,60}\\b(lost|loss|gone)\\b"
+        }
+      ],
+      "evidence": "Raw contextual inquiry 2026-02-17 (research/raw/2026-02-17-session-lock-during-dictation/session-notes.md, shadowing, researcher Priya Patel, `:34`): Method `:31-33` \"Contextual inquiry / shadowing, 5 clinicians observed through at least one natural idle-timeout event during a real or simulated dictation session, plus 1 IT Security stakeholder interviewed on the technical constraints\"; Key Findings `:38-41` \"a session lock mid-recording simply freezes the ambient-scribe widget with no message; 4 of 5 clinicians assumed the draft was lost and started re-dictating from scratch after re-authenticating, even though the draft is server-side and actually survives the lock.\" participants.md: \"**Count:** 5\" (`:21`) and \"4 clinicians recruited from regular ambient-scribe users on units with known short idle-timeout windows; 1 IT Security stakeholder recruited directly for technical context rather than shadowed.\" (`:30-32`). correction-2026-09-27.md, Participant count (`:36-38`): \"5 participants in total, made up of 4 clinicians who were shadowed and 1 IT Security stakeholder who was interviewed but not shadowed. The session notes counted the IT Security stakeholder as a fifth clinician.\"; Draft-loss result (`:41-43`): \"Only the 4 shadowed clinicians went through a lock during dictation, so this means **all 4 clinicians** assumed the draft was lost and started dictating again after they re-authenticated.\" finding:ambient-scribe-post-ga-refinements (`:42-43`): \"all 4 shadowed clinicians assumed a locked session had destroyed their draft\"; user-flows/ambient-scribe-session-lock-recovery (`:38-40`): \"all 4 observed clinicians misread as data loss\" (citing the correction); raw 2026-04-28 nurse practitioner interview (`:22`): \"all 4 shadowed clinicians assumed the draft was lost\". The trap: the raw note still reads \"4 of 5\" and \"5 clinicians\" (raw/ is append-only; the correction sits beside it), so an answer that cites the required raw record can still give the uncorrected count. The participant count is 5, but only the 4 clinicians were shadowed; the fifth was the IT Security stakeholder, who was interviewed, not shadowed, and never went through a lock. Required raw is 2026-02-17 because it is the only raw record that observed the lock, and it carries both the uncorrected note and the correction. The must-not on \"4 of 5\" is sentence-scoped: an answer may mention the original figure when the same sentence frames it as uncorrected. correction-2026-10-13.md (P31 is really P119) doesn't bear on the count. Limits: one session, one researcher, 4 shadowed clinicians, observed \"during a real or simulated dictation session\" (`:32`), so whether each lock was real isn't recorded; the re-test after the paused state ships (`:78-79`) hasn't happened."
+    },
+    {
       "id": "scenario-documentation-pain-points",
       "set": "scenario",
       "status": "reviewed",
