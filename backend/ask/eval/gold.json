@@ -5,29 +5,32 @@
       "id": "onboarding-invite-worry",
       "set": "regression",
       "status": "reviewed",
-      "question": "What were new admins worried about at the Invite your team step?",
+      "question": "What were Practice Administrators worried about at the Invite your team step?",
       "project": "project-onboarding",
       "supportingRecords": [
-        "raw:2026-01-19-onboarding-usability-test",
-        "finding:onboarding",
-        "deliverable:topline-summaries/example-topline-summary",
-        "deliverable:journey-maps/example-journey-map",
-        "deliverable:research-readouts/onboarding-flow-q1-readout"
+        "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+        "finding:compass-ai-practice-setup",
+        "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+        "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+        "deliverable:personas/practice-administrator-compass-ai-setup",
+        "deliverable:journey-maps/practice-administrator-compass-ai-setup",
+        "deliverable:mental-models/compass-ai-schedule-access-and-invites",
+        "deliverable:storyboards/compass-ai-setup-calendar-and-invite-hesitations"
       ],
-      "requiredRawRecord": "raw:2026-01-19-onboarding-usability-test",
+      "requiredRawRecord": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
       "mustClaims": [
         {
-          "description": "New admins were worried (or unsure) that the invites would email the whole team before they were ready; worry, concern or uncertainty wording, not a statement that invites are sent immediately",
-          "pattern": "(worr|concern|unsure|uncertain|not sure|wonder|anxi|afraid|fear|nervous|hesita)[^.]{0,120}(invit|email|send|sent)[^.]{0,80}(before (\\w+ ){0,2}ready|immediately|right away|whole team)|(invit|email)[^.]{0,80}(before (\\w+ ){0,2}ready|immediately|right away|whole team)[^.]{0,60}(worr|concern|unsure|uncertain|anxi|afraid|fear|nervous)"
+          "description": "Practice Administrators were unsure when the invite email goes out (when they finish the step or at Review & finish), or didn't want staff emailed before champion training is booked; worry, uncertainty or hesitation wording, not a statement of when the email is sent",
+          "pattern": "(worr|concern|unsure|uncertain|not sure|n't sure|unclear|not clear|wonder|hesita|reluctan|afraid|nervous|anxi|didn't want|did not want|don't want|do not want|not want)[^.]{0,120}((whether|when)[^.]{0,60}(email|invit)[^.]{0,60}(sent|send|go(es)? out|went out|would go)|(email|invit)[^.]{0,60}(at (that|the|this) step or|or (only )?at review)|before (any(one)? |the )?(champion )?training|training (is |was |had been |has been |were |gets )?(booked|scheduled))"
         }
       ],
       "mustNotClaims": [
         {
-          "description": "Says step 4 (Invite your team) is required or can't be skipped; the wireflow says it can be skipped and nothing in the research makes it required",
-          "pattern": "(step 4|invite your team)[^.]{0,60}(\\b(is|was|are) (also )?required|can(no|')t be skipped)"
+          "description": "Says all, every or each Practice Administrator worried or hesitated at the invite step; it was 3 of 4 in one session (P155 went on without comment), so \"most\" and \"3 of 4\" are fine",
+          "pattern": "(?<!\\bnot |n't )\\b(all|every|each)\\b (of )?(the )?((4|four) )?(practice )?(admin\\w*|participants?)\\b[^.]{0,100}(invit|email|hesita|worr|unsure|not sure|n't sure|training)|\\b(practice )?(admin\\w*|participants?) (all|each)\\b[^.]{0,80}(invit|email|hesita|worr|unsure|not sure|n't sure|training)"
         }
       ],
-      "evidence": "Raw session 3: \"I guess I'm worried this is going to email my whole team before I'm ready.\" (the only direct quote). finding:onboarding: admins aren't sure whether invites send immediately or only when the wizard is submitted. Topline: all 3 participants paused at step 4, unsure whether invites send immediately. Journey map: anxious, worried invites are sending before she's ready. Readout: the related hesitation seen in session 3. The wireflow says step 4 can be skipped (audit follow-up §3)."
+      "evidence": "Raw usability test 2026-02-03 (research/raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md, moderated think-aloud usability test, `:28`): `:53` \"3 of 4 Practice Administrators (P154, P156, P157) hesitated at Invite your team. They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice. P155 entered the test staff list and went on without comment.\" P157 (`:64-65`): \"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" When this build actually sends the email isn't recorded (\"The step 4 screen doesn't say when the invite email is sent, and these notes don't record when this build sends it\", `:46-47`; open question `:84`), so a correct answer gives it as their uncertainty, not as fact. finding:compass-ai-practice-setup (`:72-75`), the topline (`:45-47`), the readout (`:102-105`), the persona (`:43-46`), the journey map (`:52-55`), the mental model (`:71-74`) and the storyboard (`:52-54`) restate the same 3 of 4. Limits: one session with 4 Practice Administrators, on a prepared test staff list, so no real staff were emailed (`:39-42`). The worry is in this session only: the 2026-01-20 dashboard review records where setups stopped, not why (research/raw/2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:72-74), and the 2026-02-24 IT Administrator interview has no invite-timing worry (its only invite item is provisioning, `:45`). The must-not keys on all, every or each, so \"most\" and \"3 of 4\" pass. The old must-not on step 4 being required is removed: step 4 is required in this build (2026-02-03 `:36-37`)."
     },
     {
       "id": "onboarding-required-steps",
@@ -36,36 +39,33 @@
       "question": "Which onboarding steps are required, and which can be skipped?",
       "project": "project-onboarding",
       "supportingRecords": [
-        "deliverable:user-flows/onboarding-flow",
-        "finding:onboarding",
-        "raw:2026-01-19-onboarding-usability-test",
-        "deliverable:research-readouts/onboarding-flow-q1-readout",
-        "deliverable:topline-summaries/example-topline-summary",
-        "analytics:onboarding-funnel-dropoff",
-        "deliverable:wireflows/example-wireflow"
+        "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+        "finding:compass-ai-practice-setup",
+        "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion",
+        "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+        "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+        "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+        "analytics:compass-ai-practice-setup-funnel",
+        "deliverable:wireflows/compass-ai-connect-calendar-send-to-it"
       ],
-      "requiredRawRecord": "raw:2026-01-19-onboarding-usability-test",
+      "requiredRawRecord": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion",
       "mustClaims": [
         {
-          "description": "The calendar connection is required or can't be skipped (any step number: the raw notes call it step 2, the canonical flow step 3)",
-          "pattern": "calendar[^.]{0,80}((?<!not |n't )\\brequired|mandatory|can(no|'|’)t be skipped|cannot be skipped|can(no|'|’)t skip|not optional)|((?<!not |n't )\\brequired|mandatory)[^.]{0,60}calendar"
+          "description": "Connect calendar (step 3) is required or can't be skipped",
+          "pattern": "calendar[^.]{0,80}((?<!not |n't )\\brequired|mandatory|can(no|')t be skipped|cannot be skipped|can(no|')t skip|not optional|only way past)|((?<!not |n't )\\brequired|mandatory)[^.]{0,120}calendar|\\bsteps? (3|three)\\b[^.]{0,40}((?<!not |n't )\\brequired|mandatory|can(no|')t be skipped|cannot be skipped)"
+        },
+        {
+          "description": "Every step is required: all five, not only Connect calendar or steps 3 and 4",
+          "pattern": "(?<!not )\\b(every|each) (setup )?step\\b[^.]{0,30}((?<!not |n't )\\b(required|mandatory))|\\ball (five |5 |of the |the )*(steps|five|5)\\b[^.]{0,30}((?<!not |n't )\\b(required|mandatory))|\\b(required|mandatory)\\b[^.]{0,20}(?<!not )\\b(every|each) step|(can(no|')t|cannot|can not) skip (a|any) step|\\b(no|none of the) (\\w+ ){0,2}steps? (is |are |can be )?(optional|skippable|skipped)"
         }
       ],
       "mustNotClaims": [
         {
-          "description": "Says Basics or Signup can be skipped or is optional (keyed on the step names; a bare step number isn't matched, since the raw notes' \"step 2\" is the calendar step)",
-          "pattern": "(basics|sign-?up|sign up)[\\\"”')]*[^.,;]{0,40}(can be skipped|(?<!not |n't )optional|skippable|can skip)"
-        },
-        {
-          "description": "Says every other step is required; only the calendar step is marked required",
-          "pattern": "all (of )?(the )?(other|remaining) steps[^.]{0,20}required"
-        },
-        {
-          "description": "Says step 4 / Invite your team is required or can't be skipped; the wireflow says it can be skipped and nothing in the research makes it required",
-          "pattern": "(invite your team|invite step|invitation step|step 4)[\\\"”')]*[^.,;]{0,25}((?<!not |n't )\\b(is|are|was) (also )?(required|mandatory)|can(no|'|’)t be skipped)"
+          "description": "Says a step is optional or can be skipped, or that a \"Connect later\" or \"Skip for now\" option exists; a negation such as There is no \"Connect later\" and no \"Skip for now\" doesn't count",
+          "pattern": "(?<!(?:\\b(?:no|not|never|none|nor|neither|without|cannot)\\b|n't)[^.]{0,40})\\b(optional|skippable|can (be )?skip(ped)?|could (be )?skip(ped)?|may (be )?skip(ped)?)\\b|(?<!(?:\\b(?:no|not|never|none|nor|neither|without|cannot)\\b|n't)[^.]{0,60})(connect later|skip for now)"
         }
       ],
-      "evidence": "user-flows/onboarding-flow: \"Step 3 — Connect calendar (now clearly marked required)\"; step 4 isn't marked required. finding:onboarding and the readout: step 3 is required though its wording reads as optional. Raw sessions 1–2: participants tried to skip the calendar step and hit the \"required\" indicator; session 2 calls it \"step 2\" (the audit's two numbering conventions). Wireflow: \"Only step 3 is required … so step 4 can be skipped.\" No record says Basics or Signup can be skipped. The patterns key on step names, not numbers, because the calendar step is \"step 2\" in the raw notes and step 3 in the canonical flow. Baseline answer states \"Step 2 (Basics) can be skipped\" with no citation."
+      "evidence": "Every step is required. Raw dashboard review 2026-01-20 (research/raw/2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md, manual dashboard review, no participants, `:27`, `:62`): `:34-35` \"Every step is required in this build; a setup can't skip a step, it can only be left open at it.\" Required because it is the only raw record that says every step is required. Raw usability test 2026-02-03 (research/raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md): `:36-37` \"Steps 3 and 4 are required in this build. There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it.\" (steps 3 and 4 only). The five-step user flow quotes both (`:29-32`); finding:compass-ai-practice-setup: \"five steps, all required in the build studied\" (`:37`); the readout (`:27`) and the funnel summary (`:13`): \"where every step is required\". The topline (`:66`, \"The calendar step is required\") and the wireflow (`:59-61`, no skip branch on Connect calendar) state the calendar step only. Every \"Connect later\" and \"Skip for now\" in the corpus is inside a negation, so the must-not mustn't fire on one. Limit: the every-step statement comes from a dashboard review with no participants, describing the build; no session watched anyone try to skip a step. The old Basics/Signup, step-4-required and \"all other steps required\" must-nots are removed: those step names are retired, and step 4 and every other step are now required."
     },
     {
       "id": "prior-auth-citations",
@@ -131,58 +131,33 @@
       "question": "List the onboarding steps in order.",
       "project": "project-onboarding",
       "supportingRecords": [
-        "deliverable:user-flows/onboarding-flow",
-        "finding:onboarding",
-        "deliverable:journey-maps/example-journey-map"
+        "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+        "finding:compass-ai-practice-setup",
+        "deliverable:journey-maps/practice-administrator-compass-ai-setup",
+        "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow"
       ],
-      "requiredRawRecord": null,
+      "requiredRawRecord": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
       "mustClaims": [
         {
-          "description": "The six steps in order: Signup, Basics, Connect calendar, Invite your team, Preferences, Review & finish",
-          "pattern": "signup[\\s\\S]{0,120}basics[\\s\\S]{0,120}connect calendar[\\s\\S]{0,120}invite your team[\\s\\S]{0,120}preferences[\\s\\S]{0,120}review"
+          "description": "The five steps in order: Sign in with Meridian SSO (or \"Sign in\" or \"SSO\"), Practice details, Connect calendar, Invite your team, Review & finish (or \"Review\")",
+          "pattern": "(sign[- ]?in\\b|\\bsso\\b)[\\s\\S]{0,160}practice details[\\s\\S]{0,120}connect calendar[\\s\\S]{0,120}invite your team[\\s\\S]{0,120}review"
         }
       ],
       "mustNotClaims": [
         {
-          "description": "Numbers Basics as step 1 (drops Signup, the miscount the audit traced to stripped list numbers)",
-          "pattern": "(step\\s*1|(^|\\n)\\s*1[.)])\\s*[-—:(]?\\s*\\\"?basics"
+          "description": "Numbers Practice details as step 1 (drops Sign in with Meridian SSO)",
+          "pattern": "(step\\s*1|(^|\\n)\\s*1[.)])\\s*[-—:(]?\\s*\"?\\s*practice details"
         },
         {
           "description": "Numbers Invite your team as step 3",
-          "pattern": "(step\\s*3|(^|\\n)\\s*3[.)])\\s*[-—:(]?\\s*\\\"?invite"
-        }
-      ],
-      "evidence": "user-flows/onboarding-flow is the canonical numbering (audit: \"Canonical version chosen\"): Step 1 Signup … Step 6 Review & finish. finding:onboarding repeats it in its numbering note; the journey map follows the same order. The raw notes don't list the wizard's steps, so no raw session is required."
-    },
-    {
-      "id": "audit-step3-wireframe",
-      "set": "regression",
-      "status": "reviewed",
-      "question": "What does the step 3 wireframe show?",
-      "project": null,
-      "supportingRecords": [
-        "deliverable:wireframes/workspace-setup-step4-invite-team",
-        "deliverable:user-flows/onboarding-flow",
-        "finding:onboarding",
-        "deliverable:thumbnails/example-thumbnail",
-        "deliverable:mockups/example-mockups",
-        "deliverable:wireflows/example-wireflow"
-      ],
-      "requiredRawRecord": null,
-      "mustClaims": [
+          "pattern": "(step\\s*3|(^|\\n)\\s*3[.)])\\s*[-—:(]?\\s*\"?\\s*invite"
+        },
         {
-          "description": "Says there is no step 3 wireframe, or that the workspace-setup wireframe is for step 4 (Invite your team)",
-          "pattern": "step 4|invite your team|no (\\w+ ){0,3}wireframe|(do|does|did)(n't| not) (\\w+ ){0,3}(describe|include|show|contain|have|mention)"
+          "description": "Names a step Basics, Signup or Preferences, the retired six-step flow's names",
+          "pattern": "\\b(basics|sign[- ]?up|preferences)\\b"
         }
       ],
-      "mustNotClaims": [
-        {
-          "description": "Attributes the invite step's wireframe (banner, draft invite list) to step 3",
-          "pattern": "step 3[^.]{0,100}(invit|banner|draft|not sent)"
-        }
-      ],
-      "acceptDecline": true,
-      "evidence": "The only workspace-setup wireframe is \"Step 4 (Invite Your Team)\" (renamed from workspace-setup-step3.md, audit §5): a \"not sent yet\" banner and a draft invite list. Step 3 is Connect calendar (user-flows/onboarding-flow); no record has a wireframe for it. The audit logged this question getting a wrong answer from the old filename. No raw session covers wireframes."
+      "evidence": "Raw usability test 2026-02-03 (research/raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md): `:33-35` \"Steps tested, in order: 1 Sign in with Meridian SSO; 2 Practice details; 3 Connect calendar (read access to the practice's appointment schedule); 4 Invite your team (gives clinicians and staff access to Compass AI and sends them an email); 5 Review & finish.\" Required because it is the raw session that lists the steps in order. The five-step user flow (`:24`, `:38-55`), finding:compass-ai-practice-setup (`:37-41`) and the journey map (`:31-61`) give the same order; the 2026-01-20 dashboard review lists the same five (research/raw/2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:33-34). The must-nots catch dropping the sign-in, Invite your team as step 3, and the retired six-step names, which no Compass AI setup record uses."
     },
     {
       "id": "audit-session-timeout",
@@ -400,33 +375,32 @@
       "id": "scenario-invite-expectation",
       "set": "scenario",
       "status": "reviewed",
-      "question": "How did new admins expect the invite step to work?",
+      "question": "How did Practice Administrators expect the invite step to work?",
       "project": null,
       "supportingRecords": [
-        "raw:2026-01-19-onboarding-usability-test",
-        "finding:onboarding",
-        "deliverable:topline-summaries/example-topline-summary",
-        "deliverable:journey-maps/example-journey-map",
-        "deliverable:research-readouts/onboarding-flow-q1-readout"
+        "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+        "finding:compass-ai-practice-setup",
+        "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+        "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+        "deliverable:personas/practice-administrator-compass-ai-setup",
+        "deliverable:journey-maps/practice-administrator-compass-ai-setup",
+        "deliverable:mental-models/compass-ai-schedule-access-and-invites",
+        "deliverable:storyboards/compass-ai-setup-calendar-and-invite-hesitations"
       ],
-      "requiredRawRecord": "raw:2026-01-19-onboarding-usability-test",
+      "requiredRawRecord": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
       "mustClaims": [
         {
-          "description": "When invites are sent: admins worried or weren't sure whether invites go out immediately (emailing the whole team before they're ready) or only when setup is finished",
-          "pattern": "(invit|email)[^.]{0,120}(immediately|right away|straight away|before (\\w+ ){0,2}ready|whole team|(until|when|once) (the )?(setup|wizard|onboarding)[^.]{0,30}(finish|submit|complet|done))"
+          "description": "When the invite email is sent was unclear to them (when they finish the step or at Review & finish), or they didn't want staff emailed before champion training is booked; given as their uncertainty or worry, not as when the email is sent",
+          "pattern": "(worr|concern|unsure|uncertain|not sure|n't sure|unclear|not clear|wonder|hesita|reluctan|afraid|nervous|anxi|didn't want|did not want|don't want|do not want|not want)[^.]{0,120}((whether|when)[^.]{0,60}(email|invit)[^.]{0,60}(sent|send|go(es)? out|went out|would go)|(email|invit)[^.]{0,60}(at (that|the|this) step or|or (only )?at review)|before (any(one)? |the )?(champion )?training|training (is |was |had been |has been |were |gets )?(booked|scheduled))"
         }
       ],
       "mustNotClaims": [
         {
-          "description": "Says step 4 / Invite your team is required or can't be skipped; the wireflow says it can be skipped",
-          "pattern": "(invite your team|invite step|invitation step|step 4)[\\\"”')]*[^.,;]{0,25}((?<!not |n't )\\b(is|are|was) (also )?(required|mandatory)|can(no|'|’)t be skipped)"
-        },
-        {
-          "description": "Generalizes the worry to all or most participants; the raw notes record it for one session (session 3)",
-          "pattern": "\\b(all|every|most|each)\\b (\\w+ ){0,2}(participants?|admins?|users?)[^.]{0,80}(invit|email)"
+          "description": "Says all, every or each Practice Administrator worried or hesitated at the invite step; it was 3 of 4 in one session (P155 went on without comment), so \"most\" and \"3 of 4\" are fine",
+          "pattern": "(?<!\\bnot |n't )\\b(all|every|each)\\b (of )?(the )?((4|four) )?(practice )?(admin\\w*|participants?)\\b[^.]{0,100}(invit|email|hesita|worr|unsure|not sure|n't sure|training)|\\b(practice )?(admin\\w*|participants?) (all|each)\\b[^.]{0,80}(invit|email|hesita|worr|unsure|not sure|n't sure|training)"
         }
       ],
-      "evidence": "Raw onboarding test 2026-01-19 (research/raw/2026-01-19-onboarding-usability-test/session-notes.md, usability test; the answer to a direct probe is attitudinal): Session 3: \"When asked directly, said: 'I guess I'm worried this is going to email my whole team before I'm ready.'\" The raw note places it at \"step 3\" and never uses the word \"invite\"; finding:onboarding moves it to step 4 (\"Invite your team\") by reconciling the two numbering schemes and says admins \"aren't sure whether invites send immediately or only when the wizard is\" submitted. Topline: \"All 3 participants paused at step 4\" (the raw notes don't support \"all 3\"). Journey map: \"worried invites are sending before\" she's ready. Readout: recommends visible feedback that invites aren't sent until submit. The storyboard is a made-up scenario and isn't a supporting record. Method caveat: a mental-model question answered by one probe answer; the guide's \"what do you expect to happen next\" answers weren't written down. Coverage report: the raw session ranked #14 (its roster outscored its notes) and the answer cited the topline and the storyboard."
+      "evidence": "Raw usability test 2026-02-03 (research/raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md, moderated think-aloud usability test, `:28`): `:53` \"3 of 4 Practice Administrators (P154, P156, P157) hesitated at Invite your team. They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice. P155 entered the test staff list and went on without comment.\" P157 (`:64-65`): \"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" What the build does isn't recorded: \"The step 4 screen doesn't say when the invite email is sent, and these notes don't record when this build sends it\" (`:46-47`). finding:compass-ai-practice-setup (`:72-75`), the topline (`:45-47`), the readout (`:102-105`), the persona (`:43-46`), the journey map (`:52-55`), the mental model (`:71-74`) and the storyboard (`:52-54`) restate the same 3 of 4; the mental model adds that the notes don't record whether they thought the invite also gives staff access (`:78-79`). Method caveat: one session, 4 Practice Administrators, on a prepared test staff list (`:39-42`); their expectation is read from where they hesitated and what they said. Unscoped on purpose: the regression entry onboarding-invite-worry asks a similar question within project-onboarding. The must-not keys on all, every or each, so \"most\" and \"3 of 4\" pass. The old step-4-required must-not is removed: step 4 is required in this build (`:36-37`)."
     },
     {
       "id": "scenario-calendar-premise",
@@ -435,31 +409,37 @@
       "question": "What evidence supports making the calendar step required in onboarding?",
       "project": null,
       "supportingRecords": [
-        "raw:2026-01-19-onboarding-usability-test",
-        "finding:onboarding",
-        "deliverable:user-flows/onboarding-flow",
-        "deliverable:research-readouts/onboarding-flow-q1-readout",
-        "deliverable:topline-summaries/example-topline-summary",
-        "analytics:onboarding-funnel-dropoff"
+        "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+        "finding:compass-ai-practice-setup",
+        "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+        "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+        "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+        "deliverable:journey-maps/practice-administrator-compass-ai-setup",
+        "deliverable:mental-models/compass-ai-schedule-access-and-invites",
+        "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval"
       ],
-      "requiredRawRecord": "raw:2026-01-19-onboarding-usability-test",
+      "requiredRawRecord": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
       "mustClaims": [
         {
           "description": "Premise check: says the calendar step is already required",
           "pattern": "already[^.]{0,60}(required|mandatory)|(required|mandatory)[^.]{0,30}\\balready\\b|\\b(is|was) (currently|now) (marked |labell?ed )?(as )?(required|mandatory)"
         },
         {
-          "description": "Premise check: says no record argues for (or gives a reason for) making it required",
-          "pattern": "\\b(no|none of the|not any|nothing|neither)\\b[^.]{0,80}\\b(argu|support|evidence|justif|rationale|reason|case)\\w*[^.]{0,80}(requir|mandator)|\\b(do not|don't|does not|doesn't|did not|didn't)\\b[^.]{0,40}\\b(argue|make (a|the) case|justify|give (a )?(reason|rationale)|support|explain why)\\w*[^.]{0,80}(requir|mandator)"
+          "description": "Premise check: the only rationale on record is the designer's statement at session setup that the scribe attaches recordings to scheduled encounters",
+          "pattern": "(designer|okafor)[^.]{0,200}(scribe|recording)[^.]{0,80}encounter|(scribe|recording)[^.]{0,80}encounter[^.]{0,150}(designer|okafor)"
+        },
+        {
+          "description": "Premise check: says no session tested that rationale",
+          "pattern": "\\buntested\\b|\\b(never|not|n't|hasn't|has not|wasn't|was not|isn't|is not) (been |yet )*(tested|examined|validated|evaluated|checked)\\b|\\b(no|none of the)\\b[^.]{0,30}(session|study|studies|test|research|record)\\w*[^.]{0,40}\\b(tested|tests|examined|validated|evaluated|checked)\\b"
         }
       ],
       "mustNotClaims": [
         {
-          "description": "Presents the skip attempts, hesitation or drop-off as evidence for requiring the step",
-          "pattern": "(^|\\n|[.!?]\\s+)(the )?(main |key |strongest |clearest )?evidence (that )?(support\\w*|for) (making|keeping|requiring)[^.]{0,60}(includes|is|are|comes|shows|:)|(skip|optional|hesitat|drop-?off)[^.]{0,150}\\b(which|this|that|these)\\b[^.]{0,20}\\b(support|justif|show|demonstrat|prove|confirm)\\w*[^.]{0,30}\\b(need|why|that)\\b[^.]{0,40}\\b(be|stay|remain|is) (required|mandatory)"
+          "description": "Presents the stops at Connect calendar, \"IT's decision\", the privacy review or the dashboard drop-off as evidence for requiring the step",
+          "pattern": "(^|\\n|[.!?]\\s+)(the )?(main |key |strongest |clearest |best )?evidence (that )?(support\\w*|for) (making|keeping|requiring)[^.]{0,60}(includes|is|are|comes|shows|:)|(stop|stall|it's decision|it's call|privacy review|drop-?off|dashboard|left open|still open)[^.]{0,150}\\b(which|this|that|these)\\b[^.]{0,20}\\b(support|justif|show|demonstrat|prove|confirm)\\w*[^.]{0,30}\\b(need|why|that)\\b[^.]{0,40}\\b(be|stay|remain|is) (required|mandatory)|(stop|stall|it's decision|it's call|privacy review|drop-?off|dashboard|left open|still open)[^.]{0,120}(?<!(n't|\\bnot|\\bno|\\bnever|\\bnor) )\\b(support|justif|is evidence for|are evidence for|argue\\w* for|make\\w* the case for|show\\w* why|demonstrat\\w* why)\\w*\\s(?:(?!\\bnot\\b|n't|rather than|instead of)[^.]){0,40}(requir|mandator)"
         }
       ],
-      "evidence": "Premise check. The step is already required: deliverable:user-flows/onboarding-flow: \"Step 3 — Connect calendar (now clearly marked required)\"; finding:onboarding: its wording implies it is optional \"when it's actually required for later functionality\" (no source is given for that rationale). No record, raw or synthesis, argues for requiring it; the evidence supports labeling it clearly, and if anything shows the requirement causes friction. Raw onboarding test 2026-01-19 (research/raw/2026-01-19-onboarding-usability-test/session-notes.md, usability test, behavioral): session 1 \"paused ~15s at step 3 ('Connect calendar'), said 'wait, do I have to do this?'\"; session 2 \"Backed out when the 'required' indicator appeared … ('could've told me that up front')\"; sessions 4–6: \"none independently identified it as required without hitting the 'required' state first\". analytics:onboarding-funnel-dropoff: step 3 is the largest drop-off, read as users \"not realizing the step is required\" (the raw export isn't in the corpus). Readout and topline: relabel step 3. Deciding whether it should be required would need attitudinal evidence, which the corpus doesn't have. Coverage report: the pipeline accepted the premise and listed the skip attempts as evidence for requiring it. Expected to fail on today's answers."
+      "evidence": "Premise check. The step is already required: raw usability test 2026-02-03 (research/raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md): `:36-37` \"Steps 3 and 4 are required in this build. There is no \"Connect later\" and no \"Skip for now\"\". The only rationale on record: `:38` \"At session setup, the designer, Sam Okafor, stated that the calendar step is required because the scribe attaches recordings to scheduled encounters.\" finding:compass-ai-practice-setup: \"That is the designer's stated rationale; no session tested it.\" (`:43-44`) and \"It doesn't test whether the calendar step needs to be required. The only rationale on record is the designer's statement at session setup\" (`:96-97`). The topline (`:66-68`), readout (`:120-122`), user flow (`:45-48`), journey map (`:50-51`), mental model (`:30-32`) and wireframe (`:86-88`) say the same. No record says who decided to require it or when. Required raw is 2026-02-03 because it holds both the requirement and the rationale. Not evidence for requiring it: the stops at Connect calendar (3 of 4 Practice Administrators said it was IT's decision, `:51`), the privacy review only IT can file (2026-02-24 session-notes.md:29, one IT Administrator's account) and the dashboard drop-off (research/raw/2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:45, `:51-54`) are about who can approve and where setups stall, and the dashboard can't show why (`:72-74`). Completing step 3 in the test is not a result: participants went on on a sandbox calendar (2026-02-03 `:43-45`). The funnel summary and the 2026-01-20 review aren't supporting records: neither gives a rationale."
     },
     {
       "id": "scenario-care-coordinator-gaps",

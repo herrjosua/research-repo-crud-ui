@@ -82,7 +82,7 @@ describe('gold claim patterns', () => {
     const anyForbidden = (id, answer) => entry(id).mustNotClaims.filter((claim) => matches(claim, answer)).map((c) => c.description);
 
     it('has every entry reviewed', () => {
-        expect(gold.entries.filter((e) => e.set === 'regression')).toHaveLength(10);
+        expect(gold.entries.filter((e) => e.set === 'regression')).toHaveLength(9);
         expect(gold.entries.filter((e) => e.set === 'scenario')).toHaveLength(7);
         expect(gold.entries.filter((e) => e.status !== 'reviewed').map((e) => e.id)).toEqual([]);
     });
@@ -95,39 +95,56 @@ describe('gold claim patterns', () => {
     describe('onboarding-invite-worry', () => {
         const [worry] = entry('onboarding-invite-worry').mustClaims;
 
-        it('accepts the worry, stated as a worry', () => {
-            expect(matches(worry, 'New admins were worried that the invites would email their whole team before they were ready [1].')).toBe(true);
-            expect(matches(worry, 'Admins were unsure whether invites send immediately or only when setup is finished [1].')).toBe(true);
+        it('accepts the timing or training worry, stated as a worry, for 3 of 4 or most', () => {
+            const answers = [
+                '3 of 4 Practice Administrators hesitated at Invite your team: they weren’t sure whether the email goes out when they finish the step or at Review & finish [1].',
+                'Most Practice Administrators didn’t want staff emailed before champion training was booked for the practice [1][2].',
+                'It was unclear to them when the invite email is sent, at that step or at Review & finish; P155 went on without comment [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(worry, answer)).toBe(true);
+                expect(anyForbidden('onboarding-invite-worry', answer)).toEqual([]);
+            }
         });
 
-        it('doesn’t reward stating it as a fact', () => {
-            expect(matches(worry, 'The invites emailed the whole team before the admins were ready [1].')).toBe(false);
+        it('doesn’t reward stating when the email goes out as a fact', () => {
+            expect(matches(worry, 'The invite email is sent at Review & finish [1].')).toBe(false);
+            expect(matches(worry, 'Staff are emailed before training is booked [1].')).toBe(false);
+        });
+
+        it('forbids all, every or each Practice Administrator, but not a negation of it', () => {
+            expect(anyForbidden('onboarding-invite-worry', 'All Practice Administrators were unsure whether the invite email goes out at the step or at Review & finish [1].')).toHaveLength(1);
+            expect(anyForbidden('onboarding-invite-worry', 'Every Practice Administrator worried staff would be emailed before training was booked [1].')).toHaveLength(1);
+            expect(anyForbidden('onboarding-invite-worry', 'Not every Practice Administrator hesitated at Invite your team; P155 went on without comment [1].')).toEqual([]);
         });
     });
 
     describe('onboarding-required-steps', () => {
-        const [required] = entry('onboarding-required-steps').mustClaims;
+        const [calendar, everyStep] = entry('onboarding-required-steps').mustClaims;
 
-        it('accepts the raw note’s “step 2 (calendar) can’t be skipped” and doesn’t forbid it', () => {
-            const answer = 'Step 2 (calendar) can’t be skipped: a participant who tried hit the "required" indicator [1].';
-            expect(matches(required, answer)).toBe(true);
-            expect(anyForbidden('onboarding-required-steps', answer)).toEqual([]);
+        it('accepts every step required, Connect calendar included, and doesn’t forbid the build’s negations', () => {
+            const answers = [
+                'Every step is required in this build; a setup can’t skip a step, it can only be left open at it [1]. Connect calendar can’t be skipped either: there is no “Connect later” and no “Skip for now” [2].',
+                'All five steps are required, including Connect calendar [1]. There is no "Connect later" and no "Skip for now" [2].',
+                'None of the five steps can be skipped: Connect calendar is required, and the only way past it is to complete it [1][2].',
+            ];
+            for (const answer of answers) {
+                expect(matches(calendar, answer)).toBe(true);
+                expect(matches(everyStep, answer)).toBe(true);
+                expect(anyForbidden('onboarding-required-steps', answer)).toEqual([]);
+            }
         });
 
-        it('accepts step 3 (Connect calendar) is required', () => {
-            expect(matches(required, 'Step 3 ("Connect calendar") is required [1].')).toBe(true);
+        it('needs all five, not only steps 3 and 4, and the calendar step named', () => {
+            const answer = 'Steps 3 and 4 are required in this build [1].';
+            expect(matches(calendar, answer)).toBe(true);
+            expect(matches(everyStep, answer)).toBe(false);
+            expect(matches(calendar, 'Every step is required in this build [1].')).toBe(false);
         });
 
-        it('forbids “Step 2 (Basics) can be skipped”', () => {
-            expect(anyForbidden('onboarding-required-steps', 'Step 2 ("Basics") can be skipped.')).toEqual([
-                expect.stringMatching(/^Says Basics or Signup can be skipped/),
-            ]);
-        });
-
-        it('forbids step 4 required and all other steps required, but not a bare “2”', () => {
-            expect(anyForbidden('onboarding-required-steps', 'Step 4 (Invite your team) is required [1].')).toHaveLength(1);
-            expect(anyForbidden('onboarding-required-steps', 'All other steps are required [1].')).toHaveLength(1);
-            expect(anyForbidden('onboarding-required-steps', '2 of 3 participants tried to skip the calendar step, which is optional-looking but required [1].')).toEqual([]);
+        it('forbids an optional or skippable step and a “Connect later” or “Skip for now” option', () => {
+            expect(anyForbidden('onboarding-required-steps', 'Invite your team is optional [1].')).toHaveLength(1);
+            expect(anyForbidden('onboarding-required-steps', 'Connect calendar has a "Connect later" option, and you can choose "Skip for now" at Invite your team [1].')).toHaveLength(1);
         });
     });
 
@@ -148,14 +165,33 @@ describe('gold claim patterns', () => {
 
     describe('audit-onboarding-steps-order', () => {
         const [order] = entry('audit-onboarding-steps-order').mustClaims;
-        const steps = (last) => `1. Signup\n2. Basics (workspace name, team size)\n3. Connect calendar\n4. Invite your team\n5. Preferences\n6. ${last}\n[1]`;
+        const steps = (first, last) => `1. ${first}\n2. Practice details\n3. Connect calendar (read access to the appointment schedule)\n4. Invite your team\n5. ${last}\n[1]`;
 
-        it('accepts “Review & finish” as the last step', () => {
-            expect(matches(order, steps('Review & finish'))).toBe(true);
+        it('accepts the five steps in order, with the short names for the first and last', () => {
+            const answers = [
+                steps('Sign in with Meridian SSO', 'Review & finish'),
+                steps('Sign in', 'Review'),
+                'Setup starts with SSO sign-in, then Practice details, Connect calendar, Invite your team and Review & finish [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(order, answer)).toBe(true);
+                expect(anyForbidden('audit-onboarding-steps-order', answer)).toEqual([]);
+            }
         });
 
-        it('accepts just “Review” as the last step', () => {
-            expect(matches(order, steps('Review'))).toBe(true);
+        it('forbids dropping the sign-in and numbering Invite your team as step 3', () => {
+            const answer = '1. Practice details\n2. Connect calendar\n3. Invite your team\n4. Review & finish\n[1]';
+            expect(matches(order, answer)).toBe(false);
+            expect(anyForbidden('audit-onboarding-steps-order', answer)).toEqual([
+                expect.stringMatching(/^Numbers Practice details as step 1/),
+                expect.stringMatching(/^Numbers Invite your team as step 3/),
+            ]);
+        });
+
+        it('forbids the retired step names', () => {
+            expect(anyForbidden('audit-onboarding-steps-order', '1. Signup\n2. Basics\n3. Connect calendar\n4. Invite your team\n5. Preferences\n6. Review & finish\n[1]')).toEqual([
+                expect.stringMatching(/^Names a step Basics, Signup or Preferences/),
+            ]);
         });
     });
 
@@ -175,23 +211,33 @@ describe('gold claim patterns', () => {
     });
 
     describe('scenario-calendar-premise', () => {
-        const [already, noRecord] = entry('scenario-calendar-premise').mustClaims;
+        const [already, rationale, untested] = entry('scenario-calendar-premise').mustClaims;
 
-        it('accepts a premise check that says the step is already required and nothing argues for it', () => {
-            const answer = 'The calendar step is already required [1]. No record argues for making it required: the skip attempts support labeling it clearly [2].';
-            expect(matches(already, answer)).toBe(true);
-            expect(matches(noRecord, answer)).toBe(true);
-            expect(anyForbidden('scenario-calendar-premise', answer)).toEqual([]);
+        it('accepts a premise check: already required, the designer’s rationale is the only one, and no session tested it', () => {
+            const answers = [
+                'The calendar step is already required in this build [1]. The only rationale on record is the designer’s statement at session setup that the scribe attaches recordings to scheduled encounters, and no session tested it [1][2].',
+                'The step is already required [1]. The one reason given is the designer’s: the scribe attaches recordings to scheduled encounters [1]. That rationale is untested [2]. The stops at Connect calendar, where Practice Administrators said it was IT’s decision, show a problem with who can approve, not support for requiring the step [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(already, answer)).toBe(true);
+                expect(matches(rationale, answer)).toBe(true);
+                expect(matches(untested, answer)).toBe(true);
+                expect(anyForbidden('scenario-calendar-premise', answer)).toEqual([]);
+            }
         });
 
-        it('doesn’t count “even though it’s required” as the premise check', () => {
-            expect(matches(already, '2 of 3 tried to skip step 3, assuming it was optional even though it’s required [1].')).toBe(false);
+        it('doesn’t count “even though it’s required” as the premise check, or the stops as the rationale', () => {
+            expect(matches(already, '3 of 4 stopped at Connect calendar, even though it’s required [1].')).toBe(false);
+            expect(matches(rationale, 'The calendar step is required because setups stopped there [1].')).toBe(false);
+            expect(matches(untested, 'A usability session tested the calendar step with 6 participants [1].')).toBe(false);
         });
 
-        it('forbids presenting skip attempts as support for requiring it', () => {
-            expect(anyForbidden('scenario-calendar-premise', 'The evidence supporting making the calendar step required includes skip attempts [1].')).toHaveLength(1);
-            expect(anyForbidden('scenario-calendar-premise', 'Participants tried to skip it, which shows why it needs to be required [1].')).toHaveLength(1);
-            expect(anyForbidden('scenario-calendar-premise', 'The skip attempts support clearer labeling, not making it required [1].')).toEqual([]);
+        it('forbids presenting the stops, “IT’s decision”, the privacy review or the drop-off as evidence for requiring it', () => {
+            expect(anyForbidden('scenario-calendar-premise', 'The strongest evidence for requiring the step is that 7 of 24 setups stopped at Connect calendar [1].')).toHaveLength(1);
+            expect(anyForbidden('scenario-calendar-premise', 'Practice Administrators stopped at Connect calendar and said it was IT’s decision, which supports keeping the step required [1].')).toHaveLength(1);
+            expect(anyForbidden('scenario-calendar-premise', 'The privacy review that only IT can file justifies making the calendar step mandatory [1].')).toHaveLength(1);
+            expect(anyForbidden('scenario-calendar-premise', 'The dashboard drop-off at Connect calendar shows why it needs to be required [1].')).toHaveLength(1);
+            expect(anyForbidden('scenario-calendar-premise', 'The drop-off at Connect calendar supports clearer copy rather than requiring the step [1].')).toEqual([]);
         });
     });
 
@@ -230,9 +276,26 @@ describe('gold claim patterns', () => {
     });
 
     describe('scenario-invite-expectation', () => {
-        it('forbids generalizing session 3’s worry to every participant', () => {
-            expect(anyForbidden('scenario-invite-expectation', 'All participants worried the invites would email the team immediately [1].')).toHaveLength(1);
-            expect(anyForbidden('scenario-invite-expectation', 'One admin worried the invites would email the whole team before they were ready [1].')).toEqual([]);
+        const [expectation] = entry('scenario-invite-expectation').mustClaims;
+
+        it('accepts the unclear timing or the training worry, for most or 3 of 4', () => {
+            const answers = [
+                'Most Practice Administrators weren’t sure whether the invite email goes out when they finish the step or at Review & finish [1].',
+                '3 of 4 (P154, P156, P157) didn’t want staff emailed before champion training is booked [1]; P157 said forty people getting an email first would make their phone ring all afternoon [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(expectation, answer)).toBe(true);
+                expect(anyForbidden('scenario-invite-expectation', answer)).toEqual([]);
+            }
+        });
+
+        it('doesn’t reward a statement of when the email is sent', () => {
+            expect(matches(expectation, 'They expected the invite email to go out at Review & finish, and it does [1].')).toBe(false);
+        });
+
+        it('forbids generalizing the 3 of 4 to every Practice Administrator', () => {
+            expect(anyForbidden('scenario-invite-expectation', 'All Practice Administrators were unsure when the invite email is sent [1].')).toHaveLength(1);
+            expect(anyForbidden('scenario-invite-expectation', 'Each Practice Administrator hesitated at the invite step [1].')).toHaveLength(1);
         });
     });
 
