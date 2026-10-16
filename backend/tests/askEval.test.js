@@ -82,7 +82,7 @@ describe('gold claim patterns', () => {
     const anyForbidden = (id, answer) => entry(id).mustNotClaims.filter((claim) => matches(claim, answer)).map((c) => c.description);
 
     it('has every entry reviewed', () => {
-        expect(gold.entries.filter((e) => e.set === 'regression')).toHaveLength(9);
+        expect(gold.entries.filter((e) => e.set === 'regression')).toHaveLength(10);
         expect(gold.entries.filter((e) => e.set === 'scenario')).toHaveLength(7);
         expect(gold.entries.filter((e) => e.status !== 'reviewed').map((e) => e.id)).toEqual([]);
     });
@@ -110,6 +110,19 @@ describe('gold claim patterns', () => {
         it('doesn’t reward stating when the email goes out as a fact', () => {
             expect(matches(worry, 'The invite email is sent at Review & finish [1].')).toBe(false);
             expect(matches(worry, 'Staff are emailed before training is booked [1].')).toBe(false);
+        });
+
+        it('accepts unsure when staff would be emailed, invited or notified', () => {
+            const answers = [
+                'P154, P156 and P157 hesitated because they were unsure when staff would be emailed [1].',
+                'They weren’t sure whether staff would be invited before champion training [1].',
+                'Practice Administrators wondered when staff would be notified [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(worry, answer)).toBe(true);
+                expect(anyForbidden('onboarding-invite-worry', answer)).toEqual([]);
+            }
+            expect(matches(worry, 'Staff are notified when the setup is finished [1].')).toBe(false);
         });
 
         it('forbids all, every or each Practice Administrator, but not a negation of it', () => {
@@ -142,9 +155,34 @@ describe('gold claim patterns', () => {
             expect(matches(calendar, 'Every step is required in this build [1].')).toBe(false);
         });
 
+        it('accepts none, no step or nothing can be skipped, said of all the steps', () => {
+            const answers = [
+                'The setup has five steps and none can be skipped; Connect calendar is required [1].',
+                'All five steps are required; nothing can be skipped [1].',
+                'No step can be skipped in this build [1].',
+                'All five steps can’t be skipped [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(everyStep, answer)).toBe(true);
+                expect(anyForbidden('onboarding-required-steps', answer)).toEqual([]);
+            }
+            expect(matches(everyStep, 'Steps 3 and 4 can’t be skipped [1].')).toBe(false);
+            expect(matches(everyStep, 'Steps 3 and 4 are required, and none can be skipped [1].')).toBe(false);
+        });
+
         it('forbids an optional or skippable step and a “Connect later” or “Skip for now” option', () => {
             expect(anyForbidden('onboarding-required-steps', 'Invite your team is optional [1].')).toHaveLength(1);
             expect(anyForbidden('onboarding-required-steps', 'Connect calendar has a "Connect later" option, and you can choose "Skip for now" at Invite your team [1].')).toHaveLength(1);
+            expect(anyForbidden('onboarding-required-steps', 'a setup could skip Invite your team [1].')).toHaveLength(1);
+        });
+
+        it('doesn’t forbid a participant’s question about whether a step was optional', () => {
+            const answers = [
+                'Participants wondered if Connect calendar was optional; it is required, and every step is required [1].',
+                'Practice Administrators asked whether Invite your team was optional; every step is required [1].',
+                'Nothing in the build is optional: every step is required [1].',
+            ];
+            for (const answer of answers) expect(anyForbidden('onboarding-required-steps', answer)).toEqual([]);
         });
     });
 
@@ -192,6 +230,68 @@ describe('gold claim patterns', () => {
             expect(anyForbidden('audit-onboarding-steps-order', '1. Signup\n2. Basics\n3. Connect calendar\n4. Invite your team\n5. Preferences\n6. Review & finish\n[1]')).toEqual([
                 expect.stringMatching(/^Names a step Basics, Signup or Preferences/),
             ]);
+            expect(anyForbidden('audit-onboarding-steps-order', '1. Signup 2. Basics 3. Connect calendar 4. Invite your team 5. Preferences 6. Review & finish [1]')).toHaveLength(1);
+            expect(anyForbidden('audit-onboarding-steps-order', 'Step 5: Preferences [1].')).toHaveLength(1);
+            expect(anyForbidden('audit-onboarding-steps-order', 'The Preferences step comes after Invite your team [1].')).toHaveLength(1);
+        });
+
+        it('doesn’t forbid “preferences” in other prose, or the sign-in step', () => {
+            expect(anyForbidden('audit-onboarding-steps-order', 'Practice Administrators can change notification preferences after setup [1].')).toEqual([]);
+            expect(anyForbidden('audit-onboarding-steps-order', steps('Sign in with Meridian SSO', 'Review & finish'))).toEqual([]);
+        });
+    });
+
+    describe('audit-session-lock-draft-loss-count', () => {
+        const [allFour] = entry('audit-session-lock-draft-loss-count').mustClaims;
+        const forbidden = (answer) => anyForbidden('audit-session-lock-draft-loss-count', answer);
+
+        it('accepts all 4 shadowed clinicians, including beside the original figure framed as uncorrected', () => {
+            const answers = [
+                'All 4 shadowed clinicians assumed the draft was lost and started dictating again after re-authenticating [1].',
+                'All four observed clinicians thought the lock had destroyed their draft, though it survives server-side [1][2].',
+                '4 of the 4 shadowed clinicians assumed their draft was lost [1].',
+                'Four of four clinicians assumed the draft was gone [1].',
+                'Every one of the four shadowed clinicians believed the draft was lost [1].',
+                'All 4 shadowed clinicians assumed the draft was lost; the original notes said 4 of 5 because they counted the IT Security stakeholder as a clinician [1].',
+                'The session notes say 4 of 5 clinicians, but the correction says all 4 shadowed clinicians assumed the draft was lost [1].',
+                'There were 5 participants: 4 shadowed clinicians and 1 IT Security stakeholder; all 4 clinicians assumed the draft was lost [1].',
+                'All four clinicians (not four of five) assumed the draft was lost [1].',
+                'All 4 shadowed clinicians assumed the draft was lost [1]. The IT Security stakeholder was interviewed, not shadowed, and did not go through a lock [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(allFour, answer)).toBe(true);
+                expect(forbidden(answer)).toEqual([]);
+            }
+            expect(forbidden('`session-notes.md` says "4 of 5 clinicians assumed the draft was lost." Only the 4 shadowed clinicians went through a lock during dictation, so all 4 clinicians assumed the draft was lost [1].')).toEqual([]);
+        });
+
+        it('forbids 4 of 5 or 5 clinicians given as the result', () => {
+            const answers = [
+                '4 of 5 clinicians assumed the draft was lost [1].',
+                'Four of five clinicians assumed their draft was lost and re-dictated [1].',
+                '5 clinicians were shadowed, and 4 of them assumed the draft was lost [1].',
+                'According to the session notes, 4 of 5 clinicians assumed the draft was lost [1].',
+                '4 of 5 clinicians mistakenly assumed the draft was lost [1].',
+                'Most clinicians (4/5) assumed the draft was lost [1].',
+            ];
+            for (const answer of answers) {
+                expect(matches(allFour, answer)).toBe(false);
+                expect(forbidden(answer)).toEqual([expect.stringMatching(/^Presents "4 of 5"/)]);
+            }
+        });
+
+        it('doesn’t count not all 4, or all 4 without the draft loss', () => {
+            expect(matches(allFour, 'Not all 4 clinicians assumed the draft was lost [1].')).toBe(false);
+            expect(matches(allFour, 'All 4 clinicians re-authenticated quickly [1].')).toBe(false);
+        });
+
+        it('forbids the IT Security stakeholder, or all five participants, assuming the draft was lost', () => {
+            expect(forbidden('All 4 clinicians and the IT Security stakeholder assumed the draft was lost [1].')).toEqual([expect.stringMatching(/^Says the IT Security stakeholder/)]);
+            expect(forbidden('The IT Security stakeholder also assumed the draft was lost [1].')).toHaveLength(1);
+            expect(forbidden('All five participants assumed the draft was lost [1].')).toHaveLength(1);
+            expect(forbidden('The IT Security stakeholder did not assume the draft was lost; they were not shadowed [1].')).toEqual([]);
+            expect(forbidden('IT Security confirmed the draft is preserved server-side and is not lost [1].')).toEqual([]);
+            expect(forbidden('The notes counted the IT Security stakeholder, so all 4 clinicians assumed the draft was lost [1].')).toEqual([]);
         });
     });
 
@@ -291,6 +391,12 @@ describe('gold claim patterns', () => {
 
         it('doesn’t reward a statement of when the email is sent', () => {
             expect(matches(expectation, 'They expected the invite email to go out at Review & finish, and it does [1].')).toBe(false);
+            expect(matches(expectation, 'The invite email is sent at Review & finish [1].')).toBe(false);
+            expect(matches(expectation, 'Staff are emailed before training is booked [1].')).toBe(false);
+        });
+
+        it('accepts unsure when staff would be emailed', () => {
+            expect(matches(expectation, 'P154, P156 and P157 hesitated because they were unsure when staff would be emailed [1].')).toBe(true);
         });
 
         it('forbids generalizing the 3 of 4 to every Practice Administrator', () => {

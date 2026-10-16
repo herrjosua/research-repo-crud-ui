@@ -344,8 +344,8 @@ describe('followUps: Follow-ups passages for "what is unresolved" questions', ()
         const gold = loadGold().entries;
         const TARGETS = ['scenario-care-coordinator-gaps', 'scenario-session-timeout-open'];
 
-        it('fires on the two open-questions gold entries and none of the other 14', () => {
-            expect(gold).toHaveLength(16);
+        it('fires on the two open-questions gold entries and none of the other 15', () => {
+            expect(gold).toHaveLength(17);
             expect(gold.filter((e) => asksWhatIsUnresolved(e.question)).map((e) => e.id).sort()).toEqual(TARGETS);
         });
 
