@@ -1,5 +1,5 @@
 const { CAPTURE_SCRIPT_VERSION, validateStaticAnswers } = require('../ask/staticAnswers');
-const { reviewRun, citedSentences, unsupportedNumbers } = require('../scripts/capture-static-answers');
+const { reviewRun, defaultRun } = require('../scripts/capture-static-answers');
 
 // The static answers file's validator (ask/staticAnswers.js) and the capture
 // script's review checks. staticAnswers.data.test.js checks the real file.
@@ -48,7 +48,7 @@ describe('capture review checks', () => {
 
     it('flags no citations, dangling model markers, and unrelated excerpts', () => {
         expect(reviewRun({ answer: 'Nothing covers this.', sources: [], raw: 'Nothing covers this.' }, 6).flags)
-            .toEqual(['no citations']);
+            .toEqual(['no citations', 'uncited sentence: "Nothing covers this."']);
 
         const dangling = reviewRun({
             answer: 'Physicians distrusted garbled medication dosages [1].',
@@ -73,36 +73,105 @@ describe('capture review checks', () => {
     });
 });
 
-describe('citedSentences', () => {
+// The review reads sentences and figures by ask/checks.js's analyseAnswer,
+// as the live route and the harness do (askChecks.test.js covers the rules
+// themselves); these pin what the review reports and what the gate blocks.
+describe('capture review: sentences', () => {
+    const cite = (...excerpts) => excerpts.map((excerpt) => ({ recordId: 'raw:a', recordKind: 'raw', title: 'Title', section: null, excerpt }));
+    const flags = (answer, sources) => reviewRun({ answer, sources, raw: '' }, 6).flags;
+
     it('attaches markers to the sentence they follow, before or after the full stop', () => {
-        expect(citedSentences('Errors in 3 of 5 sessions. [1] Physicians read every line [2].\n\nBoth [1][3].')).toEqual([
-            { n: 1, sentence: 'Errors in 3 of 5 sessions.' },
-            { n: 2, sentence: 'Physicians read every line .' },
-            { n: 1, sentence: 'Both .' },
-            { n: 3, sentence: 'Both .' },
-        ]);
+        expect(flags(
+            'Errors in 3 of 5 sessions. [1] Physicians read every line [2].\n\nBoth [1][3].',
+            cite('Errors in 3 of 5 sessions', 'Physicians read every line', 'Both'),
+        )).toEqual([]);
+    });
+
+    it('flags a sentence whose citation comes after the next sentence as uncited', () => {
+        expect(flags(
+            'Senior coders worried about upcoding. They wanted the coder to make the final call. [1]',
+            cite('Senior coders worried about upcoding; they wanted the coder to make the final call.'),
+        )).toEqual(['uncited sentence: "Senior coders worried about upcoding."']);
+    });
+
+    it('starts a new sentence at markers followed by a lowercase word, not a capital', () => {
+        const source = cite('Admins hesitated at the calendar step and skipped it.');
+        expect(flags('Admins hesitated at the calendar step. [1] mentions that admins skipped it.', source))
+            .toEqual(['uncited sentence: "Admins hesitated at the calendar step."']);
+        expect(flags('Admins hesitated at the calendar step. [1] Admins skipped it [1].', source)).toEqual([]);
+    });
+
+    it('never splits a quotation at its own full stops, but can end a sentence at its closing mark', () => {
+        expect(flags('A physician said "I love this job. I do not love the notes." [1]', cite('I love this job. I do not love the notes.')))
+            .toEqual([]);
+        expect(flags('She said "I chart in bed." Physicians read every line [1].', cite('Physicians read every line; she charts in bed.')))
+            .toEqual(['uncited sentence: "She said "I chart in bed.""']);
+    });
+
+    it('reads "(6.5 min vs. 9 min…)" as one sentence', () => {
+        expect(flags('Drafting took less time with the AI (6.5 min vs. 9 min per case) [1].', cite('Drafting took 6.5 min vs. 9 min per case with the AI.')))
+            .toEqual([]);
     });
 });
 
-describe('unsupportedNumbers', () => {
+describe('capture review: figures', () => {
     const cite = (...excerpts) => excerpts.map((excerpt) => ({ excerpt }));
+    const figureFlags = (answer, sources) => reviewRun({ answer, sources, raw: '' }, 6).flags.filter((f) => /^(number|count)\(s\)/.test(f));
 
     it('catches the right number in the wrong count (the dropped session-lock answer)', () => {
-        expect(unsupportedNumbers(
+        expect(figureFlags(
             'Four out of four clinicians who were shadowed assumed that their draft was lost [1].',
             cite('In the current build, a session lock mid-recording simply freezes the widget; 4 of 5 clinicians assumed the draft was lost.'),
-        )).toEqual({ numbers: [], pairs: ['4 of 4'] });
+        )).toEqual(['count(s) no cited excerpt states: "4 of 4" in "Four out of four clinicians who were shadowed assumed that their draft was lost."']);
     });
 
     it('treats spelled-out numbers and digits alike, and reads percentages as numbers', () => {
-        expect(unsupportedNumbers('Two of three tried to skip it [1]; 52% chose it [2].', cite('2 of 3 tried', '52% selected it')))
-            .toEqual({ numbers: [], pairs: [] });
-        expect(unsupportedNumbers('Twelve physicians, 64% of them [1].', cite('64% of physician respondents')))
-            .toEqual({ numbers: ['12'], pairs: [] });
+        expect(figureFlags('Two of three tried to skip it [1]; 52% chose it [2].', cite('2 of 3 tried', '52% selected it'))).toEqual([]);
+        expect(figureFlags('Twelve physicians, 64% of them [1].', cite('64% of physician respondents')))
+            .toEqual(['number(s) in no cited excerpt: 12 in "Twelve physicians, 64% of them."']);
     });
 
     it('flags a number derived rather than stated', () => {
-        expect(unsupportedNumbers('The AI saved an estimated 10 minutes per case [1].', cite('from ~15 minutes to ~5 minutes')))
-            .toEqual({ numbers: ['10'], pairs: [] });
+        expect(figureFlags('The AI saved an estimated 10 minutes per case [1].', cite('from ~15 minutes to ~5 minutes')))
+            .toEqual(['number(s) in no cited excerpt: 10 in "The AI saved an estimated 10 minutes per case."']);
+    });
+
+    it('holds a figure to its own sentence\'s citations, not every cited source', () => {
+        expect(figureFlags('Physicians read every line [1]. Twelve doctors distrusted the garbled dosages [2].', cite('12 physicians read every line', 'Doctors distrusted the garbled dosages.')))
+            .toEqual(['number(s) in no cited excerpt: 12 in "Twelve doctors distrusted the garbled dosages."']);
+    });
+
+    it('lets a sentence repeat its cited source\'s label date', () => {
+        const dated = (date) => [{ excerpt: 'Physicians read every line of the draft.', date }];
+        expect(figureFlags('In the April 8, 2025 test, physicians read every line [1].', dated('Apr 8, 2025'))).toEqual([]);
+        expect(figureFlags('In the April 8, 2025 test, physicians read every line [1].', dated('Apr 9, 2025')))
+            .toEqual(['number(s) in no cited excerpt: 8, 2025 in "In the April 8, 2025 test, physicians read every line."']);
+    });
+
+    it('lets an uncited decline repeat a figure from the question or a shown source', () => {
+        const answer = 'The sources do not say whether step 4 was tested.';
+        const review = (shownSources, question) => reviewRun({ answer, sources: [], raw: '', shownSources }, 6, question).flags;
+        expect(review([], '')).toEqual(['no citations', `number(s) in no cited excerpt: 4 in "${answer}"`]);
+        expect(review([{ title: 'Onboarding flow', excerpt: 'Step 4: connect your calendar.' }], '')).toEqual(['no citations']);
+        expect(review([], 'Was step 4 tested?')).toEqual(['no citations']);
+    });
+});
+
+describe('defaultRun (the publish gate)', () => {
+    const sources = [
+        { recordId: 'raw:a', recordKind: 'raw', title: 'Session', section: null, excerpt: '12 physicians read every line of the draft.' },
+        { recordId: 'finding:b', recordKind: 'finding', title: 'Finding', section: null, excerpt: 'Physicians distrusted the garbled dosages.' },
+    ];
+    const run = (n, answer) => ({ run: n, review: reviewRun({ answer, sources, raw: '' }, 6) });
+    const uncited = run(1, 'Physicians read every line of the draft [1]. Afterwards they went home. Physicians distrusted the garbled dosages [2].');
+    const figure = run(2, 'Physicians read every line of the draft [1]. Twelve physicians distrusted the garbled dosages [2].');
+    const clean = run(3, 'Twelve physicians read every line of the draft [1]. Physicians distrusted the garbled dosages [2].');
+
+    it('skips a run with an uncited sentence or a figure its own sentence doesn\'t cite', () => {
+        expect(uncited.review.meetsBar && figure.review.meetsBar && clean.review.meetsBar).toBe(true);
+        expect(uncited.review.flags).toEqual(['uncited sentence: "Afterwards they went home."']);
+        expect(figure.review.flags).toEqual(['number(s) in no cited excerpt: 12 in "Twelve physicians distrusted the garbled dosages."']);
+        expect(defaultRun([uncited, figure, clean])).toBe(clean);
+        expect(defaultRun([uncited, figure])).toBeUndefined();
     });
 });
