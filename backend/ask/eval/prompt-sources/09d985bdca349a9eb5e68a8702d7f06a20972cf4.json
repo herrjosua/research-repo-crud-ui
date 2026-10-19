@@ -1,0 +1,1126 @@
+{
+  "corpusCommit": "09d985bdca349a9eb5e68a8702d7f06a20972cf4",
+  "records": {
+    "analytics:compass-ai-practice-setup-funnel": {
+      "title": "Compass AI practice setup — where setups stop",
+      "participants": null,
+      "date": "Feb 24, 2026"
+    },
+    "component:encounter-view": {
+      "title": "Encounter View",
+      "participants": null,
+      "date": null
+    },
+    "component:prior-auth-drafting-panel": {
+      "title": "Prior Authorization Drafting Panel",
+      "participants": null,
+      "date": null
+    },
+    "component:sso-mfa-login": {
+      "title": "SSO / MFA Login",
+      "participants": null,
+      "date": null
+    },
+    "deliverable:facilitation-guides/compass-ai-practice-setup-usability-guide": {
+      "title": "Compass AI Practice Setup — Usability Test Facilitation Guide",
+      "participants": null,
+      "date": "Jan 27, 2026"
+    },
+    "deliverable:journey-maps/longitudinal-physician-ambient-scribe": {
+      "title": "The Longitudinal Physician — Ambient Scribe Journey (v0.1 to Post-GA)",
+      "participants": null,
+      "date": "Feb 27, 2026"
+    },
+    "deliverable:journey-maps/practice-administrator-compass-ai-setup": {
+      "title": "The Practice Administrator — Compass AI Practice Setup Journey",
+      "participants": null,
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:mental-models/care-coordinator-alert-ranking": {
+      "title": "Care Coordinators' Mental Model of Alert Ranking",
+      "participants": null,
+      "date": "Sep 5, 2025"
+    },
+    "deliverable:mental-models/compass-ai-schedule-access-and-invites": {
+      "title": "Practice and IT Administrators' Mental Model of Schedule Access and Staff Invites",
+      "participants": null,
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:mindsets/wants-to-know-what-a-step-commits": {
+      "title": "Wants to Know What a Step Commits Them To",
+      "participants": null,
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:personas/physician-longitudinal-scribe-user": {
+      "title": "The Longitudinal Physician — Ambient Scribe",
+      "participants": null,
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:personas/practice-administrator-compass-ai-setup": {
+      "title": "The Practice Administrator — Compass AI Practice Setup",
+      "participants": null,
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:research-plans/compass-ai-practice-setup-study-q1": {
+      "title": "Compass AI Practice Setup — Usability Study Plan, Q1",
+      "participants": null,
+      "date": "Jan 27, 2026"
+    },
+    "deliverable:research-readouts/compass-ai-practice-setup-q1-readout": {
+      "title": "Compass AI Practice Setup — Q1 Study Readout",
+      "participants": null,
+      "date": "Mar 10, 2026"
+    },
+    "deliverable:service-topology/prior-auth-drafting-v2": {
+      "title": "AI-Assisted Prior Authorization Drafting — Service Topology (v2)",
+      "participants": null,
+      "date": "Nov 20, 2025"
+    },
+    "deliverable:storyboards/compass-ai-setup-calendar-and-invite-hesitations": {
+      "title": "Compass AI Practice Setup — A Practice Administrator at Connect Calendar and Invite Your Team",
+      "participants": null,
+      "date": "Mar 17, 2026"
+    },
+    "deliverable:thumbnails/medication-flag-placement-explorations": {
+      "title": "Sound-Alike Medication Flag — Placement Explorations",
+      "participants": null,
+      "date": "Feb 8, 2026"
+    },
+    "deliverable:topline-summaries/ambient-scribe-ga-adoption-first-4-weeks": {
+      "title": "Ambient Scribe GA Candidate — First 4 Weeks Adoption Topline",
+      "participants": null,
+      "date": "Jan 28, 2026"
+    },
+    "deliverable:topline-summaries/compass-ai-practice-setup-topline": {
+      "title": "Compass AI Practice Setup — Study Topline",
+      "participants": null,
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:user-flows/ambient-scribe-session-lock-recovery": {
+      "title": "Ambient Scribe — Session Lock Recovery",
+      "participants": null,
+      "date": "Feb 25, 2026"
+    },
+    "deliverable:user-flows/compass-ai-practice-setup-five-step-flow": {
+      "title": "Compass AI Practice Setup — The Five Steps as Built",
+      "participants": null,
+      "date": "Mar 17, 2026"
+    },
+    "deliverable:wireflows/compass-ai-connect-calendar-send-to-it": {
+      "title": "Compass AI Practice Setup — Connect Calendar \"Send to IT for Approval\" Wireflow",
+      "participants": null,
+      "date": "Mar 17, 2026"
+    },
+    "deliverable:wireframes/ambient-scribe-medication-flag": {
+      "title": "Ambient Scribe — Sound-Alike Medication Flag",
+      "participants": null,
+      "date": "Feb 24, 2026"
+    },
+    "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval": {
+      "title": "Compass AI Practice Setup — Connect Calendar with Fields Read and IT Approval",
+      "participants": null,
+      "date": "Mar 17, 2026"
+    },
+    "finding:ambient-scribe": {
+      "title": "Ambient AI Scribe",
+      "participants": null,
+      "date": "Oct 8, 2026"
+    },
+    "finding:ambient-scribe-post-ga-refinements": {
+      "title": "Ambient Scribe — Post-GA Refinements",
+      "participants": null,
+      "date": "Feb 17, 2026"
+    },
+    "finding:care-coordination-triage": {
+      "title": "Care Coordination & Alert Triage",
+      "participants": null,
+      "date": "Sep 29, 2026"
+    },
+    "finding:clinician-experience-documentation-burden": {
+      "title": "Clinician Experience & Documentation Burden",
+      "participants": null,
+      "date": "Oct 13, 2026"
+    },
+    "finding:compass-ai-practice-setup": {
+      "title": "Compass AI Practice Setup",
+      "participants": null,
+      "date": "Feb 24, 2026"
+    },
+    "finding:prior-authorization": {
+      "title": "AI-Assisted Prior Authorization",
+      "participants": null,
+      "date": "Sep 17, 2026"
+    },
+    "finding:scope-boundaries-and-workflow-fit": {
+      "title": "Scope Boundaries & Workflow Fit",
+      "participants": null,
+      "date": "Sep 8, 2026"
+    },
+    "raw:2025-02-11-survey-nursing-attitudes-ai-documentation": {
+      "title": "Survey — Nursing Staff Attitudes Toward AI-Assisted Documentation",
+      "participants": "Participants: 142 — Registered Nurse (various units)",
+      "date": "Feb 11, 2025"
+    },
+    "raw:2025-04-08-usability-test-prior-auth-ai-v1": {
+      "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v1)",
+      "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
+      "date": "Apr 8, 2025"
+    },
+    "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline": {
+      "title": "Survey — Clinician Burnout & Documentation Burden Baseline",
+      "participants": "Participants: 287 — Physician, Nurse Practitioner, Physician Assistant, Registered Nurse",
+      "date": "Sep 9, 2025"
+    },
+    "raw:2025-12-02-survey-allstaff-ai-readiness-pulse": {
+      "title": "Survey — All-Staff AI Readiness Pulse Survey",
+      "participants": "Participants: 421 — Clinical staff (various), Non-clinical/administrative staff",
+      "date": "Dec 2, 2025"
+    },
+    "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate": {
+      "title": "Usability Test — Ambient AI Scribe GA Release Candidate (Final Validation)",
+      "participants": "Participants: 6 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner, Physician Assistant",
+      "date": "Jan 13, 2026"
+    },
+    "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion": {
+      "title": "Dashboard review — Compass AI practice setup completion",
+      "participants": "Participants: N/A",
+      "date": "Jan 20, 2026"
+    },
+    "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption": {
+      "title": "Dashboard review — Ambient scribe GA candidate adoption",
+      "participants": "Participants: N/A",
+      "date": "Jan 27, 2026"
+    },
+    "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow": {
+      "title": "Usability Test — Compass AI Practice Setup Flow",
+      "participants": "Participants: 6 — P154 — Practice Administrator (admin-staff) ×1, P155 — Practice Administrator (admin-staff) ×1, P156 — Practice Administrator (admin-staff) ×1, P157 — Practice Administrator (admin-staff) ×1, P158 — IT Administrator (it) ×1, P159 — IT Administrator (it) ×1",
+      "date": "Feb 3, 2026"
+    },
+    "raw:2026-02-10-ambient-scribe-medication-flag-concept": {
+      "title": "Usability Test — Ambient Scribe Sound-Alike Medication Flag Concept",
+      "participants": "Participants: 6 — Physician, Nurse Practitioner",
+      "date": "Feb 10, 2026"
+    },
+    "raw:2026-02-17-session-lock-during-dictation": {
+      "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+      "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+      "date": "Feb 17, 2026"
+    },
+    "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites": {
+      "title": "Interview — IT Administrator on Schedule Access and Staff Invites",
+      "participants": "Participants: 1 — P160 — IT Administrator (it) ×1",
+      "date": "Feb 24, 2026"
+    },
+    "raw:2026-03-10-interview-medical-coder-coding-from-ai-drafted-notes": {
+      "title": "Interview — Medical Coder on Coding from AI-Drafted Notes",
+      "participants": "Participants: 1 — P120 — Medical Coder (certified) (him-coder) ×1",
+      "date": "Mar 10, 2026"
+    },
+    "raw:2026-03-19-interview-primary-care-physician-incidental-content-at-sign-off": {
+      "title": "Interview — Primary Care Physician on Incidental Content in Scribe Drafts",
+      "participants": "Participants: 1 — P146 — Physician (Internal Medicine) (physician) ×1",
+      "date": "Mar 19, 2026"
+    },
+    "raw:2026-03-24-interview-family-physician-plan-and-medication-changes-at-sign-off": {
+      "title": "Interview — Family Physician on the Plan Section and Medication Changes at Sign-Off",
+      "participants": "Participants: 1 — P147 — Physician (Family Medicine) (physician) ×1",
+      "date": "Mar 24, 2026"
+    },
+    "raw:2026-04-28-interview-nurse-practitioner-session-lock-shared-workstations": {
+      "title": "Interview — Nurse Practitioner on Session Lock and Shared Exam-Room Workstations",
+      "participants": "Participants: 1 — P148 — Nurse Practitioner (primary care) (app) ×1",
+      "date": "Apr 28, 2026"
+    },
+    "raw:2026-05-05-interview-care-coordinator-supervisor-queue-oversight": {
+      "title": "Interview — Care Coordinator Supervisor on Queue Oversight",
+      "participants": "Participants: 1 — P132 — Care Coordinator Supervisor (care-coordinator) ×1",
+      "date": "May 5, 2026"
+    },
+    "raw:2026-05-12-interview-cdi-specialist-documentation-gaps": {
+      "title": "Interview — CDI Specialist on Documentation Gaps in AI-Drafted Notes",
+      "participants": "Participants: 1 — P123 — Clinical Documentation Integrity Specialist (him-coder) ×1",
+      "date": "May 12, 2026"
+    },
+    "raw:2026-05-26-interview-returning-nurse-practitioner-training-and-review-habits": {
+      "title": "Interview — Returning Nurse Practitioner on Champion Training and Review Habits",
+      "participants": "Participants: 1 — P118 — Nurse Practitioner (app), returning from 2026-01-13-usability-test-ambient-scribe-ga-release-candidate ×1",
+      "date": "May 26, 2026"
+    },
+    "raw:2026-05-28-interview-icu-nurse-handoff-narrative": {
+      "title": "Interview — ICU Nurse on the Handoff Narrative",
+      "participants": "Participants: 1 — P140 — Registered Nurse (ICU) (nurse) ×1",
+      "date": "May 28, 2026"
+    },
+    "raw:2026-06-16-interview-utilization-review-nurse-case-scope": {
+      "title": "Interview — Returning Utilization Review Nurse on Pilot Case Scope",
+      "participants": "Participants: 1 — P19 — Utilization Review Nurse (nurse), returning from 2025-04-08-usability-test-prior-auth-ai-v1 ×1",
+      "date": "Jun 16, 2026"
+    },
+    "raw:2026-06-30-interview-rheumatologist-medication-lines-in-scribe-drafts": {
+      "title": "Interview — Rheumatologist on Medication Lines in Scribe Drafts",
+      "participants": "Participants: 1 — P149 — Physician (Rheumatology) (physician) ×1",
+      "date": "Jun 30, 2026"
+    },
+    "raw:2026-07-02-interview-family-physician-after-hours-charting-since-ga": {
+      "title": "Interview — Family Physician on After-Hours Charting Since GA",
+      "participants": "Participants: 1 — P150 — Physician (Family Medicine) (physician) ×1",
+      "date": "Jul 2, 2026"
+    },
+    "raw:2026-07-21-interview-med-surg-night-nurse-charting-load": {
+      "title": "Interview — Med-Surg Night Nurse on Charting Load",
+      "participants": "Participants: 1 — P141 — Registered Nurse (medical-surgical) (nurse) ×1",
+      "date": "Jul 21, 2026"
+    },
+    "raw:2026-08-04-interview-care-coordinator-complex-care-alert-volume": {
+      "title": "Interview — Complex Care Coordinator on Alert Volume",
+      "participants": "Participants: 1 — P134 — Care Coordinator (complex care) (care-coordinator) ×1",
+      "date": "Aug 4, 2026"
+    },
+    "raw:2026-08-20-interview-care-coordinator-new-hire-shadowing": {
+      "title": "Interview — New Care Coordinator on Learning the Queue",
+      "participants": "Participants: 1 — P135 — Care Coordinator (care-coordinator) ×1",
+      "date": "Aug 20, 2026"
+    },
+    "raw:2026-09-17-interview-utilization-review-nurse-citation-checking": {
+      "title": "Interview — Utilization Review Nurse on Checking Citations",
+      "participants": "Participants: 1 — P144 — Utilization Review Nurse (nurse) ×1",
+      "date": "Sep 17, 2026"
+    },
+    "raw:2026-09-22-interview-returning-internal-medicine-physician-edits-and-trust-over-time": {
+      "title": "Interview — Returning Internal Medicine Physician on Edits and Trust Over Time",
+      "participants": "Participants: 1 — P09 — Physician, Internal Medicine (physician), returning from 2026-01-13-usability-test-ambient-scribe-ga-release-candidate ×1",
+      "date": "Sep 22, 2026"
+    },
+    "raw:2026-09-29-interview-care-coordinator-referral-follow-up": {
+      "title": "Interview — Specialty Clinic Care Coordinator on Referral Follow-up",
+      "participants": "Participants: 1 — P137 — Care Coordinator (care-coordinator) ×1",
+      "date": "Sep 29, 2026"
+    },
+    "raw:2026-10-06-interview-senior-medical-coder-ai-suggestions-concept": {
+      "title": "Interview — Senior Medical Coder on AI Coding Suggestions",
+      "participants": "Participants: 1 — P129 — Medical Coder (senior) (him-coder) ×1",
+      "date": "Oct 6, 2026"
+    }
+  },
+  "passages": {
+    "analytics:compass-ai-practice-setup-funnel#0": {
+      "title": "Compass AI practice setup — where setups stop",
+      "section": "Summary",
+      "participants": null,
+      "excerpt": "In the Compass AI practice setup flow, where every step is required, setups stop most at step 3 (\"Connect calendar\") and stay there longest, then at step 4 (\"Invite your team\"). This summary covers where setups stopped and for how long; it doesn't say why.",
+      "date": "Feb 24, 2026"
+    },
+    "component:encounter-view#2": {
+      "title": "Encounter View",
+      "section": "States",
+      "participants": null,
+      "excerpt": "default\nlocked (session timeout)",
+      "date": null
+    },
+    "component:encounter-view#6": {
+      "title": "Encounter View",
+      "section": "Notes",
+      "participants": null,
+      "excerpt": "A 2026-04-28 interview with one Nurse Practitioner (primary care) raised a case on exam-room workstations shared by several clinicians: they don't know what happens to their in-progress draft if a colleague signs in on that workstation while their session is locked, so they stop the scribe before leaving the room, and how the product behaves in that case is not recorded in the corpus ( research/raw/2026-04-28-interview-nurse-practitioner-session-lock-shared-workstations/ ).",
+      "date": null
+    },
+    "component:prior-auth-drafting-panel#5": {
+      "title": "Prior Authorization Drafting Panel",
+      "section": "Notes",
+      "participants": null,
+      "excerpt": "Inline source citations (the citation-expanded state) were added directly in response to the 2025-04-08 v1 testing finding that nurses wanted to see the chart text behind each suggestion. Validated as actively used, not ignored, in 2025-11-04 v2 testing.",
+      "date": null
+    },
+    "component:sso-mfa-login#2": {
+      "title": "SSO / MFA Login",
+      "section": "States",
+      "participants": null,
+      "excerpt": "default\nsession-timeout-warning",
+      "date": null
+    },
+    "deliverable:facilitation-guides/compass-ai-practice-setup-usability-guide#1": {
+      "title": "Compass AI Practice Setup — Usability Test Facilitation Guide",
+      "section": "Session setup",
+      "participants": null,
+      "excerpt": "Confirm the test environment is up: the sandbox calendar for step 3 and the test staff list for step 4 are in place, so no real schedule is read and no real staff are emailed.\nThe designer states the rationale for the calendar step: it is required because the scribe attaches recordings to scheduled encounters. This is context for the moderator. Don't share it with the participant or ask them about it; the study doesn't test it.\nHave the notes template open, with a space for questions the moderator couldn't answer.",
+      "date": "Jan 27, 2026"
+    },
+    "deliverable:journey-maps/longitudinal-physician-ambient-scribe#3": {
+      "title": "The Longitudinal Physician — Ambient Scribe Journey (v0.1 to Post-GA)",
+      "section": "Stages",
+      "participants": null,
+      "excerpt": "GA Candidate (Jan 2026) — Per-line confidence highlighting introduces the first behavior change: begins skimming high-confidence lines for the first time. Sound-alike medication names are still a known gap, recommended for post-GA monitoring.",
+      "date": "Feb 27, 2026"
+    },
+    "deliverable:journey-maps/practice-administrator-compass-ai-setup#5": {
+      "title": "The Practice Administrator — Compass AI Practice Setup Journey",
+      "section": "Stages",
+      "participants": null,
+      "excerpt": "Invite your team. In the test, 3 of 4 Practice Administrators (P154, P156, P157) hesitated: unsure whether the email goes out when they finish the step or at Review & finish, and not wanting staff emailed before champion training is booked for the practice. P155 entered the test staff list and went on without comment (2026-02-03 :53 ). The step used a prepared test staff list, so no real staff were emailed ( :41-42 ).\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — P157 ( :64-65 )",
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:mental-models/care-coordinator-alert-ranking#2": {
+      "title": "Care Coordinators' Mental Model of Alert Ranking",
+      "section": "Model",
+      "participants": null,
+      "excerpt": "The designer's paraphrase of the coordinator view: the system should defer to the coordinator's sense of a patient's history-driven risk — an experience-weighted judgment call. In 2025 this rested on one coordinator, P81: \"I wanted to tell it 'no, this one's more urgent because I know this patient's history,' but there was nowhere to put that.\" It now rests on two team coordinators. In 2026, P81 said their most common reason for moving an alert is something the patient or a family member said on the phone that isn't in the chart yet, and P134, on a complex care team with a high-risk panel, said \"half of deciding who's at risk is knowing what happened to them last winter\" (both observed: what they said, not measured). Participants saw the ranking weight recency more heavily than their own sense of clinical risk; 4 of 5 disagreed with the AI's top-3 ranking on at least one of three test queues. There's no way for a coordinator's override to feed back into the ranking. Triage of a 20-item queue was still faster with the AI ranking than with a chronological queue in this simulated test (avg 6.5 min vs. 9 min).",
+      "date": "Sep 5, 2025"
+    },
+    "deliverable:mental-models/compass-ai-schedule-access-and-invites#2": {
+      "title": "Practice and IT Administrators' Mental Model of Schedule Access and Staff Invites",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "What the build says each step does: Connect calendar is \"read access to the practice's appointment schedule\"; Invite your team \"gives clinicians and staff access to Compass AI and sends them an email\" (2026-02-03 session-notes.md:33-35 ). The screens don't list the fields read or say when the email is sent ( :46-47 , :52 ). At session setup the designer stated that the calendar step is required because the scribe attaches recordings to scheduled encounters ( :38 ); that is the designer's stated rationale, not something any session tested.",
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:mental-models/compass-ai-schedule-access-and-invites#9": {
+      "title": "Practice and IT Administrators' Mental Model of Schedule Access and Staff Invites",
+      "section": "What Invite your team does",
+      "participants": null,
+      "excerpt": "Practice Administrators: it emails staff, and timing matters because of training. 3 of 4 (P154, P156, P157) hesitated: \"They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice.\" P155 went on without comment (2026-02-03 :53 ).\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — P157 ( :64-65 )\nThe notes don't record whether the Practice Administrators thought the invite also gives staff access, or only sends the email.",
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:mindsets/wants-to-know-what-a-step-commits#1": {
+      "title": "Wants to Know What a Step Commits Them To",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Not a persona: a stance that showed up in both roles in the 2026-02-03 usability test, Practice Administrators (P154-P157) and IT Administrators (P158, P159), at the two steps where setups stop most, Connect calendar and Invite your team ( raw/2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:51-56 ). Both steps reach beyond the setup screen: one gives Compass AI read access to the practice's appointment schedule, the other gives staff access and sends them an email (2026-02-03 session-notes.md:33-35 ). At each, participants wanted to know what the step would set off and whether someone else's part was in place before they committed to it. This is about admin setup of Compass AI, not staff training.",
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:mindsets/wants-to-know-what-a-step-commits#3": {
+      "title": "Wants to Know What a Step Commits Them To",
+      "section": "What the sessions show",
+      "participants": null,
+      "excerpt": "What it sends, and when. 3 of 4 Practice Administrators hesitated at Invite your team, unsure when the email goes out and not wanting staff emailed before champion training is booked ( :53 ). \"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — P157 ( :64-65 )\nWhat it leaves them maintaining. P159 asked whether invites create accounts or use existing SSO groups: \"if it's a separate list, I'm the one keeping it in sync.\" ( :54 , :70-71 )",
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:mindsets/wants-to-know-what-a-step-commits#6": {
+      "title": "Wants to Know What a Step Commits Them To",
+      "section": "Implications",
+      "participants": null,
+      "excerpt": "The recorded recommendations already answer each question the stance raises: list the fields read on Connect calendar; add a \"Send to IT for approval\" path there; say on Invite your team when the email is sent; let administrators schedule the invite email for a date ( :74-79 ); and confirm with IT whether a privacy review request for Compass AI's schedule access has been filed ( raw/2026-02-24-interview-it-administrator-schedule-access-and-staff-invites/session-notes.md:40-41 ). This record adds no recommendation of its own.",
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:personas/physician-longitudinal-scribe-user#1": {
+      "title": "The Longitudinal Physician — Ambient Scribe",
+      "section": "Summary",
+      "participants": null,
+      "excerpt": "Modeled on P09 (Internal Medicine), one of the 3 participants who returned from v0.1 for v0.2, and the one confirmed in all three ambient-scribe testing rounds — v0.1 (Feb 2025), v0.2 (Sep 2025), and the GA candidate (Jan 2026). Represents the clinician whose relationship with the tool has actually changed over a year of iteration, not a first-time impression.",
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:personas/physician-longitudinal-scribe-user#2": {
+      "title": "The Longitudinal Physician — Ambient Scribe",
+      "section": "Goals",
+      "participants": null,
+      "excerpt": "Trust the tool enough to stop reading every generated line, without trusting it blindly. (P09, v0.1 to GA candidate)\nCatch the specific error types that matter clinically (medication names) rather than treating all uncertainty as equally worth flagging. (Inferred from P22, 2026-02-10; not observed for P09)\nNot lose work to session/security interruptions that are unrelated to the clinical task. (Inferred from P119 and P33, 2026-02-17; not observed for P09)",
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:personas/practice-administrator-compass-ai-setup#10": {
+      "title": "The Practice Administrator — Compass AI Practice Setup",
+      "section": "Gaps",
+      "participants": null,
+      "excerpt": "Four people, in a test environment. Every step 4 action used a prepared test staff list and step 3 a sandbox calendar ( raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:39-42 ), and all 4 continued past Connect calendar only on that sandbox calendar ( :51 , :43-45 ).\nOne Practice Administrator didn't hesitate at the invite step. P155 went on without comment ( :53 ); the persona's invite-step behavior is 3 of 4, not all.\nWhether invites give staff access themselves or rely on SSO groups, and when the email is sent, isn't recorded ( :46-48 ).",
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:personas/practice-administrator-compass-ai-setup#5": {
+      "title": "The Practice Administrator — Compass AI Practice Setup",
+      "section": "What they do and say in setup",
+      "participants": null,
+      "excerpt": "Hold back the staff email until training is booked. 3 of 4 (P154, P156, P157) hesitated at Invite your team: \"They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice.\" P155 \"entered the test staff list and went on without comment\" ( :53 ).\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — P157 ( :64-65 )",
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:research-plans/compass-ai-practice-setup-study-q1#6": {
+      "title": "Compass AI Practice Setup — Usability Study Plan, Q1",
+      "section": "Participants",
+      "participants": null,
+      "excerpt": "6 participants: 4 Practice Administrators and 2 IT Administrators.\nPractice Administrators recruited through ambulatory practice contacts, from administrators who have set up, or are about to set up, Compass AI for their practice. IT Administrators recruited through the IT department.\nParticipant IDs are allocated from research/participants.yml when the session folder is created.",
+      "date": "Jan 27, 2026"
+    },
+    "deliverable:research-readouts/compass-ai-practice-setup-q1-readout#12": {
+      "title": "Compass AI Practice Setup — Q1 Study Readout",
+      "section": "What it does and doesn't show",
+      "participants": null,
+      "excerpt": "Completing step 3 in the test is not a result. When a participant stopped at Connect calendar, the moderator told them it was the sandbox calendar and let them continue (2026-02-03 :43-45 ); all 4 Practice Administrators went on only that way ( :51 ).\nWhy the calendar step is required is untested. At session setup, the designer stated that it is required because the scribe attaches recordings to scheduled encounters ( :38 ). That is the designer's stated rationale; no session tested it (finding :42-44 ).",
+      "date": "Mar 10, 2026"
+    },
+    "deliverable:research-readouts/compass-ai-practice-setup-q1-readout#5": {
+      "title": "Compass AI Practice Setup — Q1 Study Readout",
+      "section": "What was done",
+      "participants": null,
+      "excerpt": "Usability test, 2026-02-03. Planned in compass-ai-practice-setup-study-q1.md and run from compass-ai-practice-setup-usability-guide.md . Moderated, remote, think-aloud, 60 minutes, one participant per session; moderator Priya Patel (2026-02-03 session-notes.md:28-30 ). 6 participants: 4 Practice Administrators (P154-P157) and 2 IT Administrators (P158, P159) ( :32 ; participants.md:20-28 ). Participants signed in with their own Meridian SSO in a test environment: step 3 connected to a sandbox calendar and step 4 used a test staff list, so no real schedule was read and no real staff were emailed ( session-notes.md:39-42 ).",
+      "date": "Mar 10, 2026"
+    },
+    "deliverable:service-topology/prior-auth-drafting-v2#3": {
+      "title": "AI-Assisted Prior Authorization Drafting — Service Topology (v2)",
+      "section": "Map",
+      "participants": null,
+      "excerpt": "As of 2026-09-17: in daily work a nurse may stop using the draft partway through a case and finish it by hand (2026-06-16 :30 ), and \"clicked into at least one citation\" records that a citation was opened, not what the nurse checked (2026-09-17 :30 ).\nRecommendation status: supports the \"pilot expansion\" recommendation in prior-authorization.md , within the straightforward-case scope (2025-11-04 :39 ).",
+      "date": "Nov 20, 2025"
+    },
+    "deliverable:storyboards/compass-ai-setup-calendar-and-invite-hesitations#1": {
+      "title": "Compass AI Practice Setup — A Practice Administrator at Connect Calendar and Invite Your Team",
+      "section": "Scenario",
+      "participants": null,
+      "excerpt": "One unnamed Practice Administrator, drawn from the 4 in the 2026-02-03 usability test (P154-P157), sets Compass AI up for their practice. Each quote stays with the participant who said it. Not every participant did everything shown: 3 of 4 stopped at Connect calendar and 3 of 4 hesitated at Invite your team, not the same three (2026-02-03 session-notes.md:51 , :53 ). The storyboard gives no setting, time of day or interruptions, because none are recorded, and no outcome. This is about admin setup of Compass AI, not staff training.",
+      "date": "Mar 17, 2026"
+    },
+    "deliverable:storyboards/compass-ai-setup-calendar-and-invite-hesitations#5": {
+      "title": "Compass AI Practice Setup — A Practice Administrator at Connect Calendar and Invite Your Team",
+      "section": "Panels",
+      "participants": null,
+      "excerpt": "Invite your team: they hesitate. They aren't sure whether the email goes out when they finish the step or at Review & finish, and they don't want staff emailed before champion training is booked for the practice ( :53 ).\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — Practice Administrator, P157 ( :64-65 )\nOpen questions. The storyboard ends here, on what nobody in the study could answer:\nWhen is the invite email sent? The step 4 screen doesn't say, and the notes don't record when this build sends it ( :46-47 , :84 ).",
+      "date": "Mar 17, 2026"
+    },
+    "deliverable:thumbnails/medication-flag-placement-explorations#0": {
+      "title": "Sound-Alike Medication Flag — Placement Explorations",
+      "section": "Concept",
+      "participants": null,
+      "excerpt": "Evidence basis: Mixed. Observed (the test results for options 1 and 2, from raw/2026-02-10-ambient-scribe-medication-flag-concept/session-notes.md:43-45 ); the options themselves, and dropping option 3 before testing, are the designer's decisions and aren't in that session's notes.\nQuick sketches exploring where the sound-alike-medication flag should sit relative to the medication name, ahead of the 2026-02-10 concept test.",
+      "date": "Feb 8, 2026"
+    },
+    "deliverable:topline-summaries/ambient-scribe-ga-adoption-first-4-weeks#0": {
+      "title": "Ambient Scribe GA Candidate — First 4 Weeks Adoption Topline",
+      "section": "Quick takeaways",
+      "participants": null,
+      "excerpt": "Covers the first 4 weeks of GA-candidate rollout, per the 2026-01-27 dashboard review ( raw/2026-01-27-dashboard-review-ambient-scribe-ga-adoption/ ).\nClinicians shown confidence highlighting skim high-confidence lines at roughly double the rate of the pre-highlighting cohort — directionally consistent with the GA-candidate usability finding that visible uncertainty, not raw accuracy, changes reviewing behavior.\nAdoption is uneven by role: attending physicians are opting in at a noticeably higher rate than residents in the same departments.",
+      "date": "Jan 28, 2026"
+    },
+    "deliverable:topline-summaries/compass-ai-practice-setup-topline#1": {
+      "title": "Compass AI Practice Setup — Study Topline",
+      "section": "Quick takeaways",
+      "participants": null,
+      "excerpt": "One page on the three sessions about how an administrator sets Compass AI up for a practice: a dashboard review (2026-01-20), a moderated usability test with 4 Practice Administrators (P154-P157) and 2 IT Administrators (P158, P159) (2026-02-03, session-notes.md:32 ), and an interview with one IT Administrator (P160) (2026-02-24). Synthesized in compass-ai-practice-setup.md . This is about admin setup of Compass AI, not staff training.",
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:topline-summaries/compass-ai-practice-setup-topline#7": {
+      "title": "Compass AI Practice Setup — Study Topline",
+      "section": "Caveats",
+      "participants": null,
+      "excerpt": "Completing Connect calendar in the test is not a result: the moderator let anyone who stopped continue on a sandbox calendar (2026-02-03 :43-45 ).\nThe calendar step is required because, in the designer's statement at session setup, the scribe attaches recordings to scheduled encounters ( :38 ). That is the designer's stated rationale; no session tested it (finding :42-44 ).",
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:user-flows/ambient-scribe-session-lock-recovery#0": {
+      "title": "Ambient Scribe — Session Lock Recovery",
+      "section": "Description",
+      "participants": null,
+      "excerpt": "Evidence basis: Observed. The problem this flow responds to is from raw/2026-02-17-session-lock-during-dictation/session-notes.md:38-51 , read with that folder's correction-2026-09-27.md:40-43 ; the framing note's cause is the session's own \"likely\" inference ( :45-48 ). The flow itself is a design response and hasn't been tested.",
+      "date": "Feb 25, 2026"
+    },
+    "deliverable:user-flows/ambient-scribe-session-lock-recovery#1": {
+      "title": "Ambient Scribe — Session Lock Recovery",
+      "section": "Description",
+      "participants": null,
+      "excerpt": "Response to the 2026-02-17 contextual inquiry finding that a session lock mid-recording currently reads as silent draft loss. Covers the encounter-view / ambient-scribe-widget interaction from the moment the idle timeout fires through resumed dictation, replacing today's silent freeze with an explicit state. Per IT Security (interviewed in that session), the 10-minute idle-timeout policy itself is fixed and out of scope — this flow only changes what the UI communicates during that window, not when it triggers.",
+      "date": "Feb 25, 2026"
+    },
+    "deliverable:user-flows/compass-ai-practice-setup-five-step-flow#2": {
+      "title": "Compass AI Practice Setup — The Five Steps as Built",
+      "section": "Description",
+      "participants": null,
+      "excerpt": "Every step is required. \"Every step is required in this build; a setup can't skip a step, it can only be left open at it\" (2026-01-20 :34-35 ). For steps 3 and 4: \"There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it\" (2026-02-03 :36-37 ).\nWhen a setup counts as started, and as stopped. \"A setup counts as started when someone signs in at step 1. \"Stopped\" means the setup was still open at that step on 2026-01-20\" (2026-01-20 :35-36 ).",
+      "date": "Mar 17, 2026"
+    },
+    "deliverable:wireflows/compass-ai-connect-calendar-send-to-it#5": {
+      "title": "Compass AI Practice Setup — Connect Calendar \"Send to IT for Approval\" Wireflow",
+      "section": "Flow + screens",
+      "participants": null,
+      "excerpt": "No skip branch. The build has no \"Connect later\" and no \"Skip for now\"; the only way past the step is to complete it (2026-02-03 :36-37 ). This wireflow adds neither: Send to IT for approval hands the decision to IT, it doesn't skip the step.",
+      "date": "Mar 17, 2026"
+    },
+    "deliverable:wireframes/ambient-scribe-medication-flag#2": {
+      "title": "Ambient Scribe — Sound-Alike Medication Flag",
+      "section": "Details",
+      "participants": null,
+      "excerpt": "Placement: inline, immediately after the medication name — tested 5:1 over a right-hand margin badge, since participants didn't want to look away from the text.\nVisual treatment: small amber pill-shaped badge, distinct in shape and color from the existing subtle low-confidence underline, so the two signals are never visually conflated.\nCopy: short on-hover/on-tap label — \"Possible sound-alike medication name — verify before signing\" — worded to prompt verification, not to assert an error.",
+      "date": "Feb 24, 2026"
+    },
+    "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval#10": {
+      "title": "Compass AI Practice Setup — Connect Calendar with Fields Read and IT Approval",
+      "section": "Details",
+      "participants": null,
+      "excerpt": "Not covered:\nWho should see which path. The notes don't record how the screen would tell an administrator who can approve from one who can't; this wireframe shows both paths to everyone.\nWhether the step stays required. The only rationale on record is the designer's statement at session setup that \"the calendar step is required because the scribe attaches recordings to scheduled encounters\" (2026-02-03 :38 ), which no session tested (finding :42-44 ).",
+      "date": "Mar 17, 2026"
+    },
+    "finding:ambient-scribe#0": {
+      "title": "Ambient AI Scribe",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "The ambient AI scribe has moved from a formative concept (v0.1, Feb 2025) through iteration (v0.2, Sep 2025) to a GA release candidate (Jan 2026). 3 of the original 5 participants returned for v0.2, and at least one (P09) also took part in the GA-candidate round, for longitudinal comparison.\nPHI handling: The critical draft-retention/audit gap found in v0.1 was fixed by v0.2 and has remained stable through the GA candidate — drafts auto-expire after 10 minutes of inactivity and the behavior is documented for Compliance. No PHI-handling issues have recurred since.",
+      "date": "Oct 8, 2026"
+    },
+    "finding:ambient-scribe#12": {
+      "title": "Ambient AI Scribe",
+      "section": "Since GA: 2026 Physician, NP and PA Interviews",
+      "participants": null,
+      "excerpt": "Session lock on shared workstations. One Nurse Practitioner (primary care) is locked out when the idle timeout fires while they are at the exam table, \"most afternoons, at least once\"; the widget shows no message, and they re-authenticate and scroll through the draft before saying more (2026-04-28, HIGH). Because they don't know what happens to an in-progress draft if a colleague signs in on the shared workstation during a lock, they stop the scribe before leaving the room, which splits one visit across several recordings (2026-04-28, HIGH). The paused state has not shipped.",
+      "date": "Oct 8, 2026"
+    },
+    "finding:ambient-scribe#13": {
+      "title": "Ambient AI Scribe",
+      "section": "Since GA: 2026 Physician, NP and PA Interviews",
+      "participants": null,
+      "excerpt": "Opting in. One Physician (Internal Medicine resident) did not opt in at GA: writing their own notes was how they worked out their assessment while learning, and they did not describe doubt about the draft's accuracy as a reason (2026-10-08, MEDIUM). They opted in \"about three months into clinic\" and for a new problem write the assessment themselves, or rewrite the draft's assessment before signing (2026-10-08, MEDIUM). One resident's account can't explain the attending/resident adoption gap in the 2026-01-27 dashboard review.",
+      "date": "Oct 8, 2026"
+    },
+    "finding:ambient-scribe#9": {
+      "title": "Ambient AI Scribe",
+      "section": "Since GA: 2026 Physician, NP and PA Interviews",
+      "participants": null,
+      "excerpt": "Medication lines. One Physician (Family Medicine) checks every medication change in the plan against the order they placed, underlined or not, and rewrites changes worded as discussed rather than decided (2026-03-24, HIGH); they recalled one sound-alike name since GA, glyburide written where glipizide had been said, which was underlined, one recollection and not a rate (2026-03-24, MEDIUM). One Physician (Rheumatology) reads the whole medication section of long lists to find the one or two lines that changed (2026-06-30, HIGH), rewrites dose schedules the draft writes incompletely, such as a prednisone taper that keeps only its first step, which they put at \"a few times a month\", or a methotrexate dose without \"weekly\" (2026-06-30, HIGH), and checks whether each dose is the patient's report or their own decision (2026-06-30, MEDIUM). The distinct medication flag has not shipped; both accounts describe drafts with the confidence underline only.",
+      "date": "Oct 8, 2026"
+    },
+    "finding:ambient-scribe-post-ga-refinements#1": {
+      "title": "Ambient Scribe — Post-GA Refinements",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "In a 6-person concept test, a distinct sound-alike-medication flag was recognized as different from generic confidence highlighting. The GA-candidate round treated sound-alike medication errors as an ongoing monitoring item, relying on the general confidence-highlighted variant to surface them. A concept test of a dedicated, visually distinct flag found 5 of 6 participants correctly recognized it as categorically different from generic low confidence — but also surfaced a new risk: 2 of 6 participants said the flag's specificity made them trust unflagged medication lines more than they should. Any rollout needs to actively counter that over-trust framing, not just ship the flag.",
+      "date": "Feb 17, 2026"
+    },
+    "finding:ambient-scribe-post-ga-refinements#3": {
+      "title": "Ambient Scribe — Post-GA Refinements",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Session lock during active dictation currently reads as silent data loss, even though it isn't. The locked state's interaction with an in-progress recording was flagged as unresolved in encounter-view 's own notes, sourced from a May 2025 SSO/MFA interview side comment. Direct observation confirms the practical impact: all 4 shadowed clinicians assumed a locked session had destroyed their draft and restarted dictation from scratch, even though the draft is preserved server-side. IT Security confirmed the 10-minute idle-timeout policy itself is fixed, but an explicit \"paused, draft preserved\" state is a UI-only fix, not a policy change.",
+      "date": "Feb 17, 2026"
+    },
+    "finding:care-coordination-triage#12": {
+      "title": "Care Coordination & Alert Triage",
+      "section": "Since GA: 2026 Coordinator Interviews",
+      "participants": null,
+      "excerpt": "Still open after the 2026 interviews: how often the after-visit summary misses changes; whether the 2025 queue showed coordinators what its ranking was based on; how accurate the ranking is; real-world triage speed; how often coordinators follow a ranked order without judgement (no measurement of rubber-stamping); and whether the override-capture idea reached the data-science team.",
+      "date": "Sep 29, 2026"
+    },
+    "finding:clinician-experience-documentation-burden#0": {
+      "title": "Clinician Experience & Documentation Burden",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Three sessions trace clinician sentiment and documentation burden across the year: a nursing attitudes survey (Feb 2025, before AI framing was introduced), a clinician dashboard usability test (May 2025), and an org-wide burnout/documentation-burden baseline survey (Sep 2025, which explicitly referenced the AI initiative).\nThe top volunteered concern was not accuracy or privacy — it was voice. In February, \"losing my clinical narrative voice / it will sound robotic\" was the most common open-ended concern among nurses — not accuracy or privacy as originally hypothesized.",
+      "date": "Oct 13, 2026"
+    },
+    "finding:clinician-experience-documentation-burden#1": {
+      "title": "Clinician Experience & Documentation Burden",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Documentation burden is real and quantifiable, not just anecdotal. The September baseline found documentation burden is physicians' #1 self-selected burnout driver (52%, ahead of patient volume at 31%), with 64% doing regular after-hours \"pajama time\" charting (avg. 1.2 hrs/day). The session recommends it as the official pre-AI baseline for measuring Compass AI's impact at 6 and 12 months post-rollout. Caveat: the September survey mentioned the AI initiative explicitly in its framing, while the February survey didn't — any comparison between the two datasets needs to account for that framing difference, not treat them as a clean before/after.",
+      "date": "Oct 13, 2026"
+    },
+    "finding:compass-ai-practice-setup#0": {
+      "title": "Compass AI Practice Setup",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Three early-2026 sessions look at how an administrator sets Compass AI up for a practice: a dashboard review of setups (Jan 2026), a moderated usability test of the setup flow with 4 Practice Administrators and 2 IT Administrators (Feb 2026), and an interview with an IT Administrator who approves access requests across practices (Feb 2026). This is about admin setup of Compass AI, not staff training; elsewhere in the corpus \"onboarding\" can mean training copy for clinicians ( raw/2026-02-10-ambient-scribe-medication-flag-concept/session-notes.md:62 ).",
+      "date": "Feb 24, 2026"
+    },
+    "finding:prior-authorization#0": {
+      "title": "AI-Assisted Prior Authorization",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "AI-drafted prior authorization justifications were tested in two rounds (v1, Apr 2025; v2, Nov 2025) with the same utilization review nurse supervisor across both, which mattered for tracking whether fixes actually landed.\nv1 surfaced a correctness bug (citing outdated diagnosis codes) serious enough that participants said it would likely cause payer denials — not a UX problem, a data-freshness/model fix. It also surfaced a durable requirement: nurses want inline citations to the specific chart text behind each suggestion (\"show your work\"), not just a black-box draft.",
+      "date": "Sep 17, 2026"
+    },
+    "finding:scope-boundaries-and-workflow-fit#3": {
+      "title": "Scope Boundaries & Workflow Fit",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "By Feb 2026, IT Security confirmed the 10-minute idle timeout is not adjustable per feature (2026-02-17-session-lock-during-dictation/session-notes.md:49-50; see [ambient-scribe-post-ga-refinements.md](ambient-scribe-post-ga-refinements.md)). The raw notes don't say whether that settles this dispute or is a separate idle-lock setting.",
+      "date": "Sep 8, 2026"
+    },
+    "raw:2025-02-11-survey-nursing-attitudes-ai-documentation#4": {
+      "title": "Survey — Nursing Staff Attitudes Toward AI-Assisted Documentation",
+      "section": "Representative Quotes",
+      "participants": "Participants: 142 — Registered Nurse (various units)",
+      "excerpt": "\"My notes are how I hand off a patient safely. If a robot writes them and I'm just rubber-stamping, that scares me more than typing.\" — Registered Nurse, ICU, P07 (survey open-ended)\n\"Honestly if it got me out of the room 10 minutes faster to chart, I'd try almost anything.\" — Registered Nurse, Outpatient Clinic, P41 (survey open-ended)",
+      "date": "Feb 11, 2025"
+    },
+    "raw:2025-02-11-survey-nursing-attitudes-ai-documentation#5": {
+      "title": "Survey — Nursing Staff Attitudes Toward AI-Assisted Documentation",
+      "section": "Recommendations",
+      "participants": "Participants: 142 — Registered Nurse (various units)",
+      "excerpt": "Recruit the initial usability testing panel from the 38% who volunteered, weighted toward Med-Surg/outpatient where skepticism is lower, to build early momentum before tackling ICU/ED.\nReframe internal AI messaging around 'voice preservation' and editability, not just time savings — this addresses the top volunteered concern directly.",
+      "date": "Feb 11, 2025"
+    },
+    "raw:2025-04-08-usability-test-prior-auth-ai-v1#2": {
+      "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v1)",
+      "section": "Key Findings",
+      "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
+      "excerpt": "[HIGH] (accuracy) In 2 of 4 cases, the AI draft cited outdated diagnosis codes still present elsewhere in the chart rather than the most recent/active ones, which participants said would likely cause a payer denial if submitted as-is.\n[HIGH] (liability concern) The supervisor was firm that nurses would still need to read every AI-drafted justification in full before submission, since a wrongly submitted prior auth can delay patient care by days — no shortcut is acceptable here.",
+      "date": "Apr 8, 2025"
+    },
+    "raw:2025-04-08-usability-test-prior-auth-ai-v1#5": {
+      "title": "Usability Test — AI-Assisted Prior Authorization Drafting (v1)",
+      "section": "Recommendations",
+      "participants": "Participants: 4 — Utilization Review Nurse, Utilization Review Nurse (supervisor)",
+      "excerpt": "Fix the outdated-diagnosis-code issue before any further piloting; this is a correctness bug, not a UX issue.\nAdd inline source citations (chart entry + date) for every claim in the generated justification.\nConsider limiting initial pilot scope to 'straightforward' case types the nurses themselves can help define, deferring complex cases.",
+      "date": "Apr 8, 2025"
+    },
+    "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline#2": {
+      "title": "Survey — Clinician Burnout & Documentation Burden Baseline",
+      "section": "Key Findings",
+      "participants": "Participants: 287 — Physician, Nurse Practitioner, Physician Assistant, Registered Nurse",
+      "excerpt": "[HIGH] (documentation as burnout driver) Documentation burden ranked as the #1 self-selected contributor to burnout among physicians specifically (52%), ahead of patient volume (31%) and administrative meetings (12%).\n[MEDIUM] (after-hours charting) 64% of physician respondents report regularly completing documentation after clinic hours ('pajama time'), averaging a self-reported 1.2 hours/day.",
+      "date": "Sep 9, 2025"
+    },
+    "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline#4": {
+      "title": "Survey — Clinician Burnout & Documentation Burden Baseline",
+      "section": "Representative Quotes",
+      "participants": "Participants: 287 — Physician, Nurse Practitioner, Physician Assistant, Registered Nurse",
+      "excerpt": "\"I love this job. I do not love finishing my notes at 9pm after my kids are in bed. If AI fixes that, I'm in.\" — Physician, P84 (survey open-ended)\n\"Just don't let 'AI will fix documentation' become the excuse to skip fixing the actual EHR problems underneath it.\" — Nurse Practitioner, P91 (survey open-ended)",
+      "date": "Sep 9, 2025"
+    },
+    "raw:2025-12-02-survey-allstaff-ai-readiness-pulse#2": {
+      "title": "Survey — All-Staff AI Readiness Pulse Survey",
+      "section": "Key Findings",
+      "participants": "Participants: 421 — Clinical staff (various), Non-clinical/administrative staff",
+      "excerpt": "[MEDIUM] (awareness gap) Only 34% of non-clinical staff reported being aware Compass AI initiatives were underway at all, versus 71% of clinical staff — suggesting internal communications have been clinically focused and may need broadening if non-clinical rollouts (e.g., scheduling) proceed.",
+      "date": "Dec 2, 2025"
+    },
+    "raw:2025-12-02-survey-allstaff-ai-readiness-pulse#6": {
+      "title": "Survey — All-Staff AI Readiness Pulse Survey",
+      "section": "Recommendations",
+      "participants": "Participants: 421 — Clinical staff (various), Non-clinical/administrative staff",
+      "excerpt": "Broaden internal communications about Compass AI to non-clinical staff specifically before any admin-facing pilot (e.g., scheduling chatbot) goes live, given the awareness gap found here.\nIf a clean sentiment trend is wanted for 2026 reporting, re-run the exact February nursing survey instrument rather than a new pulse survey, to get a true apples-to-apples comparison.",
+      "date": "Dec 2, 2025"
+    },
+    "raw:2025-12-02-survey-allstaff-ai-readiness-pulse#7": {
+      "title": "Survey — All-Staff AI Readiness Pulse Survey",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 421 — Clinical staff (various), Non-clinical/administrative staff",
+      "excerpt": "Decide with leadership whether the September burnout survey or a repeat of the February survey is the better instrument for the planned 6-month post-GA comparison.",
+      "date": "Dec 2, 2025"
+    },
+    "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate#6": {
+      "title": "Usability Test — Ambient AI Scribe GA Release Candidate (Final Validation)",
+      "section": "Recommendations",
+      "participants": "Participants: 6 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner, Physician Assistant",
+      "excerpt": "Approve for GA release; the critical (Feb) and high (Feb, Sept) findings across this tool's full testing history are resolved or actively monitored, and the confidence-indicator concept appears to be the trust-building lever the team was looking for since September.\nContinue tracking sound-alike medication errors as a post-GA metric rather than delaying release further for a low-frequency, now-flagged issue.\nUse this session as the evidence base for the CIO's requested 'documentation time saved' 2026 headline metric baseline measurement.",
+      "date": "Jan 13, 2026"
+    },
+    "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate#7": {
+      "title": "Usability Test — Ambient AI Scribe GA Release Candidate (Final Validation)",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 6 — Physician (Family Medicine), Physician (Internal Medicine), Nurse Practitioner, Physician Assistant",
+      "excerpt": "Set up post-GA monitoring dashboard for sound-alike medication error rate.\nFeed this session's time data into the formal 2026 metrics document (per December retro action item).",
+      "date": "Jan 13, 2026"
+    },
+    "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion#2": {
+      "title": "Dashboard review — Compass AI practice setup completion",
+      "section": "Method",
+      "participants": "Participants: N/A",
+      "excerpt": "Context: The flow has five steps: 1 Sign in with Meridian SSO, 2 Practice details, 3 Connect calendar, 4 Invite your team, 5 Review & finish. Every step is required in this build; a setup can't skip a step, it can only be left open at it. A setup counts as started when someone signs in at step 1. \"Stopped\" means the setup was still open at that step on 2026-01-20. The dashboard shows setups by practice; it doesn't show the signed-in person's role, so whether a Practice Administrator or an IT Administrator ran each setup isn't known. The number of practices in the network isn't on the dashboard and isn't recorded in the corpus, so no completion rate against all practices is given here.",
+      "date": "Jan 20, 2026"
+    },
+    "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion#5": {
+      "title": "Dashboard review — Compass AI practice setup completion",
+      "section": "Key Findings",
+      "participants": "Participants: N/A",
+      "excerpt": "[LOW] (other steps) 1 of 24 was open at Practice details (5 days) and 1 of 24 at Review & finish (2 days). No setup was open at Sign in, because a setup only counts as started once someone has signed in.",
+      "date": "Jan 20, 2026"
+    },
+    "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion#8": {
+      "title": "Dashboard review — Compass AI practice setup completion",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: N/A",
+      "excerpt": "Why do setups stop at Connect calendar and Invite your team? A dashboard can't show reasons: it records where a setup is open and for how long, not what the person at that step was thinking or waiting for.\nDo stopped setups eventually finish, or are they abandoned? Re-check these 12 open setups at the next review.",
+      "date": "Jan 20, 2026"
+    },
+    "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption#0": {
+      "title": "Dashboard review — Ambient scribe GA candidate adoption",
+      "section": "Objective",
+      "participants": "Participants: N/A",
+      "excerpt": "Manually review the internal usage dashboard for the ambient scribe GA release candidate to see whether adoption and engagement patterns in real usage match what the GA-candidate usability round found — particularly whether the per-line confidence highlighting is actually changing reviewing behavior at scale, not just in the moderated session.",
+      "date": "Jan 27, 2026"
+    },
+    "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption#3": {
+      "title": "Dashboard review — Ambient scribe GA candidate adoption",
+      "section": "Recommendations",
+      "participants": "Participants: N/A",
+      "excerpt": "Feed this dashboard pattern back into findings/ambient-scribe.md as corroborating evidence for the confidence-highlighting result, rather than treating it as a separate finding.\nConsider a short follow-up interview round specifically on the physician/resident adoption gap.",
+      "date": "Jan 27, 2026"
+    },
+    "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#12": {
+      "title": "Usability Test — Compass AI Practice Setup Flow",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 6 — P154 — Practice Administrator (admin-staff) ×1, P155 — Practice Administrator (admin-staff) ×1, P156 — Practice Administrator (admin-staff) ×1, P157 — Practice Administrator (admin-staff) ×1, P158 — IT Administrator (it) ×1, P159 — IT Administrator (it) ×1",
+      "excerpt": "How is Compass AI access provisioned: through SSO groups, through these invites, or both? Ask the setup flow's engineering team.\nWhen does this build send the invite email: at step 4 or at Review & finish?\nCheck the setup dashboard after any copy change to these steps, to see whether setups still stop at Connect calendar and Invite your team.",
+      "date": "Feb 3, 2026"
+    },
+    "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#2": {
+      "title": "Usability Test — Compass AI Practice Setup Flow",
+      "section": "Method",
+      "participants": "Participants: 6 — P154 — Practice Administrator (admin-staff) ×1, P155 — Practice Administrator (admin-staff) ×1, P156 — Practice Administrator (admin-staff) ×1, P157 — Practice Administrator (admin-staff) ×1, P158 — IT Administrator (it) ×1, P159 — IT Administrator (it) ×1",
+      "excerpt": "Build: Steps 3 and 4 are required in this build. There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it.\nDesign context: At session setup, the designer, Sam Okafor, stated that the calendar step is required because the scribe attaches recordings to scheduled encounters.",
+      "date": "Feb 3, 2026"
+    },
+    "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#7": {
+      "title": "Usability Test — Compass AI Practice Setup Flow",
+      "section": "Key Findings",
+      "participants": "Participants: 6 — P154 — Practice Administrator (admin-staff) ×1, P155 — Practice Administrator (admin-staff) ×1, P156 — Practice Administrator (admin-staff) ×1, P157 — Practice Administrator (admin-staff) ×1, P158 — IT Administrator (it) ×1, P159 — IT Administrator (it) ×1",
+      "excerpt": "[HIGH] (invite: timing and training) 3 of 4 Practice Administrators (P154, P156, P157) hesitated at Invite your team. They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice. P155 entered the test staff list and went on without comment.\n[MEDIUM] (invite: provisioning) One IT Administrator (P159) asked whether the invites create accounts or rely on the SSO groups staff are already in. The moderator couldn't answer, and the corpus doesn't record how access is provisioned.",
+      "date": "Feb 3, 2026"
+    },
+    "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#9": {
+      "title": "Usability Test — Compass AI Practice Setup Flow",
+      "section": "Representative Quotes",
+      "participants": "Participants: 6 — P154 — Practice Administrator (admin-staff) ×1, P155 — Practice Administrator (admin-staff) ×1, P156 — Practice Administrator (admin-staff) ×1, P157 — Practice Administrator (admin-staff) ×1, P158 — IT Administrator (it) ×1, P159 — IT Administrator (it) ×1",
+      "excerpt": "\"That's patient names and visit reasons. That's not my call — that's IT's.\" — Practice Administrator, P154\n\"Is this mine to say yes to? I'd normally send anything like this to IT.\" — Practice Administrator, P156\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — Practice Administrator, P157\n\"Before I connect it I want to know what it pulls. Times and providers, fine. Visit reasons, that's a different conversation.\" — IT Administrator, P158",
+      "date": "Feb 3, 2026"
+    },
+    "raw:2026-02-10-ambient-scribe-medication-flag-concept#0": {
+      "title": "Usability Test — Ambient Scribe Sound-Alike Medication Flag Concept",
+      "section": "Objective",
+      "participants": "Participants: 6 — Physician, Nurse Practitioner",
+      "excerpt": "The GA-candidate round (2026-01-13) recommended treating sound-alike medication errors as an ongoing post-GA monitoring item rather than a launch blocker, since the existing confidence-highlighted variant already surfaces them as generically low-confidence. This session tests an early concept that goes one step further: a distinct flag specifically for suspected sound-alike medication names, visually separate from the general low-confidence underline, to see whether participants notice and act on it differently than they do on ordinary low-confidence text.",
+      "date": "Feb 10, 2026"
+    },
+    "raw:2026-02-10-ambient-scribe-medication-flag-concept#1": {
+      "title": "Usability Test — Ambient Scribe Sound-Alike Medication Flag Concept",
+      "section": "Method",
+      "participants": "Participants: 6 — Physician, Nurse Practitioner",
+      "excerpt": "Method: Moderated usability test, 6 simulated encounters seeded with known sound-alike pairs (e.g. hydralazine/hydroxyzine, clonidine/Klonopin), 40 min/session\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder",
+      "date": "Feb 10, 2026"
+    },
+    "raw:2026-02-17-session-lock-during-dictation#13": {
+      "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+      "section": "Correction (2026-09-27): Draft-loss result",
+      "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+      "excerpt": "session-notes.md says \"4 of 5 clinicians assumed the draft was lost.\" Only the 4 shadowed clinicians went through a lock during dictation, so this means all 4 clinicians assumed the draft was lost and started dictating again after they re-authenticated.",
+      "date": "Feb 17, 2026"
+    },
+    "raw:2026-02-17-session-lock-during-dictation#15": {
+      "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+      "section": "Correction (2026-10-13): P31",
+      "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+      "excerpt": "session-notes.md (lines 54-56) says:\n\"I genuinely thought I'd lost it. I've just gotten used to starting over when the screen locks, so I didn't even try to check.\" — Physician, Family Medicine, P31\nP31 was already assigned to the IT Security Engineer in raw/2025-05-20-interview-it-security-sso-mfa-modernization/session-notes.md:36,39 , and this session doesn't mark the physician as returning, so they are different people.\nCorrect ID: Physician, Family Medicine, P119.",
+      "date": "Feb 17, 2026"
+    },
+    "raw:2026-02-17-session-lock-during-dictation#4": {
+      "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+      "section": "Key Findings",
+      "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+      "excerpt": "[LOW] (IT Security confirms feasibility) IT Security confirmed the 10-minute idle timeout is not adjustable per-feature, but confirmed an explicit \"paused, draft preserved\" UI state is technically straightforward to add without changing the timeout policy itself.",
+      "date": "Feb 17, 2026"
+    },
+    "raw:2026-02-17-session-lock-during-dictation#5": {
+      "title": "Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation",
+      "section": "Representative Quotes",
+      "participants": "Participants: 5 — Physician, Nurse Practitioner, IT Security",
+      "excerpt": "\"I genuinely thought I'd lost it. I've just gotten used to starting over when the screen locks, so I didn't even try to check.\" — Physician, Family Medicine, P31\n\"If it said 'paused, nothing lost, just log back in,' I'd believe it and wait. Right now it just looks broken.\" — Nurse Practitioner, P33\n\"The timeout window itself is a hard policy constraint, but what the screen tells the clinician during that window is entirely a product decision — that part isn't locked down.\" — IT Security stakeholder",
+      "date": "Feb 17, 2026"
+    },
+    "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#2": {
+      "title": "Interview — IT Administrator on Schedule Access and Staff Invites",
+      "section": "Method",
+      "participants": "Participants: 1 — P160 — IT Administrator (it) ×1",
+      "excerpt": "Context: The participant is an IT Administrator who handles access requests for systems used across Meridian's practices. They had not used the Compass AI practice setup flow. The researcher described steps 3 (Connect calendar) and 4 (Invite your team) as the 2026-02-03 build shows them, and what the step 3 screen does and doesn't say, without sharing what other participants said. The participant did not name the scheduling system that holds the appointment schedule, and these notes don't record which system it is. This is their account of the approval process, not a review of its records.",
+      "date": "Feb 24, 2026"
+    },
+    "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#5": {
+      "title": "Interview — IT Administrator on Schedule Access and Staff Invites",
+      "section": "Representative Quotes",
+      "participants": "Participants: 1 — P160 — IT Administrator (it) ×1",
+      "excerpt": "\"Lowest risk isn't no risk. It's still patient names on a schedule. It still goes through privacy review, it just shouldn't take long.\" — IT Administrator, P160\n\"A practice admin can't put in that request. They call us, we file it. If the screen just asks them to click connect, it's asking the wrong person.\" — IT Administrator, P160",
+      "date": "Feb 24, 2026"
+    },
+    "raw:2026-03-10-interview-medical-coder-coding-from-ai-drafted-notes#0": {
+      "title": "Interview — Medical Coder on Coding from AI-Drafted Notes",
+      "section": "Objective",
+      "participants": "Participants: 1 — P120 — Medical Coder (certified) (him-coder) ×1",
+      "excerpt": "Two months after the ambient scribe went GA in January 2026, understand how coding from scribe-drafted notes differs from coding notes the physician typed, and what a coder would expect from the AI coding-suggestion concept (tested as a prototype in July 2025, not built or piloted) now that much of the documentation it would read is itself AI-drafted.",
+      "date": "Mar 10, 2026"
+    },
+    "raw:2026-03-10-interview-medical-coder-coding-from-ai-drafted-notes#2": {
+      "title": "Interview — Medical Coder on Coding from AI-Drafted Notes",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — P120 — Medical Coder (certified) (him-coder) ×1",
+      "excerpt": "[HIGH] (documentation gaps) Scribe-drafted notes often capture what was discussed in the visit but leave out the specificity coding depends on: laterality, acute vs. chronic, type or stage (they gave heart failure type and CKD stage as examples), and the \"due to\" link between two conditions. When it's missing the coder has two options, query the physician or code to the unspecified level, and they said they are doing both more often than with notes physicians typed from their own templates. They noted the July 2025 prototype's mismatches were mostly at the specificity level too, and expect a suggester reading these notes to hit the same wall.",
+      "date": "Mar 10, 2026"
+    },
+    "raw:2026-03-10-interview-medical-coder-coding-from-ai-drafted-notes#3": {
+      "title": "Interview — Medical Coder on Coding from AI-Drafted Notes",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — P120 — Medical Coder (certified) (him-coder) ×1",
+      "excerpt": "[MEDIUM] (trust in AI-drafted notes) Nothing in the signed note shows which sentences the scribe drafted and which the physician typed or edited. When a sentence looks off (e.g., a diagnosis in the assessment that nothing else in the note supports), the coder can't tell whether it's a documentation problem worth a query or something the scribe picked up from the conversation that the physician didn't catch at sign-off. They weren't asking for a marker on the permanent chart, just \"something I can see while I'm coding\".",
+      "date": "Mar 10, 2026"
+    },
+    "raw:2026-03-10-interview-medical-coder-coding-from-ai-drafted-notes#7": {
+      "title": "Interview — Medical Coder on Coding from AI-Drafted Notes",
+      "section": "Recommendations",
+      "participants": "Participants: 1 — P120 — Medical Coder (certified) (him-coder) ×1",
+      "excerpt": "Raise with Compliance whether scribe-drafted vs. clinician-edited provenance could be shown in the coding view only, consistent with the CMIO's August 2025 model of no marker on the permanent chart.",
+      "date": "Mar 10, 2026"
+    },
+    "raw:2026-03-19-interview-primary-care-physician-incidental-content-at-sign-off#0": {
+      "title": "Interview — Primary Care Physician on Incidental Content in Scribe Drafts",
+      "section": "Objective",
+      "participants": "Participants: 1 — P146 — Physician (Internal Medicine) (physician) ×1",
+      "excerpt": "Earlier ambient-scribe research looked at what the scribe gets wrong: medication dosages and sound-alike drug names, and whether clinicians trust the draft enough to skim it. Two sessions touched on what the scribe takes in more broadly. In an October 2025 contextual inquiry, a behavioral health clinician said that any AI tool listening to or drafting behavioral health session notes raises consent and 42 CFR Part 2 questions (2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes/session-notes.md:28); the exclusion of that population from the near-term ambient scribe rollout is recorded in the scope-boundaries finding (scope-boundaries-and-workflow-fit.md:72-74). A care coordinator said the visit notes they read since GA are longer and more conversational than the notes clinicians used to type (2026-03-03-interview-care-coordinator-chart-review-scribe-notes/session-notes.md:31). Neither asked the person signing a draft about content the scribe writes down correctly but that doesn't belong in a visit note: small talk, a patient's remarks about other people, side conversations with a family member in the room. This session asked a primary care physician, two months after the January 2026 GA, what of that kind ends up in their drafts and what they remove before they sign.",
+      "date": "Mar 19, 2026"
+    },
+    "raw:2026-03-19-interview-primary-care-physician-incidental-content-at-sign-off#7": {
+      "title": "Interview — Primary Care Physician on Incidental Content in Scribe Drafts",
+      "section": "Recommendations",
+      "participants": "Participants: 1 — P146 — Physician (Internal Medicine) (physician) ×1",
+      "excerpt": "Share with the ambient scribe team that the confidence underline doesn't help with incidental content, because that content is usually transcribed accurately; reviewing for it means reading the whole draft.\nIf anything is designed for this, explore pointing out lines that may not belong in the note rather than removing them, so the clinician makes the call.\nKeep this separate from the transcription-confidence work: it is about what belongs in the note, not whether it was heard correctly.",
+      "date": "Mar 19, 2026"
+    },
+    "raw:2026-03-24-interview-family-physician-plan-and-medication-changes-at-sign-off#0": {
+      "title": "Interview — Family Physician on the Plan Section and Medication Changes at Sign-Off",
+      "section": "Objective",
+      "participants": "Participants: 1 — P147 — Physician (Family Medicine) (physician) ×1",
+      "excerpt": "Earlier ambient-scribe sessions tested medication accuracy in drafts: dosage errors in v0.1 and v0.2, sound-alike drug names at the GA release candidate, and a concept for a distinct sound-alike medication flag (2026-02-10). The plan section has so far come up only from the reader's side: a care coordinator goes straight to the plan and the medication list in the visit notes they read before an outreach call (2026-03-03-interview-care-coordinator-chart-review-scribe-notes/session-notes.md:31, :43), and the 2026-03-17 clinic nurse interview (2026-03-17-interview-clinic-nurse-reading-scribe-drafted-notes) heard that plan items sometimes land in the body of the note rather than the plan (2026-03-17-interview-clinic-nurse-reading-scribe-drafted-notes/session-notes.md:30). None of those sessions asked the person who signs the draft how they check the plan section, where decisions made during the visit, including medication changes, are supposed to end up. This session asked a family physician, two months after the January 2026 GA, how they check the plan and the medication lines in a draft before they sign.",
+      "date": "Mar 24, 2026"
+    },
+    "raw:2026-03-24-interview-family-physician-plan-and-medication-changes-at-sign-off#5": {
+      "title": "Interview — Family Physician on the Plan Section and Medication Changes at Sign-Off",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — P147 — Physician (Family Medicine) (physician) ×1",
+      "excerpt": "[MEDIUM] (sound-alike names) They recalled one sound-alike drug name since GA, glyburide written where glipizide had been said, and said it was underlined. It is one recollection, not a rate; the GA release-candidate round records sound-alike names as a known, monitored error type (2026-01-13-usability-test-ambient-scribe-ga-release-candidate/session-notes.md:31). They said they would check medication lines against the order whether or not anything marked them, because a wrong name can be heard confidently.",
+      "date": "Mar 24, 2026"
+    },
+    "raw:2026-04-28-interview-nurse-practitioner-session-lock-shared-workstations#0": {
+      "title": "Interview — Nurse Practitioner on Session Lock and Shared Exam-Room Workstations",
+      "section": "Objective",
+      "participants": "Participants: 1 — P148 — Nurse Practitioner (primary care) (app) ×1",
+      "excerpt": "The 2026-02-17 contextual inquiry found that a session lock during active dictation freezes the ambient-scribe widget with no message, and that all 4 shadowed clinicians assumed the draft was lost and started dictating again, although the draft survives server-side (2026-02-17-session-lock-during-dictation/session-notes.md:38-41, read with correction-2026-09-27.md in that folder). A recovery flow with an explicit paused, draft-preserved state is designed but has not shipped. That session did not look at exam-room workstations shared by several clinicians. This session asked a primary care nurse practitioner, two months later, what a lock looks like in their visits and how a shared workstation affects it.",
+      "date": "Apr 28, 2026"
+    },
+    "raw:2026-04-28-interview-nurse-practitioner-session-lock-shared-workstations#2": {
+      "title": "Interview — Nurse Practitioner on Session Lock and Shared Exam-Room Workstations",
+      "section": "Method",
+      "participants": "Participants: 1 — P148 — Nurse Practitioner (primary care) (app) ×1",
+      "excerpt": "Context: The participant is a nurse practitioner in an ambulatory primary care clinic, about five years in that role. They use the ambient scribe for most visits. Exam rooms in their clinic have a workstation that clinicians share across the day, signing in with a badge tap. The idle timeout is 10 minutes and is not adjustable per feature (2026-02-17-session-lock-during-dictation/session-notes.md:49-50). The paused state has not shipped, so a lock still freezes the widget with no message. They did not take part in any earlier session, including the 2026-02-17 inquiry. This is an interview about their own practice; nothing was shown or observed.",
+      "date": "Apr 28, 2026"
+    },
+    "raw:2026-04-28-interview-nurse-practitioner-session-lock-shared-workstations#6": {
+      "title": "Interview — Nurse Practitioner on Session Lock and Shared Exam-Room Workstations",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — P148 — Nurse Practitioner (primary care) (app) ×1",
+      "excerpt": "[MEDIUM] (what would help) Asked what they would want to see after a lock, without being shown anything, they said a message that the draft is saved and whose session it belongs to. That is an expectation; the paused state has not shipped and was not shown.",
+      "date": "Apr 28, 2026"
+    },
+    "raw:2026-05-05-interview-care-coordinator-supervisor-queue-oversight#1": {
+      "title": "Interview — Care Coordinator Supervisor on Queue Oversight",
+      "section": "Method",
+      "participants": "Participants: 1 — P132 — Care Coordinator Supervisor (care-coordinator) ×1",
+      "excerpt": "Method: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant leads an ambulatory care coordination team. Their team works the chronological queue; the AI-ranked queue hasn't been built, and the override-reason capture wireflow is designed and in review, not built. They had not seen the August 2025 screens before; they reacted to a description of the ranked queue and the override-reason flow in this session. They did not take part in any earlier session.",
+      "date": "May 5, 2026"
+    },
+    "raw:2026-05-05-interview-care-coordinator-supervisor-queue-oversight#6": {
+      "title": "Interview — Care Coordinator Supervisor on Queue Oversight",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 1 — P132 — Care Coordinator Supervisor (care-coordinator) ×1",
+      "excerpt": "How often coordinators would follow a ranked order without judgement is not measured, and can't be until something is built and logged.\nReal alert volumes per coordinator are not known; the 30 to 60 figure is one supervisor's estimate.\nWhether the override-capture idea was shared with the Data Science team working on the care-gap flagging model, as the August 2025 session suggested, isn't recorded.",
+      "date": "May 5, 2026"
+    },
+    "raw:2026-05-12-interview-cdi-specialist-documentation-gaps#3": {
+      "title": "Interview — CDI Specialist on Documentation Gaps in AI-Drafted Notes",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — P123 — Clinical Documentation Integrity Specialist (him-coder) ×1",
+      "excerpt": "[MEDIUM] (queries) Wants the coding-suggestion concept to suggest queries, not codes, when the documentation is incomplete. Their worry is that a suggested code on an under-specified note pushes the coder either to an unspecified code or toward a leading query. They'd want a draft query that states the clinical indicators found and asks the physician to clarify, in non-leading language Compliance has approved.",
+      "date": "May 12, 2026"
+    },
+    "raw:2026-05-12-interview-cdi-specialist-documentation-gaps#5": {
+      "title": "Interview — CDI Specialist on Documentation Gaps in AI-Drafted Notes",
+      "section": "Representative Quotes",
+      "participants": "Participants: 1 — P123 — Clinical Documentation Integrity Specialist (him-coder) ×1",
+      "excerpt": "\"The note sounds finished. That's the problem. It reads like a really good note, and then you go looking for the acuity and it's just not in there.\" — Clinical Documentation Integrity Specialist, P123\n\"Don't hand me a code. Hand me the question I should be asking the doctor.\" — Clinical Documentation Integrity Specialist, P123",
+      "date": "May 12, 2026"
+    },
+    "raw:2026-05-26-interview-returning-nurse-practitioner-training-and-review-habits#1": {
+      "title": "Interview — Returning Nurse Practitioner on Champion Training and Review Habits",
+      "section": "Method",
+      "participants": "Participants: 1 — P118 — Nurse Practitioner (app), returning from 2026-01-13-usability-test-ambient-scribe-ga-release-candidate ×1",
+      "excerpt": "Method: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant is a nurse practitioner in an ambulatory clinic who has used the ambient scribe since the January 2026 GA. They review and sign their own visit notes. They went through the champion training pilot before the January 2026 round; how clinicians who started using the scribe after GA were trained is not recorded in the corpus, and they did not know. This is an interview about their own practice; nothing was shown or observed.",
+      "date": "May 26, 2026"
+    },
+    "raw:2026-05-26-interview-returning-nurse-practitioner-training-and-review-habits#7": {
+      "title": "Interview — Returning Nurse Practitioner on Champion Training and Review Habits",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 1 — P118 — Nurse Practitioner (app), returning from 2026-01-13-usability-test-ambient-scribe-ga-release-candidate ×1",
+      "excerpt": "How clinicians who started using the scribe after GA were trained is not recorded in the corpus.\nWhether pilot-trained clinicians are more comfortable than others is still not a controlled comparison; the January round said so, and one returning participant can't settle it.\nHow long draft review takes is not measured; \"a minute or two a note\" is one nurse practitioner's estimate.",
+      "date": "May 26, 2026"
+    },
+    "raw:2026-05-28-interview-icu-nurse-handoff-narrative#3": {
+      "title": "Interview — ICU Nurse on the Handoff Narrative",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — P140 — Registered Nurse (ICU) (nurse) ×1",
+      "excerpt": "[MEDIUM] (expectation of AI drafting) They were skeptical of any AI drafting nursing notes. Their expectation was that a draft could summarise the flowsheet but would not know what they were worried about, and that a nurse at the end of a twelve-hour shift would accept it rather than rewrite it. They saw that as worse than writing less. This is an expectation of a tool that doesn't exist.\n[LOW] (where help might fit) They could see help with the parts that repeat flowsheet data in prose, as long as the narrative stayed theirs. This came up once, unprompted, and wasn't explored.",
+      "date": "May 28, 2026"
+    },
+    "raw:2026-05-28-interview-icu-nurse-handoff-narrative#5": {
+      "title": "Interview — ICU Nurse on the Handoff Narrative",
+      "section": "Recommendations",
+      "participants": "Participants: 1 — P140 — Registered Nurse (ICU) (nurse) ×1",
+      "excerpt": "Treat the nursing narrative as a handoff safety artifact in any future discussion of AI drafting for nurses, not only as a documentation-burden item.\nIf AI drafting for nursing notes is ever scoped, test end-of-shift acceptance of drafts directly, since this nurse's concern was about tired nurses accepting a draft, not about accuracy.",
+      "date": "May 28, 2026"
+    },
+    "raw:2026-06-16-interview-utilization-review-nurse-case-scope#0": {
+      "title": "Interview — Returning Utilization Review Nurse on Pilot Case Scope",
+      "section": "Objective",
+      "participants": "Participants: 1 — P19 — Utilization Review Nurse (nurse), returning from 2025-04-08-usability-test-prior-auth-ai-v1 ×1",
+      "excerpt": "Check the prior-auth scope decision in prior-authorization.md against daily work, with a nurse who now uses the drafting panel. The finding says scope discipline held: pilot scope was limited to \"straightforward\" cases and complex cases were kept out ( findings/prior-authorization.md :35-38), and that inline citations are actively used rather than ignored (lines 32-34). Both rest on test sessions with realistic scenarios. The participant is P19, returning from 2025-04-08-usability-test-prior-auth-ai-v1, where they said they liked the draft \"for the boring, obvious cases\" and wanted it kept away from complicated ones. The questions were whether the straightforward boundary matches the cases that actually reach them, how they check the panel's citations, and which cases they still do by hand.",
+      "date": "Jun 16, 2026"
+    },
+    "raw:2026-06-16-interview-utilization-review-nurse-case-scope#2": {
+      "title": "Interview — Returning Utilization Review Nurse on Pilot Case Scope",
+      "section": "Method",
+      "participants": "Participants: 1 — P19 — Utilization Review Nurse (nurse), returning from 2025-04-08-usability-test-prior-auth-ai-v1 ×1",
+      "excerpt": "Context: A limited pilot of the prior-auth drafting panel has run in the utilization review department since early 2026, on straightforward cases only, the scope the v2 test recommended (2025-11-04-usability-test-prior-auth-ai-v2/session-notes.md:39). Complex cases stay manual. The pilot is not generally available and has not reached other departments. The panel shows inline citations to the chart entries behind each part of the draft. The participant is in the pilot and uses the panel on their own straightforward cases. They took part in the April 2025 v1 test only, not the November 2025 v2 test, so nothing here speaks to v2. They are not P17, the utilization review supervisor quoted in v1 and v2. No pilot outcomes data was reviewed in this session, and the written straightforward-case definition was not reviewed either; what the participant says about it is their own description.",
+      "date": "Jun 16, 2026"
+    },
+    "raw:2026-06-30-interview-rheumatologist-medication-lines-in-scribe-drafts#0": {
+      "title": "Interview — Rheumatologist on Medication Lines in Scribe Drafts",
+      "section": "Objective",
+      "participants": "Participants: 1 — P149 — Physician (Rheumatology) (physician) ×1",
+      "excerpt": "Earlier ambient-scribe sessions tested medication accuracy in drafts: dosage errors in v0.1 and v0.2 (2025-02-25-usability-test-ambient-scribe-v01/session-notes.md:30; 2025-09-23-usability-test-ambient-scribe-v02/session-notes.md:31), sound-alike drug names at the GA release candidate (2026-01-13-usability-test-ambient-scribe-ga-release-candidate/session-notes.md:31), and a concept for a distinct sound-alike medication flag (2026-02-10-ambient-scribe-medication-flag-concept/session-notes.md:21-27). Since GA, a family physician in an ambulatory primary care clinic described checking each medication change in the plan against the order they had placed (2026-03-24-interview-family-physician-plan-and-medication-changes-at-sign-off/session-notes.md:28, :32). No raw session dated on or before this one mentions a specialty clinic, rheumatology, a dose taper or a weekly dosing schedule. This session asked a rheumatologist, about six months after the January 2026 GA, how they check the medication lines in a draft when a patient's medication list is long and doses change often.",
+      "date": "Jun 30, 2026"
+    },
+    "raw:2026-06-30-interview-rheumatologist-medication-lines-in-scribe-drafts#2": {
+      "title": "Interview — Rheumatologist on Medication Lines in Scribe Drafts",
+      "section": "Method",
+      "participants": "Participants: 1 — P149 — Physician (Rheumatology) (physician) ×1",
+      "excerpt": "Context: The participant is a rheumatologist in an ambulatory specialty clinic, mid-career. They opted in to the ambient scribe after the January 2026 GA and use it for most visits. The scribe drafts the visit note only; the clinician enters orders, including medication orders, separately. Low-confidence transcription is shown with a subtle underline. The distinct medication flag tested on 2026-02-10 has not shipped; there is no medication-specific marking beyond the confidence underline. They did not take part in any earlier session, and the researcher did not share what other participants had said. This is an interview about their own practice; nothing was shown or observed.",
+      "date": "Jun 30, 2026"
+    },
+    "raw:2026-06-30-interview-rheumatologist-medication-lines-in-scribe-drafts#3": {
+      "title": "Interview — Rheumatologist on Medication Lines in Scribe Drafts",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — P149 — Physician (Rheumatology) (physician) ×1",
+      "excerpt": "[HIGH] (long lists) Many of their patients have long medication lists: disease-modifying drugs, a steroid, supplements, and drugs for other conditions managed by other clinicians. At most visits only one or two of those lines change. In the draft, a line that changed at this visit and a line that was only mentioned while going through the list look the same, and the underline marks only where the scribe was unsure what it heard. To find what changed they read the whole medication section against the orders they placed and the patient's current list. They put a long list at \"fifteen lines, give or take\" for many of their patients, an informal impression, not a count.",
+      "date": "Jun 30, 2026"
+    },
+    "raw:2026-06-30-interview-rheumatologist-medication-lines-in-scribe-drafts#6": {
+      "title": "Interview — Rheumatologist on Medication Lines in Scribe Drafts",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — P149 — Physician (Rheumatology) (physician) ×1",
+      "excerpt": "[LOW] (what would help) Asked what would help, without being shown anything, they said a way to see which medication lines changed at this visit. That is an expectation; nothing was shown, and the distinct medication flag was not discussed with them.",
+      "date": "Jun 30, 2026"
+    },
+    "raw:2026-07-02-interview-family-physician-after-hours-charting-since-ga#0": {
+      "title": "Interview — Family Physician on After-Hours Charting Since GA",
+      "section": "Objective",
+      "participants": "Participants: 1 — P150 — Physician (Family Medicine) (physician) ×1",
+      "excerpt": "The September 2025 baseline survey asked about after-hours charting and reported it for physician respondents (2025-09-09-survey-clinician-burnout-documentation-burden-baseline/session-notes.md:29). It recommended future re-surveys \"(e.g., 6 and 12 months post-rollout)\" (same file, :40) and listed as a follow-up \"a repeat of this exact survey instrument 6 months after ambient scribe GA rollout\" (same file, :44). No repeat is recorded in research/raw on or before this session's date: the only survey folder after September 2025 is the December 2025 all-staff AI readiness pulse (2025-12-02-survey-allstaff-ai-readiness-pulse). No earlier 1:1 session asked a physician about charting after clinic: among raw sessions dated on or before 2026-07-02, after-hours and \"pajama time\" charting appear only in the September survey (session-notes.md:29, :40). This session asked a family physician, about six months after the January 2026 GA, when and how they finish their notes now. It is one physician's informal account and does not re-measure anything the survey measured.",
+      "date": "Jul 2, 2026"
+    },
+    "raw:2026-07-02-interview-family-physician-after-hours-charting-since-ga#7": {
+      "title": "Interview — Family Physician on After-Hours Charting Since GA",
+      "section": "Representative Quotes",
+      "participants": "Participants: 1 — P150 — Physician (Family Medicine) (physician) ×1",
+      "excerpt": "\"The evening used to be writing. Now it's mostly reading what it wrote and signing, and then the messages.\" — Physician (Family Medicine), P150\n\"Right after the visit I remember what we said. By the evening I'm checking it against a memory that's gone fuzzy.\" — Physician (Family Medicine), P150",
+      "date": "Jul 2, 2026"
+    },
+    "raw:2026-07-21-interview-med-surg-night-nurse-charting-load#0": {
+      "title": "Interview — Med-Surg Night Nurse on Charting Load",
+      "section": "Objective",
+      "participants": "Participants: 1 — P141 — Registered Nurse (medical-surgical) (nurse) ×1",
+      "excerpt": "The documentation-burden finding quantifies after-hours charting for physicians only: the September 2025 baseline found 64% of physician respondents regularly finishing documentation after clinic hours, at a self-reported 1.2 hours a day (2025-09-09-survey-clinician-burnout-documentation-burden-baseline/session-notes.md:30). Nothing in the corpus describes the same thing for nurses beyond the February 2025 nursing survey's attitudes and one respondent's wish to get \"out of the room 10 minutes faster to chart\" (2025-02-11-survey-nursing-attitudes-ai-documentation/session-notes.md:37). This session asked an inpatient nurse whether their charting runs past the end of their shift, why, and what they expect of AI drafting nursing notes, which doesn't exist.",
+      "date": "Jul 21, 2026"
+    },
+    "raw:2026-07-21-interview-med-surg-night-nurse-charting-load#7": {
+      "title": "Interview — Med-Surg Night Nurse on Charting Load",
+      "section": "Recommendations",
+      "participants": "Participants: 1 — P141 — Registered Nurse (medical-surgical) (nurse) ×1",
+      "excerpt": "When the documentation-burden finding is next revised, note that after-shift charting is also reported by nurses, qualitatively, and keep the September figures labelled as physician-only.\nIf nurse documentation burden needs a number, measure it directly (the September baseline's registered nurse responses reported separately, if they exist, or time logs), rather than extending the physician figures.",
+      "date": "Jul 21, 2026"
+    },
+    "raw:2026-07-21-interview-med-surg-night-nurse-charting-load#8": {
+      "title": "Interview — Med-Surg Night Nurse on Charting Load",
+      "section": "Follow-ups / Open Questions",
+      "participants": "Participants: 1 — P141 — Registered Nurse (medical-surgical) (nurse) ×1",
+      "excerpt": "How much time nurses spend charting after their shift is not measured; \"thirty to forty-five minutes\" is one nurse's estimate, on one unit.\nThe September 2025 baseline's roster lists registered nurses among its respondents, but its notes report the burnout and after-hours figures for physicians only; whether nurse results exist is not recorded.\nWhether skepticism varies with tenure is still open; the February 2025 survey's cross-tab hasn't been run, and one interview can't answer it.\nWhether day-shift nurses on the same unit chart after their shift too is not known.",
+      "date": "Jul 21, 2026"
+    },
+    "raw:2026-08-04-interview-care-coordinator-complex-care-alert-volume#1": {
+      "title": "Interview — Complex Care Coordinator on Alert Volume",
+      "section": "Method",
+      "participants": "Participants: 1 — P134 — Care Coordinator (complex care) (care-coordinator) ×1",
+      "excerpt": "Method: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant is a care coordinator on a complex care team with a high-risk panel. Their team works the chronological queue; the AI-ranked queue hasn't been built. They reacted to a description of the ranked queue, not to screens. They did not take part in any earlier session.",
+      "date": "Aug 4, 2026"
+    },
+    "raw:2026-08-04-interview-care-coordinator-complex-care-alert-volume#4": {
+      "title": "Interview — Complex Care Coordinator on Alert Volume",
+      "section": "Representative Quotes",
+      "participants": "Participants: 1 — P134 — Care Coordinator (complex care) (care-coordinator) ×1",
+      "excerpt": "\"It's not the order that gets me, it's seeing the same patient four times. Put them together first, then rank them if you want.\" — Care Coordinator (complex care), P134\n\"I know these patients. Half of deciding who's at risk is knowing what happened to them last winter.\" — Care Coordinator (complex care), P134",
+      "date": "Aug 4, 2026"
+    },
+    "raw:2026-08-20-interview-care-coordinator-new-hire-shadowing#0": {
+      "title": "Interview — New Care Coordinator on Learning the Queue",
+      "section": "Objective",
+      "participants": "Participants: 1 — P135 — Care Coordinator (care-coordinator) ×1",
+      "excerpt": "Understand how a care coordinator who is new to the role learns the team's working conventions, and what an AI-ranked alert queue would mean for someone who doesn't yet have the experience to judge it, following up the August 2025 alert-triage test and the undocumented colour-coding first described in the January 2025 baseline.",
+      "date": "Aug 20, 2026"
+    },
+    "raw:2026-08-20-interview-care-coordinator-new-hire-shadowing#2": {
+      "title": "Interview — New Care Coordinator on Learning the Queue",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — P135 — Care Coordinator (care-coordinator) ×1",
+      "excerpt": "[HIGH] (learning by shadowing) They learned the team's conventions, including what the shared spreadsheet's colours mean and which alerts can safely wait, by shadowing experienced coordinators, with nothing written down to check against later. They thought a ranked queue might help newer coordinators most, because it would stand in for the judgement they haven't built yet. But they said newer coordinators would also be the least able to tell when the ranking is wrong. This is their own reflection; nothing was observed or measured in this session.",
+      "date": "Aug 20, 2026"
+    },
+    "raw:2026-09-17-interview-utilization-review-nurse-citation-checking#0": {
+      "title": "Interview — Utilization Review Nurse on Checking Citations",
+      "section": "Objective",
+      "participants": "Participants: 1 — P144 — Utilization Review Nurse (nurse) ×1",
+      "excerpt": "prior-authorization.md says nurses want inline citations to the chart text behind each part of the draft, and that in v2 the citations were used rather than ignored, with 3 of 4 participants clicking into at least one citation before accepting ( findings/prior-authorization.md :30-34). Both claims come from the April 2025 v1 and November 2025 v2 tests, whose participants asked for the citations or tested them. This session asked a utilization review nurse who joined the department after both tests, and has only ever used the panel in the pilot, whether they want the citations and how they check them, and how they handle the cases the panel doesn't take, including claim denials and calls with the health plan.",
+      "date": "Sep 17, 2026"
+    },
+    "raw:2026-09-17-interview-utilization-review-nurse-citation-checking#3": {
+      "title": "Interview — Utilization Review Nurse on Checking Citations",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — P144 — Utilization Review Nurse (nurse) ×1",
+      "excerpt": "[MEDIUM] (citations as the way to read a draft) They want the citations, and don't think of them as an added feature: they have never used a draft without them, and opening them is how they read a draft at all. On each case they open the citation behind every criterion the request has to meet and read the chart entry it points to. What they check is whether that entry says what the draft says it says, not only that it exists; their example was a cited note that supports a symptom the draft describes as ongoing, when the note is months old. On their informal impression, most drafts need no change after checking and some need a sentence reworded; they kept no count. This confirms prior-authorization.md :30-34 for a nurse who wasn't in v1 or v2: the citations are wanted and used in pilot work, not only in testing. It also complicates the v2 measure: \"clicked into at least one citation\" records that a citation was opened, not what the nurse checked once it was.",
+      "date": "Sep 17, 2026"
+    },
+    "raw:2026-09-17-interview-utilization-review-nurse-citation-checking#5": {
+      "title": "Interview — Utilization Review Nurse on Checking Citations",
+      "section": "Representative Quotes",
+      "participants": "Participants: 1 — P144 — Utilization Review Nurse (nurse) ×1",
+      "excerpt": "\"I've never had a draft without them. The citations aren't extra, they're how I read the thing.\" — Utilization Review Nurse, P144\n\"A denial comes with a reason, and the reason's in the letter, not the chart. So I start from the letter and go find what answers it.\" — Utilization Review Nurse, P144",
+      "date": "Sep 17, 2026"
+    },
+    "raw:2026-09-22-interview-returning-internal-medicine-physician-edits-and-trust-over-time#2": {
+      "title": "Interview — Returning Internal Medicine Physician on Edits and Trust Over Time",
+      "section": "Method",
+      "participants": "Participants: 1 — P09 — Physician, Internal Medicine (physician), returning from 2026-01-13-usability-test-ambient-scribe-ga-release-candidate ×1",
+      "excerpt": "Context: The participant is an internal medicine physician in an ambulatory clinic. They have used the ambient scribe since the January 2026 GA. The scribe drafts the visit note only; they review the draft, correct single lines in place, and sign. Low-confidence transcription is shown with a subtle underline. Their earlier sessions were moderated usability tests; this is an interview about their own practice, nothing was shown or observed, and what they describe can't be compared directly with what those tests recorded. The researcher did not share what other participants had said.",
+      "date": "Sep 22, 2026"
+    },
+    "raw:2026-09-22-interview-returning-internal-medicine-physician-edits-and-trust-over-time#8": {
+      "title": "Interview — Returning Internal Medicine Physician on Edits and Trust Over Time",
+      "section": "Recommendations",
+      "participants": "Participants: 1 — P09 — Physician, Internal Medicine (physician), returning from 2026-01-13-usability-test-ambient-scribe-ga-release-candidate ×1",
+      "excerpt": "Share with the ambient scribe team that, in this physician's account, the order of events in the history is where drafts go wrong without being underlined, because each word is heard clearly.\nWhen drafts are evaluated, check the sequence of events in the history against the visit, not only word accuracy.\nIf the team wants to know whether review habits change over time, plan a measure for it; one returning participant's account can't show a trend.",
+      "date": "Sep 22, 2026"
+    },
+    "raw:2026-09-29-interview-care-coordinator-referral-follow-up#0": {
+      "title": "Interview — Specialty Clinic Care Coordinator on Referral Follow-up",
+      "section": "Objective",
+      "participants": "Participants: 1 — P137 — Care Coordinator (care-coordinator) ×1",
+      "excerpt": "Understand how a care coordinator on a specialty clinic team follows up referrals, where the time goes, and what a 'what changed' view would need to cover for them, following up the January 2025 baseline's recommendation to scope early AI work around 'what changed since last review'.",
+      "date": "Sep 29, 2026"
+    },
+    "raw:2026-09-29-interview-care-coordinator-referral-follow-up#4": {
+      "title": "Interview — Specialty Clinic Care Coordinator on Referral Follow-up",
+      "section": "Representative Quotes",
+      "participants": "Participants: 1 — P137 — Care Coordinator (care-coordinator) ×1",
+      "excerpt": "\"Most of my day is going into the scheduling system to see if they actually went. Half the overdue alerts, they already did.\" — Care Coordinator, P137\n\"Meds are only part of it. For me, what changed means did they get seen, and did the results come back.\" — Care Coordinator, P137",
+      "date": "Sep 29, 2026"
+    },
+    "raw:2026-10-06-interview-senior-medical-coder-ai-suggestions-concept#3": {
+      "title": "Interview — Senior Medical Coder on AI Coding Suggestions",
+      "section": "Key Findings",
+      "participants": "Participants: 1 — P129 — Medical Coder (senior) (him-coder) ×1",
+      "excerpt": "[MEDIUM] (citations) A source citation for every suggested code was non-negotiable for them: the sentence or sentences in the note that support the code, including the specificity. A code without a citation is one they would not accept, however likely it looked. Because so much of the documentation is now scribe-drafted, they said the citation is also how they'd check that the note actually supports the code and that the suggester isn't just echoing a sentence the physician didn't catch at sign-off.",
+      "date": "Oct 6, 2026"
+    },
+    "raw:2026-10-06-interview-senior-medical-coder-ai-suggestions-concept#6": {
+      "title": "Interview — Senior Medical Coder on AI Coding Suggestions",
+      "section": "Recommendations",
+      "participants": "Participants: 1 — P129 — Medical Coder (senior) (him-coder) ×1",
+      "excerpt": "Keep the per-code suggested / accepted / edited / overridden record as a release-blocking requirement, and make it visible to the coder in the coding view as well as to auditors and supervisors.\nRequire a source-text citation, down to the specificity level, for every suggested code. Don't show a suggestion that has no citation. This is consistent with the transparency pattern from prior-auth research.\nIn any pilot, measure the time to review a suggestion, citation check included, not only the end-to-end time per chart, so the 2-3 minute estimate is checked against how coders actually review.",
+      "date": "Oct 6, 2026"
+    }
+  }
+}
