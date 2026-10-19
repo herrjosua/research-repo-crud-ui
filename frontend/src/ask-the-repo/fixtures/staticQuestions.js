@@ -1,7 +1,7 @@
-// GET /api/ask/config's `questions` and `capture` in static mode (the
-// public demo), for stories: a few of the captured questions, as the
-// server lists them. Story fixture only; the real list is the backend's
-// ask/static/questions.json.
+// Storybook fixture in the shape of GET /api/ask/config's `questions` and
+// `capture` in static mode (the public demo): sample questions for
+// stories, not the published list. The real list is the backend's
+// ask/static/questions.json, and it doesn't have to match this one.
 export const STATIC_QUESTIONS = [
     { id: 'all-scribe-draft-trust', question: "Why didn't physicians trust the ambient scribe's draft notes?", project: null },
     { id: 'all-documentation-burden', question: 'How much documentation burden do clinicians report?', project: null },
