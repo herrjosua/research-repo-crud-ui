@@ -193,12 +193,19 @@ node scripts/capture-static-answers.js publish        # writes ask/static/answer
 under it each cited source's title, section, record id and excerpt, so you can
 check every claim against its evidence. The report flags answers with no
 citations, markers the model pointed at no source (the pipeline drops them
-from the answer), citations whose excerpt shares few words with the
-sentence citing it, numbers in the answer that no cited excerpt contains
+from the answer), and citations whose excerpt shares few words with the
+sentence citing it. Sentences and figures are judged by `ask/checks.js`,
+the rules the live route reports as `checks` (see [Ask the
+Repo](#ask-the-repo-v136)): it flags each uncited sentence (a citation
+after the next sentence doesn't count for this one), and each sentence's
+numbers and "N of M" counts that the sources *it* cites don't contain
 (digits, percentages and "one" to "twenty", so "four" matches "4"; this
-catches derived figures like "saved 10 minutes" from "15 to 5 minutes"), and
-"N of M" counts no cited excerpt states (so "4 of 4" cited to "4 of 5" is
-caught even though "4" appears). It also checks the citation-count bar (at least two
+catches derived figures like "saved 10 minutes" from "15 to 5 minutes", and
+"4 of 4" cited to "4 of 5" even though "4" appears). A cited source's label
+date may be repeated, and an uncited decline may repeat figures from the
+question or from any source the model was shown, which `capture` stores in
+`runs.json` as `shownSources` (runs captured before that are judged
+without them). It also checks the citation-count bar (at least two
 records, including a raw session). Whether a cited record actually supports
 its claim is still for a person to judge.
 
@@ -375,8 +382,8 @@ report says how many are still drafts.
 
 The first two rules (and the stack count below) are `ask/checks.js`, the same
 checks the live route reports as `checks` (see [Ask the
-Repo](#ask-the-repo-v136)); the capture script's figure flag uses its figure
-rule too (without label dates). Every rule reads the answer with a narrow
+Repo](#ask-the-repo-v136)); the capture script's review judges by them
+too. Every rule reads the answer with a narrow
 no-break space (U+202F) as a space and a non-breaking hyphen (U+2011) as a
 hyphen, which gpt-oss:20b writes; so do the claim patterns. They're pure
 functions of the answer, its sources, the question and the sources the
