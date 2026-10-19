@@ -10,8 +10,9 @@
 // capture  Runs every question in ask/static/questions.json through the same
 //          pipeline as POST /api/ask (ask/pipeline.js), in process, against
 //          a real Ollama and the agentic-repo at AGENTIC_REPO_ROOT (both read
-//          from backend/.env like the server). Keeps every run, unedited, in
-//          the scratch file ask/static/review/runs.json, and writes
+//          from backend/.env like the server). Keeps every run, unedited and
+//          with the sources it was shown, in the scratch file
+//          ask/static/review/runs.json, and writes
 //          ask/static/review/report.md for a person to check. --only
 //          recaptures just those ids and keeps every other run. --seed and
 //          --temperature override the chat options for this capture only
@@ -42,7 +43,8 @@ const { createOllamaClient, OLLAMA_DEFAULTS } = require('../ask/ollama');
 const { loadRecords, htmlToBlocks } = require('../ask/corpus');
 const { createEmbeddingIndex } = require('../ask/retrieval');
 const { createAskPipeline, CHAT_OPTIONS } = require('../ask/pipeline');
-const { sourceEvidence, unsupportedFiguresIn } = require('../ask/checks');
+const { toSource } = require('../ask/answer');
+const { analyseAnswer } = require('../ask/checks');
 const {
     STATIC_DIR, QUESTIONS_FILE, ANSWERS_FILE, CAPTURE_SCRIPT_VERSION,
     citationMarkers, validateQuestionList, validateStaticAnswers, loadStaticAnswers,
@@ -78,31 +80,20 @@ function contentWords(text) {
     return new Set([...words, ...numbers]);
 }
 
-// The sentence (or list item) each [n] marker belongs to. The model writes
-// markers both before and after the full stop ("…sessions [1]." and
-// "…sessions. [1]"), so a split only happens after punctuation and any
-// markers that follow it.
-function citedSentences(answer) {
-    const out = [];
-    for (const piece of answer.split(/(?<=[.!?](?:\s*\[\d+\])*)\s+(?!\[)|\n+/)) {
-        for (const n of citationMarkers(piece)) out.push({ n, sentence: piece.replace(/\[\d+\]/g, '').trim() });
-    }
-    return out;
-}
-
-// Numbers in the answer that no cited source contains, and "N of M" counts
-// no cited source states, by ask/checks.js's figure rule (a source's title
-// and section count as well as its excerpt). Unlike the harness's check,
-// which holds each sentence to its own citations, this pools every cited
-// source: it flags a figure from nowhere, not one cited to the wrong source.
-function unsupportedNumbers(answer, sources) {
-    return unsupportedFiguresIn(answer.replace(/\[\d+\]/g, ''), sources.map(sourceEvidence).join('\n'));
+function clip(text) {
+    return `${text.slice(0, 90)}${text.length > 90 ? '…' : ''}`;
 }
 
 // Flags one run. `shownCount` is how many sources the model was shown, for
 // markers in its raw reply that pointed at none of them (renumberCitations
-// drops those from the answer, so they only show up in `raw`).
-function reviewRun({ answer, sources, raw }, shownCount) {
+// drops those from the answer, so they only show up in `raw`). Sentences and
+// figures are judged by ask/checks.js's analyseAnswer, the rules the live
+// route and the harness use: each sentence needs its own citation, and each
+// figure must be in a source its own sentence cites. `shownSources` (every
+// source the prompt showed, as toSource builds them) and `question` let an
+// uncited decline repeat a figure from them; a run stored without
+// shownSources is judged with none.
+function reviewRun({ answer, sources, raw, shownSources = [] }, shownCount, question = '') {
     const flags = [];
     if (sources.length === 0) flags.push('no citations');
 
@@ -116,25 +107,31 @@ function reviewRun({ answer, sources, raw }, shownCount) {
         flags.push(`model cited ${[...new Set(dangling)].map((n) => `[${n}]`).join(' ')}, which point at nothing (shown ${shownCount}); dropped from the answer`);
     }
 
+    const sentences = analyseAnswer(answer, sources, question, shownSources);
     const weak = [];
-    for (const { n, sentence } of citedSentences(answer)) {
-        const source = sources[n - 1];
-        if (!source) continue;
-        const claim = contentWords(sentence);
-        const evidence = contentWords(`${source.title} ${source.section || ''} ${source.excerpt}`);
-        const shared = [...claim].filter((word) => evidence.has(word));
-        if (claim.size > 0 && (shared.length < 2 || shared.length / claim.size < 0.2)) {
-            weak.push({ n, sentence, shared });
+    for (const { text, cites } of sentences) {
+        for (const n of cites) {
+            const source = sources[n - 1];
+            if (!source) continue;
+            const claim = contentWords(text);
+            const evidence = contentWords(`${source.title} ${source.section || ''} ${source.excerpt}`);
+            const shared = [...claim].filter((word) => evidence.has(word));
+            if (claim.size > 0 && (shared.length < 2 || shared.length / claim.size < 0.2)) {
+                weak.push({ n, text, shared });
+            }
         }
     }
-    for (const { n, sentence, shared } of weak) {
-        flags.push(`[${n}] may be unrelated to "${sentence.slice(0, 90)}${sentence.length > 90 ? '…' : ''}" (shares: ${shared.join(', ') || 'nothing'})`);
+    for (const { n, text, shared } of weak) {
+        flags.push(`[${n}] may be unrelated to "${clip(text)}" (shares: ${shared.join(', ') || 'nothing'})`);
     }
 
-    if (sources.length > 0) {
-        const { numbers, pairs } = unsupportedNumbers(answer, sources);
-        if (numbers.length > 0) flags.push(`number(s) in no cited excerpt: ${numbers.join(', ')}`);
-        if (pairs.length > 0) flags.push(`count(s) no cited excerpt states: ${pairs.map((p) => `"${p}"`).join(', ')}`);
+    // analyseAnswer writes counts as "N of M" among the numbers.
+    for (const { text, uncited, unsupported } of sentences) {
+        if (uncited) flags.push(`uncited sentence: "${clip(text)}"`);
+        const pairs = unsupported.filter((figure) => figure.includes(' of '));
+        const numbers = unsupported.filter((figure) => !pairs.includes(figure));
+        if (numbers.length > 0) flags.push(`number(s) in no cited excerpt: ${numbers.join(', ')} in "${clip(text)}"`);
+        if (pairs.length > 0) flags.push(`count(s) no cited excerpt states: ${pairs.map((p) => `"${p}"`).join(', ')} in "${clip(text)}"`);
     }
 
     const records = new Set(sources.map((s) => s.recordId));
@@ -330,8 +327,10 @@ async function capture({ runs, only, seed, temperature }) {
             const started = Date.now();
             const result = await pipeline.ask(q.question, q.project);
             const shown = result.ranked.map(({ passage }, i) => ({ n: i + 1, recordId: passage.record.id, title: passage.record.title }));
-            const review = reviewRun(result, shown.length);
-            entry.runs.push({ run, answer: result.answer, sources: result.sources, model: result.model, raw: result.raw, shown, review });
+            // As ask/pipeline.js builds them for its own checks.
+            const shownSources = result.ranked.map((r) => toSource(r, q.project));
+            const review = reviewRun({ ...result, shownSources }, shown.length, q.question);
+            entry.runs.push({ run, answer: result.answer, sources: result.sources, model: result.model, raw: result.raw, shown, shownSources, review });
             console.log(`  ${q.id} run ${run}: ${review.citedRecords} record(s)${review.citesRawSession ? ' incl. raw' : ''}, ${review.flags.length} flag(s), ${((Date.now() - started) / 1000).toFixed(1)}s`);
         }
         captured.push(entry);
@@ -371,12 +370,18 @@ async function capture({ runs, only, seed, temperature }) {
 function report({ only }) {
     const runsFile = readJson(RUNS_FILE);
     for (const q of runsFile.questions) {
-        for (const run of q.runs) run.review = reviewRun(run, run.shown.length);
+        for (const run of q.runs) run.review = reviewRun(run, run.shown.length, q.question);
     }
     writeJson(RUNS_FILE, runsFile);
     const shown = only ? runsFile.questions.filter((q) => only.includes(q.id)) : runsFile.questions;
     fs.writeFileSync(REPORT_FILE, renderReport({ ...runsFile, questions: shown }));
     console.log(`Review report: ${path.relative(process.cwd(), REPORT_FILE)}`);
+}
+
+// The run publish takes when none is picked: the first that meets the bar
+// with no flags.
+function defaultRun(runs) {
+    return runs.find((r) => r.review.meetsBar && r.review.flags.length === 0);
 }
 
 function publish({ picks, dryRun }) {
@@ -396,7 +401,7 @@ function publish({ picks, dryRun }) {
         const pick = picks.get(q.id);
         const run = pick
             ? capturedQ.runs.find((r) => r.run === pick)
-            : capturedQ.runs.find((r) => r.review.meetsBar && r.review.flags.length === 0);
+            : defaultRun(capturedQ.runs);
         if (!run) {
             problems.push(pick ? `${q.id}: there is no run ${pick}` : `${q.id}: no run meets the bar without flags; choose one with --pick ${q.id}=N or drop it`);
             continue;
@@ -542,6 +547,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-    reviewRun, citedSentences, contentWords, unsupportedNumbers, renderReport, verifyAnswers,
+    reviewRun, defaultRun, contentWords, renderReport, verifyAnswers,
     corpusCommit, ollamaInfo, withChatOptions, chatOverrides,
 };
