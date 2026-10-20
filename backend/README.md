@@ -372,7 +372,7 @@ report says how many are still drafts.
   dated Apr 8, 2025 is supported. A date is matched as a date, so its
   digits never support anything else, and a time is always a figure (labels
   carry none). A decline that cites nothing may repeat figures from the
-  question or from any source the prompt showed ("Steps 1, 2, 4, 5 and 6
+  question or from any source the prompt showed ("Steps 1, 2, 4 and 5
   are not labeled … in the sources", with the onboarding flow shown);
 - it cites at least one supporting record, and the required raw session if
   there is one. On an `acceptDecline` entry, an answer that only declines and
@@ -836,9 +836,9 @@ Anything else from a non-lead gets a `400`.
   "enabled": true,  // true when a provider is active (LLM_PROVIDER, or a dev switch); false means POST /api/ask answers 503
   "mode": "live",   // "live" (ollama), "static", or null when disabled
   "projects": [
-    { "id": "project-onboarding", "label": "Onboarding", "count": 21 },
+    { "id": "project-onboarding", "label": "Onboarding", "count": 17 },
     …,
-    { "id": "project-cross-cutting", "label": "Cross-cutting", "count": 25 }
+    { "id": "project-cross-cutting", "label": "Cross-cutting", "count": 32 }
   ]
 }
 ```
@@ -983,7 +983,7 @@ evaluation harness records them with every result:
   passages, so the first question embeds 431 (counted at agentic-repo
   commit 4ba145f, the corpus the 2026-09-29 evaluation runs record). They stay in the record for
   a cited passage's surrounding context and for the provenance links below.
-  The onboarding session's own `Participants` section, which is prose
+  A raw session's heading-only `Participants` section, which is prose
   evidence, stays retrievable.
 - **Rosters become a header.** Each passage of a raw session carries its
   roster as one line (`Participants: 3 — Care Coordinator ×2, Care
