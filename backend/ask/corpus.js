@@ -132,10 +132,9 @@ const METADATA_SECTIONS = {
     finding: [/^Evidence Trail$/, /^Related Findings$/],
     component: [/^Code mapping$/, /^Related Research Findings$/],
 };
-// …plus a raw record's heading-less one-line "Researcher: …" passage (the
-// onboarding session has one). The onboarding session's own "Participants"
-// section, with no " — <title>", is prose evidence ("6 participants, all
-// first-time admins…") and stays retrievable.
+// …plus a raw record's heading-less one-line "Researcher: …" passage. A raw
+// record's own "Participants" section, with no " — <title>", is prose
+// evidence and stays retrievable.
 const RESEARCHER_LINE_RE = /^Researcher:[^\n]*$/;
 // A raw session's own list of what it left open. It's evidence, retrieved
 // like any section; the pipeline's followUps option (ask/pipeline.js) also
@@ -183,7 +182,7 @@ function participantsHeader(record) {
 }
 
 // A raw session's appended participants.md: its "Participants — <title>"
-// roster, or the onboarding session's heading-only "Participants" prose.
+// roster, or its heading-only "Participants" prose.
 // Neither is part of the session's notes.
 const APPENDED_PARTICIPANTS_RE = /^Participants(?: — |$)/;
 
