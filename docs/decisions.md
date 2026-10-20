@@ -920,6 +920,12 @@ answers (`ask/static/answers.json`) were made with the old decline rule
 and should be recaptured before the next release that ships this
 (backend/README.md, "Static mode"). That isn't done here.
 
+**Update (2026-10-20):** the recapture was done in RR-152, at
+corpus 09d985b (PR #74, merge commit 3a1694f). Five of the ten captured
+questions were published and five were dropped; RR-206 restores them. It
+shipped in release v1.3.8 (annotated tag on merge commit 623439c),
+deployed 2026-10-20.
+
 **Not tried** (one round, no rewording):
 - Premise check and open items with different wording.
 - Open items with only the Follow-ups section attached.
@@ -1221,6 +1227,12 @@ changed):
 **Still not done:** recapturing the public demo's saved answers
 (`ask/static/answers.json`), as in decision 19.
 
+**Update (2026-10-20):** the recapture was done in RR-152, at
+corpus 09d985b (PR #74, merge commit 3a1694f). Five of the ten captured
+questions were published and five were dropped; RR-206 restores them. It
+shipped in release v1.3.8 (annotated tag on merge commit 623439c),
+deployed 2026-10-20.
+
 **Kept in `backend/ask/eval/results/`:**
 - `checks-rejudge.md`.
 - `checks-control[-scenarios]` and `checks-decline-list[-scenarios]`,
@@ -1410,6 +1422,12 @@ checks results.
 
 **Still not done:** recapturing the public demo's saved answers
 (`ask/static/answers.json`), as in decisions 19 and 20.
+
+**Update (2026-10-20):** the recapture was done in RR-152, at
+corpus 09d985b (PR #74, merge commit 3a1694f). Five of the ten captured
+questions were published and five were dropped; RR-206 restores them. It
+shipped in release v1.3.8 (annotated tag on merge commit 623439c),
+deployed 2026-10-20.
 
 **Kept in `backend/ask/eval/results/`:** `checks-rejudge-rr149.md`. No runs
 were made. The reports stored before this decision are left as written,
