@@ -3,8 +3,9 @@ const {
 } = require('../ask/checks');
 
 // ask/checks.js, on answers the corpus audit logged as wrong (and the
-// harness baselines), with the sources as the pipeline cites them. The
-// excerpts are verbatim from the agentic-repo corpus.
+// harness baselines), with the sources as the pipeline cites them. Not
+// every excerpt matches the agentic-repo corpus: some are shortened or
+// aren't in their record, and some cite record IDs it doesn't have.
 
 const source = (recordId, title, section, excerpt) => ({
     recordId, recordKind: recordId.split(':')[0], title, section, excerpt,
@@ -186,8 +187,9 @@ describe('checkAnswer', () => {
         expect(checkAnswer('3 of 3 tried to skip step 3 [1].', [TOPLINE]).unsupportedFigures).toEqual(['3 of 3']);
     });
 
-    // RR checks changes (docs/decisions.md, 20). Fixtures are verbatim from
-    // the stored runs in ask/eval/results/ unless they say otherwise.
+    // RR checks changes (docs/decisions.md, 20). Some fixtures are verbatim
+    // from the stored runs in ask/eval/results/; others, such as the nurses
+    // excerpt below, aren't in any run.
     describe('a source’s label date counts as evidence (change 1)', () => {
         const NURSES_V1 = {
             ...source('raw:2025-04-08-usability-test-prior-auth-ai-v1', 'Usability Test — Prior Auth AI v1', 'Key Findings', '4 utilization review nurses and 1 supervisor took part.'),

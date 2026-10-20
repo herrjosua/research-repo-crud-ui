@@ -252,7 +252,7 @@ function answerSentences(answer) {
 //                sources' label dates is taken out. A decline that cites
 //                nothing may repeat figures from the question or from any
 //                source the prompt showed (`shown`, in the same shape as
-//                `sources`): "Steps 1, 2, 4, 5 and 6 are not labeled … in
+//                `sources`): "Steps 1, 2, 4 and 5 are not labeled … in
 //                the sources" names steps the shown flow lists. Counts are
 //                written "N of M".
 function analyseAnswer(answer, sources, question = '', shown = []) {
