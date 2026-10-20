@@ -152,10 +152,13 @@ sequenceDiagram
 - Retrieval quality: numbered lists lose their numbers when chunked, and
   the model occasionally states figures that aren't in the sources.
   `backend/scripts/eval-ask.js` measures this against a gold set; the
-  baseline is `backend/ask/eval/results/baseline.md`, the current state
-  `behavior-combined.md` (5 of 10 regression, 0 of 7 scenario, against
-  step 5's 6 of 10; the two seeded losses pass all their unseeded runs, so
-  the stop rule doesn't count them; decision 19).
+  baseline is `backend/ask/eval/results/baseline.md`. At corpus 4ba145f
+  the current state was `behavior-combined.md` (5 of 10 regression, 0 of 7
+  scenario, against step 5's 6 of 10; the two seeded losses pass all their
+  unseeded runs, so the stop rule doesn't count them; decision 19). The
+  latest rebaseline is `backend/ask/eval/results/rebaseline-09d985b.md`, at
+  corpus 09d985b: "Gold pass: 1 of 10" regression, and "Gold pass: 0 of 7"
+  scenario in `rebaseline-09d985b-scenarios.md`.
 - The wrong passage of the right record is still sometimes shown. A raw
   session shows its two best-scoring passages, and the evidence can be in a
   third section: the GA adoption window's "4 weeks" is in the dashboard
@@ -163,14 +166,15 @@ sequenceDiagram
   Findings passage that isn't shown.
 - The provenance slot (`ask/provenance.js`) is off: it adds a whole
   record, not the passage with the evidence, and it cost a passing answer
-  (decision 15). Some required sessions aren't shown at all: the onboarding
-  session for the two invite questions, and scribe v0.2 for the scribe-trust
+  (decision 15). Some required sessions aren't shown at all: in
+  `rebaseline-09d985b-scenarios.md`, the practice-setup usability test for
+  the invite-expectation question, and scribe v0.2 for the scribe-trust
   question.
 - Where the evidence is shown, the model sometimes still doesn't use it:
-  the calendar-premise question has "it's actually required" in the
-  prompt, and the answer quotes it without saying the step is already
-  required. (The burnout survey's "52% of physicians" is now used, since
-  the decline-with-evidence rule; decision 19.)
+  the calendar-premise question has "The calendar step is required
+  because…" in the prompt, and the answer quotes it without saying the
+  step is already required. (The burnout survey's "52% of physicians" is
+  now used, since the decline-with-evidence rule; decision 19.)
 - The answer checks (`backend/ask/checks.js`) read a list whose one
   citation sits on its last item as uncited items, which failed a correct
   answer at k = 8. The broader decline rule ("not", "cannot" or "no" with
