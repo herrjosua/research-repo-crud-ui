@@ -290,8 +290,9 @@ tags.
   The `deploy` job then waits for approval in the `production` environment.
   See [`docs/deploy.md`](./docs/deploy.md#deploying-from-github-actions).
 - **Tags are annotated from now on:** `git tag -a vX.Y.Z`.
-- **Six tags so far:** v1.2.6, v1.2.7, v1.2.8, v1.2.9, v1.2.10 and v1.3.6.
-  v1.2.6 to v1.2.9 are lightweight tags; v1.2.10 and v1.3.6 are annotated.
+- **Eight tags so far:** v1.2.6, v1.2.7, v1.2.8, v1.2.9, v1.2.10, v1.3.6,
+  v1.3.7 and v1.3.8. v1.2.6 to v1.2.9 are lightweight tags; v1.2.10, v1.3.6,
+  v1.3.7 and v1.3.8 are annotated.
   Earlier work (v0.6 to v1.1, and v1.2 before v1.2.6) shipped before
   tagging began.
 - **"Shipped" means released**: a tag exists and it's deployed. Work merged
