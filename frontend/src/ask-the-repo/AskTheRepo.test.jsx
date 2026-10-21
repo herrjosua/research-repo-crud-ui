@@ -600,7 +600,7 @@ describe('AskTheRepo in static mode', () => {
         vi.mocked(useAskConfig).mockReturnValue({ data: { ...STATIC_CONFIG, capture: undefined } });
         renderPage();
 
-        expect(staticBanner()).toHaveTextContent('Captured from a local model run on sample data. To ask your own questions, run the project locally');
+        expect(staticBanner()).toHaveTextContent('Captured from a local model run on sample data. The answers were written by an AI and can make mistakes, so check them against the cited sources. To ask your own questions, run the project locally');
     });
 
     it('keeps live mode unchanged, even if a config carries questions', () => {

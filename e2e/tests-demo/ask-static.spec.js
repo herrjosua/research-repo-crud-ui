@@ -32,7 +32,8 @@ test('Ask the Repo offers only captured questions, filters them by project, and 
     const banner = page.locator('.cds--actionable-notification', { hasText: 'Answers are pre-generated' });
     await expect(banner).toBeVisible();
     await expect(banner).toContainText(
-        'Captured from a local model run (gemma2:9b, Sep 28, 2026) on sample data. To ask your own questions, run the project locally',
+        'Captured from a local model run (gemma2:9b, Sep 28, 2026) on sample data. The answers were written by an AI and can make mistakes, '
+        + 'so check them against the cited sources. To ask your own questions, run the project locally',
     );
     const readmeLink = banner.getByRole('link', { name: 'run the project locally (opens in a new tab)', exact: true });
     await expect(readmeLink).toHaveAttribute('href', 'https://github.com/herrjosua/research-repo-crud-ui#getting-started');
