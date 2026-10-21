@@ -49,6 +49,14 @@ const { readProjectList, recordProjectTag } = require('../projects');
 //                                     // Non-failing: the two may contradict, or
 //                                     // be a right "no rate, but 52%…" answer.
 //                                     // Only a first-sentence decline counts.
+//       narrowEvidence: string[],     // cited sentences making a plural claim
+//                                     // about a role ("Physicians…") whose
+//                                     // cited records' rosters add up to 2 or
+//                                     // fewer participants. Non-failing.
+//       quotedFigures: string[],      // figures a sentence takes only from a
+//                                     // cited correction passage's quotation
+//                                     // of the claim it corrects, once per
+//                                     // sentence. Non-failing.
 //     },
 //   }
 //
