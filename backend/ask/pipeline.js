@@ -55,7 +55,7 @@ const { checkAnswer } = require('./checks');
 //                   passage is shown only when it ranks on its own.
 // The evaluation harness records this with every result.
 const RETRIEVAL = {
-    topK: 6, metadataSections: 'excluded', provenanceSlot: false, passagesPerRaw: 2, wholeRawNotes: 0, followUps: false, corrections: 'off',
+    topK: 6, metadataSections: 'excluded', provenanceSlot: false, passagesPerRaw: 2, wholeRawNotes: 3, followUps: false, corrections: 'off',
 };
 const TOP_K = RETRIEVAL.topK;
 // Low temperature: this is retrieval-grounded summarization, not writing.

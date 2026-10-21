@@ -101,7 +101,8 @@ function isHeaderFor(header, title) {
 }
 
 // The distinct records behind a prompt's sources (a raw session can have two
-// passages, ask/pipeline.js RETRIEVAL.passagesPerRaw), by their titles.
+// passages, ask/pipeline.js RETRIEVAL.passagesPerRaw, or is shown as its whole
+// notes, RETRIEVAL.wholeRawNotes), by their titles.
 function shownRecordTitles(chatRequest, records) {
     const titles = Object.values(promptSourceHeaders(chatRequest))
         // The longest matching title, since one title can prefix another.
@@ -183,7 +184,7 @@ describe('POST /api/ask', () => {
         const userContent = chat.body.messages[1].content;
         for (const source of res.body.sources) {
             expect(source).toEqual({
-                id: expect.stringMatching(new RegExp(`^${source.recordId.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}#\\d+$`)),
+                id: expect.stringMatching(new RegExp(`^${source.recordId.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}#(\\d+|notes)$`)),
                 kind: expect.stringMatching(/^(interview|survey|transcript|synthesis|doc)$/),
                 title: expect.any(String),
                 excerpt: expect.any(String),
@@ -224,25 +225,29 @@ describe('POST /api/ask', () => {
         });
     });
 
-    it('maps a raw usability-test record to the transcript kind with real surrounding context', async () => {
+    it('maps a raw usability-test record to the transcript kind, shown as its whole notes', async () => {
         const res = await agent.post('/api/ask').send({
             question: 'medication dosages garbled scribe sessions physicians disqualifying sign-off',
         });
         const headers = promptSourceHeaders(fakeOllama.requestsTo('/api/chat')[0]);
-        // The fake reply cites [2] then [1], so the top-ranked passage — the
-        // usability test's Key Findings — comes back as sources[1].
-        expect(headers[1]).toBe('Usability Test — Ambient AI Scribe Prototype v0.1 — Key Findings');
+        // The fake reply cites [2] then [1], so the top-ranked source — the
+        // usability test's whole notes (RETRIEVAL.wholeRawNotes) — comes back
+        // as sources[1].
+        expect(headers[1]).toBe('Usability Test — Ambient AI Scribe Prototype v0.1');
         const source = res.body.sources[1];
         expect(source).toMatchObject({
+            id: 'raw:2025-02-25-usability-test-ambient-scribe-v01#notes',
             kind: 'transcript',
             recordKind: 'raw',
             recordType: 'usability-test',
             date: 'Feb 25, 2025',
-            section: 'Key Findings',
+            section: null,
+            contextBefore: null,
+            contextAfter: null,
         });
+        expect(source.excerpt).toMatch(/Moderated usability test/);
         expect(source.excerpt).toMatch(/garbled medication dosages in 3 of 5/);
-        expect(source.contextBefore).toMatch(/Moderated usability test/);
-        expect(source.contextAfter).toMatch(/4 of 5 participants read every line/);
+        expect(source.excerpt).toMatch(/4 of 5 participants read every line/);
     });
 
     it('labels each source for the model as a raw session, synthesis or doc', async () => {
@@ -259,7 +264,7 @@ describe('POST /api/ask', () => {
             n: 1,
             cls: 'RAW SESSION',
             meta: ['usability test', 'Feb 25, 2025'],
-            header: 'Usability Test — Ambient AI Scribe Prototype v0.1 — Key Findings',
+            header: 'Usability Test — Ambient AI Scribe Prototype v0.1',
         });
         const records = (await agent.get('/api/records?summary=true')).body;
         for (const label of labels) {

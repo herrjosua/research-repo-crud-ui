@@ -287,7 +287,7 @@ node scripts/eval-ask.js report baseline-scenarios after-chunking-scenarios
 minutes with the model loaded. `--set regression|scenario` asks one
 gold set's questions (all of them without it); `--seed`, `--temperature`,
 `--seeded-runs`, `--unseeded-runs` and `--only id,id` change the defaults.
-`--whole-raw-notes N` runs with the off-by-default whole-notes option set to
+`--whole-raw-notes N` runs with the whole-notes option (3 by default) set to
 N (see "Retrieval" below) for that run only, and the report's Retrieval row
 records it. `--follow-ups shown|linked` runs with the off-by-default
 follow-ups option set to that (see "Retrieval" below) for that run only;
@@ -994,8 +994,9 @@ evaluation harness records them with every result:
   head count.
 - **Top k.** The question is scored against every retrievable passage by
   brute-force cosine similarity, records are ranked by their best passage,
-  and the top 6 records go to `gemma2:9b`: two passages for a raw session,
-  one for anything else (below).
+  and the top 6 records go to `gemma2:9b`: one passage for a synthesis or
+  doc record, and the top 3 raw sessions of the whole ranking, each as its
+  whole notes, in place of the raw sessions' passages (below).
 - **Labels.** Each source reaches the model as
   `[n] RAW SESSION · <method> · <date> — <title> — <section>`, or
   `SYNTHESIS · <date> — …` (findings, analytics) or `DOC · <type> · <date> — …`
@@ -1025,7 +1026,8 @@ evaluation harness records them with every result:
   v1 "inline source citations" recommendation, the chart-review quote, the
   onboarding sessions 4–6), and the model still doesn't use it. It makes the
   prompt about 20–25% longer (mean 4,837 regression and 5,521 scenario
-  characters, max 7,378). See decision 15.
+  characters, max 7,378). See decision 15. It applies only with whole raw
+  notes off (`wholeRawNotes: 0`); they're on by default (below).
 
 - **Off by default: corrections** (`corrections`: `'off'` or `'shown'`).
   A raw session's correction files (`raw/<session>/correction-*.md`) are
@@ -1046,7 +1048,7 @@ evaluation harness records them with every result:
   lengthened its prompt and the answer stopped citing that session. With
   `'off'`, the session-lock draft-loss question still answered "all 4"
   from the correction passage, which ranked on its own.
-- **Off by default: whole raw notes** (`wholeRawNotes`). Set to N, the raw
+- **On by default, N = 3: whole raw notes** (`wholeRawNotes`). Set to N, the raw
   sessions in the top k are dropped and the top N raw sessions of the whole
   ranking are shown instead, each as its whole notes: every section of its
   `session-notes.md` in order under its own heading, one label, and the
@@ -1055,6 +1057,9 @@ evaluation harness records them with every result:
   are shown as without it, all in ranking order. In the evaluation, N = 2
   and N = 4 each gained two passing answers and lost three; see
   [decision 18](../docs/decisions.md#18-whole-raw-session-notes-measured-off-by-default-v13637).
+  N = 3 is the default, provisionally, until a larger model is available
+  through AWS Bedrock; see
+  [decision 23](../docs/decisions.md#23-whole-raw-notes-at-n--3-the-default-provisionally).
 - **Off by default: follow-ups** (`followUps`: `false`, `'shown'` or
   `'linked'`). For a question that asks what is unresolved, a raw session's
   own `Follow-ups / Open Questions` section (`ask/corpus.js`,
@@ -1083,7 +1088,7 @@ evaluation harness records them with every result:
   Not yet measured with a model (RR-145).
 
 The final defaults are **k = 6, metadata sections excluded, provenance slot
-off, `passagesPerRaw: 2`, whole raw notes off, follow-ups off**.
+off, `passagesPerRaw: 2`, whole raw notes 3, follow-ups off**.
 
 **Prompt behaviors.** Four rules for the system prompt, each a switch in
 `PROMPT_BEHAVIORS` (`ask/answer.js`). With all four off, the prompt is what

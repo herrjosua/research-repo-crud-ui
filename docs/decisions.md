@@ -1641,3 +1641,114 @@ held-out questions and a new measurement.
 
 The 4ba145f prompt-sources file gains the attached passages: 2 records and
 8 passages, with no entry removed or changed.
+
+## 23. Whole raw notes at N = 3: the default, provisionally
+
+**Date:** 2026-10-21. **Status:** Active, provisional. Ticket RR-205.
+Changes decision 18's default. An interim measure until a larger model is
+available through AWS Bedrock.
+
+**Decision:** `RETRIEVAL.wholeRawNotes` in `ask/pipeline.js` is 3 by
+default (it was 0). The top 3 raw sessions of the whole ranking are shown
+as their whole notes, in place of the raw sessions' passages in the top 6;
+synthesis and doc records are shown as before (decision 18 describes the
+option). Nothing else in the retrieval or the prompt changes.
+
+**Why (decision by the owner, 2026-10-21):** across three seeds, W3 (N = 3)
+had the gold answers cite the required raw session more often than the
+current defaults did, at every seed, and pass more often, with the
+prompt well inside the window. It also beat every other variant tried.
+It has a known cost on the old corpus (below), accepted for now.
+
+**What was measured:** gemma2:9b (digest `ff02c3702f32…`) and
+nomic-embed-text (`0a109f422b47…`) on Ollama 0.40.6, corpus 09d985b, both
+gold sets (17 entries), seeds 42, 7 and 123, temperature 0.2, 3 seeded and
+3 unseeded runs, app commit 0f4491a (a measurement copy whose extra
+switches were off for these runs). The control is the defaults before
+this change. Each cell is required raw session cited / passes, of 17, for
+the first seeded run.
+
+| Configuration | seed 42 | seed 7 | seed 123 | Max prompt tokens |
+|---|---|---|---|---|
+| Control | 4 / 1 | 4 / 2 | 6 / 5 | 2,411 |
+| W3 (`wholeRawNotes: 3`) | 10 / 8 | 10 / 8 | 10 / 8 | 4,813 |
+
+- By set, W3 is 8 / 7 regression and 2 / 1 scenario at every seed; the
+  control is 3 / 1, 3 / 2 and 5 / 5 regression and 1 / 0 scenario.
+- Of the 153 unseeded runs, 80 cite the required raw session under W3
+  and 44 under the control.
+- No W3 run is over the prompt-size guard (6,963 tokens, 85% of
+  `num_ctx` 8192).
+- W3 gains, at every seed: `prior-auth-citations`,
+  `audit-onboarding-steps-order`, `audit-adoption-window` and
+  `scenario-invite-expectation`. `onboarding-invite-worry` and
+  `audit-session-lock-draft-loss-count` pass at seeds 42 and 7, and
+  `audit-burnout-share` at seed 42, where the control fails them.
+  `scribe-sound-alike-names` passes in the control at
+  seed 123 only, and fails under W3 at every seed.
+
+**Known cost (old corpus 4ba145f, six entries):** passes are 4, 4, 5 in
+the control and 4, 4, 4 under W3, at seeds 42, 7, 123.
+`audit-session-timeout` passes in the control and fails under W3 at all
+three seeds (it doesn't cite
+`raw:2026-02-17-session-lock-during-dictation`).
+`scribe-sound-alike-names` passes in the control at seeds 42 and 123 and
+fails under W3 at both. `audit-adoption-window` gains: it fails in the
+control and passes under W3 at all three seeds.
+
+**What was tried and didn't help** (same pins, all three seeds):
+- **C1: `topK` 8 with `passagesPerRaw` 1.** 8 / 7, 8 / 6, 8 / 6, but it
+  fails the old-corpus cost rule: old-corpus passes 2, 3, 2 against the
+  control's 4, 4, 5, failing the rule at seeds 42 and 123. It loses
+  `audit-burnout-share` at every seed, `scribe-sound-alike-names` at 42
+  and 123, and `prior-auth-citations` at 123.
+- **W2 (N = 2).** 8 / 6 at every seed: below W3 at every seed, with the
+  same old-corpus losses.
+- **W4 (N = 4).** 8 / 6, 10 / 7, 9 / 6: below W3 on average, and it varies
+  by seed.
+- **W5 (N = 5).** 8 / 6, 8 / 5, 7 / 5: over budget (18 runs over 6,963
+  tokens, max 7,671) and not above the control's passes at seed 123.
+- **W6 (N = 6).** 5 / 3, 5 / 3, 5 / 4: over budget (36 runs over 6,963
+  tokens, max 7,730), and at every seed its answers stop citing the
+  required session for `audit-burnout-share`,
+  `audit-session-lock-draft-loss-count` and
+  `scenario-documentation-pain-points`, which the control's cite.
+- **On top of W3, four levers (step 5):**
+  - follow-ups `linked`: 10 / 8 at every seed, the same verdicts as W3,
+    so no gain;
+  - premise check and open items on: 7 / 4, 6 / 4, 6 / 3; it loses four
+    of W3's passes at seeds 42 and 7 and five at 123;
+  - a raw-preference line in the prompt: 9 / 7, 9 / 6, 9 / 7; it loses
+    `audit-onboarding-steps-order` at every seed;
+  - a hybrid that adds the best passage of the next 3 raw sessions:
+    11 / 6, 10 / 6, 10 / 7; more citations, fewer passes (it loses
+    `audit-session-lock-draft-loss-count` at every seed).
+
+**Unchanged:** the gold bar (cite the required raw session) and
+`backend/ask/eval/gold.json`. Nine of the 17 gold entries still fail
+under W3 at every seed: `onboarding-required-steps`,
+`scribe-sound-alike-names`, `audit-session-timeout`,
+`scenario-documentation-pain-points`, `scenario-scribe-trust`,
+`scenario-nurses-citations`, `scenario-calendar-premise`,
+`scenario-care-coordinator-gaps` and `scenario-session-timeout-open`.
+
+**Not done here:** recapturing the demo's published answers. That's
+RR-206; until then the static demo serves answers captured before this
+change.
+
+**Revisit when:** a larger model is available through AWS Bedrock
+(RR-48, RR-50, RR-46). Re-measure W3 against that model then, with the
+same gold and bar.
+
+**Kept:** the step 2 to 5 runs and their analyses
+(`analysis-step3.md`, `analysis-step4.md`, `analysis-step5.md`) are in the
+RR-205 measurement copy, outside this repo. In `backend/ask/eval/results/`:
+- `rebaseline-09d985b-w3` and `rebaseline-09d985b-w3-scenarios` (`.json`
+  and `.md`): the baseline at this default. gemma2:9b, Ollama 0.40.6,
+  corpus 09d985b, seed 42, temperature 0.2, 3 seeded and 3 unseeded runs,
+  app commit 8bdcff0. "Gold pass: 7 of 10" regression and "Gold pass: 1
+  of 7" scenario; the required raw session is cited in 10 of 17. All 51
+  seeded runs match the W3 seed 42 measurement byte for byte: answers,
+  cited sources, shown passages and prompt size.
+- The 09d985b prompt-sources file gains the whole notes these runs
+  showed: 7 records and 33 passages, with no entry removed or changed.
