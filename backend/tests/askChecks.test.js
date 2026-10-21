@@ -48,7 +48,9 @@ const SESSION_2 = source(
     'Attempted to skip step 2 directly, assuming it was optional. Backed out when the "required" indicator appeared.',
 );
 
-const CLEAN = { uncited: [], unsupportedFigures: [], stacked: [], declineThenClaims: [] };
+const CLEAN = {
+    uncited: [], unsupportedFigures: [], stacked: [], declineThenClaims: [], narrowEvidence: [], quotedFigures: [],
+};
 
 describe('checkAnswer', () => {
     it('returns nothing to flag for a clean, cited answer', () => {
@@ -72,6 +74,8 @@ describe('checkAnswer', () => {
                 unsupportedFigures: ['52'],
                 stacked: [],
                 declineThenClaims: [],
+                narrowEvidence: [],
+                quotedFigures: [],
             });
         });
 
@@ -100,6 +104,8 @@ describe('checkAnswer', () => {
             unsupportedFigures: ['2'],
             stacked: ['Step 3 ("Connect calendar") is required.'],
             declineThenClaims: [],
+            narrowEvidence: [],
+            quotedFigures: [],
         });
     });
 
@@ -129,6 +135,8 @@ describe('checkAnswer', () => {
             unsupportedFigures: ['5'],
             stacked: [],
             declineThenClaims: [],
+            narrowEvidence: [],
+            quotedFigures: [],
         });
     });
 
@@ -146,6 +154,7 @@ describe('checkAnswer', () => {
         const sentence = 'Steps 1, 2, 4, 5, and 6 are not explicitly labeled as required or optional in the provided sources.';
         expect(checkAnswer(sentence, [], 'Which onboarding steps are required?')).toEqual({
             uncited: [], unsupportedFigures: ['1', '2', '4', '5', '6'], stacked: [], declineThenClaims: [],
+            narrowEvidence: [], quotedFigures: [],
         });
         // No "sources": a negated claim, not a decline.
         expect(checkAnswer('Admins did not know when invites were sent.', []).uncited).toEqual(['Admins did not know when invites were sent.']);
@@ -459,6 +468,8 @@ describe('checkAnswer', () => {
                 unsupportedFigures: [],
                 stacked: [],
                 declineThenClaims: ['The sources do not contain what percentage of clinicians report burnout.'],
+                narrowEvidence: [],
+                quotedFigures: [],
             });
         });
 
@@ -478,6 +489,111 @@ describe('checkAnswer', () => {
 
         it('doesn’t flag a clean cited answer', () => {
             expect(checkAnswer(CLAIM, [MEDFLAG, READOUT])).toEqual(CLEAN);
+        });
+    });
+
+    // RR-208: two non-failing flags for a claim stronger than its evidence.
+    describe('narrowEvidence: a plural role claim on a roster of 1 or 2 (RR-208)', () => {
+        const raw = (recordId, participants, excerpt = 'The draft put the history in the wrong order.') => ({
+            ...source(recordId, 'Interview', 'Session', excerpt), participants,
+        });
+        // all-scribe-draft-trust run 1's first [1].
+        const P09 = raw(
+            'raw:2026-09-22-interview-returning-internal-medicine-physician-edits-and-trust-over-time',
+            'Participants: 1 — P09 — Physician, Internal Medicine (physician), returning from 2026-01-13-usability-test-ambient-scribe-ga-release-candidate ×1',
+        );
+        const PHYSICIANS = 'Physicians expressed concerns about the accuracy of the ambient scribe\'s drafts, particularly regarding the order of events in the history.';
+        const narrow = (answer, sources) => checkAnswer(answer, sources).narrowEvidence;
+        const total = (answer, sources) => analyseAnswer(answer, sources)[0].rosterTotal;
+
+        it('flags all-scribe-draft-trust run 1\'s "Physicians expressed concerns…" citing one physician', () => {
+            expect(checkAnswer(`${PHYSICIANS} [1]`, [P09])).toEqual({ ...CLEAN, narrowEvidence: [PHYSICIANS] });
+            expect(total(`${PHYSICIANS} [1]`, [P09])).toBe(1);
+        });
+
+        it('doesn’t flag a singular role, "people", or a decline that cites', () => {
+            expect(narrow('The coder rejected the suggested code [1].', [P09])).toEqual([]);
+            expect(narrow('People expressed concerns about the drafts [1].', [P09])).toEqual([]);
+            expect(narrow('The sources do not say whether physicians trusted the draft [1].', [P09])).toEqual([]);
+        });
+
+        it('doesn’t flag a roster total of 3 or more', () => {
+            expect(narrow(`${PHYSICIANS} [1]`, [raw('raw:a', 'Participants: 4 — Physician, Nurse Practitioner')])).toEqual([]);
+            const three = ['raw:a', 'raw:b', 'raw:c'].map((id) => raw(id, 'Participants: 1 — Physician ×1'));
+            expect(narrow(`${PHYSICIANS} [1][2][3]`, three)).toEqual([]);
+            expect(total(`${PHYSICIANS} [1][2][3]`, three)).toBe(3);
+        });
+
+        it('doesn’t flag when no cited record gives a head count ("N/A", or a finding or deliverable)', () => {
+            expect(narrow(`${PHYSICIANS} [1]`, [raw('raw:analytics', 'Participants: N/A')])).toEqual([]);
+            expect(total(`${PHYSICIANS} [1]`, [raw('raw:analytics', 'Participants: N/A')])).toBeNull();
+            expect(narrow(`${PHYSICIANS} [1][2]`, [ONBOARDING_FINDING, READOUT])).toEqual([]);
+            expect(total(`${PHYSICIANS} [1][2]`, [ONBOARDING_FINDING, READOUT])).toBeNull();
+        });
+
+        it('sums two distinct records of 1 each to 2, and flags it', () => {
+            const two = [raw('raw:a', 'Participants: 1 — Physician ×1'), raw('raw:b', 'Participants: 1 — Physician ×1')];
+            expect(narrow(`${PHYSICIANS} [1][2]`, two)).toEqual([PHYSICIANS]);
+            expect(total(`${PHYSICIANS} [1][2]`, two)).toBe(2);
+        });
+
+        it('counts a record cited through two passages once', () => {
+            expect(total(`${PHYSICIANS} [1][2]`, [P09, { ...P09, excerpt: 'Another passage.' }])).toBe(1);
+            const pair = raw('raw:pair', 'Participants: 2 — Physician ×2');
+            const twoPassages = [pair, { ...pair, excerpt: 'Another passage.' }];
+            expect(total(`${PHYSICIANS} [1][2]`, twoPassages)).toBe(2);
+            expect(narrow(`${PHYSICIANS} [1][2]`, twoPassages)).toEqual([PHYSICIANS]);
+        });
+    });
+
+    describe('quotedFigures: a figure only a correction passage\'s quotation holds (RR-208)', () => {
+        // raw:2026-02-17-session-lock-during-dictation#13 as the stored eval
+        // runs have it: a correction `section`, no `correction` field.
+        const SESSION_LOCK = {
+            ...source(
+                'raw:2026-02-17-session-lock-during-dictation',
+                'Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation',
+                'Correction (2026-09-27): Draft-loss result',
+                'session-notes.md says "4 of 5 clinicians assumed the draft was lost." Only the 4 shadowed clinicians went through a lock during dictation, so this means all 4 clinicians assumed the draft was lost and started dictating again after they re-authenticated.',
+            ),
+            participants: 'Participants: 5 — Physician, Nurse Practitioner, IT Security',
+            date: 'Feb 17, 2026',
+        };
+        const quoted = (answer, sources) => checkAnswer(answer, sources).quotedFigures;
+
+        it('flags "4 of 5" taken from the quoted superseded claim, which every other check passes', () => {
+            const answer = '4 of 5 clinicians assumed the draft was lost and started dictating again after they re-authenticated [1].';
+            expect(checkAnswer(answer, [SESSION_LOCK])).toEqual({ ...CLEAN, quotedFigures: ['4 of 5'] });
+        });
+
+        it('reads a passage as a correction by its `correction` field too', () => {
+            const answer = '4 of 5 clinicians assumed the draft was lost [1].';
+            expect(quoted(answer, [{ ...SESSION_LOCK, section: 'Draft-loss result', correction: { date: '2026-09-27' } }])).toEqual(['4 of 5']);
+        });
+
+        it('doesn’t flag the corrected figure', () => {
+            expect(quoted('All 4 clinicians assumed the draft was lost [1].', [SESSION_LOCK])).toEqual([]);
+        });
+
+        it('doesn’t flag a quoted figure in a passage that isn’t a correction', () => {
+            expect(quoted('4 of 5 clinicians assumed the draft was lost [1].', [{ ...SESSION_LOCK, section: 'Findings' }])).toEqual([]);
+        });
+
+        it('doesn’t flag a figure another cited source states outside a quotation', () => {
+            const notes = source(
+                'raw:2026-02-17-session-lock-during-dictation-notes',
+                'Session notes',
+                'Findings',
+                'In the current build, a session lock mid-recording freezes the widget; 4 of 5 clinicians assumed the draft was lost.',
+            );
+            expect(quoted('4 of 5 clinicians assumed the draft was lost [1][2].', [SESSION_LOCK, notes])).toEqual([]);
+        });
+
+        // Accepted for a non-failing flag: the sentence reports the old figure
+        // as the old figure, and is still flagged.
+        it('flags a sentence that reports both the quoted and the corrected figure (accepted for a non-failing flag)', () => {
+            const answer = 'The notes said 4 of 5, but all 4 shadowed clinicians assumed the draft was lost [1].';
+            expect(quoted(answer, [SESSION_LOCK])).toEqual(['4 of 5']);
         });
     });
 });

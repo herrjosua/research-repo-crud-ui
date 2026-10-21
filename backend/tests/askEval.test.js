@@ -297,6 +297,41 @@ describe('gold claim patterns', () => {
             }
         });
 
+        // RR-208: quotedFigures flags "4 of 5" taken from the correction's
+        // quotation of the session notes, and the harness verdict ignores it.
+        describe('quotedFigures leaves the verdict unchanged', () => {
+            const SESSION_LOCK = {
+                recordId: 'raw:2026-02-17-session-lock-during-dictation',
+                recordKind: 'raw',
+                title: 'Contextual Inquiry — Session Lock During Active Ambient Scribe Dictation',
+                section: 'Correction (2026-09-27): Draft-loss result',
+                participants: 'Participants: 5 — Physician, Nurse Practitioner, IT Security',
+                excerpt: 'session-notes.md says "4 of 5 clinicians assumed the draft was lost." Only the 4 shadowed clinicians went through a lock during dictation, so this means all 4 clinicians assumed the draft was lost and started dictating again after they re-authenticated.',
+            };
+            const judge = (answer, sources = [SESSION_LOCK]) => judgeRun(entry('audit-session-lock-draft-loss-count'), { answer, sources });
+            const quotedFigures = (result) => summariseSentences(result.sentences).quotedFigures;
+
+            it('judges a flagged answer the same as a clean one', () => {
+                const flagged = judge('The session notes say 4 of 5 clinicians, but the correction says all 4 shadowed clinicians assumed the draft was lost [1].');
+                const clean = judge('All 4 shadowed clinicians assumed the draft was lost [1].');
+                expect(quotedFigures(flagged)).toEqual(['4 of 5']);
+                expect(quotedFigures(clean)).toEqual([]);
+                expect(clean).toMatchObject({ pass: true, failures: [] });
+                expect(flagged).toMatchObject({ pass: clean.pass, failures: clean.failures });
+            });
+
+            it('fails a "4 of 5" answer on the gold claims alone, flagged or not', () => {
+                const answer = '4 of 5 clinicians assumed the draft was lost and started dictating again after they re-authenticated [1].';
+                const flagged = judge(answer);
+                const unflagged = judge(answer, [{ ...SESSION_LOCK, section: 'Findings' }]);
+                expect(quotedFigures(flagged)).toEqual(['4 of 5']);
+                expect(quotedFigures(unflagged)).toEqual([]);
+                expect(flagged.pass).toBe(false);
+                expect(flagged.failures).toEqual([expect.stringMatching(/^missing: /), expect.stringMatching(/^forbidden: Presents "4 of 5"/)]);
+                expect(unflagged).toMatchObject({ pass: flagged.pass, failures: flagged.failures });
+            });
+        });
+
         it('doesn’t count not all 4, or all 4 without the draft loss', () => {
             expect(matches(allFour, 'Not all 4 clinicians assumed the draft was lost [1].')).toBe(false);
             expect(matches(allFour, 'All 4 clinicians re-authenticated quickly [1].')).toBe(false);

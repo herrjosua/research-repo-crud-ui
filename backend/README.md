@@ -209,7 +209,10 @@ without them). It flags an answer that opens with a decline and then
 cites claims (`declineThenClaims`), to check the decline against the
 shown passages; `publish` then skips that run by default, so publishing
 it, as for the burnout question's right "no rate, but 52%…" answer, takes
-`--pick`. It also checks the citation-count bar (at least two
+`--pick`. In the same way it flags a plural role claim whose cited rosters
+add up to 1 or 2 participants (`narrowEvidence`) and a figure found only
+in a correction passage's quotation of the claim it corrects
+(`quotedFigures`). It also checks the citation-count bar (at least two
 records, including a raw session). Whether a cited record actually supports
 its claim is still for a person to judge.
 
@@ -900,7 +903,9 @@ record has the tag, the answer says so and the model isn't called.)
     "uncited": [],
     "unsupportedFigures": [],
     "stacked": [],
-    "declineThenClaims": []
+    "declineThenClaims": [],
+    "narrowEvidence": [],
+    "quotedFigures": []
   }
 }
 ```
@@ -939,6 +944,30 @@ record has the tag, the answer says so and the model isn't called.)
     the first sentence counts; a later one isn't flagged. An answer that
     only declines isn't flagged either. See decision 24 in
     `docs/decisions.md`.
+  - `narrowEvidence`: sentences that cite a source, aren't declines, name a
+    plural role (physicians, clinicians, nurses, nurse practitioners,
+    coders, administrators, users, participants or staff), and whose cited
+    records' rosters add up to 2 or fewer participants: the first number
+    after "Participants:" in each distinct record's roster line, summed
+    ("Physicians expressed concerns…" citing one physician's interview). A
+    record cited through two passages counts once. A sentence citing no
+    roster with a number (findings, deliverables, "Participants: N/A") isn't
+    flagged.
+  - `quotedFigures`: figures and "N of M" counts that a sentence takes only
+    from a quotation inside a cited correction passage (a source with
+    `correction`, or a section headed "Correction (YYYY-MM-DD)"), when no
+    cited source states them outside a quotation. The session-lock
+    correction quotes the superseded "4 of 5 clinicians assumed the draft
+    was lost", so "4 of 5 clinicians…" citing it passes every other check;
+    here it gives `["4 of 5"]`. One entry per sentence a figure appears in.
+
+  `declineThenClaims`, `narrowEvidence` and `quotedFigures` are
+  **non-failing**: the harness doesn't judge by them, and the capture
+  review's flag for each makes `publish` skip that run unless it's picked
+  with `--pick`. A plural claim on one or two participants can still be
+  fair, and a sentence that reports the old figure as the old one ("The
+  notes said 4 of 5, but all 4…") is flagged too. See decisions 24 and 25
+  in `docs/decisions.md`.
 
   Each list is `[]` when there's nothing to flag, including when the model
   wasn't called (no record has the project tag) or returned nothing. A

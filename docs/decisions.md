@@ -1824,3 +1824,94 @@ stays.
 evidence gives a false flag. Neither is changed here, nor `isDecline`,
 the sentence splitter, the prompt, the retrieval, or the harness report
 columns (RR-204).
+
+## 25. Claims stronger than their evidence: flagged, not failed
+
+**Date:** 2026-10-21. **Status:** Active. Ticket RR-208.
+
+**Decision:** `ask/checks.js` gets two more non-failing categories, in
+the pattern of decision 24. Both read only sentences that cite a source
+(own markers or a list's group citation).
+- `narrowEvidence` holds a sentence that isn't a decline (`isDecline`),
+  names a plural role as a whole word (physicians, clinicians, nurses,
+  nurse practitioners, coders, administrators, users, participants,
+  staff; not "the coder", not "people"), and whose roster total is 2 or
+  fewer. The roster total is the first integer after "Participants:" in
+  each distinct cited record's roster line, summed; two passages of one
+  record count once. A record with no roster line, or one with no number
+  ("Participants: N/A"), adds nothing, and when no cited record gives a
+  number the total is unknown and nothing is flagged.
+- `quotedFigures` holds, for a sentence citing a correction passage (a
+  source whose `correction` is set or whose `section` matches
+  `CORRECTION_HEADING_RE`; stored eval runs have only the section), each
+  figure or "N of M" count, after its sources' label dates are taken out,
+  that sits inside a quotation in a cited correction passage's excerpt
+  and in no cited source's evidence outside one. A correction passage's
+  evidence outside a quotation is its title, section, roster line and
+  excerpt with the quoted spans removed. Numbers and counts are compared
+  as `unsupportedFigures` compares them.
+
+The live route returns both in `checks` (`[]` on the no-records path
+too). The capture review adds a flag per entry: `plural claim rests on N
+participant(s); check it against the rosters: "…"` and `figure "4 of 5"
+appears only in a quoted earlier claim of a correction passage; check
+it: "…"`. `defaultRun` then skips the run, and `--pick id=N` still
+publishes it. The harness verdict (`judgeRun`) doesn't read either and is
+unchanged. `checks.js` imports `CORRECTION_HEADING_RE` from
+`ask/corpus.js` rather than copying it: `corpus.js` requires only Node
+built-ins, reads no files at load and requires nothing from `ask/`, so
+there is no cycle.
+
+**Why:** no check asked whether a claim was stronger than its evidence.
+`all-scribe-draft-trust` run 1 says "Physicians expressed concerns about
+the accuracy of the ambient scribe's drafts…" and cites one record whose
+roster is "Participants: 1 — P09 — Physician, Internal Medicine…". The
+session-lock correction (`raw:2026-02-17-session-lock-during-dictation#13`)
+quotes the session notes' superseded "4 of 5 clinicians assumed the draft
+was lost." before correcting it to all 4; an answer giving "4 of 5"
+cites that passage, and every check passed it, because "4 of 5" is in
+the excerpt.
+
+**What was measured** (the same 234 stored runs as decision 24, with this
+change applied):
+- `narrowEvidence` flags 36 sentences in 29 runs. All 36 have a roster
+  total of 1 (29 runs); none has a total of 2. They include sentence 1 of
+  `all-scribe-draft-trust` runs 1 to 3; of the five published answers,
+  only `all-scribe-draft-trust` is flagged.
+- 9 runs cite the session-lock correction passage; `quotedFigures` flags
+  5 of them (`all-session-lock-draft-loss` runs 1 to 3 in the review's
+  `runs.json`, and 2 `audit-session-lock-draft-loss-count` runs in
+  `rebaseline-09d985b.json`), each for "4 of 5" only, and no other run.
+- In `runs.json`, the review gains one RR-208 flag on each of those six
+  runs, and one `narrowEvidence` flag on `scribe-medication-flag` run 3
+  ("They do show that physicians were interested…", citing one
+  participant) that the preregistered predictions missed.
+
+**Why not failing checks:** a plural claim on a roster of 1 or 2 can be
+fair (two records of one physician each do say something about
+physicians), and a sentence can quote the old figure to say it was
+wrong. Telling those apart takes a person reading the sentence against
+the rosters or the correction, which the flags ask for. No version is
+bumped: the harness verdict is unchanged (a test judges a flagged and a
+clean session-lock answer the same, and a "4 of 5" answer the same with
+and without the flag), so `EVAL_HARNESS_VERSION` stays; `report`
+re-applies the review and `answers.json` gains nothing, so
+`CAPTURE_SCRIPT_VERSION` stays.
+
+**Known limits:**
+- A plural claim with a roster total of 1 or 2 can still be fair, and is
+  flagged anyway.
+- A sentence citing only findings or deliverables has no roster and is
+  never flagged, however few participants stand behind it.
+- Only the stored runs were measured, and they hold one correction
+  passage with a quoted figure.
+- A sentence that reports both the old and the corrected figure ("The
+  notes said 4 of 5, but all 4 shadowed clinicians…") is flagged for the
+  old one.
+
+**Left out:** two other measured rules (R2 and R3), dropped as noise; any
+prompt, retrieval or corpus change; banner or frontend copy; declines;
+and the two figure-check gaps from decision 24 ("N of the M" not read as
+a count, "four of the five" in evidence giving a false flag).
+`isDecline`, `DECLINE_RE`, the figure logic and the sentence splitter are
+unchanged.

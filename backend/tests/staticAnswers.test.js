@@ -212,3 +212,47 @@ describe('capture review: an opening decline followed by cited claims', () => {
         expect(defaultRun([burnout])).toBeUndefined();
     });
 });
+
+// RR-208: a plural role claim on a roster of 1 or 2, and a figure only a
+// correction passage's quotation holds, each get a flag, so the publish
+// gate skips the run and choosing it takes --pick.
+describe('capture review: claims stronger than their evidence', () => {
+    const P09 = {
+        recordId: 'raw:p09', recordKind: 'raw', title: 'Interview — returning physician', section: 'Session',
+        participants: 'Participants: 1 — P09 — Physician, Internal Medicine (physician) ×1',
+        excerpt: 'The draft put the history in the wrong order.',
+    };
+    const SESSION_LOCK = {
+        recordId: 'raw:session-lock', recordKind: 'raw', title: 'Contextual Inquiry — Session Lock During Dictation',
+        section: 'Correction (2026-09-27): Draft-loss result',
+        participants: 'Participants: 5 — Physician, Nurse Practitioner, IT Security',
+        excerpt: 'session-notes.md says "4 of 5 clinicians assumed the draft was lost." Only the 4 shadowed clinicians went through a lock during dictation, so this means all 4 clinicians assumed the draft was lost.',
+    };
+    const FINDING = { recordId: 'finding:drafts', recordKind: 'finding', title: 'Draft trust', section: null, excerpt: 'The draft put the history in the wrong order and lost drafts on lock.' };
+    const run = (n, answer, sources) => ({ run: n, review: reviewRun({ answer, sources, raw: '' }, 6) });
+    const NARROW = 'Physicians expressed concerns about the order of events in the history.';
+    const narrow = run(1, `${NARROW} [1] The draft put the history in the wrong order [2].`, [P09, FINDING]);
+    const QUOTED = '4 of 5 clinicians assumed the draft was lost.';
+    const quoted = run(2, `${QUOTED} [1] The draft lost drafts on lock [2].`, [SESSION_LOCK, FINDING]);
+    const clean = run(3, 'The draft put the history in the wrong order [1]. All 4 clinicians assumed the draft was lost [2].', [P09, SESSION_LOCK]);
+
+    it('flags a plural claim resting on one participant, though the run meets the bar', () => {
+        expect(narrow.review.meetsBar).toBe(true);
+        expect(narrow.review.flags).toEqual([
+            `plural claim rests on 1 participant(s); check it against the rosters: "${NARROW}"`,
+        ]);
+    });
+
+    it('flags a figure only a correction passage’s quotation holds, though the run meets the bar', () => {
+        expect(quoted.review.meetsBar).toBe(true);
+        expect(quoted.review.flags).toEqual([
+            `figure "4 of 5" appears only in a quoted earlier claim of a correction passage; check it: "${QUOTED}"`,
+        ]);
+    });
+
+    it('leaves defaultRun to a clean run, and to none when there is none', () => {
+        expect(clean.review.flags).toEqual([]);
+        expect(defaultRun([narrow, quoted, clean])).toBe(clean);
+        expect(defaultRun([narrow, quoted])).toBeUndefined();
+    });
+});
