@@ -5,7 +5,7 @@ import Composer from './Composer';
 import QuestionPicker from './QuestionPicker';
 import StarterQuestions from './StarterQuestions';
 import {
-    CONFIG_LOADING_TEXT, ERROR_COPY, LOADING_TEXT, NO_PICKER_QUESTIONS, NO_STARTERS, PICKER_LABEL,
+    AI_CAVEAT, CONFIG_LOADING_TEXT, ERROR_COPY, LOADING_TEXT, NO_PICKER_QUESTIONS, NO_STARTERS, PICKER_LABEL,
     RUN_LOCALLY_LEAD, RUN_LOCALLY_LINK, RUN_LOCALLY_URL, SLOW_TEXT, STATIC_BANNER_TITLE, UNAVAILABLE_COPY,
 } from './askCopy';
 import styles from './ChatPanel.module.scss';
@@ -43,7 +43,8 @@ import styles from './ChatPanel.module.scss';
  *   straight away. An empty array says the project has none yet (a
  *   safety net: AskTheRepo only lists projects that have some).
  * - `captureNote`: static mode's "Answers are pre-generated" banner body
- *   (where the answers came from, `./askCopy.js`'s `captureNote`). The
+ *   (where the answers came from, `./askCopy.js`'s `captureNote`), followed
+ *   by the AI caveat and the run-locally invitation. The
  *   banner is the panel's first row, above the scrolling thread, whenever
  *   the questions are offered (so never in live mode or after a 503).
  * - `onSend(text)`, `onRetry()`, `onSignIn()`, `onOpenSource(source,
@@ -201,7 +202,7 @@ export default function ChatPanel({
                     titleId={bannerTitleId}
                     subtitle={(
                         <>
-                            {captureNote} {RUN_LOCALLY_LEAD}
+                            {captureNote} {AI_CAVEAT} {RUN_LOCALLY_LEAD}
                             <Link
                                 href={RUN_LOCALLY_URL}
                                 target="_blank"

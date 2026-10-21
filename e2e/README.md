@@ -145,13 +145,14 @@ scroll. Both the picker and the post-login dashboard get their own
 accessibility scan, since neither is reached by the suite above.
 [`ask-static.spec.js`](./tests-demo/ask-static.spec.js) checks Ask the Repo
 in static mode: the question picker replaces the composer, the "Answers are
-pre-generated" banner shows the capture's model and date and links to the
-README, a typed question is refused, the project dropdown filters the
-questions (including a project with none), picking one sends only its
-`questionId` and renders the answer, `[1]` opens its source in the modal,
-Save as insight lands in the Saved Insights tab, and a second question
-comes from the "Choose a question" dropdown. It scans the empty state, the
-answered page and the open modal. A second test opens that dropdown at the
+pre-generated" banner shows the capture's model and date, says an AI wrote
+the answers and can make mistakes, and links to the README, a typed
+question is refused, the project dropdown filters the questions
+(including a project with none), picking one sends only its `questionId`
+and renders the answer, `[1]` opens its source in the modal, Save as
+insight lands in the Saved Insights tab, and a second question comes from
+the "Choose a question" dropdown. It scans the empty state, the answered
+page and the open modal. A second test opens that dropdown at the
 672px md floor and checks every option shows its whole question (nothing
 clipped or ellipsized, the longest one wrapping onto more lines), with no
 horizontal page scroll, and that a wrapped option can still be picked. A

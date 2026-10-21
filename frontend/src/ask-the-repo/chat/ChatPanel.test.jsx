@@ -240,7 +240,7 @@ describe('ChatPanel with a question picker (static mode)', () => {
         renderPicker();
 
         expect(banner()).toBeInTheDocument();
-        expect(banner()).toHaveTextContent(`${NOTE} To ask your own questions, run the project locally (opens in a new tab).`);
+        expect(banner()).toHaveTextContent(`${NOTE} The answers were written by an AI and can make mistakes, so check them against the cited sources. To ask your own questions, run the project locally (opens in a new tab).`);
         // Permanent content, not an event: no live region, no close button.
         expect(banner()).not.toHaveAttribute('role');
         expect(banner().querySelector('[aria-live]')).toBeNull();
@@ -258,6 +258,18 @@ describe('ChatPanel with a question picker (static mode)', () => {
         const thread = screen.getByRole('region', { name: 'Conversation' });
         expect(thread).not.toContainElement(banner());
         expect(banner().nextElementSibling).toBe(thread);
+    });
+
+    it('says the answers were written by an AI and can make mistakes, between the capture note and the invitation', () => {
+        renderPicker();
+
+        // Spelled out rather than imported, so dropping the caveat from
+        // askCopy.js fails here too.
+        const text = banner().textContent;
+        const caveat = text.indexOf('The answers were written by an AI and can make mistakes, so check them against the cited sources.');
+        expect(caveat).toBeGreaterThan(text.indexOf(NOTE));
+        expect(caveat).toBeLessThan(text.indexOf('To ask your own questions'));
+        expect(text).not.toMatch(/reviewed/i);
     });
 
     it('keeps the banner above the thread once a conversation has started', () => {

@@ -50,9 +50,11 @@ function captureDate(capturedAt) {
 }
 
 // Static mode's banner at the top of the chat panel (ChatPanel), saying
-// the answers were captured ahead of time and pointing to where running
-// the project is explained. RUN_LOCALLY_LINK is the linked phrase.
+// the answers were captured ahead of time, that an AI wrote them, and
+// pointing to where running the project is explained. RUN_LOCALLY_LINK is
+// the linked phrase.
 export const STATIC_BANNER_TITLE = 'Answers are pre-generated';
+export const AI_CAVEAT = 'The answers were written by an AI and can make mistakes, so check them against the cited sources.';
 export const RUN_LOCALLY_LEAD = 'To ask your own questions, ';
 export const RUN_LOCALLY_LINK = 'run the project locally';
 export const RUN_LOCALLY_URL = 'https://github.com/herrjosua/research-repo-crud-ui#getting-started';
