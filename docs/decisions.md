@@ -1752,3 +1752,13 @@ RR-205 measurement copy, outside this repo. In `backend/ask/eval/results/`:
   cited sources, shown passages and prompt size.
 - The 09d985b prompt-sources file gains the whole notes these runs
   showed: 7 records and 33 passages, with no entry removed or changed.
+
+**Update (2026-10-21):** The app commit recorded as `8bdcff0` in this
+decision and in the `rebaseline-09d985b-w3` result files is the
+pre-rewrite hash of the first commit of PR #78. The three commits were
+amended only to change the Co-Authored-By trailer before the push, and
+`8bdcff0` was never pushed, so it does not exist in the repository's
+history. The same commit is `ea01c3f` (tree
+`0fdd3bd7a7a9d86a2769737fa1f2374f1c7c399b`, identical to `8bdcff0`'s), and
+it reached main in merge commit `4170ff4`. The result files are left
+exactly as the harness wrote them.
