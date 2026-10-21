@@ -159,11 +159,13 @@ sequenceDiagram
   latest rebaseline is `backend/ask/eval/results/rebaseline-09d985b.md`, at
   corpus 09d985b: "Gold pass: 1 of 10" regression, and "Gold pass: 0 of 7"
   scenario in `rebaseline-09d985b-scenarios.md`.
-- The wrong passage of the right record is still sometimes shown. A raw
-  session shows its two best-scoring passages, and the evidence can be in a
-  third section: the GA adoption window's "4 weeks" is in the dashboard
-  review's Method, and the prior-auth "show your work" is in the Key
-  Findings passage that isn't shown.
+- With whole raw notes off, the wrong passage of the right record is
+  sometimes shown. A raw session shows its two best-scoring passages, and
+  the evidence can be in a third section: the GA adoption window's "4
+  weeks" is in the dashboard review's Method, and the prior-auth "show your
+  work" is in the Key Findings passage that isn't shown. Whole notes for
+  the top 3 raw sessions are the default since decision 23; a raw session
+  ranked below them isn't shown at all.
 - The provenance slot (`ask/provenance.js`) is off: it adds a whole
   record, not the passage with the evidence, and it cost a passing answer
   (decision 15). Some required sessions aren't shown at all: in

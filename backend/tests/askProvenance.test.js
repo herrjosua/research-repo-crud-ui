@@ -103,8 +103,9 @@ describe('withProvenanceSlot', () => {
 
 describe('the pipeline with the provenance slot on', () => {
     // Off by default (RETRIEVAL.provenanceSlot); these tests turn it on.
+    // Whole raw notes off: these tests are about passages.
     const { createAskPipeline, RETRIEVAL, TOP_K } = require('../ask/pipeline');
-    const retrieval = { ...RETRIEVAL, provenanceSlot: true };
+    const retrieval = { ...RETRIEVAL, provenanceSlot: true, wholeRawNotes: 0 };
     const { chunkRecord } = require('../ask/corpus');
 
     // A finding built from RAW_B, then enough unlinked docs to fill the top k,
@@ -139,7 +140,7 @@ describe('the pipeline with the provenance slot on', () => {
 
     it('is off by default: the top k by similarity, unchanged', async () => {
         const ollama = { chatModel: 'test', chat: async () => 'ok' };
-        const shown = (await createAskPipeline({ ollama, index }).select('q', null)).map(({ passage }) => passage.record.id);
+        const shown = (await createAskPipeline({ ollama, index, retrieval: { ...RETRIEVAL, wholeRawNotes: 0 } }).select('q', null)).map(({ passage }) => passage.record.id);
         expect(RETRIEVAL.provenanceSlot).toBe(false);
         expect(shown).toEqual([FINDING.id, ...docs.slice(0, TOP_K - 1).map((d) => d.id)]);
     });
@@ -173,14 +174,14 @@ describe('passagesPerRaw: a second passage for raw sessions only', () => {
 
     it("shows a raw session's two best passages in document order, and one passage for anything else", async () => {
         expect(RETRIEVAL.passagesPerRaw).toBe(2);
-        expect(await shownWith(RETRIEVAL)).toEqual([
+        expect(await shownWith({ ...RETRIEVAL, wholeRawNotes: 0 })).toEqual([
             'finding:flag#0', // the finding's second passage (#1, 0.94) isn't shown
             'raw:2026-02-10-flag#1', 'raw:2026-02-10-flag#2', // best is #2, but #1 comes first in the record
         ]);
     });
 
     it('shows one passage per record at passagesPerRaw 1', async () => {
-        expect(await shownWith({ ...RETRIEVAL, passagesPerRaw: 1 })).toEqual(['finding:flag#0', 'raw:2026-02-10-flag#2']);
+        expect(await shownWith({ ...RETRIEVAL, passagesPerRaw: 1, wholeRawNotes: 0 })).toEqual(['finding:flag#0', 'raw:2026-02-10-flag#2']);
     });
 });
 
@@ -234,9 +235,9 @@ describe('wholeRawNotes: whole notes for the top raw sessions', () => {
         expect(wholeNotesText(onboarding)).toBe('Session 1 — Jan 19\npaused at step 3');
     });
 
-    it('is off by default: the passages as before', async () => {
-        expect(RETRIEVAL.wholeRawNotes).toBe(0);
-        expect(await shownWith({ ...RETRIEVAL, topK: 3 })).toEqual(['finding:f0#0', 'raw:2026-02-10-flag#0', 'raw:2026-02-10-flag#1', 'finding:f1#0']);
+    it('is 3 by default, and at 0 the passages as before', async () => {
+        expect(RETRIEVAL.wholeRawNotes).toBe(3);
+        expect(await shownWith({ ...RETRIEVAL, topK: 3, wholeRawNotes: 0 })).toEqual(['finding:f0#0', 'raw:2026-02-10-flag#0', 'raw:2026-02-10-flag#1', 'finding:f1#0']);
     });
 
     it('replaces the raw passages with the whole notes of the top N raw sessions, in ranking order', async () => {
@@ -310,7 +311,7 @@ describe('followUps: Follow-ups passages for "what is unresolved" questions', ()
         'finding:triage': 0.709,
         [careTest.id]: { 0: 0.4, 1: 0.6, 2: 0.683 },
     });
-    const care = { ...RETRIEVAL, topK: 4 };
+    const care = { ...RETRIEVAL, topK: 4, wholeRawNotes: 0 };
 
     // Shaped like the session-timeout question: one raw session in the top
     // k; the best synthesis record is built from it and two sessions below
@@ -338,7 +339,7 @@ describe('followUps: Follow-ups passages for "what is unresolved" questions', ()
         'finding:third': 0.6,
         [ed.id]: 0.5,
     });
-    const timeout = { ...RETRIEVAL, topK: 3 };
+    const timeout = { ...RETRIEVAL, topK: 3, wholeRawNotes: 0 };
 
     describe('the trigger', () => {
         const gold = loadGold().entries;
@@ -473,7 +474,7 @@ describe("corrections: with 'shown', a shown session always shows its correction
     const other = session('2026-02-10-other');
     const plain = session('2026-02-17-lock', false);
     const records = [finding('scribe'), lock, other];
-    const base = { ...RETRIEVAL, topK: 2, corrections: 'shown' };
+    const base = { ...RETRIEVAL, topK: 2, corrections: 'shown', wholeRawNotes: 0 };
     // lock is shown by Objective and Key Findings; its corrections rank
     // below both. other is third, outside the top k.
     const scores = {
