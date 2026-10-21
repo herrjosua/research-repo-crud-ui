@@ -48,7 +48,7 @@ const SESSION_2 = source(
     'Attempted to skip step 2 directly, assuming it was optional. Backed out when the "required" indicator appeared.',
 );
 
-const CLEAN = { uncited: [], unsupportedFigures: [], stacked: [] };
+const CLEAN = { uncited: [], unsupportedFigures: [], stacked: [], declineThenClaims: [] };
 
 describe('checkAnswer', () => {
     it('returns nothing to flag for a clean, cited answer', () => {
@@ -71,6 +71,7 @@ describe('checkAnswer', () => {
                 uncited: ['52% of clinicians report burnout.'],
                 unsupportedFigures: ['52'],
                 stacked: [],
+                declineThenClaims: [],
             });
         });
 
@@ -98,6 +99,7 @@ describe('checkAnswer', () => {
             uncited: ['Step 2 ("Basics") can be skipped.'],
             unsupportedFigures: ['2'],
             stacked: ['Step 3 ("Connect calendar") is required.'],
+            declineThenClaims: [],
         });
     });
 
@@ -126,6 +128,7 @@ describe('checkAnswer', () => {
             uncited: [],
             unsupportedFigures: ['5'],
             stacked: [],
+            declineThenClaims: [],
         });
     });
 
@@ -142,7 +145,7 @@ describe('checkAnswer', () => {
     it('still holds a decline’s figures to its sources or the question, and needs the word "sources"', () => {
         const sentence = 'Steps 1, 2, 4, 5, and 6 are not explicitly labeled as required or optional in the provided sources.';
         expect(checkAnswer(sentence, [], 'Which onboarding steps are required?')).toEqual({
-            uncited: [], unsupportedFigures: ['1', '2', '4', '5', '6'], stacked: [],
+            uncited: [], unsupportedFigures: ['1', '2', '4', '5', '6'], stacked: [], declineThenClaims: [],
         });
         // No "sources": a negated claim, not a decline.
         expect(checkAnswer('Admins did not know when invites were sent.', []).uncited).toEqual(['Admins did not know when invites were sent.']);
@@ -422,6 +425,59 @@ describe('checkAnswer', () => {
             const answer = 'Only 34\u202F% of non\u2011clinical staff were aware, versus 71\u202F% of clinical staff [1].';
             expect(checkAnswer(answer, [AI_READINESS])).toEqual(CLEAN);
             expect(analyseAnswer(answer, [AI_READINESS])[0].text).toBe('Only 34 % of non-clinical staff were aware, versus 71 % of clinical staff.');
+        });
+    });
+
+    describe('declineThenClaims: an opening decline followed by cited claims (RR-207)', () => {
+        const MEDFLAG = source(
+            'raw:2025-10-14-concept-test-medication-flag',
+            'Concept test — medication change flag',
+            'Session 1',
+            'The physician read the flagged medication line first and checked it against the order before accepting the draft.',
+        );
+        // scribe-medication-flag run 3 (RR-152): it declines, then cites
+        // three records for what physicians did with the flag.
+        const DECLINE = 'The sources do not contain information about how physicians reacted to the medication flag concept.';
+        const CLAIM = 'The physician read the flagged medication line first and checked it against the order [1][2].';
+
+        it('flags the decline when a later sentence cites a source', () => {
+            expect(checkAnswer(`${DECLINE} ${CLAIM}`, [MEDFLAG, READOUT])).toEqual({ ...CLEAN, declineThenClaims: [DECLINE] });
+        });
+
+        it('counts a group citation as a cited claim', () => {
+            const answer = `${DECLINE}\n- Read the flagged line first\n- Checked it against the order\n[1]`;
+            expect(checkAnswer(answer, [MEDFLAG]).declineThenClaims).toEqual([DECLINE]);
+        });
+
+        // By design: this is the right answer for audit-burnout-share (the gold
+        // wants "no overall rate" and the physicians' 52%), and it is flagged
+        // anyway. The category never fails a run; the other checks stay clean.
+        it('flags the burnout answer too, with nothing else to flag', () => {
+            const answer = 'The sources do not contain what percentage of clinicians report burnout. 52% of physicians ranked documentation burden as the top contributor to burnout [1].';
+            expect(checkAnswer(answer, [BURNOUT_SURVEY], 'What percentage of clinicians report burnout?')).toEqual({
+                uncited: [],
+                unsupportedFigures: [],
+                stacked: [],
+                declineThenClaims: ['The sources do not contain what percentage of clinicians report burnout.'],
+            });
+        });
+
+        it('doesn’t flag an answer that only declines', () => {
+            expect(checkAnswer(`${DECLINE} The sources do not say whether the flag was tested again.`, []).declineThenClaims).toEqual([]);
+        });
+
+        // A known limit: only the first sentence is read.
+        it('doesn’t flag a decline that comes after a cited claim', () => {
+            expect(checkAnswer(`${CLAIM} ${DECLINE}`, [MEDFLAG, READOUT]).declineThenClaims).toEqual([]);
+        });
+
+        it('leaves an opening decline followed by uncited claims to `uncited`', () => {
+            const answer = `${DECLINE} The physician read the flagged line first.`;
+            expect(checkAnswer(answer, [])).toEqual({ ...CLEAN, uncited: ['The physician read the flagged line first.'] });
+        });
+
+        it('doesn’t flag a clean cited answer', () => {
+            expect(checkAnswer(CLAIM, [MEDFLAG, READOUT])).toEqual(CLEAN);
         });
     });
 });

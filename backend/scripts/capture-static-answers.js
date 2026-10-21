@@ -44,7 +44,7 @@ const { loadRecords, htmlToBlocks } = require('../ask/corpus');
 const { createEmbeddingIndex } = require('../ask/retrieval');
 const { createAskPipeline, CHAT_OPTIONS } = require('../ask/pipeline');
 const { toSource } = require('../ask/answer');
-const { analyseAnswer } = require('../ask/checks');
+const { analyseAnswer, summariseSentences } = require('../ask/checks');
 const {
     STATIC_DIR, QUESTIONS_FILE, ANSWERS_FILE, CAPTURE_SCRIPT_VERSION,
     citationMarkers, validateQuestionList, validateStaticAnswers, loadStaticAnswers,
@@ -132,6 +132,13 @@ function reviewRun({ answer, sources, raw, shownSources = [] }, shownCount, ques
         const numbers = unsupported.filter((figure) => !pairs.includes(figure));
         if (numbers.length > 0) flags.push(`number(s) in no cited excerpt: ${numbers.join(', ')} in "${clip(text)}"`);
         if (pairs.length > 0) flags.push(`count(s) no cited excerpt states: ${pairs.map((p) => `"${p}"`).join(', ')} in "${clip(text)}"`);
+    }
+
+    // An opening decline followed by cited claims. Not always wrong (the
+    // burnout answer's "no overall rate, but 52% of physicians…" is right),
+    // but defaultRun then skips the run, so publishing it takes --pick.
+    for (const text of summariseSentences(sentences).declineThenClaims) {
+        flags.push(`opens with a decline but cites claims; check the decline against the shown passages: "${clip(text)}"`);
     }
 
     const records = new Set(sources.map((s) => s.recordId));
