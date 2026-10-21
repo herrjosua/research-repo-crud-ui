@@ -156,9 +156,11 @@ sequenceDiagram
   the current state was `behavior-combined.md` (5 of 10 regression, 0 of 7
   scenario, against step 5's 6 of 10; the two seeded losses pass all their
   unseeded runs, so the stop rule doesn't count them; decision 19). The
-  latest rebaseline is `backend/ask/eval/results/rebaseline-09d985b.md`, at
-  corpus 09d985b: "Gold pass: 1 of 10" regression, and "Gold pass: 0 of 7"
-  scenario in `rebaseline-09d985b-scenarios.md`.
+  latest rebaseline, at whole raw notes 3 (decision 23), is
+  `backend/ask/eval/results/rebaseline-09d985b-w3.md`, at corpus 09d985b:
+  "Gold pass: 7 of 10" regression, and "Gold pass: 1 of 7" scenario in
+  `rebaseline-09d985b-w3-scenarios.md`. The one before, at the earlier
+  defaults, is `rebaseline-09d985b.md`: 1 of 10 and 0 of 7.
 - With whole raw notes off, the wrong passage of the right record is
   sometimes shown. A raw session shows its two best-scoring passages, and
   the evidence can be in a third section: the GA adoption window's "4
