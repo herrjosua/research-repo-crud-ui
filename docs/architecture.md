@@ -126,8 +126,10 @@ sequenceDiagram
 - **Honest about it.** An "Answers are pre-generated" info banner (a
   Carbon `Callout`, so no live region) is the chat panel's first row, above
   the scrolling thread, so it stays in view before and after a question is
-  picked. It names the model and capture date from the config and links
-  "run the project locally" to the README's Getting started section.
+  picked. It names the model and capture date from the config, says the
+  answers were written by an AI and can make mistakes (so check them
+  against the cited sources), and links "run the project locally" to the
+  README's Getting started section.
   There's no simulated delay, typing effect or fake progress, and no "first
   question is slow" hint.
 - **Everything else is live.** Answers go through the same `useAskRepo`
