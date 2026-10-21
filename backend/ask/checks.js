@@ -1,12 +1,17 @@
 // Checks on a finished answer: which sentences cite nothing, which figures
 // their own citations don't contain, which stack three or more
-// citations, and whether it opens with a decline before cited claims.
+// citations, whether it opens with a decline before cited claims, which
+// make a plural claim about a role on a roster of one or two, and which
+// figures come only from a correction passage's quotation of the claim it
+// corrects.
 // Pure functions of the answer, its sources, the question and the sources
 // the prompt showed, so the live route (via ask/pipeline.js),
 // the evaluation harness (scripts/eval-ask.js) and the capture script's
 // review (scripts/capture-static-answers.js) apply the same rules, and
 // stored runs can be re-judged. None of this can say a citation is
 // *correct*; it finds the ones that can't be.
+
+const { CORRECTION_HEADING_RE } = require('./corpus');
 
 const MARKER_RE = /\[(\d+)\]/g;
 const LIST_ITEM_RE = /^\s*(?:[-•*]|\d+[.)])\s+/;
@@ -242,6 +247,53 @@ function answerSentences(answer) {
     return out;
 }
 
+// ---------------------------------------------------------------------------
+// Claims stronger than their evidence (RR-208). Both are non-failing; see
+// summariseSentences.
+// ---------------------------------------------------------------------------
+
+// A plural role noun, as a whole word. Singular nouns ("the coder") and
+// "people" don't count.
+const PLURAL_ROLE_RE = /\b(?:physicians|clinicians|nurses|nurse practitioners|coders|administrators|users|participants|staff)\b/i;
+// The head count a raw session's roster line starts with ("Participants: 1 —
+// P09 — Physician…"); "Participants: N/A" has none.
+const ROSTER_COUNT_RE = /Participants:\D*(\d+)/;
+
+// The summed head counts of the distinct records among `sources`, or null
+// when none of them has a roster line with a number. Two passages of one
+// record count once.
+function rosterTotal(sources) {
+    const counts = new Map();
+    for (const source of sources) {
+        const m = ROSTER_COUNT_RE.exec(String(source.participants || ''));
+        if (m && !counts.has(source.recordId)) counts.set(source.recordId, Number(m[1]));
+    }
+    return counts.size === 0 ? null : [...counts.values()].reduce((a, b) => a + b, 0);
+}
+
+// A passage under a correction heading: `correction` as the pipeline sets it,
+// or by its section alone, since stored eval runs have no `correction`.
+function isCorrection(source) {
+    return Boolean(source.correction) || CORRECTION_HEADING_RE.test(source.section || '');
+}
+
+// Figures in `text` (dates already taken out) that a cited correction
+// passage has only inside a quotation in its excerpt (the superseded claim
+// it quotes: 'session-notes.md says "4 of 5 clinicians…"') and no cited
+// source has outside one. [] when no cited source is a correction.
+function quotedOnlyFigures(text, sources) {
+    const corrections = sources.filter(isCorrection);
+    if (corrections.length === 0) return [];
+    const quoted = corrections.flatMap((s) => String(s.excerpt || '').match(QUOTE_RE) || []).join('\n');
+    const unquoted = sources.map((s) => sourceEvidence(isCorrection(s)
+        ? { ...s, excerpt: String(s.excerpt || '').replace(QUOTE_RE, ' ') }
+        : s)).join('\n');
+    const inQuote = new Set([...numbersIn(quoted), ...countPairsIn(quoted)]);
+    const outside = new Set([...numbersIn(unquoted), ...countPairsIn(unquoted)]);
+    return [...new Set(numbersIn(text)), ...new Set(countPairsIn(text))]
+        .filter((figure) => inQuote.has(figure) && !outside.has(figure));
+}
+
 // Every sentence of an answer, checked against the sources it cites:
 //   exempt       why it needs no citation of its own: 'decline', 'list intro'
 //                (ends with ":"), or 'group-cited list item'; null otherwise
@@ -256,6 +308,12 @@ function answerSentences(answer) {
 //                `sources`): "Steps 1, 2, 4 and 5 are not labeled … in
 //                the sources" names steps the shown flow lists. Counts are
 //                written "N of M".
+//   rosterTotal  summed roster head counts of its cited records (rosterTotal),
+//                or null; for a sentence that cites nothing, always null
+//   narrow       not a decline, cites something, names a plural role
+//                (PLURAL_ROLE_RE), and rosterTotal is 2 or fewer
+//   quoted       figures, in unsupported's units, that only a cited
+//                correction passage's quotation holds (quotedOnlyFigures)
 function analyseAnswer(answer, sources, question = '', shown = []) {
     return answerSentences(answer).map((sentence) => {
         const own = [...new Set(sentence.markers)];
@@ -273,7 +331,9 @@ function analyseAnswer(answer, sources, question = '', shown = []) {
             ...(exempt === 'decline' ? [question] : []),
         ].join('\n');
         const dates = evidenceSources.map(sourceDate).filter(Boolean);
-        const { numbers, pairs } = unsupportedFiguresIn(withoutSourceDates(sentence.text, dates), evidence);
+        const figureText = withoutSourceDates(sentence.text, dates);
+        const { numbers, pairs } = unsupportedFiguresIn(figureText, evidence);
+        const roster = cites.length > 0 ? rosterTotal(citedSources) : null;
         return {
             text: sentence.text,
             listItem: sentence.listItem,
@@ -282,6 +342,9 @@ function analyseAnswer(answer, sources, question = '', shown = []) {
             uncited: exempt === null && own.length === 0,
             stack: own.length,
             unsupported: [...numbers, ...pairs],
+            rosterTotal: roster,
+            narrow: roster !== null && roster <= 2 && !isDecline(sentence.text) && PLURAL_ROLE_RE.test(sentence.text),
+            quoted: cites.length > 0 ? quotedOnlyFigures(figureText, citedSources) : [],
         };
     });
 }
@@ -302,6 +365,16 @@ function analyseAnswer(answer, sources, question = '', shown = []) {
 //                       it, and a correct "no overall rate, but 52% of
 //                       physicians…" answer has the same shape. Only the
 //                       first sentence is read; a later decline isn't flagged.
+//   narrowEvidence      cited sentences making a plural claim about a role
+//                       ("Physicians expressed concerns…") whose cited
+//                       records' rosters add up to 2 or fewer participants.
+//                       Non-failing: such a claim can still be fair, and a
+//                       sentence citing no roster (findings, deliverables)
+//                       is never flagged.
+//   quotedFigures       figures a sentence takes only from a cited correction
+//                       passage's quotation of the claim it corrects, once
+//                       per sentence. Non-failing: a sentence reporting both
+//                       the old figure and the corrected one is flagged too.
 // Each is [] when the answer is clean.
 function summariseSentences(sentences) {
     const [first, ...rest] = sentences;
@@ -312,6 +385,8 @@ function summariseSentences(sentences) {
         unsupportedFigures: sentences.flatMap((s) => s.unsupported),
         stacked: sentences.filter((s) => s.stack >= 3).map((s) => s.text),
         declineThenClaims: declineThenClaims ? [first.text] : [],
+        narrowEvidence: sentences.filter((s) => s.narrow).map((s) => s.text),
+        quotedFigures: sentences.flatMap((s) => s.quoted),
     };
 }
 
@@ -328,6 +403,8 @@ module.exports = {
     countPairsIn,
     sourceEvidence,
     unsupportedFiguresIn,
+    rosterTotal,
+    quotedOnlyFigures,
     sourceDate,
     withoutSourceDates,
     normalizeText,

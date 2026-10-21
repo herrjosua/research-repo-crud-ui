@@ -141,6 +141,18 @@ function reviewRun({ answer, sources, raw, shownSources = [] }, shownCount, ques
         flags.push(`opens with a decline but cites claims; check the decline against the shown passages: "${clip(text)}"`);
     }
 
+    // Claims stronger than their evidence (RR-208), non-failing like the
+    // above: a plural role claim on a roster of 1 or 2, and a figure only a
+    // correction passage's quotation of the superseded claim holds.
+    for (const { text, narrow, rosterTotal } of sentences) {
+        if (narrow) flags.push(`plural claim rests on ${rosterTotal} participant(s); check it against the rosters: "${clip(text)}"`);
+    }
+    for (const { text, quoted } of sentences) {
+        for (const figure of quoted) {
+            flags.push(`figure "${figure}" appears only in a quoted earlier claim of a correction passage; check it: "${clip(text)}"`);
+        }
+    }
+
     const records = new Set(sources.map((s) => s.recordId));
     const hasRaw = sources.some((s) => s.recordKind === 'raw');
     return {

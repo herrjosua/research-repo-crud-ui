@@ -166,6 +166,8 @@ describe('POST /api/ask', () => {
             unsupportedFigures: [],
             stacked: [],
             declineThenClaims: [],
+            narrowEvidence: [],
+            quotedFigures: [],
         });
 
         // What was sent to Ollama.
@@ -232,6 +234,8 @@ describe('POST /api/ask', () => {
             unsupportedFigures: ['97'],
             stacked: ['97% of physicians abandoned the scribe.'],
             declineThenClaims: [],
+            narrowEvidence: [],
+            quotedFigures: [],
         });
     });
 
@@ -246,6 +250,8 @@ describe('POST /api/ask', () => {
             unsupportedFigures: [],
             stacked: [],
             declineThenClaims: ['The sources do not contain information about how physicians reacted to the medication flag.'],
+            narrowEvidence: [],
+            quotedFigures: [],
         });
     });
 
@@ -397,7 +403,9 @@ describe('POST /api/ask', () => {
             sources: [],
             model: 'gemma2:9b',
             // The model wrote nothing, so there is nothing to flag.
-            checks: { retried: false, uncited: [], unsupportedFigures: [], stacked: [], declineThenClaims: [] },
+            checks: {
+                retried: false, uncited: [], unsupportedFigures: [], stacked: [], declineThenClaims: [], narrowEvidence: [], quotedFigures: [],
+            },
         });
         expect(fakeOllama.requestsTo('/api/chat')).toHaveLength(0);
     });
