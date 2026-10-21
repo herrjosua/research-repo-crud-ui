@@ -205,7 +205,11 @@ catches derived figures like "saved 10 minutes" from "15 to 5 minutes", and
 date may be repeated, and an uncited decline may repeat figures from the
 question or from any source the model was shown, which `capture` stores in
 `runs.json` as `shownSources` (runs captured before that are judged
-without them). It also checks the citation-count bar (at least two
+without them). It flags an answer that opens with a decline and then
+cites claims (`declineThenClaims`), to check the decline against the
+shown passages; `publish` then skips that run by default, so publishing
+it, as for the burnout question's right "no rate, but 52%…" answer, takes
+`--pick`. It also checks the citation-count bar (at least two
 records, including a raw session). Whether a cited record actually supports
 its claim is still for a person to judge.
 
@@ -895,7 +899,8 @@ record has the tag, the answer says so and the model isn't called.)
     "retried": false,
     "uncited": [],
     "unsupportedFigures": [],
-    "stacked": []
+    "stacked": [],
+    "declineThenClaims": []
   }
 }
 ```
@@ -923,6 +928,17 @@ record has the tag, the answer says so and the model isn't called.)
     repeat figures from the question or from any source the model was
     shown.
   - `stacked`: sentences citing three or more distinct sources.
+  - `declineThenClaims`: the answer's first sentence, when it is a decline
+    and a later sentence that isn't a decline cites a source (its own
+    markers or a list's group citation). The decline and the claims may
+    contradict each other ("The sources do not contain information about
+    how physicians reacted…", then three cited records on how they
+    reacted). It is **non-failing**: the harness doesn't judge by it, since
+    a right answer can have the same shape ("no overall burnout rate is
+    reported; 52% of physicians named documentation…"). Only a decline in
+    the first sentence counts; a later one isn't flagged. An answer that
+    only declines isn't flagged either. See decision 24 in
+    `docs/decisions.md`.
 
   Each list is `[]` when there's nothing to flag, including when the model
   wasn't called (no record has the project tag) or returned nothing. A

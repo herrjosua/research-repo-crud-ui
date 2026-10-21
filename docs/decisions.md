@@ -1762,3 +1762,65 @@ history. The same commit is `ea01c3f` (tree
 `0fdd3bd7a7a9d86a2769737fa1f2374f1c7c399b`, identical to `8bdcff0`'s), and
 it reached main in merge commit `4170ff4`. The result files are left
 exactly as the harness wrote them.
+
+## 24. A decline before cited claims: flagged, not failed
+
+**Date:** 2026-10-21. **Status:** Active. Ticket RR-207.
+
+**Decision:** `ask/checks.js` gets a non-failing category,
+`declineThenClaims`. It holds the answer's first sentence when that
+sentence is a decline (`isDecline`, with no markers of its own) and at
+least one later sentence that isn't a decline cites a source, by its own
+markers or a list's group citation; otherwise it is `[]`. The live route
+returns it in `checks` (the pipeline spreads `checkAnswer`'s result, so it
+is `[]` on the no-records path too). The capture script's review adds one
+flag for it: `opens with a decline but cites claims; check the decline
+against the shown passages: "…"`. Because `defaultRun` takes only a run
+with no flags, `publish` no longer picks such a run by default;
+`--pick id=N` still publishes it, as a person's decision. The harness
+verdict (`judgeRun`) doesn't read it and is unchanged.
+
+**Why:** a decline that contradicts the answer's own cited claims passed
+every check. A decline needs no citation, so it was never uncited, and
+the review flagged nothing else. `scribe-medication-flag` run 3 (RR-152)
+opens "The sources do not contain information about how physicians
+reacted to the medication flag concept.", then cites three records on
+how they reacted, meets the bar with no flags, and was the run `publish`
+would pick.
+
+**What was measured** (234 stored runs: the capture review's `runs.json`
+and the four `rebaseline-09d985b*` result files):
+- 37 runs have a decline sentence and cited claims.
+- 24 of them open with the decline: `scribe-medication-flag` 3,
+  `audit-burnout-share` 12, `audit-onboarding-steps-order` 6,
+  `scenario-session-timeout-open` 3. The other 13 have the decline later.
+- The 12 `audit-burnout-share` runs are right. The gold requires both
+  "no overall burnout rate" and the physicians' 52%, so the decline and
+  the cited claim belong together there.
+- 1 is a false decline that `publish` would have picked: the
+  `scribe-medication-flag` run above.
+
+**Why not a failing check:** it would fail the 12 right burnout answers,
+and nothing in the sentence says which openings contradict their claims.
+That takes a person reading the decline against the shown passages,
+which the flag asks for. No version is bumped: the harness verdict is
+unchanged (a test judges a burnout answer the same with the decline
+first or last), so `EVAL_HARNESS_VERSION` stays; `report` re-applies the
+review and `answers.json` gains nothing, so `CAPTURE_SCRIPT_VERSION`
+stays.
+
+**Known limits:**
+- Only a decline in the first sentence is flagged. The 13 runs whose
+  decline comes later aren't.
+- A right answer of this shape is flagged too (the burnout answers), so
+  publishing one takes `--pick`.
+- Nothing matches the decline against the shown passages; the flag only
+  points a person at it.
+- A first-sentence decline whose later sentences cite nothing isn't
+  flagged here; those sentences are already `uncited`.
+
+**Found but left out:** two figure-check gaps from the same measurement.
+"N of the M" isn't read as a count, and "four of the five" in a source's
+evidence gives a false flag. Neither is changed here, nor `isDecline`,
+the sentence splitter, the prompt, the retrieval, or the harness report
+columns (RR-204).
