@@ -1,7 +1,8 @@
 // Checks on a finished answer: which sentences cite nothing, which figures
-// their own citations don't contain, and which stack three or more
-// citations. Pure functions of the answer, its sources, the question and
-// the sources the prompt showed, so the live route (via ask/pipeline.js),
+// their own citations don't contain, which stack three or more
+// citations, and whether it opens with a decline before cited claims.
+// Pure functions of the answer, its sources, the question and the sources
+// the prompt showed, so the live route (via ask/pipeline.js),
 // the evaluation harness (scripts/eval-ask.js) and the capture script's
 // review (scripts/capture-static-answers.js) apply the same rules, and
 // stored runs can be re-judged. None of this can say a citation is
@@ -293,12 +294,24 @@ function analyseAnswer(answer, sources, question = '', shown = []) {
 //                       sentence's cited sources, once per sentence they
 //                       appear in
 //   stacked             sentences citing three or more distinct sources
+//   declineThenClaims   the first sentence, when it is a decline and a later
+//                       sentence that isn't one cites a source (own or group
+//                       markers): the answer says the sources don't cover
+//                       something, then makes cited claims, and the two may
+//                       contradict. Non-failing: the harness doesn't judge by
+//                       it, and a correct "no overall rate, but 52% of
+//                       physicians…" answer has the same shape. Only the
+//                       first sentence is read; a later decline isn't flagged.
 // Each is [] when the answer is clean.
 function summariseSentences(sentences) {
+    const [first, ...rest] = sentences;
+    const declineThenClaims = first && first.exempt === 'decline'
+        && rest.some((s) => s.exempt !== 'decline' && s.cites.length > 0);
     return {
         uncited: sentences.filter((s) => s.uncited).map((s) => s.text),
         unsupportedFigures: sentences.flatMap((s) => s.unsupported),
         stacked: sentences.filter((s) => s.stack >= 3).map((s) => s.text),
+        declineThenClaims: declineThenClaims ? [first.text] : [],
     };
 }
 

@@ -1,5 +1,5 @@
 const { GOLD_FILE, loadGold, validateGold } = require('../ask/eval/gold');
-const { answerSentences, analyseAnswer } = require('../ask/checks');
+const { answerSentences, analyseAnswer, summariseSentences } = require('../ask/checks');
 const {
     judgeRun, claimText, renderReport, renderComparison, parseArgs, withBehaviors, thinkRequest, withPromptSources, runRetrieval,
 } = require('../scripts/eval-ask');
@@ -198,6 +198,23 @@ describe('gold claim patterns', () => {
         it('needs physicians and documentation, not clinicians', () => {
             expect(matches(physicians, '52% of clinicians named documentation burden as the top contributor [1].')).toBe(false);
             expect(matches(physicians, '52% of physicians named patient volume [1].')).toBe(false);
+        });
+
+        // RR-207: declineThenClaims flags the first answer's opening decline
+        // and not the second's, and the harness verdict is the same for both.
+        it('judges an opening decline before cited claims the same as one after them', () => {
+            const sources = [
+                { recordId: 'raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline', recordKind: 'raw', excerpt: 'Documentation burden ranked as the #1 self-selected contributor to burnout among physicians specifically (52%).' },
+                { recordId: 'finding:clinician-experience-documentation-burden', recordKind: 'finding', excerpt: '52% of physicians named documentation burden as the top contributor to burnout.' },
+            ];
+            const decline = 'The sources do not report an overall burnout rate for clinicians.';
+            const claim = '52% of physicians named documentation burden as the top contributor to burnout [1][2].';
+            const declineFirst = judgeRun(entry('audit-burnout-share'), { answer: `${decline} ${claim}`, sources });
+            const declineLast = judgeRun(entry('audit-burnout-share'), { answer: `${claim} ${decline}`, sources });
+            expect(summariseSentences(declineFirst.sentences).declineThenClaims).toEqual([decline]);
+            expect(summariseSentences(declineLast.sentences).declineThenClaims).toEqual([]);
+            expect(declineFirst).toMatchObject({ pass: true, failures: [] });
+            expect(declineLast).toMatchObject({ pass: declineFirst.pass, failures: declineFirst.failures });
         });
     });
 

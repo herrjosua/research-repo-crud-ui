@@ -43,6 +43,12 @@ const { readProjectList, recordProjectTag } = require('../projects');
 //                                     // sentence's cited sources (title, section,
 //                                     // participants or excerpt), once per sentence
 //       stacked: string[],            // sentences citing 3+ distinct sources
+//       declineThenClaims: string[],  // the first sentence, when it's a decline
+//                                     // ("the sources do not…") and a later
+//                                     // sentence cites a source; [] otherwise.
+//                                     // Non-failing: the two may contradict, or
+//                                     // be a right "no rate, but 52%…" answer.
+//                                     // Only a first-sentence decline counts.
 //     },
 //   }
 //

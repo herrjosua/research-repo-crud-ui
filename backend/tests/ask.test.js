@@ -25,6 +25,9 @@ const MODEL_REPLY = [
 // For the checks test: an invented figure, stacked on three sources.
 const INVENTED_QUESTION = 'What share of physicians abandoned the scribe?';
 const INVENTED_REPLY = '97% of physicians abandoned the scribe [1][2][3].';
+// For the declineThenClaims test: an opening decline, then a cited claim.
+const DECLINE_QUESTION = 'How did physicians react to the medication flag?';
+const DECLINE_REPLY = 'The sources do not contain information about how physicians reacted to the medication flag. Physicians did not trust the draft [1].';
 
 let testRepoPath;
 let fakeOllama;
@@ -32,7 +35,12 @@ let app, sessionDb, clearSessionInterval, db, server, request, agent;
 
 beforeAll(async () => {
     fakeOllama = await startFakeOllama({
-        chatReply: (body) => (body.messages.at(-1).content.endsWith(`Question: ${INVENTED_QUESTION}`) ? INVENTED_REPLY : MODEL_REPLY),
+        chatReply: (body) => {
+            const content = body.messages.at(-1).content;
+            if (content.endsWith(`Question: ${INVENTED_QUESTION}`)) return INVENTED_REPLY;
+            if (content.endsWith(`Question: ${DECLINE_QUESTION}`)) return DECLINE_REPLY;
+            return MODEL_REPLY;
+        },
     });
     testRepoPath = createTestRepo({ corpusDir: CORPUS_DIR });
     process.env.AGENTIC_REPO_ROOT = testRepoPath;
@@ -157,6 +165,7 @@ describe('POST /api/ask', () => {
             uncited: ['Summary', 'Medication dosages were', 'Edit affordance was hard to find'],
             unsupportedFigures: [],
             stacked: [],
+            declineThenClaims: [],
         });
 
         // What was sent to Ollama.
@@ -222,6 +231,21 @@ describe('POST /api/ask', () => {
             uncited: [],
             unsupportedFigures: ['97'],
             stacked: ['97% of physicians abandoned the scribe.'],
+            declineThenClaims: [],
+        });
+    });
+
+    it('flags an opening decline followed by a cited claim, without failing anything', async () => {
+        const res = await agent.post('/api/ask').send({ question: DECLINE_QUESTION });
+
+        expect(res.status).toBe(200);
+        expect(res.body.answer).toBe(DECLINE_REPLY);
+        expect(res.body.checks).toEqual({
+            retried: false,
+            uncited: [],
+            unsupportedFigures: [],
+            stacked: [],
+            declineThenClaims: ['The sources do not contain information about how physicians reacted to the medication flag.'],
         });
     });
 
@@ -373,7 +397,7 @@ describe('POST /api/ask', () => {
             sources: [],
             model: 'gemma2:9b',
             // The model wrote nothing, so there is nothing to flag.
-            checks: { retried: false, uncited: [], unsupportedFigures: [], stacked: [] },
+            checks: { retried: false, uncited: [], unsupportedFigures: [], stacked: [], declineThenClaims: [] },
         });
         expect(fakeOllama.requestsTo('/api/chat')).toHaveLength(0);
     });

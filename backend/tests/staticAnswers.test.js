@@ -175,3 +175,40 @@ describe('defaultRun (the publish gate)', () => {
         expect(defaultRun([uncited, figure])).toBeUndefined();
     });
 });
+
+// RR-207: an opening decline followed by cited claims gets a flag, so the
+// publish gate skips the run and choosing it takes --pick.
+describe('capture review: an opening decline followed by cited claims', () => {
+    const sources = [
+        { recordId: 'raw:medflag', recordKind: 'raw', title: 'Concept test — medication change flag', section: 'Session 1', excerpt: 'The physician read the flagged medication line first and checked it against the order.' },
+        { recordId: 'finding:medflag', recordKind: 'finding', title: 'Medication flag finding', section: null, excerpt: 'Physicians checked the flagged medication line against the order before accepting.' },
+    ];
+    const run = (n, answer, runSources = sources) => ({ run: n, review: reviewRun({ answer, sources: runSources, raw: '' }, 6) });
+    const DECLINE = 'The sources do not contain information about how physicians reacted to the medication flag concept.';
+    const claims = 'The physician read the flagged medication line first [1]. Physicians checked it against the order before accepting [2].';
+    const declined = run(3, `${DECLINE} ${claims}`);
+    const clean = run(1, claims);
+
+    it('flags the decline, though the run meets the bar', () => {
+        expect(declined.review.meetsBar).toBe(true);
+        expect(declined.review.flags).toEqual([
+            `opens with a decline but cites claims; check the decline against the shown passages: "${DECLINE.slice(0, 90)}…"`,
+        ]);
+    });
+
+    it('leaves defaultRun to a clean run, and to none when there is none', () => {
+        expect(clean.review.flags).toEqual([]);
+        expect(defaultRun([declined, clean])).toBe(clean);
+        expect(defaultRun([declined])).toBeUndefined();
+    });
+
+    it('flags the correct burnout decline too, so publishing it needs --pick', () => {
+        const burnout = run(1, 'The sources do not contain what percentage of clinicians report burnout. 52% of physicians ranked documentation burden as the top contributor to burnout [1][2].', [
+            { recordId: 'raw:survey', recordKind: 'raw', title: 'Survey — Clinician Burnout', section: 'Key Findings', excerpt: 'Documentation burden ranked as the #1 contributor to burnout among physicians (52%).' },
+            { recordId: 'finding:burden', recordKind: 'finding', title: 'Documentation burden', section: null, excerpt: '52% of physicians ranked documentation burden as the top contributor to burnout.' },
+        ]);
+        expect(burnout.review.meetsBar).toBe(true);
+        expect(burnout.review.flags).toEqual([expect.stringMatching(/^opens with a decline but cites claims/)]);
+        expect(defaultRun([burnout])).toBeUndefined();
+    });
+});
