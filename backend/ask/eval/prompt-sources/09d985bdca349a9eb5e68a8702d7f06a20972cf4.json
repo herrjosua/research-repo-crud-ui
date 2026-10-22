@@ -6,6 +6,11 @@
       "participants": null,
       "date": "Feb 24, 2026"
     },
+    "component:clinician-dashboard": {
+      "title": "Clinician Home Dashboard",
+      "participants": null,
+      "date": null
+    },
     "component:encounter-view": {
       "title": "Encounter View",
       "participants": null,
@@ -46,10 +51,20 @@
       "participants": null,
       "date": "Mar 3, 2026"
     },
+    "deliverable:mindsets/skeptical-verifier": {
+      "title": "The Skeptical Verifier",
+      "participants": null,
+      "date": "Dec 1, 2025"
+    },
     "deliverable:mindsets/wants-to-know-what-a-step-commits": {
       "title": "Wants to Know What a Step Commits Them To",
       "participants": null,
       "date": "Mar 3, 2026"
+    },
+    "deliverable:mockups/confidence-highlighted-draft-review": {
+      "title": "Confidence-Highlighted Draft Review — Hi-Fi Mockup (GA Candidate)",
+      "participants": null,
+      "date": "Jan 5, 2026"
     },
     "deliverable:personas/physician-longitudinal-scribe-user": {
       "title": "The Longitudinal Physician — Ambient Scribe",
@@ -246,6 +261,11 @@
       "participants": "Participants: 1 — P147 — Physician (Family Medicine) (physician) ×1",
       "date": "Mar 24, 2026"
     },
+    "raw:2026-04-14-interview-ed-intake-nurse-interruptions-and-downtime": {
+      "title": "Interview — Returning ED Intake Nurse on Interruptions and Downtime",
+      "participants": "Participants: 1 — P21 — ED Intake Nurse (nurse), returning from 2025-04-22-contextual-inquiry-ed-intake-shadowing ×1",
+      "date": "Apr 14, 2026"
+    },
     "raw:2026-04-28-interview-nurse-practitioner-session-lock-shared-workstations": {
       "title": "Interview — Nurse Practitioner on Session Lock and Shared Exam-Room Workstations",
       "participants": "Participants: 1 — P148 — Nurse Practitioner (primary care) (app) ×1",
@@ -345,11 +365,25 @@
       "excerpt": "In the Compass AI practice setup flow, where every step is required, setups stop most at step 3 (\"Connect calendar\") and stay there longest, then at step 4 (\"Invite your team\"). This summary covers where setups stopped and for how long; it doesn't say why.",
       "date": "Feb 24, 2026"
     },
+    "component:clinician-dashboard#5": {
+      "title": "Clinician Home Dashboard",
+      "section": "Notes",
+      "participants": null,
+      "excerpt": "The care-gap-flags-enabled variant is not recommended for further rollout per the 2025-05-06 finding that 5/6 participants expected the flags to become background noise within a week at current precision.",
+      "date": null
+    },
     "component:encounter-view#2": {
       "title": "Encounter View",
       "section": "States",
       "participants": null,
       "excerpt": "default\nlocked (session timeout)",
+      "date": null
+    },
+    "component:encounter-view#5": {
+      "title": "Encounter View",
+      "section": "Notes",
+      "participants": null,
+      "excerpt": "The locked state's interaction with an in-progress ambient scribe recording was flagged as an open edge case in the 2025-05-20 SSO/MFA interview and studied in the 2026-02-17 contextual inquiry: a session lock mid-recording freezes the ambient-scribe widget with no message, and all 4 shadowed clinicians assumed the draft was lost, even though it survives server-side (the session notes say \"4 of 5\"; see that folder's correction-2026-09-27.md ). A recovery flow with an explicit paused, draft-preserved state is designed and in review ( user-flows/ambient-scribe-session-lock-recovery.md ); it isn't reflected in this component's states yet.",
       "date": null
     },
     "component:encounter-view#6": {
@@ -415,11 +449,25 @@
       "excerpt": "Practice Administrators: it emails staff, and timing matters because of training. 3 of 4 (P154, P156, P157) hesitated: \"They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice.\" P155 went on without comment (2026-02-03 :53 ).\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — P157 ( :64-65 )\nThe notes don't record whether the Practice Administrators thought the invite also gives staff access, or only sends the email.",
       "date": "Mar 3, 2026"
     },
+    "deliverable:mindsets/skeptical-verifier#2": {
+      "title": "The Skeptical Verifier",
+      "section": "Implications",
+      "participants": null,
+      "excerpt": "Doesn't want AI output hidden or auto-applied — wants citations, confidence signals, or an audit-visible human-decision boundary before trusting a draft, whether that draft is a prior-auth justification, a coding suggestion, or a transcribed note. Confidence signals were the 2025-09-23 study's recommendation ( :43 ), which P09 then welcomed in the GA-candidate round (2026-01-13 :36 ). Design response should default to visible, checkable provenance rather than trying to earn trust through accuracy alone — this echoes the ambient-scribe finding that accuracy improvements alone didn't change reading behavior for this same kind of user.",
+      "date": "Dec 1, 2025"
+    },
     "deliverable:mindsets/wants-to-know-what-a-step-commits#1": {
       "title": "Wants to Know What a Step Commits Them To",
       "section": "Overview",
       "participants": null,
       "excerpt": "Not a persona: a stance that showed up in both roles in the 2026-02-03 usability test, Practice Administrators (P154-P157) and IT Administrators (P158, P159), at the two steps where setups stop most, Connect calendar and Invite your team ( raw/2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:51-56 ). Both steps reach beyond the setup screen: one gives Compass AI read access to the practice's appointment schedule, the other gives staff access and sends them an email (2026-02-03 session-notes.md:33-35 ). At each, participants wanted to know what the step would set off and whether someone else's part was in place before they committed to it. This is about admin setup of Compass AI, not staff training.",
+      "date": "Mar 3, 2026"
+    },
+    "deliverable:mindsets/wants-to-know-what-a-step-commits#2": {
+      "title": "Wants to Know What a Step Commits Them To",
+      "section": "What the sessions show",
+      "participants": null,
+      "excerpt": "Whose sign-off it is. 3 of 4 Practice Administrators stopped at Connect calendar because they \"did not think they could approve\" access to patient appointments; P156 asked whether it was theirs to approve before going on ( :51 ). \"Is this mine to say yes to? I'd normally send anything like this to IT.\" — P156 ( :61-62 )\nWhat it reads. Both IT Administrators asked which fields are read before connecting ( :52 ). \"Before I connect it I want to know what it pulls.\" — P158 ( :67 )",
       "date": "Mar 3, 2026"
     },
     "deliverable:mindsets/wants-to-know-what-a-step-commits#3": {
@@ -436,6 +484,13 @@
       "excerpt": "The recorded recommendations already answer each question the stance raises: list the fields read on Connect calendar; add a \"Send to IT for approval\" path there; say on Invite your team when the email is sent; let administrators schedule the invite email for a date ( :74-79 ); and confirm with IT whether a privacy review request for Compass AI's schedule access has been filed ( raw/2026-02-24-interview-it-administrator-schedule-access-and-staff-invites/session-notes.md:40-41 ). This record adds no recommendation of its own.",
       "date": "Mar 3, 2026"
     },
+    "deliverable:mockups/confidence-highlighted-draft-review#3": {
+      "title": "Confidence-Highlighted Draft Review — Hi-Fi Mockup (GA Candidate)",
+      "section": "Notes",
+      "participants": null,
+      "excerpt": "Two-state treatment. The 2026-01-13 session notes record only that low-confidence transcription was shown in a subtle underline ( :30 ). The rest is the designer's spec and wasn't recorded in the test: high-confidence lines render as default text with no marking (deliberately inviting skimming), low-confidence lines also get an on-hover explanation, and there is no separate medium-confidence tier. Deliberately avoids color-only signaling, per the cross-cutting accessibility finding — flagged lines are distinguishable by the underline itself, not color alone.",
+      "date": "Jan 5, 2026"
+    },
     "deliverable:personas/physician-longitudinal-scribe-user#1": {
       "title": "The Longitudinal Physician — Ambient Scribe",
       "section": "Summary",
@@ -448,6 +503,13 @@
       "section": "Goals",
       "participants": null,
       "excerpt": "Trust the tool enough to stop reading every generated line, without trusting it blindly. (P09, v0.1 to GA candidate)\nCatch the specific error types that matter clinically (medication names) rather than treating all uncertainty as equally worth flagging. (Inferred from P22, 2026-02-10; not observed for P09)\nNot lose work to session/security interruptions that are unrelated to the clinical task. (Inferred from P119 and P33, 2026-02-17; not observed for P09)",
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:personas/physician-longitudinal-scribe-user#4": {
+      "title": "The Longitudinal Physician — Ambient Scribe",
+      "section": "What changed for this persona, round over round",
+      "participants": null,
+      "excerpt": "Post-GA (Feb 2026, inferred from participants): The next trust lever is specificity, not just visibility — a distinct medication-safety flag was recognized as different from generic low-confidence highlighting (5 of 6), but risks over-trusting anything left unflagged if that distinction isn't actively managed in the UI. This isn't recorded as P09's experience: it comes from P22, P24 and the other participants in the 2026-02-10 concept test.",
       "date": "Feb 26, 2026"
     },
     "deliverable:personas/practice-administrator-compass-ai-setup#10": {
@@ -464,6 +526,13 @@
       "excerpt": "Hold back the staff email until training is booked. 3 of 4 (P154, P156, P157) hesitated at Invite your team: \"They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice.\" P155 \"entered the test staff list and went on without comment\" ( :53 ).\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — P157 ( :64-65 )",
       "date": "Mar 3, 2026"
     },
+    "deliverable:research-plans/compass-ai-practice-setup-study-q1#10": {
+      "title": "Compass AI Practice Setup — Usability Study Plan, Q1",
+      "section": "Gaps going in",
+      "participants": null,
+      "excerpt": "When this build sends the invite email (at step 4 or at Review & finish) isn't known to the moderator. If a participant asks, the moderator says they can't answer and notes the question.\nHow Compass AI access is provisioned (through SSO groups or through these invites) isn't known to the moderator. Same rule.\nHow practices were chosen to set up, and when each planned to go live, isn't recorded ( raw/2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:21-23 ).",
+      "date": "Jan 27, 2026"
+    },
     "deliverable:research-plans/compass-ai-practice-setup-study-q1#6": {
       "title": "Compass AI Practice Setup — Usability Study Plan, Q1",
       "section": "Participants",
@@ -476,6 +545,20 @@
       "section": "What it does and doesn't show",
       "participants": null,
       "excerpt": "Completing step 3 in the test is not a result. When a participant stopped at Connect calendar, the moderator told them it was the sandbox calendar and let them continue (2026-02-03 :43-45 ); all 4 Practice Administrators went on only that way ( :51 ).\nWhy the calendar step is required is untested. At session setup, the designer stated that it is required because the scribe attaches recordings to scheduled encounters ( :38 ). That is the designer's stated rationale; no session tested it (finding :42-44 ).",
+      "date": "Mar 10, 2026"
+    },
+    "deliverable:research-readouts/compass-ai-practice-setup-q1-readout#15": {
+      "title": "Compass AI Practice Setup — Q1 Study Readout",
+      "section": "Recommendations as recorded",
+      "participants": null,
+      "excerpt": "Ordered by step. Each is quoted from the session that recorded it.\nConnect calendar\n\"List the fields read from the appointment schedule on the Connect calendar step.\" (2026-02-03 :74 )\n\"Add a \"Send to IT for approval\" path on Connect calendar for an administrator who can't approve the access themselves.\" ( :75-76 )\n\"On Connect calendar, route an administrator who can't approve schedule access to IT, consistent with the \"Send to IT for approval\" path recommended on 2026-02-03\" (2026-02-24 :40 )",
+      "date": "Mar 10, 2026"
+    },
+    "deliverable:research-readouts/compass-ai-practice-setup-q1-readout#2": {
+      "title": "Compass AI Practice Setup — Q1 Study Readout",
+      "section": "Summary",
+      "participants": null,
+      "excerpt": "In the Compass AI practice setup flow, where every step is required, setups stop most at Connect calendar and then at Invite your team. In a usability test, 3 of 4 Practice Administrators stopped at Connect calendar, saying approving access to the practice's appointment schedule was IT's decision; both IT Administrators asked which fields are read before connecting; and 3 of 4 Practice Administrators hesitated at Invite your team, not wanting staff emailed before champion training is booked. An IT Administrator interviewed said schedule access needs a privacy review request that only IT files. The sessions recorded six recommendations, and leave open when the invite email is sent, how access is provisioned, whether a privacy review request has been filed and which scheduling system holds the schedule. This is about admin setup of Compass AI, not staff training.",
       "date": "Mar 10, 2026"
     },
     "deliverable:research-readouts/compass-ai-practice-setup-q1-readout#5": {
@@ -513,6 +596,20 @@
       "excerpt": "Evidence basis: Mixed. Observed (the test results for options 1 and 2, from raw/2026-02-10-ambient-scribe-medication-flag-concept/session-notes.md:43-45 ); the options themselves, and dropping option 3 before testing, are the designer's decisions and aren't in that session's notes.\nQuick sketches exploring where the sound-alike-medication flag should sit relative to the medication name, ahead of the 2026-02-10 concept test.",
       "date": "Feb 8, 2026"
     },
+    "deliverable:thumbnails/medication-flag-placement-explorations#1": {
+      "title": "Sound-Alike Medication Flag — Placement Explorations",
+      "section": "Options considered",
+      "participants": null,
+      "excerpt": "Inline pill immediately after the medication name — carried forward; won 5:1 in testing since participants didn't want to look away from the text.\nRight-hand margin badge, mirroring the layout of other dashboard flags — tested as an alternate and lost; inline placement was preferred 5:1 because participants didn't want to look away from the text to check a flag.",
+      "date": "Feb 8, 2026"
+    },
+    "deliverable:thumbnails/medication-flag-placement-explorations#2": {
+      "title": "Sound-Alike Medication Flag — Placement Explorations",
+      "section": "Options considered",
+      "participants": null,
+      "excerpt": "Modal interrupt on encountering a flagged line — the designer's decision to drop it before testing, as too disruptive for a signal meant to prompt verification, not force a stop. It wasn't tested, so there's no participant result for it.",
+      "date": "Feb 8, 2026"
+    },
     "deliverable:topline-summaries/ambient-scribe-ga-adoption-first-4-weeks#0": {
       "title": "Ambient Scribe GA Candidate — First 4 Weeks Adoption Topline",
       "section": "Quick takeaways",
@@ -525,6 +622,13 @@
       "section": "Quick takeaways",
       "participants": null,
       "excerpt": "One page on the three sessions about how an administrator sets Compass AI up for a practice: a dashboard review (2026-01-20), a moderated usability test with 4 Practice Administrators (P154-P157) and 2 IT Administrators (P158, P159) (2026-02-03, session-notes.md:32 ), and an interview with one IT Administrator (P160) (2026-02-24). Synthesized in compass-ai-practice-setup.md . This is about admin setup of Compass AI, not staff training.",
+      "date": "Feb 26, 2026"
+    },
+    "deliverable:topline-summaries/compass-ai-practice-setup-topline#3": {
+      "title": "Compass AI Practice Setup — Study Topline",
+      "section": "Quick takeaways",
+      "participants": null,
+      "excerpt": "Practice Administrators don't think the calendar is theirs to approve. 3 of 4 (P154, P155, P157) stopped at Connect calendar and each said it was IT's decision; P156 asked the moderator whether it was theirs to approve before going on (2026-02-03 :51 ).\n\"That's patient names and visit reasons. That's not my call — that's IT's.\" — P154 ( :58-59 )\nIT Administrators connect it, but want to know what is read. Both P158 and P159 connected the calendar only after asking which fields are read; the screen doesn't list them and the moderator couldn't answer ( :52 ).",
       "date": "Feb 26, 2026"
     },
     "deliverable:topline-summaries/compass-ai-practice-setup-topline#7": {
@@ -555,12 +659,26 @@
       "excerpt": "Every step is required. \"Every step is required in this build; a setup can't skip a step, it can only be left open at it\" (2026-01-20 :34-35 ). For steps 3 and 4: \"There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it\" (2026-02-03 :36-37 ).\nWhen a setup counts as started, and as stopped. \"A setup counts as started when someone signs in at step 1. \"Stopped\" means the setup was still open at that step on 2026-01-20\" (2026-01-20 :35-36 ).",
       "date": "Mar 17, 2026"
     },
+    "deliverable:user-flows/compass-ai-practice-setup-five-step-flow#6": {
+      "title": "Compass AI Practice Setup — The Five Steps as Built",
+      "section": "Details",
+      "participants": null,
+      "excerpt": "When the invite email is sent. The notes \"don't record when this build sends it\" (2026-02-03 :46-47 ), and the question is left open: \"When does this build send the invite email: at step 4 or at Review & finish?\" ( :84 ). This flow places the email at neither step.\nHow access is provisioned. \"How Compass AI access is provisioned (through SSO groups or through these invites) wasn't known to the moderator and isn't recorded in the corpus\" ( :47-48 ). This flow doesn't show where access is created.\nWhich fields Connect calendar reads , for the same reason ( :52 ).",
+      "date": "Mar 17, 2026"
+    },
     "deliverable:wireflows/compass-ai-connect-calendar-send-to-it#5": {
       "title": "Compass AI Practice Setup — Connect Calendar \"Send to IT for Approval\" Wireflow",
       "section": "Flow + screens",
       "participants": null,
       "excerpt": "No skip branch. The build has no \"Connect later\" and no \"Skip for now\"; the only way past the step is to complete it (2026-02-03 :36-37 ). This wireflow adds neither: Send to IT for approval hands the decision to IT, it doesn't skip the step.",
       "date": "Mar 17, 2026"
+    },
+    "deliverable:wireframes/ambient-scribe-medication-flag#1": {
+      "title": "Ambient Scribe — Sound-Alike Medication Flag",
+      "section": "Description",
+      "participants": null,
+      "excerpt": "Lo-fi layout for the distinct sound-alike-medication flag tested in the 2026-02-10 concept test, which calls for a larger-N validation pass before a build-ready spec. Applies to the ambient-scribe-widget component's draft-review surface, inside the encounter-view screen. Separate from the existing generic confidence-highlighted variant — this flag reads specifically as \"check this drug name,\" not \"low confidence generally.\"",
+      "date": "Feb 24, 2026"
     },
     "deliverable:wireframes/ambient-scribe-medication-flag#2": {
       "title": "Ambient Scribe — Sound-Alike Medication Flag",
@@ -569,11 +687,25 @@
       "excerpt": "Placement: inline, immediately after the medication name — tested 5:1 over a right-hand margin badge, since participants didn't want to look away from the text.\nVisual treatment: small amber pill-shaped badge, distinct in shape and color from the existing subtle low-confidence underline, so the two signals are never visually conflated.\nCopy: short on-hover/on-tap label — \"Possible sound-alike medication name — verify before signing\" — worded to prompt verification, not to assert an error.",
       "date": "Feb 24, 2026"
     },
+    "deliverable:wireframes/ambient-scribe-medication-flag#3": {
+      "title": "Ambient Scribe — Sound-Alike Medication Flag",
+      "section": "Details",
+      "participants": null,
+      "excerpt": "Adjacent messaging (new): a one-time inline tip, shown the first time a clinician encounters the flag, stating that lines without this flag still warrant normal review — directly addressing the over-trust-on-unflagged-lines risk found in 2 of 6 concept-test participants.\nOpen item: in the 2026-02-10 test, one deliberately seeded false positive was accepted by all 6 participants as \"worth a second look, not annoying\" — final threshold tuning is an engineering/detection decision, not a layout decision, and is out of scope for this wireframe.",
+      "date": "Feb 24, 2026"
+    },
     "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval#10": {
       "title": "Compass AI Practice Setup — Connect Calendar with Fields Read and IT Approval",
       "section": "Details",
       "participants": null,
       "excerpt": "Not covered:\nWho should see which path. The notes don't record how the screen would tell an administrator who can approve from one who can't; this wireframe shows both paths to everyone.\nWhether the step stays required. The only rationale on record is the designer's statement at session setup that \"the calendar step is required because the scribe attaches recordings to scheduled encounters\" (2026-02-03 :38 ), which no session tested (finding :42-44 ).",
+      "date": "Mar 17, 2026"
+    },
+    "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval#2": {
+      "title": "Compass AI Practice Setup — Connect Calendar with Fields Read and IT Approval",
+      "section": "Description",
+      "participants": null,
+      "excerpt": "\"Add a \"Send to IT for approval\" path on Connect calendar for an administrator who can't approve the access themselves.\" ( :75-76 ) The 2026-02-24 interview recommends the same route: \"On Connect calendar, route an administrator who can't approve schedule access to IT, consistent with the \"Send to IT for approval\" path recommended on 2026-02-03\" (2026-02-24 session-notes.md:40 ).",
       "date": "Mar 17, 2026"
     },
     "finding:ambient-scribe#0": {
@@ -595,6 +727,13 @@
       "section": "Since GA: 2026 Physician, NP and PA Interviews",
       "participants": null,
       "excerpt": "Opting in. One Physician (Internal Medicine resident) did not opt in at GA: writing their own notes was how they worked out their assessment while learning, and they did not describe doubt about the draft's accuracy as a reason (2026-10-08, MEDIUM). They opted in \"about three months into clinic\" and for a new problem write the assessment themselves, or rewrite the draft's assessment before signing (2026-10-08, MEDIUM). One resident's account can't explain the attending/resident adoption gap in the 2026-01-27 dashboard review.",
+      "date": "Oct 8, 2026"
+    },
+    "finding:ambient-scribe#2": {
+      "title": "Ambient AI Scribe",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Trust calibration was the hardest problem, and accuracy alone didn't solve it. Returning participants read every line in both v0.1 and v0.2 despite the accuracy improvement between them — trust didn't move with correctness. The GA-candidate round introduced per-line confidence highlighting, and for the first time participants reported actually skimming high-confidence lines. This is the strongest evidence so far that visible uncertainty , not raw accuracy, is the lever that changes reviewing behavior.",
       "date": "Oct 8, 2026"
     },
     "finding:ambient-scribe#9": {
@@ -644,6 +783,13 @@
       "section": "Overview",
       "participants": null,
       "excerpt": "Three early-2026 sessions look at how an administrator sets Compass AI up for a practice: a dashboard review of setups (Jan 2026), a moderated usability test of the setup flow with 4 Practice Administrators and 2 IT Administrators (Feb 2026), and an interview with an IT Administrator who approves access requests across practices (Feb 2026). This is about admin setup of Compass AI, not staff training; elsewhere in the corpus \"onboarding\" can mean training copy for clinicians ( raw/2026-02-10-ambient-scribe-medication-flag-concept/session-notes.md:62 ).",
+      "date": "Feb 24, 2026"
+    },
+    "finding:compass-ai-practice-setup#8": {
+      "title": "Compass AI Practice Setup",
+      "section": "Overview",
+      "participants": null,
+      "excerpt": "Recommendation (from the 2026-02-03 and 2026-02-24 sessions): list the fields read on Connect calendar; add a \"Send to IT for approval\" path there for an administrator who can't approve the access; say on Invite your team when the email is sent; and let administrators schedule the invite email for a date, so it can go out once training is booked ( raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:74-79 ; raw/2026-02-24-interview-it-administrator-schedule-access-and-staff-invites/session-notes.md:40-41 ).",
       "date": "Feb 24, 2026"
     },
     "finding:prior-authorization#0": {
@@ -1037,6 +1183,13 @@
       "participants": "Participants: 1 — P147 — Physician (Family Medicine) (physician) ×1",
       "excerpt": "Objective\nEarlier ambient-scribe sessions tested medication accuracy in drafts: dosage errors in v0.1 and v0.2, sound-alike drug names at the GA release candidate, and a concept for a distinct sound-alike medication flag (2026-02-10). The plan section has so far come up only from the reader's side: a care coordinator goes straight to the plan and the medication list in the visit notes they read before an outreach call (2026-03-03-interview-care-coordinator-chart-review-scribe-notes/session-notes.md:31, :43), and the 2026-03-17 clinic nurse interview (2026-03-17-interview-clinic-nurse-reading-scribe-drafted-notes) heard that plan items sometimes land in the body of the note rather than the plan (2026-03-17-interview-clinic-nurse-reading-scribe-drafted-notes/session-notes.md:30). None of those sessions asked the person who signs the draft how they check the plan section, where decisions made during the visit, including medication changes, are supposed to end up. This session asked a family physician, two months after the January 2026 GA, how they check the plan and the medication lines in a draft before they sign.\nMethod\nMethod: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant is a family medicine physician in an ambulatory primary care clinic, mid-career. They opted in to the ambient scribe after the January 2026 GA. The scribe drafts the visit note only; the clinician enters orders, including medication orders, separately. Low-confidence transcription is shown with a subtle underline. The distinct sound-alike medication flag tested on 2026-02-10 has not shipped; there is no distinct medication marking beyond the confidence underline. They did not take part in any earlier session. This is an interview about their own practice; nothing was shown or observed.\nKey Findings\n[HIGH] (plan section) When a decision is talked through over several minutes, the draft sometimes puts the reasoning in the assessment and only part of the decision in the plan, or leaves a follow-up interval in the body of the note. Before signing they read the plan against what they remember deciding and move or add items by hand. They put it at \"a couple of times on a full clinic day\", an informal impression, not a count.\n[HIGH] (medication changes) They enter medication orders themselves, so they know what they decided; the question at sign-off is whether the note says the same thing. Their main check is that every medication change in the plan matches the order they placed, and that it is written as a decision. When the draft words a change tentatively, as it was discussed rather than as it was decided, they rewrite it. They said they make this check on every medication line, underlined or not.\n[MEDIUM] (sound-alike names) They recalled one sound-alike drug name since GA, glyburide written where glipizide had been said, and said it was underlined. It is one recollection, not a rate; the GA release-candidate round records sound-alike names as a known, monitored error type (2026-01-13-usability-test-ambient-scribe-ga-release-candidate/session-notes.md:31). They said they would check medication lines against the order whether or not anything marked them, because a wrong name can be heard confidently.\nRepresentative Quotes\n\"I put the order in myself, so I know what I decided. The question is whether the note says the same thing.\" — Physician (Family Medicine), P147\n\"'We talked about lowering the dose' isn't a plan. I change it to what we actually did.\" — Physician (Family Medicine), P147\nRecommendations\nShare with the ambient scribe team that decisions made during the visit, especially medication changes and follow-up intervals, need to reach the plan section, worded as decisions.\nWhen drafts are evaluated, check the plan section's completeness against what was decided in the visit, not only transcription accuracy.\nWhen the distinct medication flag's design is next reviewed, note that this physician checks every medication line against the order regardless of marking; whether a flag would change that is untested.\nFollow-ups / Open Questions\nHow often plan items land outside the plan section is not measured; \"a couple of times on a full clinic day\" is one physician's impression.\nWhether NPs and PAs, or other physicians, check the plan and medication lines the same way is not known; this is one interview.\nWhether the distinct medication flag would change how signers check medication lines is untested; it has not shipped.",
       "date": "Mar 24, 2026"
+    },
+    "raw:2026-04-14-interview-ed-intake-nurse-interruptions-and-downtime#notes": {
+      "title": "Interview — Returning ED Intake Nurse on Interruptions and Downtime",
+      "section": null,
+      "participants": "Participants: 1 — P21 — ED Intake Nurse (nurse), returning from 2025-04-22-contextual-inquiry-ed-intake-shadowing ×1",
+      "excerpt": "Objective\nCheck whether the ED intake boundary in scope-boundaries-and-workflow-fit.md still holds, with the nurse whose shadowing it rests on. The participant is P21, returning from 2025-04-22-contextual-inquiry-ed-intake-shadowing, where they were shadowed during peak hours in April 2025; this interview is in April 2026. That session found intake staff interrupted every 2-4 minutes at peak and a paper triage sheet kept as backup for when the system is slow. The questions were whether either has changed, and whether any AI help that needs reviewing could fit intake at peak.\nMethod\nMethod: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant still works ED intake, including the late-afternoon and evening peak. Intake documentation is still entered by hand in the intake form; no AI feature is scoped against it. The ambient scribe, GA since January 2026, drafts notes for physicians, NPs and PAs only and isn't used at intake. This is an interview about their own practice; nothing was observed in this session.\nKey Findings\n[HIGH] (interruption tolerance) At peak, nothing that needs sustained review would fit intake. They described the interruptions as unchanged since the April 2025 shadowing (\"constant, same as when you were here\"); this is their account, not a re-measurement of the 2-4 minute figure. They were open to help that needs no review, such as fields that fill themselves and can be ignored, but not to anything they would have to read and approve between interruptions. This confirms the ED intake boundary and the ED intake storyboard.\n[MEDIUM] (paper backup) The paper triage sheet is still in use. They start one at the beginning of every peak shift whether or not the system is slow, because by the time it is slow it is too late to start one. The April 2025 notes record the sheet as a backup kept \"in case the system is slow\" (2025-04-22-contextual-inquiry-ed-intake-shadowing/session-notes.md:31) but don't say when staff started it, so this is not evidence of a change since 2025. They gave no new estimate of how often the system is slow (the 2025 notes have staff self-reporting it several times a shift) and did not know what causes it. Any AI feature at intake would still need to degrade to paper without losing what was already entered.\n[LOW] (re-entry) After a slow spell, they re-enter what is on the paper sheet into the intake form, usually after peak. They saw that re-entry, not intake itself, as the part of the shift where a tool might help, because it happens when things are quieter.\nRepresentative Quotes\n\"Same as when you were here. If I have to read it and click OK, it's not happening between ambulances.\" — ED Intake Nurse, P21 (returning from 2025-04-22-contextual-inquiry-ed-intake-shadowing)\n\"I start the paper sheet at the top of every shift. By the time the system's crawling, it's too late to start one.\" — ED Intake Nurse, P21 (returning from 2025-04-22-contextual-inquiry-ed-intake-shadowing)\nRecommendations\nKeep the ED intake boundary as it is: no AI feature at intake during peak that needs review attention.\nTreat the paper sheet as part of the intake workflow, not a fallback, when scoping anything for this setting: any feature has to work alongside it and survive re-entry from it.\nIf ED intake is revisited, look at post-peak re-entry from the paper sheet as a separate, lower-pressure task.\nFollow-ups / Open Questions\nWhat causes the system slowness, and how often it happens, is still not known; the April 2025 question to IT is unanswered in the corpus, and the only frequency on record is the 2025 staff self-report (several times a shift).\nWhether the insurance-card photo pre-fill for registration clerks has been piloted is not recorded; it was not discussed with this participant.\nWhether the 2-4 minute interruption figure still holds would need another peak-hour observation.",
+      "date": "Apr 14, 2026"
     },
     "raw:2026-04-28-interview-nurse-practitioner-session-lock-shared-workstations#0": {
       "title": "Interview — Nurse Practitioner on Session Lock and Shared Exam-Room Workstations",
