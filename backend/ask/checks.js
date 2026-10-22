@@ -277,17 +277,36 @@ function isCorrection(source) {
     return Boolean(source.correction) || CORRECTION_HEADING_RE.test(source.section || '');
 }
 
-// Figures in `text` (dates already taken out) that a cited correction
-// passage has only inside a quotation in its excerpt (the superseded claim
-// it quotes: 'session-notes.md says "4 of 5 clinicians…"') and no cited
-// source has outside one. [] when no cited source is a correction.
+// A correction heading as a line of a whole-note excerpt (ask/corpus.js
+// wholeNotesText writes each heading on its own line, and a session's
+// correction file always comes after its own sections). A passage never
+// holds a heading line, since passages don't straddle headings.
+const CORRECTION_LINE_RE = new RegExp(CORRECTION_HEADING_RE.source, 'm');
+
+// The correction text in a source's excerpt: all of it for a correction
+// passage; for a whole-note source (wholeRawNotes), everything from its
+// first correction heading line on; otherwise null.
+function correctionExcerpt(source) {
+    const excerpt = String(source.excerpt || '');
+    if (isCorrection(source)) return excerpt;
+    const m = CORRECTION_LINE_RE.exec(excerpt);
+    return m ? excerpt.slice(m.index) : null;
+}
+
+// Figures in `text` (dates already taken out) that a cited source's
+// correction text has only inside a quotation (the superseded claim it
+// quotes: 'session-notes.md says "4 of 5 clinicians…"') and no cited source
+// has outside one. A whole-note source offers only its correction text as
+// evidence here, not the original notes above it, which state the
+// superseded claim unquoted; another cited source's notes still count.
+// [] when no cited source has correction text.
 function quotedOnlyFigures(text, sources) {
-    const corrections = sources.filter(isCorrection);
-    if (corrections.length === 0) return [];
-    const quoted = corrections.flatMap((s) => String(s.excerpt || '').match(QUOTE_RE) || []).join('\n');
-    const unquoted = sources.map((s) => sourceEvidence(isCorrection(s)
-        ? { ...s, excerpt: String(s.excerpt || '').replace(QUOTE_RE, ' ') }
-        : s)).join('\n');
+    const corrections = sources.map(correctionExcerpt);
+    if (corrections.every((c) => c === null)) return [];
+    const quoted = corrections.flatMap((c) => (c || '').match(QUOTE_RE) || []).join('\n');
+    const unquoted = sources.map((s, i) => sourceEvidence(corrections[i] === null
+        ? s
+        : { ...s, excerpt: corrections[i].replace(QUOTE_RE, ' ') })).join('\n');
     const inQuote = new Set([...numbersIn(quoted), ...countPairsIn(quoted)]);
     const outside = new Set([...numbersIn(unquoted), ...countPairsIn(unquoted)]);
     return [...new Set(numbersIn(text)), ...new Set(countPairsIn(text))]
@@ -313,7 +332,8 @@ function quotedOnlyFigures(text, sources) {
 //   narrow       not a decline, cites something, names a plural role
 //                (PLURAL_ROLE_RE), and rosterTotal is 2 or fewer
 //   quoted       figures, in unsupported's units, that only a cited
-//                correction passage's quotation holds (quotedOnlyFigures)
+//                correction passage's quotation holds, or the correction
+//                section of a cited whole-note source (quotedOnlyFigures)
 function analyseAnswer(answer, sources, question = '', shown = []) {
     return answerSentences(answer).map((sentence) => {
         const own = [...new Set(sentence.markers)];
@@ -372,7 +392,8 @@ function analyseAnswer(answer, sources, question = '', shown = []) {
 //                       sentence citing no roster (findings, deliverables)
 //                       is never flagged.
 //   quotedFigures       figures a sentence takes only from a cited correction
-//                       passage's quotation of the claim it corrects, once
+//                       passage's (or whole-note source's correction
+//                       section's) quotation of the claim it corrects, once
 //                       per sentence. Non-failing: a sentence reporting both
 //                       the old figure and the corrected one is flagged too.
 // Each is [] when the answer is clean.

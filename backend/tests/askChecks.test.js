@@ -595,5 +595,52 @@ describe('checkAnswer', () => {
             const answer = 'The notes said 4 of 5, but all 4 shadowed clinicians assumed the draft was lost [1].';
             expect(quoted(answer, [SESSION_LOCK])).toEqual(['4 of 5']);
         });
+
+        describe('in a whole-note source (wholeRawNotes)', () => {
+            // raw:2026-02-17-session-lock-during-dictation#notes as
+            // wholeNotesText builds it, abridged: the original notes state
+            // "4 of 5" unquoted, and the appended correction quotes them.
+            const NOTES = [
+                'Key Findings',
+                '[CRITICAL] (silent draft loss) In the current build, a session lock mid-recording simply freezes the ambient-scribe widget with no message; 4 of 5 clinicians assumed the draft was lost and started re-dictating from scratch after re-authenticating.',
+                'Representative Quotes',
+                '"I genuinely thought I\'d lost it. I\'ve just gotten used to starting over when the screen locks, so I didn\'t even try to check." — Physician, Family Medicine, P31',
+            ].join('\n');
+            const CORRECTION = [
+                'Correction (2026-09-27)',
+                'Filed 2026-09-27 as correction-2026-09-27.md in this session\'s folder. The original notes above are unchanged.',
+                'Correction (2026-09-27): Draft-loss result',
+                'session-notes.md says "4 of 5 clinicians assumed the draft was lost." Only the 4 shadowed clinicians went through a lock during dictation, so this means all 4 clinicians assumed the draft was lost and started dictating again after they re-authenticated.',
+            ].join('\n');
+            const WHOLE = {
+                ...SESSION_LOCK,
+                id: 'raw:2026-02-17-session-lock-during-dictation#notes',
+                section: null,
+                excerpt: `${NOTES}\n${CORRECTION}`,
+            };
+
+            it('flags "4 of 5" from the correction section\'s quotation, though the notes above state it unquoted', () => {
+                const answer = '4 of 5 clinicians assumed the draft was lost and started dictating again after they re-authenticated [1].';
+                expect(checkAnswer(answer, [WHOLE])).toEqual({ ...CLEAN, quotedFigures: ['4 of 5'] });
+            });
+
+            it('doesn’t flag the corrected figure', () => {
+                expect(quoted('All 4 clinicians assumed the draft was lost [1].', [WHOLE])).toEqual([]);
+            });
+
+            it('flags only the quoted figure in a sentence that also reports the corrected one, as for a passage', () => {
+                const answer = 'The notes said 4 of 5, but all 4 shadowed clinicians assumed the draft was lost [1].';
+                expect(quoted(answer, [WHOLE])).toEqual(['4 of 5']);
+            });
+
+            it('doesn’t flag a figure from a whole note without a correction section', () => {
+                expect(quoted('4 of 5 clinicians assumed the draft was lost [1].', [{ ...WHOLE, excerpt: NOTES }])).toEqual([]);
+            });
+
+            it('doesn’t flag a figure another cited source states outside a quotation', () => {
+                const finding = source('finding:ambient-scribe', 'Ambient scribe', 'Findings', '4 of 5 clinicians assumed the draft was lost.');
+                expect(quoted('4 of 5 clinicians assumed the draft was lost [1][2].', [WHOLE, finding])).toEqual([]);
+            });
+        });
     });
 });
