@@ -556,7 +556,7 @@
     {
       "id": "rationale-medflag-placement",
       "set": "rationale",
-      "status": "draft",
+      "status": "reviewed",
       "question": "Why is the sound-alike medication flag placed inline after the drug name rather than in the right-hand margin?",
       "project": null,
       "supportingRecords": [
@@ -585,7 +585,7 @@
     {
       "id": "rationale-medflag-unflagged-tip",
       "set": "rationale",
-      "status": "draft",
+      "status": "reviewed",
       "question": "Why does the sound-alike medication flag come with a one-time tip about unflagged lines?",
       "project": null,
       "supportingRecords": [
@@ -615,7 +615,7 @@
     {
       "id": "rationale-medflag-open",
       "set": "rationale",
-      "status": "draft",
+      "status": "reviewed",
       "question": "What is still open about the sound-alike medication flag?",
       "project": null,
       "supportingRecords": [
@@ -658,7 +658,7 @@
     {
       "id": "rationale-setup-invite-timing",
       "set": "rationale",
-      "status": "draft",
+      "status": "reviewed",
       "question": "Why doesn't the Compass AI practice setup flow show when the invite email is sent?",
       "project": null,
       "supportingRecords": [
@@ -693,7 +693,7 @@
     {
       "id": "rationale-calendar-send-to-it",
       "set": "rationale",
-      "status": "draft",
+      "status": "reviewed",
       "question": "Why does the Connect calendar step get a \"Send to IT for approval\" branch instead of a skip option?",
       "project": null,
       "supportingRecords": [
@@ -734,7 +734,7 @@
     {
       "id": "rationale-session-lock-paused-state",
       "set": "rationale",
-      "status": "draft",
+      "status": "reviewed",
       "question": "Why does the session lock recovery flow add a paused state instead of changing the idle timeout?",
       "project": null,
       "supportingRecords": [
@@ -772,7 +772,7 @@
     {
       "id": "rationale-confidence-two-state",
       "set": "rationale",
-      "status": "draft",
+      "status": "reviewed",
       "question": "Why does the confidence-highlighted draft review leave high-confidence lines unmarked?",
       "project": null,
       "supportingRecords": [

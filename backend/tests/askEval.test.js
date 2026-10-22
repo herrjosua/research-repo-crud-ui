@@ -95,9 +95,9 @@ describe('gold claim patterns', () => {
         expect(gold.entries.filter((e) => e.set !== 'rationale' && e.status !== 'reviewed').map((e) => e.id)).toEqual([]);
     });
 
-    // Drafts until a person reviews them against the raw sessions.
-    it('has 7 rationale entries, all drafts', () => {
-        expect(gold.entries.filter((e) => e.set === 'rationale').map((e) => e.status)).toEqual(Array(7).fill('draft'));
+    // Reviewed by a person against the raw sessions they cite.
+    it('has 7 rationale entries, all reviewed', () => {
+        expect(gold.entries.filter((e) => e.set === 'rationale').map((e) => e.status)).toEqual(Array(7).fill('reviewed'));
     });
 
     // The open-questions entries: a decline must fail, so none may accept one.
