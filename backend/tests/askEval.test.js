@@ -1,7 +1,7 @@
 const { GOLD_FILE, loadGold, validateGold } = require('../ask/eval/gold');
 const { answerSentences, analyseAnswer, summariseSentences } = require('../ask/checks');
 const {
-    judgeRun, claimText, renderReport, renderComparison, parseArgs, withBehaviors, thinkRequest, withPromptSources, runRetrieval,
+    judgeRun, claimText, renderReport, renderComparison, parseArgs, withBehaviors, thinkRequest, withPromptSources, runRetrieval, entriesToAsk,
 } = require('../scripts/eval-ask');
 const { createOllamaClient, finalAnswer } = require('../ask/ollama');
 const { withChatOptions, chatOverrides } = require('../scripts/capture-static-answers');
@@ -45,14 +45,22 @@ describe('gold set', () => {
         }
     });
 
+    it('accepts every gold set, rationale included', () => {
+        for (const set of ['regression', 'scenario', 'rationale']) {
+            const data = valid();
+            data.entries[0].set = set;
+            expect(validateGold(data)).toEqual([]);
+        }
+    });
+
     it.each([
         ['a wrong version', (d) => { d.version = 2; }, /version must be 1/],
         ['no entries', (d) => { d.entries = []; }, /entries must be a non-empty array/],
         ['a duplicate id', (d) => { d.entries.push({ ...d.entries[0] }); }, /duplicate id/],
         ['a bad id', (d) => { d.entries[0].id = 'Q 1'; }, /id must match/],
         ['an unknown status', (d) => { d.entries[0].status = 'approved'; }, /status must be one of draft, reviewed/],
-        ['a missing set', (d) => { delete d.entries[0].set; }, /set must be one of regression, scenario/],
-        ['an unknown set', (d) => { d.entries[0].set = 'smoke'; }, /set must be one of regression, scenario/],
+        ['a missing set', (d) => { delete d.entries[0].set; }, /set must be one of regression, scenario, rationale/],
+        ['an unknown set', (d) => { d.entries[0].set = 'smoke'; }, /set must be one of regression, scenario, rationale/],
         ['an empty question', (d) => { d.entries[0].question = ' '; }, /question must be a non-empty string/],
         ['a bad project', (d) => { d.entries[0].project = 'onboarding'; }, /project must be a project-\* tag or null/],
         ['no supporting records', (d) => { d.entries[0].supportingRecords = []; }, /supportingRecords must be a non-empty array/],
@@ -81,10 +89,15 @@ describe('gold claim patterns', () => {
     const matches = (claim, answer) => new RegExp(claim.pattern, 'i').test(claimText(answer));
     const anyForbidden = (id, answer) => entry(id).mustNotClaims.filter((claim) => matches(claim, answer)).map((c) => c.description);
 
-    it('has every entry reviewed', () => {
+    it('has every regression and scenario entry reviewed', () => {
         expect(gold.entries.filter((e) => e.set === 'regression')).toHaveLength(10);
         expect(gold.entries.filter((e) => e.set === 'scenario')).toHaveLength(7);
-        expect(gold.entries.filter((e) => e.status !== 'reviewed').map((e) => e.id)).toEqual([]);
+        expect(gold.entries.filter((e) => e.set !== 'rationale' && e.status !== 'reviewed').map((e) => e.id)).toEqual([]);
+    });
+
+    // Drafts until a person reviews them against the raw sessions.
+    it('has 7 rationale entries, all drafts', () => {
+        expect(gold.entries.filter((e) => e.set === 'rationale').map((e) => e.status)).toEqual(Array(7).fill('draft'));
     });
 
     // The open-questions entries: a decline must fail, so none may accept one.
@@ -635,6 +648,42 @@ describe('eval --model', () => {
         expect(parseArgs(['run', '--label', 'x']).model).toBeNull();
         expect(parseArgs(['run', '--label', 'x', '--model', 'qwen3:32b']).model).toBe('qwen3:32b');
         expect(() => parseArgs(['run', '--label', 'x', '--model', 'bad model'])).toThrow(/--model/);
+    });
+});
+
+describe('eval --set', () => {
+    it('takes a gold set name, and is unset by default', () => {
+        expect(parseArgs(['run', '--label', 'x']).set).toBeNull();
+        expect(parseArgs(['run', '--label', 'x', '--set', 'rationale']).set).toBe('rationale');
+        expect(parseArgs(['run', '--label', 'x', '--set', 'scenario']).set).toBe('scenario');
+        expect(() => parseArgs(['run', '--label', 'x', '--set', 'smoke'])).toThrow(/--set must be one of regression, scenario, rationale/);
+    });
+});
+
+// Which checked-in entries a run asks: a set added later must not change a
+// plain run, so old and new baselines stay comparable.
+describe('eval run entry selection', () => {
+    const gold = loadGold(GOLD_FILE);
+    const ids = (entries) => entries.map((e) => e.id);
+    const existing = gold.entries.filter((e) => e.set === 'regression' || e.set === 'scenario');
+
+    it('asks exactly the 17 regression and scenario entries without --set', () => {
+        expect(existing).toHaveLength(17);
+        expect(ids(entriesToAsk(gold))).toEqual(ids(existing));
+        expect(ids(entriesToAsk(gold, { set: null, only: null }))).toEqual(ids(existing));
+    });
+
+    it('asks only the 7 rationale entries with --set rationale', () => {
+        const rationale = entriesToAsk(gold, { set: 'rationale' });
+        expect(rationale).toHaveLength(7);
+        expect(rationale.every((e) => e.set === 'rationale')).toBe(true);
+        expect(ids(rationale)).toEqual(ids(gold.entries.filter((e) => e.set === 'rationale')));
+    });
+
+    it('keeps --only within the set, and rejects an id outside it', () => {
+        expect(ids(entriesToAsk(gold, { set: 'rationale', only: ['rationale-medflag-open'] }))).toEqual(['rationale-medflag-open']);
+        expect(() => entriesToAsk(gold, { only: ['rationale-medflag-open'] })).toThrow(/--only: no gold entry rationale-medflag-open/);
+        expect(() => entriesToAsk(gold, { set: 'rationale', only: ['audit-burnout-share'] })).toThrow(/in the rationale set/);
     });
 });
 

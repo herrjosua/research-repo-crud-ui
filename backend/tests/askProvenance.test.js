@@ -342,12 +342,19 @@ describe('followUps: Follow-ups passages for "what is unresolved" questions', ()
     const timeout = { ...RETRIEVAL, topK: 3, wholeRawNotes: 0 };
 
     describe('the trigger', () => {
-        const gold = loadGold().entries;
+        const all = loadGold().entries;
+        const gold = all.filter((e) => e.set === 'regression' || e.set === 'scenario');
         const TARGETS = ['scenario-care-coordinator-gaps', 'scenario-session-timeout-open'];
 
         it('fires on the two open-questions gold entries and none of the other 15', () => {
             expect(gold).toHaveLength(17);
             expect(gold.filter((e) => asksWhatIsUnresolved(e.question)).map((e) => e.id).sort()).toEqual(TARGETS);
+        });
+
+        // Only matters with followUps on, which the default retrieval isn't.
+        it('fires on one rationale entry, the open-items one', () => {
+            const rationale = all.filter((e) => e.set === 'rationale');
+            expect(rationale.filter((e) => asksWhatIsUnresolved(e.question)).map((e) => e.id)).toEqual(['rationale-medflag-open']);
         });
 
         it('ignores case and reads curly apostrophes as straight ones', () => {
