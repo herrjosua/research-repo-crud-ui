@@ -1915,3 +1915,24 @@ and the two figure-check gaps from decision 24 ("N of the M" not read as
 a count, "four of the five" in evidence giving a false flag).
 `isDecline`, `DECLINE_RE`, the figure logic and the sentence splitter are
 unchanged.
+
+**Update (2026-10-22):** `quotedFigures` now also reads a whole-note
+source (`wholeRawNotes`, the default, id `<record id>#notes`). Its
+section is empty, so it never counted as a correction passage, but
+`wholeNotesText` keeps each heading as its own line and a session's
+correction file always comes last. Everything from the excerpt's first
+line matching `CORRECTION_HEADING_RE` on is treated as correction text:
+its quoted figures count as quoted, and its unquoted text is the
+source's only evidence outside a quotation. The original notes above it
+don't count, because they state the superseded claim unquoted (the
+session-lock notes say "4 of 5 clinicians assumed…" in Key Findings), so
+counting them would mean the flag never fires. Another cited source's
+evidence still counts, as before. Correction passages and stored runs
+with only a correction `section` are read as before, and `isCorrection`
+and `unsupportedFigures` are unchanged. Re-judging
+`rebaseline-09d985b-w3` and `rebaseline-09d985b-w3-scenarios` with
+`report` gives identical reports before and after, because no stored
+answer that cites a whole note with a correction uses a quoted-only
+figure. A new known limit: a whole-note source's quoted figure that the
+correction didn't supersede (P17's "40 minutes", where only the speaker's
+label was corrected) is flagged when only that note is cited.
