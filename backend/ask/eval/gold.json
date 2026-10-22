@@ -552,6 +552,260 @@
         }
       ],
       "evidence": "Open questions, no acceptDecline: a decline citing nothing fails. Raw IT Security interview 2025-05-20 (research/raw/2025-05-20-interview-it-security-sso-mfa-modernization/session-notes.md, stakeholder interview, attitudinal): \"re-authentication requirement every 15 minutes, down from the current 4 hours\"; P31: \"Security wants 15 minutes, clinical ops wants 4 hours, and nobody's told me yet who wins that argument\"; \"new MFA plan hasn't yet been confirmed to work with the existing badge-tap hardware\"; Follow-ups: \"Confirm badge-tap hardware compatibility with new MFA plan.\" Required because it holds two of the three open items and ranked #11, unshown, in the coverage report. Raw contextual inquiry 2026-02-17 (research/raw/2026-02-17-session-lock-during-dictation/session-notes.md, behavioral plus an IT Security interview): \"IT Security confirmed the 10-minute idle timeout is not adjustable per-feature\"; \"4 of 5 clinicians assumed the draft was lost … even though the draft is server-side and actually survives the lock\"; Follow-ups: \"Re-test the abandon-and-redictate behavior once the explicit paused state ships, to confirm it actually changes clinician behavior and not just their stated understanding.\" and whether the pattern should \"extend to other session-timeout-adjacent surfaces\" (credit, not required). finding:scope-boundaries-and-workflow-fit: \"The raw notes don't say whether that settles this dispute or is a separate idle-lock setting.\" The schema allows one required raw session; a full answer needs both. Coverage report: the pipeline cited two findings, no raw; it referred to \"this dispute\" without naming it and missed badge-tap. Expected to fail on today's answers."
+    },
+    {
+      "id": "rationale-medflag-placement",
+      "set": "rationale",
+      "status": "reviewed",
+      "question": "Why is the sound-alike medication flag placed inline after the drug name rather than in the right-hand margin?",
+      "project": null,
+      "supportingRecords": [
+        "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+        "deliverable:wireframes/ambient-scribe-medication-flag",
+        "deliverable:thumbnails/medication-flag-placement-explorations"
+      ],
+      "requiredRawRecord": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+      "mustClaims": [
+        {
+          "description": "Inline was preferred 5:1 over the margin badge (\"5:1\", \"five to one\", or 5 of 6 preferring inline)",
+          "pattern": "\\b5\\s*(:|to)\\s*1\\b|\\bfive[- ]to[- ]one\\b|\\b(5|five) (of|out of) (the )?(6|six)\\b[^.]{0,80}\\b(prefer|favou?r|chose|inline)\\w*|\\b(prefer|favou?r|chose|inline)\\w*[^.]{0,80}\\b(5|five) (of|out of) (the )?(6|six)\\b"
+        },
+        {
+          "description": "The reason: participants didn't want to look away from the text to check a flag",
+          "pattern": "\\blook(ing|ed)? away\\b|\\bglanc\\w* away\\b|\\beyes off\\b|\\beyes on the (text|note|line|draft)\\b|\\baway from the (text|note|line|draft|medication)\\b|\\bstay\\w* (in|with|on) the (text|line|note)\\b"
+        },
+        {
+          "description": "Observed vs proposed: in one sentence, contrasts the 5:1 test result with the layout details (amber pill, hover/tap copy) the designer specified",
+          "pattern": "\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b[^.]{0,250}\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b|\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b[^.]{0,250}\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b"
+        }
+      ],
+      "mustNotClaims": [],
+      "evidence": "Wireframe wireframes/ambient-scribe-medication-flag.md `:29-30`: \"inline, immediately after the medication name — tested 5:1 over a right-hand margin badge, since participants didn't want to look away from the text.\" Raw usability test 2026-02-10 (research/raw/2026-02-10-ambient-scribe-medication-flag-concept/session-notes.md, 6 participants, researcher Priya Patel) `:43-45`: \"**[LOW]** *(placement)* Badge placement inline with the medication name (vs. in a right-hand margin, tested as an alternate) was preferred 5:1 — participants didn't want to look away from the text to check a flag.\" Rec 1 `:60-61`: \"Build the distinct medication-safety flag as its own variant, inline with the medication name\". participants.md `:20`: \"**Count:** 6\". Thumbnails thumbnails/medication-flag-placement-explorations.md `:20-24` say the same and add that option 3 (modal interrupt) was dropped by the designer before testing (`:25-27`), so it has no participant result. Observed vs proposed: the wireframe's Evidence basis (`:21`) says \"illustrative (the layout, the hover/tap copy and the tip's wording are the designer's spec, not recorded in the test)\". Differs from the ticket's draft: the raw says \"preferred 5:1\", a stated preference rated [LOW], not \"tested 5:1\" as a performance result. No must-not: an answer naturally echoes \"inline (vs. a right-hand margin) was preferred\", which a \"margin was preferred\" pattern would catch."
+    },
+    {
+      "id": "rationale-medflag-unflagged-tip",
+      "set": "rationale",
+      "status": "reviewed",
+      "question": "Why does the sound-alike medication flag come with a one-time tip about unflagged lines?",
+      "project": null,
+      "supportingRecords": [
+        "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+        "deliverable:wireframes/ambient-scribe-medication-flag",
+        "finding:ambient-scribe-post-ga-refinements"
+      ],
+      "requiredRawRecord": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+      "mustClaims": [
+        {
+          "description": "2 of 6 participants (or two participants) said the flag would make them trust unflagged medication lines more",
+          "pattern": "\\b(2|two)( (of|out of) (the )?(6|six))?( participants?| clinicians?| people| testers)?\\b[^.]{0,160}\\b(unflagged|un-flagged|not flagged|without (a|the|this) (flag|badge)|no (flag|badge)|isn't flagged|aren't flagged)|\\b(unflagged|un-flagged|not flagged)\\b[^.]{0,160}\\b(2|two) (of|out of) (the )?(6|six)\\b"
+        },
+        {
+          "description": "Observed vs proposed: in one sentence, contrasts what participants said (self-reported over-trust) with the tip as a proposal (the designer's spec, or the session's recommendation)",
+          "pattern": "\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b[^.]{0,250}\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b|\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b[^.]{0,250}\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b"
+        }
+      ],
+      "mustNotClaims": [
+        {
+          "description": "Presents the over-trust as observed behaviour: participants missed, accepted or signed errors on unflagged lines",
+          "pattern": "\\b(2|two)( (of|out of) (the )?(6|six))?( participants?| clinicians?)?\\b[^.]{0,60}\\b(missed|accepted|signed|approved|overlooked|let through)\\b[^.]{0,60}\\b(error|mistake|wrong|incorrect)\\w*|\\b(observed|watched|saw)\\b[^.]{0,40}\\bover-?trust"
+        }
+      ],
+      "evidence": "Wireframe `:35-37`: \"a one-time inline tip, shown the first time a clinician encounters the flag, stating that lines *without* this flag still warrant normal review — directly addressing the over-trust-on-unflagged-lines risk found in 2 of 6 concept-test participants.\" Raw 2026-02-10 `:40-42`: \"**[MEDIUM]** *(over-trust risk)* 2 participants said the badge's specificity made them *more* likely to treat unflagged medication lines as automatically correct — the opposite of the intended effect, and worth watching as adoption scales.\" Quote `:55-57` (P24): \"If it's not flagged, I might just... trust it more than I should.\" Rec 2 `:62-64`: \"Before rollout, pair the flag with brief onboarding copy or training-pilot messaging that explicitly counters the over-trust-on-unflagged-lines risk surfaced by 2 of 6 participants\". Open question `:71-72`: re-check \"once the post-GA monitoring dashboard ... has real error-rate data to compare against self-reported behavior.\" finding:ambient-scribe-post-ga-refinements `:36-38`: \"2 of 6 participants said the flag's specificity made them trust *unflagged* medication lines more than they should.\" Differs from the ticket's draft: \"over-trust ... in 2 of 6\" was self-reported (\"said\"), not observed; and the raw recommends \"onboarding copy or training-pilot messaging\". The one-time inline tip and its wording are the designer's spec (wireframe `:21`)."
+    },
+    {
+      "id": "rationale-medflag-open",
+      "set": "rationale",
+      "status": "reviewed",
+      "question": "What is still open about the sound-alike medication flag?",
+      "project": null,
+      "supportingRecords": [
+        "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+        "deliverable:wireframes/ambient-scribe-medication-flag",
+        "finding:ambient-scribe-post-ga-refinements",
+        "finding:ambient-scribe"
+      ],
+      "requiredRawRecord": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+      "mustClaims": [
+        {
+          "description": "A larger-N validation pass is needed before a build-ready spec",
+          "pattern": "\\blarger[- ]?(n\\b|sample|group|study|validation|cohort|test)|\\bmore participants\\b|\\bbigger (sample|study|group|test)\\b|\\b(larger|broader|further|bigger)\\b[^.]{0,30}\\bvalidat\\w*|\\bvalidation (pass|study|round)\\b"
+        },
+        {
+          "description": "Detection-threshold tuning is left to whoever tunes detection (engineering): \"threshold\" within 80 characters of detection, tuning, tuned or engineering",
+          "pattern": "\\bthreshold\\w*\\b[^.]{0,80}\\b(detect\\w*|tun(e|es|ed|ing)|engineer\\w*)\\b|\\b(detect\\w*|tun(e|es|ed|ing)|engineer\\w*)\\b[^.]{0,80}\\bthreshold"
+        },
+        {
+          "description": "The over-trust risk is to be re-checked against real error-rate data from the post-GA monitoring dashboard",
+          "pattern": "\\berror[- ]rate|\\bmonitoring dashboard\\b|\\bpost-?GA (monitoring|data|dashboard)\\b|\\breal(-world)? (error|usage) data\\b"
+        },
+        {
+          "description": "Observed vs proposed: in one sentence, contrasts what the concept test found with what the designer specified or the session proposed",
+          "pattern": "\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b[^.]{0,250}\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b|\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b[^.]{0,250}\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b"
+        }
+      ],
+      "mustNotClaims": [
+        {
+          "description": "Says the seeded false positive annoyed participants or was rejected",
+          "pattern": "\\bfalse positive\\b[^.]{0,120}(?<!\\bnot )(?<!\\bnot as )\\b(annoying|annoyed|rejected|disliked|irritat\\w*)\\b"
+        },
+        {
+          "description": "Says the flag has shipped or is live",
+          "pattern": "\\b(flag|badge)\\b[^.]{0,60}\\b(has|have) (now )?(shipped|launched|rolled out|been (shipped|launched|rolled out|released|deployed))\\b|\\b(flag|badge) is (now )?(live|in production|shipping)\\b"
+        }
+      ],
+      "evidence": "Raw 2026-02-10 Follow-ups `:70`: \"Needs a larger-N validation pass before this moves from concept test to build-ready spec.\" `:71-72`: \"Over-trust-on-unflagged risk should be checked again once the post-GA monitoring dashboard (recommended 2026-01-13) has real error-rate data to compare against self-reported behavior.\" Rec 3 `:65-67`: \"Feed the false-positive tolerance finding to whoever tunes the sound-alike detection threshold\". Key Findings `:46-48`: \"One deliberately-seeded false positive (a real but unusual drug name) was accepted by all 6 participants as \"worth a second look, not annoying\"\". Wireframe `:38-41` (\"Open item\"): \"final threshold tuning is an engineering/detection decision, not a layout decision, and is out of scope for this wireframe.\" Wireframe `:21`: layout, hover/tap copy and tip wording are the designer's spec; `:23-24`: the test \"calls for a larger-N validation pass before a build-ready spec.\" finding:ambient-scribe `:100-101`: \"The distinct medication flag has not shipped\". Differs from the ticket's draft: (1) the seeded false positive is a finding, not an open item; the wireframe files it under \"Open item\" only to hand threshold tuning to detection. (2) The draft leaves out the raw's second open question, re-checking over-trust against real error-rate data; it is added here as a must-claim. (3) \"Threshold tuning is a detection decision\" is the wireframe's scoping; the raw only says to feed the tolerance result to whoever tunes it. Not required, but a fair answer may add it: whether the flag stays visible to readers of signed notes (finding:ambient-scribe-post-ga-refinements `:39-45`, from raw 2026-09-15 `:30`, `:45`), which the wireframe doesn't cite."
+    },
+    {
+      "id": "rationale-setup-invite-timing",
+      "set": "rationale",
+      "status": "reviewed",
+      "question": "Why doesn't the Compass AI practice setup flow show when the invite email is sent?",
+      "project": null,
+      "supportingRecords": [
+        "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+        "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+        "finding:compass-ai-practice-setup",
+        "deliverable:research-readouts/compass-ai-practice-setup-q1-readout"
+      ],
+      "requiredRawRecord": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+      "mustClaims": [
+        {
+          "description": "It isn't recorded: the step 4 screen doesn't say and the notes don't record when the build sends it",
+          "pattern": "(\\bnot\\b|n't\\b|\\bnever\\b|\\bno one\\b|\\bnobody\\b)[^.]{0,40}\\b(record\\w*|document\\w*|known|know|knew|say|says|said|state[sd]?|show\\w*|specif\\w*)\\b|\\b(unrecorded|undocumented|unknown)\\b|\\bno record\\b"
+        },
+        {
+          "description": "The open question: at step 4 (Invite your team) or at Review & finish",
+          "pattern": "\\b(step 4|step four|invite your team)\\b[^.]{0,140}\\breview (&|and) finish\\b|\\breview (&|and) finish\\b[^.]{0,140}\\b(step 4|step four|invite your team)\\b"
+        },
+        {
+          "description": "Observed vs proposed: a found-vs-proposed contrast in one sentence, or that showing the timing on screen is the session's recommendation, or that no decision is recorded",
+          "pattern": "\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b[^.]{0,250}\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b|\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b[^.]{0,250}\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b|\\brecommend\\w*\\b[^.]{0,150}\\b(screen|step 4|step four|invite your team)\\b[^.]{0,80}\\b(when|timing)\\b|\\b(say|says|saying|state|states|stating|show|shows|showing)\\b[^.]{0,40}\\b(when|timing)\\b[^.]{0,120}\\brecommend\\w*|\\bno decision\\b|\\bdecision\\b[^.]{0,40}\\b(isn't|is not|wasn't|was not|not)\\b[^.]{0,20}\\brecorded\\b|\\b(nothing|none of (these|them)) (has been|was|is) decided\\b"
+        }
+      ],
+      "mustNotClaims": [
+        {
+          "description": "States as fact that the email is sent at step 4 or at Review & finish (\"whether\", \"if\", \"not sure\" or \"unclear\" before it doesn't count)",
+          "pattern": "(?<!\\b(whether|if|unclear|unknown|sure|know|say|says|record|recorded|question)\\b[^.]{0,80})\\b(email|emails|invites?|invitations?)\\b[^.]{0,20}\\b(is|are|gets|get|goes|go) (sent|out|delivered)\\b[^.]{0,20}\\b(at|when|after|on|upon|once)\\b[^.]{0,30}\\b(step 4|step four|invite your team|review (&|and) finish|they finish)"
+        }
+      ],
+      "evidence": "User flow user-flows/compass-ai-practice-setup-five-step-flow.md `:21`: \"This is the flow as built, not a redesign, and it adds no recommendation.\" `:57-60`: \"**When the invite email is sent.** The notes \"don't record when this build sends it\" ... and the question is left open: \"When does this build send the invite email: at step 4 or at Review & finish?\" ... This flow places the email at neither step.\" Raw usability test 2026-02-03 (research/raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md) `:46-47`: \"The step 4 screen doesn't say when the invite email is sent, and these notes don't record when this build sends it.\" `:53`: \"3 of 4 Practice Administrators (P154, P156, P157) hesitated at Invite your team. They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked\". Rec 3 `:77`: \"Say on the Invite your team screen when the invite email is sent.\" Open question `:84`: \"When does this build send the invite email: at step 4 or at Review & finish?\" finding:compass-ai-practice-setup `:107`: \"When this build sends the invite email isn't recorded\". Readout `:148`, `:152`: recommendation 5, and \"No decision on any of these is recorded.\" Avoids overlap with scenario-invite-expectation (what administrators expected) and onboarding-invite-worry (what worried them): this asks why the flow leaves timing out."
+    },
+    {
+      "id": "rationale-calendar-send-to-it",
+      "set": "rationale",
+      "status": "reviewed",
+      "question": "Why does the Connect calendar step get a \"Send to IT for approval\" branch instead of a skip option?",
+      "project": null,
+      "supportingRecords": [
+        "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+        "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+        "deliverable:wireflows/compass-ai-connect-calendar-send-to-it",
+        "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval",
+        "finding:compass-ai-practice-setup",
+        "deliverable:research-readouts/compass-ai-practice-setup-q1-readout"
+      ],
+      "requiredRawRecord": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+      "mustClaims": [
+        {
+          "description": "3 of 4 Practice Administrators stopped at Connect calendar",
+          "pattern": "\\b(3|three) (of|out of) (the )?(4|four)\\b[^.]{0,150}\\b(stop|stall|halt|wouldn't|would not|didn't|did not|refus|hesitat|paus)\\w*|\\b(stop|stall|halt|refus|hesitat|paus)\\w*[^.]{0,100}\\b(3|three) (of|out of) (the )?(4|four)\\b"
+        },
+        {
+          "description": "Why: they didn't think they could approve it, it was IT's decision, and (in one IT Administrator's account) privacy review requests are filed by IT",
+          "pattern": "\\bIT'?s (decision|call)\\b|\\bnot (theirs|their call|their decision|my call|mine)\\b|\\b(couldn't|could not|can't|cannot|didn't think they could|did not think they could|not able to|unable to) (approve|authori[sz]e|put in|file|start)\\b|\\bprivacy review\\b"
+        },
+        {
+          "description": "No skip: the build has no \"Connect later\" or \"Skip for now\", and the branch hands the decision to IT rather than skipping the step",
+          "pattern": "(\\bno\\b|\\bnot\\b|n't\\b|\\bwithout\\b|\\brather than\\b|\\binstead of\\b|\\bnever\\b)[^.]{0,40}\\bskip|\\bconnect later\\b|\\bskip\\w*\\b[^.]{0,60}\\b(isn't|is not|not|no)\\b"
+        },
+        {
+          "description": "Observed vs proposed: in one sentence, contrasts what the sessions found with the branch as a recommendation or the wireflow's illustrative, untested screens",
+          "pattern": "\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b[^.]{0,250}\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b|\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b[^.]{0,250}\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b"
+        }
+      ],
+      "mustNotClaims": [
+        {
+          "description": "Says a privacy review request for Compass AI has been filed, submitted or approved (\"whether\"/\"if\"/\"not known\" before it doesn't count)",
+          "pattern": "(?<!\\b(whether|if|unclear|unknown|known|know|sure)\\b[^.]{0,80})\\bprivacy review( request)?\\b[^.]{0,60}\\b(has been|have been|was|were|is) (filed|submitted|completed|approved|granted)\\b"
+        }
+      ],
+      "evidence": "Wireflow wireflows/compass-ai-connect-calendar-send-to-it.md `:19`: \"Illustrative: the screens and the order of the branch are this record's design; no session saw or tested them. The parts nobody recorded are shown as open ends, not designed.\" `:28-35` (why the branch, citing 2026-02-03 `:51`, `:61-62`, `:75-76` and 2026-02-24 `:40`; \"No decision on either is recorded\"). `:59-61`: \"No skip branch. The build has no \"Connect later\" and no \"Skip for now\" ... Send to IT for approval hands the decision to IT, it doesn't skip the step.\" Raw 2026-02-03 `:51`: \"3 of 4 Practice Administrators (P154, P155, P157) stopped at Connect calendar and wouldn't connect it: it gives Compass AI access to patient appointments, and they did not think they could approve that. Each said it was IT's decision.\" `:36-37`: \"There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it.\" `:75-76`: \"Add a \"Send to IT for approval\" path on Connect calendar for an administrator who can't approve the access themselves.\" Raw interview 2026-02-24 (research/raw/2026-02-24-interview-it-administrator-schedule-access-and-staff-invites/session-notes.md) `:29`: \"any new system that reads the appointment schedule needs a privacy review request before it is connected, and a Practice Administrator can't start one: requests are filed by IT ... They didn't know whether one had been filed for Compass AI.\" `:36-37` (P160): \"A practice admin can't put in that request. They call us, we file it.\" `:26`: \"This is their account of the approval process, not a review of its records.\" `:40`: the same route recommended. Readout `:152`: \"No decision on any of these is recorded.\" Required raw is 2026-02-03 (the stops, the no-skip build and the recommendation); 2026-02-24 is one IT Administrator's account. Distinct from scenario-calendar-premise, which asks why the step is required."
+    },
+    {
+      "id": "rationale-session-lock-paused-state",
+      "set": "rationale",
+      "status": "reviewed",
+      "question": "Why does the session lock recovery flow add a paused state instead of changing the idle timeout?",
+      "project": null,
+      "supportingRecords": [
+        "raw:2026-02-17-session-lock-during-dictation",
+        "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+        "finding:ambient-scribe-post-ga-refinements"
+      ],
+      "requiredRawRecord": "raw:2026-02-17-session-lock-during-dictation",
+      "mustClaims": [
+        {
+          "description": "The silent freeze was read as draft loss (clinicians assumed the draft was lost and re-dictated)",
+          "pattern": "\\b(assum|thought|believ|misread|mistook|read (it )?as|took it as|interpreted)\\w*[^.]{0,100}\\b(lost|loss|gone|deleted|wiped)\\b"
+        },
+        {
+          "description": "The draft actually survives the lock (server-side)",
+          "pattern": "\\bdraft\\b[^.]{0,100}\\b(surviv\\w*|preserv\\w*|server-side|intact|not (actually )?lost|wasn't lost|was not lost)|\\b(surviv\\w*|preserv\\w*|server-side)\\b[^.]{0,60}\\bdraft\\b"
+        },
+        {
+          "description": "IT Security: the (10-minute) idle timeout is fixed and can't be adjusted per feature, so the fix is in the UI",
+          "pattern": "\\b(timeout|time-out)\\b[^.]{0,120}\\b(fixed|not adjustable|can't be (changed|adjusted)|cannot be (changed|adjusted)|hard (policy )?constraint|policy|locked down|out of scope)\\b|\\bIT Security\\b[^.]{0,120}\\b(timeout|time-out)\\b"
+        },
+        {
+          "description": "Observed vs proposed: in one sentence, contrasts what the session observed with the flow as an untested design response or recommendation",
+          "pattern": "\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b[^.]{0,250}\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b|\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b[^.]{0,250}\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b"
+        }
+      ],
+      "mustNotClaims": [
+        {
+          "description": "Presents \"4 of 5\", \"four of five\", \"4/5\" or \"5 clinicians\" as the result; a sentence that frames it as the uncorrected figure (correct/correction, uncorrected, original(ly), \"the session notes say\", the raw or original notes, counted the IT Security stakeholder, miscount, or \"not\"/\"rather than\"/\"instead of\" right before it) doesn't count, but \"according to the session notes, 4 of 5\" does",
+          "pattern": "(?<!(\\bcorrect(ed|ion|ions)?\\b|\\buncorrected\\b|\\boriginal(ly)?\\b|\\bsession[- ]notes(\\.md)?[`\"']? (say|says|said|state|states|stated|report|reports|reported|record|recorded|count|counted|gave|give|had)\\b|\\b(raw|original|uncorrected) notes\\b|\\bcount(ed|ing)? the IT Security|\\bmis-?count\\w*|\\bover-?count\\w*)[^.]{0,200})(?<!\\b(not|rather than|instead of|than) [\"(]?)(\\b(4|four) (out )?of (5|five)\\b|\\b4/5\\b|\\b(5|five) (shadowed |observed )?clinicians\\b)(?![^.]{0,200}(\\bcorrect(ed|ion|ions)?\\b|\\buncorrected\\b|\\boriginal(ly)?\\b|\\bsession[- ]notes\\b|\\b(raw|original|uncorrected) notes\\b|\\bcount(ed|ing)? the IT Security|\\bIT Security (stakeholder )?(as a|was counted)|\\bmis-?count\\w*|\\bover-?count\\w*))"
+        }
+      ],
+      "evidence": "User flow user-flows/ambient-scribe-session-lock-recovery.md `:23`: \"The flow itself is a design response and hasn't been tested.\" `:28-30`: \"Per IT Security (interviewed in that session), the 10-minute idle-timeout policy itself is fixed and out of scope — this flow only changes what the UI communicates\". `:37-40`: \"This replaces today's silent freeze, which all 4 observed clinicians misread as data loss (see ... correction-2026-09-27.md).\" Raw contextual inquiry 2026-02-17 (research/raw/2026-02-17-session-lock-during-dictation/session-notes.md) `:38-41`: \"a session lock mid-recording simply freezes the ambient-scribe widget with no message; 4 of 5 clinicians assumed the draft was lost and started re-dictating from scratch after re-authenticating, even though the draft is server-side and actually survives the lock.\" `:49-51`: \"IT Security confirmed the 10-minute idle timeout is not adjustable per-feature, but confirmed an explicit \"paused, draft preserved\" UI state is technically straightforward to add without changing the timeout policy itself.\" `:62-64` (IT Security stakeholder): \"The timeout window itself is a hard policy constraint, but what the screen tells the clinician during that window is entirely a product decision\". Rec 2 `:69-70`; follow-up `:78-79`: \"Re-test the abandon-and-redictate behavior once the explicit paused state ships\". correction-2026-09-27.md `:41-43`: \"Only the 4 shadowed clinicians went through a lock during dictation, so this means **all 4 clinicians** assumed the draft was lost\". finding:ambient-scribe-post-ga-refinements `:59-60`: \"IT Security confirmed the 10-minute idle-timeout policy itself is fixed, but an explicit \"paused, draft preserved\" state is a UI-only fix, not a policy change.\" The must-not on \"4 of 5\" is audit-session-lock-draft-loss-count's, verbatim. Overlaps audit-session-timeout and scenario-session-timeout-open on the timeout; this one asks why the design changes the UI and not the policy. The \"one more annoying re-login\" framing (`:45-48`) is the session's \"likely\" inference, not required."
+    },
+    {
+      "id": "rationale-confidence-two-state",
+      "set": "rationale",
+      "status": "reviewed",
+      "question": "Why does the confidence-highlighted draft review leave high-confidence lines unmarked?",
+      "project": null,
+      "supportingRecords": [
+        "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate",
+        "deliverable:mockups/confidence-highlighted-draft-review",
+        "finding:ambient-scribe",
+        "raw:2026-03-19-interview-primary-care-physician-incidental-content-at-sign-off",
+        "raw:2026-06-30-interview-rheumatologist-medication-lines-in-scribe-drafts",
+        "raw:2026-07-28-interview-orthopedics-physician-assistant-exam-findings-in-scribe-drafts",
+        "raw:2026-09-22-interview-returning-internal-medicine-physician-edits-and-trust-over-time"
+      ],
+      "requiredRawRecord": "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate",
+      "mustClaims": [
+        {
+          "description": "4 of 6 participants said it let them skim high-confidence lines",
+          "pattern": "\\b(4|four) (of|out of) (the )?(6|six)\\b[^.]{0,160}\\bskim|\\bskim\\w*[^.]{0,160}\\b(4|four) (of|out of) (the )?(6|six)\\b"
+        },
+        {
+          "description": "Observed vs proposed: in one sentence, contrasts what the session recorded (the subtle underline, 4 of 6 skimming) with the designer's spec (unmarked high-confidence lines, hover, no medium tier)",
+          "pattern": "\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b[^.]{0,250}\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b|\\b(designer'?s?|design (spec|choice|decision|response|proposal)|spec(ification)?|illustrative|proposed|proposal|recommend\\w*|untested|not (been |yet )*(tested|recorded|validated|part of the test)|(isn't|is not|wasn't|was not|aren't|are not|weren't|were not|hasn't|has not|haven't|have not) (yet )?(been )?(tested|recorded|validated))\\b[^.]{0,250}\\b(observed|found|showed|shows|recorded|reported|said|preferred|(was|were) tested|test results?|the (concept |usability )?(test|session|study|research|notes|interview)s? (found|showed|shows|records?|recorded|observed|tested|says|said)|participants? (said|preferred|reported|chose))\\b"
+        },
+        {
+          "description": "Limit since GA: the underline marks only where the scribe was unsure what it heard, so problems in clearly heard lines (later single-clinician interviews) aren't underlined",
+          "pattern": "\\b(heard (it |them )?clearly|clearly heard|each word was heard|words were heard|unsure what it heard|transcribed accurately|accurately transcribed|transcription (confidence|uncertainty))\\b|\\bonly (marks?|flags?|underlines?|shows?)\\b[^.]{0,60}\\b(heard|transcri\\w*|audio|recogni\\w*)"
+        }
+      ],
+      "mustNotClaims": [
+        {
+          "description": "Says unmarked (high-confidence) lines are correct, accurate or safe to skip as fact",
+          "pattern": "\\b(high-confidence|unmarked|unflagged|non-underlined|un-underlined)( lines?| text)?\\b[^.]{0,40}\\b(are|is) (always |guaranteed |known to be )?(correct|accurate|error-free|safe to skip)\\b"
+        }
+      ],
+      "evidence": "Mockup mockups/confidence-highlighted-draft-review.md `:14`: \"illustrative (the treatment in Notes beyond the underline itself is the designer's spec, not recorded in the test)\". `:30-34`: \"The 2026-01-13 session notes record only that low-confidence transcription was shown in a subtle underline (`:30`). The rest is the designer's spec and wasn't recorded in the test: high-confidence lines render as default text with no marking (deliberately inviting skimming), low-confidence lines also get an on-hover explanation, and there is no separate medium-confidence tier.\" `:23-27`: four later interviews say \"the underline marks only where the scribe was unsure what it heard, so problems in lines it heard clearly aren't underlined\". Raw usability test 2026-01-13 (research/raw/2026-01-13-usability-test-ambient-scribe-ga-release-candidate/session-notes.md) `:30`: \"The new per-line confidence highlighting (low-confidence transcription shown in a subtle underline) was well received and, notably, 4 of 6 participants said it let them skim high-confidence lines for the first time across the whole testing history — the first session where reduced line-by-line reading was observed.\" `:43`: \"the confidence-indicator concept appears to be the trust-building lever the team was looking for since September.\" Later raws, each one clinician's account: 2026-03-19 `:32` (\"Incidental content is usually transcribed accurately, so it is not underlined\"), 2026-06-30 `:31` (\"Those lines are usually not underlined, because each word was heard clearly\"), 2026-07-28 `:29` (\"These lines are usually not underlined, because the words were heard clearly\"), 2026-09-22 `:31` (same). Note: 2026-01-13 `:31` says the indicator \"now flags\" sound-alike errors for review; that is what the 2026-02-10 flag concept builds on."
     }
   ]
 }

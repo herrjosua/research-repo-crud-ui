@@ -7,8 +7,10 @@
 //     entries: [{
 //       id, question, project,  // as in questions.json; project is a project-* tag or null
 //       set,                    // "regression" (questions the pipeline has got wrong before, to catch
-//                               // them coming back) or "scenario" (realistic researcher questions,
-//                               // including ones that test new behaviors); reports count each apart
+//                               // them coming back), "scenario" (realistic researcher questions,
+//                               // including ones that test new behaviors) or "rationale" (why a
+//                               // design document decided what it did, from the raw sessions it
+//                               // cites); reports count each apart
 //       status,                 // "draft" until a person has reviewed the entry, then "reviewed"
 //       supportingRecords,      // record ids that support a correct answer; a passing run cites one
 //       requiredRawRecord,      // the raw session a passing run must cite, or null when no raw
@@ -31,7 +33,7 @@ const { SAFE_SLUG_RE } = require('../../validation');
 
 const GOLD_FILE = path.join(__dirname, 'gold.json');
 const GOLD_STATUSES = ['draft', 'reviewed'];
-const GOLD_SETS = ['regression', 'scenario'];
+const GOLD_SETS = ['regression', 'scenario', 'rationale'];
 // ask/corpus.js record ids: "<kind>:<path or slug>".
 const RECORD_ID_RE = /^(raw|finding|component|analytics|deliverable):[a-z0-9][a-z0-9/._-]*$/;
 

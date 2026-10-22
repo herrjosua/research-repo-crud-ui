@@ -7,7 +7,7 @@
 //
 //   node scripts/eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed 42]
 //                                [--temperature 0.2] [--seeded-runs 3] [--unseeded-runs 3]
-//                                [--set regression|scenario] [--only id,id]
+//                                [--set regression|scenario|rationale] [--only id,id]
 //                                [--whole-raw-notes N] [--follow-ups shown|linked]
 //                                [--corrections shown|off] [--behaviors none|name,name]
 //   node scripts/eval-ask.js report BEFORE [AFTER]
@@ -20,8 +20,10 @@
 //         this process only). Writes the runs to ask/eval/results/NAME.json
 //         and the report to ask/eval/results/NAME.md. Pass or fail is decided
 //         on the first seeded run; the unseeded runs only count distinct
-//         answers. --set asks only one gold set's questions, --only only the
-//         ids given (within --set, if both are given). --model sets the chat
+//         answers. --set asks only one gold set's questions (without it,
+//         the regression and scenario sets; rationale runs only with --set
+//         rationale), --only only the ids given (within --set, if both are
+//         given). --model sets the chat
 //         model for this process only (default OLLAMA_CHAT_MODEL, else
 //         gemma2:9b); the embedding model is never changed. A model whose
 //         Ollama capabilities include "thinking" is asked with think: false
@@ -423,6 +425,22 @@ function runRetrieval({ wholeRawNotes = null, followUps = null, corrections = nu
     };
 }
 
+// The gold entries a run asks: those in `set`, or with no --set those in
+// DEFAULT_SETS, so a set added later (rationale) doesn't change what a
+// plain run asks and old and new baselines stay comparable; then only the
+// `only` ids, if given.
+const DEFAULT_SETS = ['regression', 'scenario'];
+
+function entriesToAsk(gold, { set = null, only = null } = {}) {
+    const inSet = gold.entries.filter((e) => (set ? e.set === set : DEFAULT_SETS.includes(e.set)));
+    const entries = inSet.filter((e) => !only || only.includes(e.id));
+    if (only) {
+        const unknown = only.filter((id) => !entries.some((e) => e.id === id));
+        if (unknown.length > 0) throw new Error(`--only: no gold entry ${unknown.join(', ')}${set ? ` in the ${set} set` : ''}`);
+    }
+    return entries;
+}
+
 async function run({
     label, model, think: thinkLevel, seed, temperature, seededRuns, unseededRuns, set, only, wholeRawNotes, followUps, corrections, behaviors,
 }) {
@@ -430,12 +448,7 @@ async function run({
     const repoRoot = process.env.AGENTIC_REPO_ROOT;
     if (!repoRoot) throw new Error('AGENTIC_REPO_ROOT is not set (backend/.env or the environment).');
     const gold = loadGold();
-    const inSet = gold.entries.filter((e) => !set || e.set === set);
-    const entries = inSet.filter((e) => !only || only.includes(e.id));
-    if (only) {
-        const unknown = only.filter((id) => !entries.some((e) => e.id === id));
-        if (unknown.length > 0) throw new Error(`--only: no gold entry ${unknown.join(', ')}${set ? ` in the ${set} set` : ''}`);
-    }
+    const entries = entriesToAsk(gold, { set, only });
 
     const ollama = createOllamaClient({
         baseUrl: process.env.OLLAMA_BASE_URL || OLLAMA_DEFAULTS.baseUrl,
@@ -1051,7 +1064,7 @@ async function main() {
     if (options.command === 'report') return report(options);
     if (options.command === 'compare') return compare(options);
     if (options.command === 'prompt-sources') return promptSources();
-    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario] [--only id,id] [--whole-raw-notes N] [--follow-ups shown|linked] [--corrections shown|off] [--behaviors none|name,name] | report BEFORE [AFTER] | compare --label NAME BASE OTHER... | prompt-sources');
+    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario|rationale] [--only id,id] [--whole-raw-notes N] [--follow-ups shown|linked] [--corrections shown|off] [--behaviors none|name,name] | report BEFORE [AFTER] | compare --label NAME BASE OTHER... | prompt-sources');
 }
 
 if (require.main === module) {
@@ -1062,5 +1075,5 @@ if (require.main === module) {
 }
 
 module.exports = {
-    judgeRun, claimText, renderReport, renderComparison, parseArgs, thinkRequest, withBehaviors, withPromptSources, runRetrieval, EVAL_HARNESS_VERSION,
+    judgeRun, claimText, renderReport, renderComparison, parseArgs, thinkRequest, withBehaviors, withPromptSources, runRetrieval, entriesToAsk, DEFAULT_SETS, EVAL_HARNESS_VERSION,
 };

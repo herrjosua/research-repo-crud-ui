@@ -1936,3 +1936,44 @@ answer that cites a whole note with a correction uses a quoted-only
 figure. A new known limit: a whole-note source's quoted figure that the
 correction didn't supersede (P17's "40 minutes", where only the speaker's
 label was corrected) is flagged when only that note is cited.
+
+## 26. A rationale gold set, run apart: baseline 0 of 7
+
+**Date:** 2026-10-22. **Status:** Active. Rationale gold set, part A.
+
+**Decision:** `ask/eval/gold.json` gets a third set, `rationale`: why a
+design document decided what it did, judged against the raw sessions it
+cites. It has 7 entries, all `reviewed`:
+`rationale-medflag-placement`, `rationale-medflag-unflagged-tip`,
+`rationale-medflag-open`, `rationale-setup-invite-timing`,
+`rationale-calendar-send-to-it`, `rationale-session-lock-paused-state`
+and `rationale-confidence-two-state`. `eval-ask.js run` asks it only with
+`--set rationale`. Without `--set`, a run asks `DEFAULT_SETS`
+(`regression` and `scenario`), so a plain run still asks the same 17
+entries. Judging is unchanged and `EVAL_HARNESS_VERSION` stays at 1.
+
+**Baseline** (`rationale-a-w3`): app commit 96b6581, corpus 09d985b,
+gemma2:9b @ ff02c3702f32, Ollama 0.40.6, seed 42, temperature 0.2, 3
+seeded and 3 unseeded runs, default retrieval (`wholeRawNotes: 3`,
+`corrections: 'off'`, `followUps: false`).
+- Gold pass: 0 of 7.
+- Raw session cited: 1 of 7 (`rationale-medflag-placement`).
+- Seeded runs identical: 7 of 7.
+
+**Predictions:** registered before the run. `prereg.md` has SHA-256
+`e67a19ed3333483e6a6ae7f28762323e4c9d87a491e235a6767a846c784458bc`.
+Scored against the baseline: P1 missed, P2 to P7 hit.
+
+**Unchanged:** after the baseline, no gold entry or claim pattern was
+edited, and no other stored result was changed. The run added 153 lines
+to `ask/eval/prompt-sources/09d985b….json` and removed none; every other
+stored run still rebuilds all its prompts from it.
+
+**Not run:**
+- A `--whole-raw-notes 0` control. `parseArgs` rejects 0 (it requires an
+  integer ≥ 1, and a test pins that), although the pipeline treats 0 as
+  passages.
+- A `--corrections shown` variant. `withCorrections` skips sessions shown
+  as whole notes, so at `wholeRawNotes: 3` it changes no prompt.
+
+**Commit hashes:** the baseline ran at app commit 96b6581, before this branch was rebased onto main (#83, which adds the RR-217 `quotedFigures` change). After the rebase the same commits are e428252 (set added), c31d6a0 (entries reviewed), f2f12ff (results) and this decision. RR-217 changes only a non-failing flag, so the stored answers and gold verdicts are unaffected. The result file's metadata still records 96b6581.
