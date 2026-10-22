@@ -1975,3 +1975,5 @@ stored run still rebuilds all its prompts from it.
   passages.
 - A `--corrections shown` variant. `withCorrections` skips sessions shown
   as whole notes, so at `wholeRawNotes: 3` it changes no prompt.
+
+**Commit hashes:** the baseline ran at app commit 96b6581, before this branch was rebased onto main (#83, which adds the RR-217 `quotedFigures` change). After the rebase the same commits are e428252 (set added), c31d6a0 (entries reviewed), f2f12ff (results) and this decision. RR-217 changes only a non-failing flag, so the stored answers and gold verdicts are unaffected. The result file's metadata still records 96b6581.
