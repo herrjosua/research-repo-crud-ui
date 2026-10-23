@@ -6,12 +6,17 @@
 //
 // routes/ask.js reads get() once per request, so a request finishes with
 // the provider it started on even if the provider is switched while it runs.
-// The static answers and the Ollama pipeline are each built the first time
-// they're needed and then kept, so switching back to ollama reuses the
-// embeddings already computed.
+// The static answers and each live provider's pipeline (ollama, bedrock) are
+// built the first time they're needed and then kept. Both pipelines share
+// one embedding index built on the Ollama client's embed, so switching back
+// to ollama reuses the embeddings already computed, and bedrock embeds with
+// Ollama too (OLLAMA_BASE_URL, OLLAMA_EMBED_MODEL). The dev switch
+// (routes/dev.js) only offers static and ollama; bedrock is only ever
+// LLM_PROVIDER.
 
-const { resolveProvider, resolveAskSeed } = require('./config');
+const { resolveProvider, resolveAskSeed, resolveBedrockConfig } = require('./config');
 const { createOllamaClient, OLLAMA_DEFAULTS } = require('./ollama');
+const { createBedrockClient } = require('./bedrock');
 const { loadRecords } = require('./corpus');
 const { createEmbeddingIndex } = require('./retrieval');
 const { createAskPipeline } = require('./pipeline');
@@ -28,8 +33,13 @@ let provider = resolveProvider(process.env);
 // Checked at startup whatever the provider, so a bad ASK_SEED can't wait
 // for a later switch to ollama to surface.
 const askSeed = resolveAskSeed(process.env);
+// Checked at startup too, and only for bedrock: an unknown BEDROCK_MODEL_ID
+// refuses to start, like an unknown LLM_PROVIDER.
+const bedrockConfig = provider === 'bedrock' ? resolveBedrockConfig(process.env) : null;
 let ollama = null;
-let pipeline = null;
+let bedrock = null;
+let index = null;
+const pipelines = {};
 let staticAnswers = null;
 
 function getOllama() {
@@ -43,14 +53,27 @@ function getOllama() {
     return ollama;
 }
 
-function getPipeline() {
-    if (!pipeline) {
-        const client = getOllama();
-        pipeline = createAskPipeline({
-            ollama: client, index: createEmbeddingIndex({ embed: client.embed, loadRecords }), seed: askSeed,
-        });
+// Builds no client and makes no network call: the SDK loads on the first
+// chat (ask/bedrock.js).
+function getBedrock() {
+    if (!bedrock) bedrock = createBedrockClient(bedrockConfig);
+    return bedrock;
+}
+
+function getIndex() {
+    if (!index) index = createEmbeddingIndex({ embed: getOllama().embed, loadRecords });
+    return index;
+}
+
+// The live pipeline for `name`, ollama unless bedrock is asked for. Bedrock
+// gets no seed: Converse has none (ask/config.js resolveAskSeed).
+function getPipeline(name = 'ollama') {
+    if (!pipelines[name]) {
+        pipelines[name] = name === 'bedrock'
+            ? createAskPipeline({ ollama: getBedrock(), index: getIndex(), seed: undefined })
+            : createAskPipeline({ ollama: getOllama(), index: getIndex(), seed: askSeed });
     }
-    return pipeline;
+    return pipelines[name];
 }
 
 // Throws if the answers file is missing or invalid (see loadStaticAnswers).
@@ -62,15 +85,18 @@ function getStaticAnswers() {
 // Static mode at startup: read and validated now, so a missing or broken
 // file stops the server instead of failing each request. Live mode and a
 // disabled Ask never read it, so they start without it. Live mode builds
-// its client now too; that makes no network call.
+// its client now too; that makes no network call (and for bedrock loads no
+// SDK).
 if (provider === 'static') getStaticAnswers();
 if (provider === 'ollama') getOllama();
+if (provider === 'bedrock') getBedrock();
 
 module.exports = {
     get: () => provider,
     // Callers check the new provider is usable first (routes/dev.js).
     set: (next) => { provider = next; },
     getOllama,
+    getBedrock,
     getPipeline,
     getStaticAnswers,
 };

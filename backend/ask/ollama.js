@@ -3,6 +3,8 @@
 // `ollama` npm package would wrap exactly these two POSTs, so it isn't
 // worth the dependency.
 
+const { LlmError } = require('./llmError');
+
 const DEFAULTS = {
     baseUrl: 'http://localhost:11434',
     embedModel: 'nomic-embed-text',
@@ -21,9 +23,6 @@ function withTag(name) {
     return name.includes(':') ? name : `${name}:latest`;
 }
 
-// Thrown for anything that goes wrong talking to Ollama (unreachable, non-2xx,
-// malformed JSON, timeout). routes/ask.js turns it into a generic 502 and
-// logs `detail` server-side only.
 // A reasoning model's reply can open with its thinking in <think>…</think>
 // tags when Ollama doesn't split it into the message's separate `thinking`
 // field (Ollama 0.34 does split it, for models whose /api/show capabilities
@@ -35,7 +34,11 @@ function finalAnswer(content) {
     return match ? content.slice(match[0].length) : content;
 }
 
-class OllamaError extends Error {
+// Thrown for anything that goes wrong talking to Ollama (unreachable, non-2xx,
+// malformed JSON, timeout). An LlmError (ask/llmError.js): routes/ask.js
+// turns it into a generic 502 and logs `detail` server-side only.
+
+class OllamaError extends LlmError {
     constructor(message, detail) {
         super(message);
         this.name = 'OllamaError';

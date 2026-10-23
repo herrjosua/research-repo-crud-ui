@@ -10,8 +10,11 @@
 //                                [--set regression|scenario|rationale] [--only id,id]
 //                                [--whole-raw-notes N] [--follow-ups shown|linked]
 //                                [--corrections shown|off] [--behaviors none|name,name]
-//   node scripts/eval-ask.js report BEFORE [AFTER]
-//   node scripts/eval-ask.js compare --label NAME BASE [OTHER ...]
+//   node scripts/eval-ask.js run --provider bedrock --label NAME [--model PROFILE_ID]
+//                                --max-cost USD --pass-rule-file PATH --pass-rule-sha256 HASH
+//                                [--set ...] [--only id,id] [retrieval and --behaviors flags as above]
+//   node scripts/eval-ask.js report BEFORE [AFTER] [--across-settings]
+//   node scripts/eval-ask.js compare --label NAME BASE [OTHER ...] [--across-settings]
 //   node scripts/eval-ask.js prompt-sources
 //
 // run     Asks every gold question --seeded-runs times with the fixed seed and
@@ -53,18 +56,37 @@
 //         open-items, decline-with-evidence, list-format; `none` turns them
 //         all off) for this process only; without it, the defaults. The
 //         metadata's `promptBehaviors` records them.
+//         --provider bedrock (default ollama, everything above) asks Amazon
+//         Bedrock's Converse API instead (ask/bedrock.js), the embeddings
+//         still from Ollama. --model is then an inference profile ID
+//         (default BEDROCK_MODEL_ID); BEDROCK_REGION, BEDROCK_MAX_TOKENS and
+//         BEDROCK_EFFORT apply as for the server. There is no seed and no
+//         temperature, so --seed, --temperature, --seeded-runs,
+//         --unseeded-runs and --think are refused. Before any call it checks
+//         the AWS identity (STS GetCallerIdentity) is the ux-research-demo
+//         IAM user and refuses anything else. Each entry is asked by the
+//         three-then-five pass rule (threeThenFive below), whose description
+//         --pass-rule-file must hash to --pass-rule-sha256. --max-cost USD
+//         is required: each call's cost is its usage at BEDROCK_PRICING, and
+//         the run stops before a call once the total reaches it, saving what
+//         it has.
 // report  Re-judges stored runs against the current gold file (so editing
 //         the gold set needs no re-run) and rewrites the report. With two
 //         names it writes a before/after report to ask/eval/results/
 //         BEFORE-vs-AFTER.md, and refuses unless both share the harness
-//         version, corpus commit, seed and temperature.
+//         version, corpus commit, seed, temperature and provider (a set
+//         without one is ollama). --across-settings allows a different
+//         seed, temperature or provider (a Bedrock set against a seeded
+//         Ollama one), with a banner listing every setting that differs;
+//         each set is judged by its own pass rule.
 // compare Several result sets side by side, grouped by chat model (a
 //         model's regression and scenario runs are usually two sets), the
 //         first set's model as the base: pass counts, speed and memory per
 //         model, and each entry that fails on any model with every model's
 //         verdict and whether the gold evidence was in the prompt. Writes
 //         ask/eval/results/NAME.md. Refuses sets that differ in harness
-//         version, corpus commit, seed or temperature, like report.
+//         version, corpus commit, seed, temperature or provider, like
+//         report, and takes --across-settings like it.
 // prompt-sources
 //         Rebuilds ask/eval/prompt-sources/<corpus commit>.json from the
 //         corpus checkout (read only) for every stored result at its
@@ -76,11 +98,14 @@
 // Both report each gold set (regression, scenario) in its own section with
 // its own pass counts, taking an entry's set from the current gold file.
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
 const { createOllamaClient, OLLAMA_DEFAULTS } = require('../ask/ollama');
+const { createBedrockClient, BedrockError, redact } = require('../ask/bedrock');
+const { resolveBedrockConfig } = require('../ask/config');
 const {
     loadRecords, chunkRecord, participantsHeader, wholeNotesText, formatDate,
 } = require('../ask/corpus');
@@ -117,7 +142,24 @@ const PROMPT_SOURCES_DIR = path.join(__dirname, '..', 'ask', 'eval', 'prompt-sou
 // Nor did --follow-ups: runs made with it also store `followUps`
 // ({ fired, attached }), and the metadata `retrieval` its value; the
 // attached passages are ordinary shown passages.
+// Nor did --provider bedrock: a Bedrock set adds optional metadata
+// (provider, region, effort, maxTokens, runs, passRule, pricing, cost) and
+// stores each question's runs as `runs` instead of `seeded`/`unseeded`; it
+// has no Ollama fields (modelDigest, ollamaVersion, memory, tokens per
+// second), and seed is "not supported", temperature "not sent". A set
+// without `provider` is ollama.
 const EVAL_HARNESS_VERSION = 1;
+
+// The provider a result set was run with.
+function providerOf(metadata) {
+    return metadata.provider || 'ollama';
+}
+
+// A question's answered runs: an Ollama set's seeded and unseeded runs, or
+// a Bedrock set's `runs` minus the ones that errored.
+function runsOf(q) {
+    return q.runs ? q.runs.filter((r) => !r.error) : [...q.seeded, ...q.unseeded];
+}
 
 // ---------------------------------------------------------------------------
 // Judging. The per-sentence checks live in ask/checks.js (shared with the
@@ -279,7 +321,9 @@ function withPromptSources(results, promptSources = readPromptSources(results.me
     });
     return {
         ...results,
-        questions: results.questions.map((q) => ({ ...q, seeded: q.seeded.map(withSources), unseeded: q.unseeded.map(withSources) })),
+        questions: results.questions.map((q) => (q.runs
+            ? { ...q, runs: q.runs.map((r) => (r.error ? r : withSources(r))) }
+            : { ...q, seeded: q.seeded.map(withSources), unseeded: q.unseeded.map(withSources) })),
     };
 }
 
@@ -315,7 +359,7 @@ async function promptSources() {
         const { label, retrieval, promptBehaviors } = results.metadata;
         prompts[label] = { rebuilt: 0, same: 0 };
         for (const q of results.questions) {
-            for (const r of [...q.seeded, ...q.unseeded]) {
+            for (const r of runsOf(q)) {
                 for (const x of r.shown) {
                     const shownRecord = record(x.recordId);
                     out.records[x.recordId] = {
@@ -571,6 +615,314 @@ async function run({
 }
 
 // ---------------------------------------------------------------------------
+// Run with --provider bedrock
+// ---------------------------------------------------------------------------
+
+// USD per 1M tokens, input / output, for each model in ask/bedrock.js
+// BEDROCK_MODELS: the global profile in us-east-1 (gpt-oss-20b: the
+// standard in-Region tier). Cache-read and cache-write tokens aren't priced:
+// no request asks for prompt caching, and a call's cost is its input and
+// output tokens only.
+const BEDROCK_PRICING = {
+    'global.anthropic.claude-sonnet-5-5': { inputPerM: 2, outputPerM: 10 },
+    'global.anthropic.claude-opus-5-5': { inputPerM: 4, outputPerM: 20 },
+    'openai.gpt-oss-20b-1:0': { inputPerM: 0.07, outputPerM: 0.30 },
+};
+const BEDROCK_PRICING_SOURCE = 'AWS Bedrock pricing page';
+const BEDROCK_PRICING_AS_OF = '2026-10-23';
+
+// The only AWS identity a Bedrock run may use. There is no override.
+const REQUIRED_IDENTITY_SUFFIX = ':user/ux-research-demo';
+
+const PASS_RULE_ID = 'three-then-five';
+
+// The three-then-five pass rule, on an entry's run outcomes in the order
+// they ran (true: the run passes judgeRun; an errored run is false). Three
+// runs; 3-0 or 0-3 is the verdict. On 2-1 or 1-2, two more, and the
+// majority of the five. `needed` is how many runs the rule needs for the
+// outcomes so far; `pass` is null until it has them (a stored set re-judged
+// against an edited gold file can come up short). Runs beyond `needed` are
+// ignored.
+function threeThenFive(outcomes) {
+    const passes = (n) => outcomes.slice(0, n).filter(Boolean).length;
+    if (outcomes.length < 3) return { pass: null, needed: 3, n: outcomes.length, passes: passes(3) };
+    const first = passes(3);
+    if (first === 0 || first === 3) return { pass: first === 3, needed: 3, n: 3, passes: first };
+    if (outcomes.length < 5) return { pass: null, needed: 5, n: outcomes.length, passes: passes(5) };
+    return { pass: passes(5) >= 3, needed: 5, n: 5, passes: passes(5) };
+}
+
+// A call's cost in USD from its usage. Refuses a call without token counts,
+// since the cost guard can't count it.
+function callCost(stats, pricing) {
+    if (!stats || typeof stats.inputTokens !== 'number' || typeof stats.outputTokens !== 'number') {
+        throw new Error('Bedrock returned no token usage, so the cost guard cannot count the call; stopping');
+    }
+    return (stats.inputTokens * pricing.inputPerM + stats.outputTokens * pricing.outputPerM) / 1e6;
+}
+
+// The pass-rule file's text and hash, or a refusal when its SHA-256 isn't
+// `expected`.
+function readPassRule(file, expected) {
+    const bytes = fs.readFileSync(file);
+    const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+    if (sha256 !== String(expected).toLowerCase()) {
+        throw new Error(`refusing to run: ${file} has SHA-256 ${sha256}, not ${expected}`);
+    }
+    return { id: PASS_RULE_ID, sha256, text: bytes.toString('utf8') };
+}
+
+// The caller's ARN from STS GetCallerIdentity, with the SDK's default
+// credential chain (AWS_PROFILE). Loaded here only, for --provider bedrock.
+async function stsCallerArn(region) {
+    const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts');
+    const sts = new STSClient({ region });
+    return (await sts.send(new GetCallerIdentityCommand({}))).Arn;
+}
+
+// Refuses unless the caller is the ux-research-demo IAM user. Only the part
+// of the ARN after the account says who it was, so the account ID is never
+// printed.
+async function checkIdentity(getArn) {
+    let arn;
+    try {
+        arn = await getArn();
+    } catch (err) {
+        const name = (err && err.name) || 'Error';
+        throw new Error(`refusing to run: STS GetCallerIdentity failed (${name}: ${redact(err && err.message).slice(0, 200)})`);
+    }
+    const who = typeof arn === 'string' ? arn.slice(arn.lastIndexOf(':') + 1) : String(arn);
+    if (typeof arn !== 'string' || !arn.endsWith(REQUIRED_IDENTITY_SUFFIX)) {
+        throw new Error(`refusing to run: the AWS identity is ${who}, not ${REQUIRED_IDENTITY_SUFFIX.slice(1)}`);
+    }
+    return who;
+}
+
+// One run slot: a call, and when it fails with a BedrockError one re-run.
+// If that fails too the slot is an errored run, which counts as a fail.
+// `askOnce` resolves to { run, pass, cost } or { error, cost }; every
+// call's cost is added to `budget.spentUsd`, and the re-run isn't started
+// once that reaches `budget.limitUsd` (`stopped`).
+async function runSlot(askOnce, budget) {
+    const first = await askOnce();
+    budget.spentUsd += first.cost;
+    if (!first.error) return { run: first.run, pass: first.pass };
+    if (budget.spentUsd >= budget.limitUsd) {
+        return { run: { error: first.error.message, errors: [first.error.message], rerun: false, cost: first.cost }, pass: false, stopped: true };
+    }
+    const second = await askOnce();
+    budget.spentUsd += second.cost;
+    if (!second.error) return { run: { ...second.run, erroredFirst: first.error.message, cost: second.cost + first.cost }, pass: second.pass };
+    return {
+        run: {
+            error: second.error.message, errors: [first.error.message, second.error.message], rerun: true, cost: first.cost + second.cost,
+        },
+        pass: false,
+    };
+}
+
+// An entry's runs by the three-then-five rule. Before each slot the cost
+// guard checks the running total; once it reaches the limit nothing more
+// is started and `stopped` is true.
+async function askByPassRule(askOnce, budget) {
+    const runs = [];
+    const outcomes = [];
+    while (outcomes.length < threeThenFive(outcomes).needed) {
+        if (budget.spentUsd >= budget.limitUsd) return { runs, outcomes, stopped: true };
+        const slot = await runSlot(askOnce, budget);
+        runs.push(slot.run);
+        outcomes.push(slot.pass);
+        if (slot.stopped) return { runs, outcomes, stopped: true };
+    }
+    return { runs, outcomes, stopped: false };
+}
+
+// A Bedrock set's metadata. No Ollama fields beyond the embedding model's.
+function bedrockMetadata({
+    label, corpusCommit: corpus, appCommit: app, client, embedModel, embedModelDigest, retrieval, promptBehaviors, passRule, pricing,
+}) {
+    return {
+        harnessVersion: EVAL_HARNESS_VERSION,
+        label,
+        createdAt: new Date().toISOString(),
+        corpusCommit: corpus,
+        appCommit: app,
+        provider: 'bedrock',
+        model: client.chatModel,
+        region: client.region,
+        embedModel,
+        embedModelDigest,
+        effort: client.effort ?? 'not sent',
+        maxTokens: client.maxTokens,
+        temperature: 'not sent',
+        seed: 'not supported',
+        chatOptions: { maxTokens: client.maxTokens, effort: client.effort ?? 'not sent' },
+        topK: retrieval.topK,
+        retrieval,
+        promptBehaviors,
+        runs: { rule: PASS_RULE_ID, first: 3, onSplit: 5, rerunsAfterError: 1 },
+        passRule,
+        pricing: {
+            ...pricing, source: BEDROCK_PRICING_SOURCE, asOf: BEDROCK_PRICING_AS_OF,
+        },
+    };
+}
+
+// `deps` is for the tests: `send` (the Converse call), `getCallerArn` (STS)
+// and `ollamaInfo`. Without them the real ones are used.
+async function runBedrock({
+    label, model, set, only, wholeRawNotes, followUps, corrections, behaviors, maxCost, passRuleFile, passRuleSha256,
+}, deps = {}) {
+    if (!label) throw new Error('run needs --label NAME');
+    const repoRoot = process.env.AGENTIC_REPO_ROOT;
+    if (!repoRoot) throw new Error('AGENTIC_REPO_ROOT is not set (backend/.env or the environment).');
+    if (!model && !(process.env.BEDROCK_MODEL_ID || '').trim()) throw new Error('--provider bedrock needs --model PROFILE_ID or BEDROCK_MODEL_ID');
+    const config = resolveBedrockConfig({ ...process.env, ...(model ? { BEDROCK_MODEL_ID: model } : {}) });
+    const pricing = BEDROCK_PRICING[config.modelId];
+    if (!pricing) throw new Error(`no pricing for ${config.modelId} in BEDROCK_PRICING`);
+    const passRule = readPassRule(passRuleFile, passRuleSha256);
+    const gold = loadGold();
+    const entries = entriesToAsk(gold, { set, only });
+
+    // Before any call, Bedrock or Ollama.
+    const who = await checkIdentity(deps.getCallerArn || (() => stsCallerArn(config.region)));
+
+    // Embeddings only: the chat model is never asked about.
+    const ollama = createOllamaClient({
+        baseUrl: process.env.OLLAMA_BASE_URL || OLLAMA_DEFAULTS.baseUrl,
+        embedModel: process.env.OLLAMA_EMBED_MODEL || OLLAMA_DEFAULTS.embedModel,
+    });
+    const info = await (deps.ollamaInfo || ollamaInfo)(ollama.baseUrl, [ollama.embedModel]);
+    const client = createBedrockClient({ ...config, send: deps.send });
+    const recording = recordingClient(client);
+    const index = createEmbeddingIndex({ embed: ollama.embed, loadRecords });
+    const retrieval = runRetrieval({ wholeRawNotes, followUps, corrections });
+    const promptBehaviors = withBehaviors(behaviors);
+    const pipeline = createAskPipeline({ ollama: recording, index, retrieval, promptBehaviors });
+
+    const metadata = bedrockMetadata({
+        label,
+        corpusCommit: corpusCommit(repoRoot),
+        appCommit: appCommit(),
+        client,
+        embedModel: ollama.embedModel,
+        embedModelDigest: info.digests[0],
+        retrieval,
+        promptBehaviors,
+        passRule,
+        pricing,
+    });
+    console.log(`Evaluating ${entries.length} question(s) against ${repoRoot} @ ${metadata.corpusCommit.slice(0, 7)} with Bedrock ${metadata.model} (${metadata.region}) as ${who}`);
+    console.log(`Effort ${metadata.effort}, max tokens ${metadata.maxTokens}, temperature not sent, no seed; pass rule ${PASS_RULE_ID} (${passRule.sha256.slice(0, 12)}); cost limit $${maxCost}`);
+
+    const { passages } = await index.refresh();
+    const known = new Set(passages.map((p) => p.record.id));
+    const missing = [...new Set(entries.flatMap((e) => e.supportingRecords))].filter((id) => !known.has(id));
+    if (missing.length > 0) throw new Error(`gold records not in the corpus: ${missing.join(', ')}`);
+
+    const budget = { limitUsd: maxCost, spentUsd: 0 };
+    const questions = [];
+    const started = Date.now();
+    let stoppedBefore = null;
+    const save = () => {
+        metadata.wallSecs = Math.round((Date.now() - started) / 1000);
+        metadata.cost = {
+            limitUsd: maxCost,
+            totalUsd: Math.round(budget.spentUsd * 1e6) / 1e6,
+            stoppedAtLimit: stoppedBefore !== null,
+            notAsked: entries.filter((e) => !questions.some((q) => q.id === e.id)).map((e) => e.id),
+            incomplete: questions.filter((q) => q.incomplete).map((q) => q.id),
+        };
+        const results = { metadata, questions };
+        const file = path.join(RESULTS_DIR, `${label}.json`);
+        writeJson(file, results);
+        return { results, file };
+    };
+
+    try {
+        for (const entry of entries) {
+            const ranking = (await pipeline.rank(entry.question, entry.project, Infinity))
+                .map(({ passage, score }) => ({ recordId: passage.record.id, kind: passage.record.kind, score: Math.round(score * 1000) / 1000 }));
+
+            const askOnce = async () => {
+                const askStarted = Date.now();
+                recording.last = null;
+                let result;
+                try {
+                    result = await pipeline.ask(entry.question, entry.project);
+                } catch (err) {
+                    if (!(err instanceof BedrockError)) throw err;
+                    console.log(`    ${entry.id}: ${err.message}`);
+                    return { error: err, cost: err.stats ? callCost(err.stats, pricing) : 0 };
+                }
+                const reply = recording.last;
+                const { stats } = reply;
+                const cost = callCost(stats, pricing);
+                const run = {
+                    secs: Math.round((Date.now() - askStarted) / 100) / 10,
+                    answer: result.answer,
+                    usage: {
+                        inputTokens: stats.inputTokens,
+                        outputTokens: stats.outputTokens,
+                        totalTokens: stats.totalTokens,
+                        cacheReadTokens: stats.cacheReadTokens,
+                        cacheWriteTokens: stats.cacheWriteTokens,
+                    },
+                    stopReason: stats.stopReason,
+                    latencyMs: stats.latencyMs,
+                    attempts: stats.attempts,
+                    cost: Math.round(cost * 1e6) / 1e6,
+                    ...(reply.reasoningBlocks > 0 ? { thinkingChars: reply.thinking.length } : {}),
+                    sources: result.sources.map(storedSource),
+                    promptChars: result.promptChars,
+                    promptTokens: result.promptTokens,
+                    ...(result.followUps ? { followUps: result.followUps } : {}),
+                    shown: result.ranked.map(({ passage }, i) => ({
+                        n: i + 1, recordId: passage.record.id, kind: passage.record.kind, passage: `${passage.record.id}#${passage.chunk.index}`,
+                    })),
+                };
+                // Judged as `report` will re-judge it: the cited sources with
+                // their label dates, and every shown passage.
+                const pass = judgeRun(entry, {
+                    answer: result.answer, sources: result.sources, shownSources: result.ranked.map(({ passage }) => passageSource(passage)),
+                }).pass;
+                return { run, pass, cost };
+            };
+
+            const { runs, outcomes, stopped } = await askByPassRule(askOnce, budget);
+            if (runs.length > 0) {
+                const verdict = threeThenFive(outcomes);
+                questions.push({
+                    id: entry.id, question: entry.question, project: entry.project, ranking, runs, ...(verdict.pass === null ? { incomplete: true } : {}),
+                });
+                const errored = runs.filter((r) => r.error).length;
+                console.log(`  ${entry.id}: ${verdict.pass === null ? 'INCOMPLETE' : verdict.pass ? 'PASS' : 'FAIL'} ${verdict.passes}/${verdict.n} (N=${runs.length}${errored ? `, ${errored} errored` : ''}), $${budget.spentUsd.toFixed(4)} so far`);
+            }
+            if (stopped) {
+                stoppedBefore = entry.id;
+                break;
+            }
+        }
+    } catch (err) {
+        metadata.aborted = err instanceof BedrockError ? err.message : String(err.message).slice(0, 500);
+        const { file } = save();
+        console.error(`Stopped by an error; saved ${questions.length} question(s) to ${path.relative(process.cwd(), file)}`);
+        throw err;
+    }
+
+    const { results, file } = save();
+    if (stoppedBefore !== null) {
+        console.log(`\nCost guard: $${budget.spentUsd.toFixed(4)} reached the --max-cost $${maxCost} limit at ${stoppedBefore}; stopped there and saved what it had. Incomplete: ${metadata.cost.incomplete.join(', ') || 'none'}; not asked: ${metadata.cost.notAsked.join(', ') || 'none'}`);
+    }
+    console.log(`Total cost: $${budget.spentUsd.toFixed(4)} of $${maxCost}`);
+    await promptSources();
+    const reportFile = path.join(RESULTS_DIR, `${label}.md`);
+    fs.writeFileSync(reportFile, renderReport([withPromptSources(results)], gold));
+    console.log(`\nRuns: ${path.relative(process.cwd(), file)}\nReport: ${path.relative(process.cwd(), reportFile)}`);
+    return results;
+}
+
+// ---------------------------------------------------------------------------
 // Report
 // ---------------------------------------------------------------------------
 
@@ -590,8 +942,56 @@ function short(recordId) {
     return recordId.replace(/^deliverable:/, 'd:');
 }
 
+// A Bedrock question that has no answered run: every run errored.
+const NO_ANSWER = { secs: null, answer: '', sources: [], shown: [] };
+
+// summarise() for a Bedrock set's question: the verdict is the
+// three-then-five rule's on every run, and what the report shows of one run
+// (citations, sentences, answer) is the first answered run's. Errored runs
+// count as fails and are listed apart. It has no seed, so no
+// seeded-identical check (null).
+function summariseByPassRule(q, entry) {
+    const answered = runsOf(q);
+    const first = answered[0] || NO_ANSWER;
+    const judged = q.runs.map((r) => (r.error ? null : judgeRun(entry, r)));
+    const rule = threeThenFive(judged.map((j) => Boolean(j && j.pass)));
+    const firstVerdict = judgeRun(entry, first);
+    const errored = q.runs.filter((r) => r.error);
+    const ruleText = `${rule.passes} of ${rule.n} runs pass${rule.pass === null ? ` (incomplete: the rule needs ${rule.needed})` : ''}`;
+    const firstFailing = judged.find((j) => j && !j.pass);
+    const verdict = {
+        ...firstVerdict,
+        pass: rule.pass === true,
+        failures: rule.pass === true ? [] : [`${PASS_RULE_ID}: ${ruleText}`, ...(firstFailing ? firstFailing.failures : []), ...(errored.length ? [`${errored.length} run(s) errored`] : [])],
+    };
+    const rawIndex = q.ranking.findIndex((r) => r.kind === 'raw');
+    return {
+        q,
+        verdict,
+        first,
+        shown: first.shown,
+        firstRaw: rawIndex === -1 ? null : { rank: rawIndex + 1, of: q.ranking.length, recordId: q.ranking[rawIndex].recordId },
+        seededIdentical: null,
+        distinctUnseeded: new Set(answered.map((r) => r.answer)).size,
+        unseededPasses: rule.passes,
+        // Bedrock only: the denominators the report shows, the runs and
+        // the rule's verdict, the errored runs, and the cost.
+        unseededOf: rule.n,
+        distinctOf: answered.length,
+        ruleNote: ` (${rule.passes}/${rule.n})`,
+        ruleText,
+        errored: errored.map((r) => r.error),
+        cost: q.runs.reduce((n, r) => n + (r.cost || 0), 0),
+        coldLatency: first.secs,
+        latency: median(answered.map((r) => r.secs)),
+        unseededLatency: null,
+        reviewFlags: reviewRun({ answer: first.answer, sources: first.sources, raw: null }, first.shown.length).flags,
+    };
+}
+
 // Everything the report shows about one question in one result set.
 function summarise(q, entry) {
+    if (q.runs) return summariseByPassRule(q, entry);
     const first = q.seeded[0];
     const verdict = judgeRun(entry, first);
     const rawIndex = q.ranking.findIndex((r) => r.kind === 'raw');
@@ -663,16 +1063,23 @@ function settingsRows(sets) {
         row('Run at', (x) => x.createdAt),
         row('App commit', (x) => x.appCommit.slice(0, 12) + (x.appCommit.endsWith('-dirty') ? ' (uncommitted pipeline changes)' : '')),
         row('Corpus commit', (x) => x.corpusCommit),
-        row('Chat model', (x) => `${x.model} @ ${x.modelDigest.slice(0, 12)}`),
-        row('Embedding model', (x) => `${x.embedModel} @ ${x.embedModelDigest.slice(0, 12)}`),
-        row('Ollama', (x) => x.ollamaVersion),
+        row('Chat model', (x) => `${x.model}${x.modelDigest ? ` @ ${x.modelDigest.slice(0, 12)}` : ''}`),
+        row('Embedding model', (x) => `${x.embedModel}${x.embedModelDigest ? ` @ ${x.embedModelDigest.slice(0, 12)}` : ''}`),
+        row('Ollama', (x) => x.ollamaVersion ?? '—'),
         row('Thinking', (x) => (x.thinking ? x.thinking.handling : '—')),
         row('Seed / temperature', (x) => `${x.seed} / ${x.temperature}`),
         row('Chat options', (x) => JSON.stringify(x.chatOptions)),
         row('Top k', (x) => x.topK),
         row('Retrieval', (x) => (x.retrieval ? JSON.stringify(x.retrieval) : '—')),
         row('Prompt behaviors on', (x) => (x.promptBehaviors ? Object.keys(x.promptBehaviors).filter((k) => x.promptBehaviors[k]).join(', ') || 'none' : '—')),
-        row('Runs per question', (x) => `${x.seededRuns} seeded, ${x.unseededRuns} unseeded`),
+        row('Runs per question', (x) => (x.passRule ? `${x.passRule.id}: 3, then 5 on a 2-1 split` : `${x.seededRuns} seeded, ${x.unseededRuns} unseeded`)),
+        ...(m.some((x) => providerOf(x) === 'bedrock') ? [
+            row('Provider', (x) => (providerOf(x) === 'bedrock' ? `bedrock, ${x.region}` : providerOf(x))),
+            row('Effort / max tokens', (x) => (providerOf(x) === 'bedrock' ? `${x.effort} / ${x.maxTokens}` : '—')),
+            row('Pass rule', (x) => (x.passRule ? `${x.passRule.id}, file SHA-256 ${x.passRule.sha256}` : 'first seeded run')),
+            row('Pricing (USD per 1M in / out)', (x) => (x.pricing ? `${x.pricing.inputPerM} / ${x.pricing.outputPerM} (${x.pricing.source}, ${x.pricing.asOf})` : '—')),
+            row('Cost', (x) => (x.cost ? `$${x.cost.totalUsd.toFixed(4)} of a $${x.cost.limitUsd} limit${x.cost.stoppedAtLimit ? ', **stopped at the limit**' : ''}` : '—')),
+        ] : []),
         row('Peak model memory', memoryText),
         row('Wall time', (x) => (typeof x.wallSecs === 'number' ? `${Math.round(x.wallSecs / 60)} min` : '—')),
     ];
@@ -680,7 +1087,7 @@ function settingsRows(sets) {
 
 // A report on one result set, or before/after on two. Judged against the
 // current gold file.
-function renderReport(sets, gold) {
+function renderReport(sets, gold, { banner = null } = {}) {
     const entryFor = (q) => {
         const entry = gold.entries.find((e) => e.id === q.id);
         if (!entry) throw new Error(`${q.id} is no longer in ${path.basename(GOLD_FILE)}`);
@@ -714,6 +1121,7 @@ function renderReport(sets, gold) {
         '',
         ...settingsRows(sets),
         '',
+        ...(banner ? [banner, ''] : []),
     ];
     const drift = ['ollamaVersion', 'modelDigest', 'embedModelDigest', 'model', 'embedModel']
         .filter((key) => before && sets[0].metadata[key] !== sets[1].metadata[key]);
@@ -735,11 +1143,11 @@ function renderReport(sets, gold) {
             `- Sentences with 3+ stacked citations: ${join((s) => of(s).reduce((n, x) => n + x.verdict.stacks.length, 0))}`,
             `- Unsupported figures: ${join((s) => of(s).reduce((n, x) => n + x.verdict.unsupported.length, 0))}`,
             `- Sentences with unsupported figures: ${join((s) => of(s).reduce((n, x) => n + x.verdict.sentences.filter((y) => y.unsupported.length > 0).length, 0))}`,
-            `- Questions whose seeded runs weren't identical: ${join((s) => count(of(s), (x) => !x.seededIdentical))}`,
+            `- Questions whose seeded runs weren't identical: ${join((s) => count(of(s), (x) => x.seededIdentical === false))}`,
             `- Prompt size, mean / max (chars): ${join((s) => promptSize(of(s)))}`,
-            `- Cold latency, mean / max (s): ${join((s) => meanMax(of(s).map((x) => x.coldLatency), 1))}`,
+            `- Cold latency, mean / max (s): ${join((s) => meanMax(of(s).map((x) => x.coldLatency).filter((n) => typeof n === 'number'), 1))}`,
             `- Tokens per second, cold run, mean / max: ${join((s) => meanMax(of(s).map((x) => tokensPerSec(x.first)).filter((n) => n !== null), 1))}`,
-            `- Runs that returned thinking text: ${join((s) => (of(s).every((x) => typeof x.first.thinkingChars === 'number') ? of(s).reduce((n, x) => n + [...x.q.seeded, ...x.q.unseeded].filter((r) => r.thinkingChars > 0).length, 0) : '—'))}`,
+            `- Runs that returned thinking text: ${join((s) => (of(s).every((x) => x.q.runs || typeof x.first.thinkingChars === 'number') ? of(s).reduce((n, x) => n + runsOf(x.q).filter((r) => r.thinkingChars > 0).length, 0) : '—'))}`,
             '',
             '### Per question',
             '',
@@ -749,7 +1157,7 @@ function renderReport(sets, gold) {
         for (const i of indexes) {
             const per = summaries.map((s) => s[i]);
             const col = (f) => per.map(f).join(' → ');
-            lines.push(`| \`${ids[i]}\` | ${col((s) => (s.verdict.pass ? 'PASS' : '**FAIL**'))} | ${col((s) => s.shown.length)} | ${col(firstRawText)} | ${col((s) => s.verdict.cited.length)} | ${col((s) => (s.verdict.citesRaw ? 'yes' : 'no'))} | ${col((s) => s.verdict.uncited.length)} | ${col((s) => s.verdict.stacks.length)} | ${col((s) => s.verdict.unsupported.length)} | ${col((s) => `${s.distinctUnseeded}/${sets[per.indexOf(s)].metadata.unseededRuns}`)} | ${col((s) => `${s.coldLatency} / ${s.latency}`)} |`);
+            lines.push(`| \`${ids[i]}\` | ${col((s) => `${s.verdict.pass ? 'PASS' : '**FAIL**'}${s.ruleNote || ''}`)} | ${col((s) => s.shown.length)} | ${col(firstRawText)} | ${col((s) => s.verdict.cited.length)} | ${col((s) => (s.verdict.citesRaw ? 'yes' : 'no'))} | ${col((s) => s.verdict.uncited.length)} | ${col((s) => s.verdict.stacks.length)} | ${col((s) => s.verdict.unsupported.length)} | ${col((s) => `${s.distinctUnseeded}/${s.distinctOf ?? sets[per.indexOf(s)].metadata.unseededRuns}`)} | ${col((s) => `${s.coldLatency} / ${s.latency}`)} |`);
         }
         lines.push('');
     }
@@ -781,8 +1189,13 @@ function renderReport(sets, gold) {
             `| Stacks of 3+ | ${per.map((s) => listOrNone(s.verdict.stacks.map(cell))).join(' | ')} |`,
             row('Unsupported figures', (s) => s.verdict.unsupported.join(', ') || '—'),
             row('Exempt sentences', (s) => s.verdict.sentences.filter((x) => x.exempt).map((x) => `${x.exempt}: ${x.text}`).join('\n') || '—'),
-            row('Seeded runs identical', (s) => (s.seededIdentical ? 'yes' : 'NO')),
-            row('Distinct unseeded answers', (s) => `${s.distinctUnseeded} of ${sets[per.indexOf(s)].metadata.unseededRuns}`),
+            row('Seeded runs identical', (s) => (s.seededIdentical === null ? '— (no seed)' : s.seededIdentical ? 'yes' : 'NO')),
+            row('Distinct unseeded answers', (s) => `${s.distinctUnseeded} of ${s.distinctOf ?? sets[per.indexOf(s)].metadata.unseededRuns}`),
+            ...(per.some((s) => s.ruleText) ? [
+                row('Pass rule runs (N)', (s) => (s.ruleText ? `${s.ruleText}; N=${s.q.runs.length}` : '—')),
+                row('Errored runs', (s) => (s.errored ? s.errored.join('\n') || 'none' : '—')),
+                row('Cost (USD)', (s) => (s.cost === undefined ? '—' : s.cost.toFixed(4))),
+            ] : []),
             row('Prompt (chars)', (s) => s.first.promptChars ?? '—'),
             row('Latency (s)', (s) => `${s.coldLatency} cold (first seeded run), ${s.latency} seeded median, ${s.unseededLatency ?? '—'} unseeded median`),
             row('Review flags (capture script)', (s) => s.reviewFlags.join('\n') || '—'),
@@ -815,7 +1228,7 @@ function evidenceText(entry, shown) {
 
 // Several result sets side by side by chat model; the first set's model is
 // the base. Judged against the current gold file.
-function renderComparison(sets, gold) {
+function renderComparison(sets, gold, { banner = null } = {}) {
     const models = [];
     for (const set of sets) {
         let group = models.find((m) => m.model === set.metadata.model);
@@ -852,27 +1265,33 @@ function renderComparison(sets, gold) {
         header,
         rule,
         `| Result sets | ${col((m) => m.sets.map((x) => `\`${x.metadata.label}\``).join(', '))} |`,
-        `| Model digest | ${col((m) => m.sets[0].metadata.modelDigest.slice(0, 12))} |`,
+        `| Model digest | ${col((m) => (m.sets[0].metadata.modelDigest ? m.sets[0].metadata.modelDigest.slice(0, 12) : '—'))} |`,
         `| Capabilities | ${col((m) => (m.sets[0].metadata.capabilities || ['—']).join(', '))} |`,
         `| Thinking | ${col((m) => cell(m.sets[0].metadata.thinking ? m.sets[0].metadata.thinking.handling : '— (stored before --model)'))} |`,
-        `| Ollama | ${col((m) => [...new Set(m.sets.map((x) => x.metadata.ollamaVersion))].join(', '))} |`,
+        `| Ollama | ${col((m) => [...new Set(m.sets.map((x) => x.metadata.ollamaVersion ?? '—'))].join(', '))} |`,
         `| Corpus / seed / temperature | ${col((m) => `${m.sets[0].metadata.corpusCommit.slice(0, 7)} / ${m.sets[0].metadata.seed} / ${m.sets[0].metadata.temperature}`)} |`,
         `| Chat options | ${col((m) => cell(JSON.stringify(m.sets[0].metadata.chatOptions)))} |`,
         `| Retrieval | ${col((m) => cell(JSON.stringify(m.sets[0].metadata.retrieval || '—')))} |`,
         `| Peak model memory | ${col((m) => m.sets.map((x) => memoryText(x.metadata)).join(', '))} |`,
         `| Wall time per set | ${col((m) => m.sets.map((x) => (typeof x.metadata.wallSecs === 'number' ? `${Math.round(x.metadata.wallSecs / 60)} min` : '—')).join(', '))} |`,
+        ...(sets.some((x) => providerOf(x.metadata) === 'bedrock') ? [
+            `| Provider | ${col((m) => [...new Set(m.sets.map((x) => providerOf(x.metadata)))].join(', '))} |`,
+            `| Pass rule | ${col((m) => [...new Set(m.sets.map((x) => (x.metadata.passRule ? x.metadata.passRule.id : 'first seeded run')))].join(', '))} |`,
+            `| Cost | ${col((m) => m.sets.map((x) => (x.metadata.cost ? `$${x.metadata.cost.totalUsd.toFixed(4)}` : '—')).join(', '))} |`,
+        ] : []),
         '',
+        ...(banner ? [banner, ''] : []),
     ];
     const retrieval = (m) => JSON.stringify([m.sets[0].metadata.retrieval, m.sets[0].metadata.chatOptions, m.sets[0].metadata.embedModelDigest]);
     if (models.some((m) => retrieval(m) !== retrieval(base))) lines.push('⚠ The models were run with different retrieval, chat options or embedding model, so differences aren\'t all the chat model\'s.', '');
-    const versions = [...new Set(models.flatMap((m) => m.sets.map((x) => x.metadata.ollamaVersion)))];
+    const versions = [...new Set(models.flatMap((m) => m.sets.map((x) => x.metadata.ollamaVersion)))].filter((v) => v !== undefined);
     if (versions.length > 1) lines.push(`⚠ The sets were run on different Ollama versions (${versions.join(', ')}). A seed only reproduces an answer on the same Ollama build, so check a model re-run on both before reading small differences as the model's.`, '');
 
     for (const name of GOLD_SETS) {
         const inSet = ids.filter((id) => gold.entries.find((e) => e.id === id).set === name);
         if (inSet.length === 0) continue;
         const of = (m) => inSet.map((id) => at(m, id)).filter(Boolean);
-        const unseededTotal = (m) => sum(of(m), (x) => x.metadata.unseededRuns);
+        const unseededTotal = (m) => sum(of(m), (x) => x.unseededOf ?? x.metadata.unseededRuns);
         lines.push(
             `## ${name[0].toUpperCase()}${name.slice(1)} set (${inSet.length} question${inSet.length === 1 ? '' : 's'})`,
             '',
@@ -884,11 +1303,11 @@ function renderComparison(sets, gold) {
             `| Sentences with 3+ stacked citations | ${col((m) => sum(of(m), (x) => x.verdict.stacks.length))} |`,
             `| Unsupported figures | ${col((m) => sum(of(m), (x) => x.verdict.unsupported.length))} |`,
             `| Unseeded runs passing | ${col((m) => `${sum(of(m), (x) => x.unseededPasses)} of ${unseededTotal(m)}`)} |`,
-            `| Seeded runs not identical | ${col((m) => of(m).filter((x) => !x.seededIdentical).length)} |`,
-            `| Cold latency, mean / max (s) | ${col((m) => meanMax(of(m).map((x) => x.coldLatency), 1))} |`,
+            `| Seeded runs not identical | ${col((m) => of(m).filter((x) => x.seededIdentical === false).length)} |`,
+            `| Cold latency, mean / max (s) | ${col((m) => meanMax(of(m).map((x) => x.coldLatency).filter((n) => typeof n === 'number'), 1))} |`,
             `| Tokens per second, cold run, mean / max | ${col((m) => meanMax(of(m).map((x) => tokensPerSec(x.first)).filter((n) => n !== null), 1))} |`,
             `| Answer length, mean / max (words) | ${col((m) => meanMax(of(m).map((x) => x.first.answer.split(/\s+/).filter(Boolean).length)))} |`,
-            `| Runs that returned thinking text | ${col((m) => (of(m).every((x) => typeof x.first.thinkingChars === 'number') ? sum(of(m), (x) => [...x.q.seeded, ...x.q.unseeded].filter((r) => r.thinkingChars > 0).length) : '—'))} |`,
+            `| Runs that returned thinking text | ${col((m) => (of(m).every((x) => x.q.runs || typeof x.first.thinkingChars === 'number') ? sum(of(m), (x) => runsOf(x.q).filter((r) => r.thinkingChars > 0).length) : '—'))} |`,
             '',
             `Per question: seeded verdict (unseeded runs passing). Gold evidence is from \`${base.model}\`'s prompt.`,
             '',
@@ -901,7 +1320,7 @@ function renderComparison(sets, gold) {
             const same = models.every((m) => shownIds(at(m, id)) === shownIds(at(base, id)));
             lines.push(`| \`${id}\` | ${col((m) => {
                 const x = at(m, id);
-                return x ? `${x.verdict.pass ? 'PASS' : '**FAIL**'} (${x.unseededPasses}/${x.metadata.unseededRuns})` : '—';
+                return x ? `${x.verdict.pass ? 'PASS' : '**FAIL**'} (${x.unseededPasses}/${x.unseededOf ?? x.metadata.unseededRuns})` : '—';
             })} | ${at(base, id) ? evidenceText(entry, at(base, id).shown) : '—'} | ${same ? 'yes' : '**no**'} |`);
         }
         lines.push('');
@@ -926,7 +1345,7 @@ function renderComparison(sets, gold) {
             if (!x) continue;
             lines.push(
                 `**\`${m.model}\`: ${x.verdict.pass ? 'PASS' : `FAIL: ${x.verdict.failures.join('; ')}`}**`,
-                `(cited ${x.first.sources.map((y) => short(y.recordId)).join(', ') || 'nothing'}; unseeded ${x.unseededPasses}/${x.metadata.unseededRuns} passing; cold ${x.coldLatency}s)`,
+                `(cited ${x.first.sources.map((y) => short(y.recordId)).join(', ') || 'nothing'}; ${x.q.runs ? 'runs' : 'unseeded'} ${x.unseededPasses}/${x.unseededOf ?? x.metadata.unseededRuns} passing; cold ${x.coldLatency}s)`,
                 '',
                 ...x.first.answer.split('\n').map((l) => `> ${l}`),
                 '',
@@ -936,14 +1355,47 @@ function renderComparison(sets, gold) {
     return `${lines.join('\n')}\n`;
 }
 
-// The settings every compared result set must share.
-function checkComparable(labels, sets) {
-    for (const key of ['harnessVersion', 'corpusCommit', 'seed', 'temperature']) {
-        const values = new Set(sets.map((x) => x.metadata[key]));
-        if (values.size > 1) {
-            throw new Error(`${labels.join(', ')} differ in ${key} (${[...values].join(' vs ')}); re-run so they match`);
+// The settings every compared result set must share. A set without
+// `provider` is ollama.
+const COMPARABLE_KEYS = ['harnessVersion', 'corpusCommit', 'seed', 'temperature', 'provider'];
+// The ones --across-settings lets differ: a Bedrock set (no seed, no
+// temperature) against a seeded Ollama one, or two seeds.
+const ACROSS_SETTINGS_KEYS = ['seed', 'temperature', 'provider'];
+// What the --across-settings banner also lists when it differs.
+const BANNER_KEYS = [...COMPARABLE_KEYS, 'model', 'region', 'effort', 'maxTokens', 'chatOptions', 'retrieval', 'promptBehaviors', 'passRule'];
+
+function settingValue(metadata, key) {
+    if (key === 'provider') return providerOf(metadata);
+    if (key === 'passRule') return metadata.passRule ? `${metadata.passRule.id} ${metadata.passRule.sha256.slice(0, 12)}` : 'first seeded run';
+    const value = metadata[key];
+    if (value === undefined) return '—';
+    return typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
+}
+
+// Refuses sets that differ in COMPARABLE_KEYS; with acrossSettings, only
+// in harnessVersion or corpusCommit. Returns null when nothing differs, or
+// with acrossSettings the banner listing every BANNER_KEYS setting that
+// differs (also printed).
+function checkComparable(labels, sets, { acrossSettings = false } = {}) {
+    for (const key of COMPARABLE_KEYS) {
+        const values = new Set(sets.map((x) => (key === 'provider' ? providerOf(x.metadata) : x.metadata[key])));
+        if (values.size > 1 && !(acrossSettings && ACROSS_SETTINGS_KEYS.includes(key))) {
+            const hint = ACROSS_SETTINGS_KEYS.includes(key) ? ', or pass --across-settings to compare them anyway' : '';
+            throw new Error(`${labels.join(', ')} differ in ${key} (${[...values].join(' vs ')}); re-run so they match${hint}`);
         }
     }
+    if (!acrossSettings) return null;
+    const differing = BANNER_KEYS
+        .map((key) => ({ key, values: sets.map((x) => settingValue(x.metadata, key)) }))
+        .filter(({ values }) => new Set(values).size > 1);
+    if (differing.length === 0) return null;
+    const banner = [
+        `⚠ **Across settings** (--across-settings): these sets differ in ${differing.map((d) => d.key).join(', ')}. Each set is judged by its own pass rule, so pass counts are not like for like.`,
+        '',
+        ...differing.map(({ key, values }) => `- ${key}: ${values.map((v, i) => `\`${labels[i]}\` ${v}`).join('; ')}`),
+    ].join('\n');
+    console.log(banner);
+    return banner;
 }
 
 function readResults(label) {
@@ -952,22 +1404,22 @@ function readResults(label) {
     return readJson(file);
 }
 
-function compare({ label, labels }) {
+function compare({ label, labels, acrossSettings }) {
     if (!label) throw new Error('compare needs --label NAME');
     if (labels.length < 2) throw new Error('compare takes at least two result names');
     const sets = labels.map(readResults).map((set) => withPromptSources(set));
-    checkComparable(labels, sets);
+    const banner = checkComparable(labels, sets, { acrossSettings });
     const out = path.join(RESULTS_DIR, `${label}.md`);
-    fs.writeFileSync(out, renderComparison(sets, loadGold()));
+    fs.writeFileSync(out, renderComparison(sets, loadGold(), { banner }));
     console.log(`Report: ${path.relative(process.cwd(), out)}`);
 }
 
-function report({ labels }) {
+function report({ labels, acrossSettings }) {
     if (labels.length < 1 || labels.length > 2) throw new Error('report takes one result name, or two for before/after');
     const sets = labels.map(readResults).map((set) => withPromptSources(set));
-    if (sets.length === 2) checkComparable(labels, sets);
+    const banner = sets.length === 2 ? checkComparable(labels, sets, { acrossSettings }) : null;
     const out = path.join(RESULTS_DIR, `${labels.join('-vs-')}.md`);
-    fs.writeFileSync(out, renderReport(sets, loadGold()));
+    fs.writeFileSync(out, renderReport(sets, loadGold(), { banner }));
     console.log(`Report: ${path.relative(process.cwd(), out)}`);
 }
 
@@ -995,7 +1447,10 @@ function parseArgs(argv) {
     const [command, ...rest] = argv;
     const options = {
         command, label: null, model: null, think: null, seed: 42, temperature: CHAT_OPTIONS.temperature, seededRuns: 3, unseededRuns: 3, set: null, only: null, wholeRawNotes: null, followUps: null, corrections: null, behaviors: null, labels: [],
+        provider: 'ollama', maxCost: null, passRuleFile: null, passRuleSha256: null, acrossSettings: false,
     };
+    // The flags given, for what --provider bedrock refuses.
+    const given = new Set();
     const count = (arg, raw, min) => {
         const n = Number(raw);
         if (!Number.isInteger(n) || n < min) throw new Error(`${arg} must be an integer ≥ ${min}`);
@@ -1003,6 +1458,7 @@ function parseArgs(argv) {
     };
     for (let i = 0; i < rest.length; i += 1) {
         const arg = rest[i];
+        given.add(arg);
         const value = () => {
             if (i + 1 >= rest.length) throw new Error(`${arg} needs a value`);
             i += 1;
@@ -1047,11 +1503,37 @@ function parseArgs(argv) {
                 throw new Error(`--behaviors takes none, or names from ${Object.keys(PROMPT_BEHAVIORS).map(behaviorName).join(', ')}`);
             }
             options.behaviors = none ? [] : names;
+        } else if (arg === '--provider') {
+            options.provider = value();
+            if (!['ollama', 'bedrock'].includes(options.provider)) throw new Error('--provider must be ollama or bedrock');
+        } else if (arg === '--max-cost') {
+            options.maxCost = Number(value());
+            if (!Number.isFinite(options.maxCost) || options.maxCost <= 0) throw new Error('--max-cost must be a number of US dollars > 0');
+        } else if (arg === '--pass-rule-file') {
+            options.passRuleFile = value();
+        } else if (arg === '--pass-rule-sha256') {
+            options.passRuleSha256 = value().trim();
+            if (!/^[0-9a-fA-F]{64}$/.test(options.passRuleSha256)) throw new Error('--pass-rule-sha256 must be 64 hex characters');
+        } else if (arg === '--across-settings') {
+            options.acrossSettings = true;
         } else if (!arg.startsWith('--') && (command === 'report' || command === 'compare')) {
             options.labels.push(arg);
         } else {
             throw new Error(`unknown argument ${arg}`);
         }
+    }
+    const bedrockOnly = ['--max-cost', '--pass-rule-file', '--pass-rule-sha256'].filter((flag) => given.has(flag));
+    if (options.provider === 'bedrock') {
+        const refused = ['--seed', '--temperature', '--seeded-runs', '--unseeded-runs', '--think'].filter((flag) => given.has(flag));
+        if (refused.length > 0) {
+            throw new Error(`--provider bedrock refuses ${refused.join(', ')}: Converse takes no seed, temperature is not sent, there is no Ollama think, and the runs follow the ${PASS_RULE_ID} pass rule`);
+        }
+        if (command === 'run' && options.maxCost === null) throw new Error('--provider bedrock needs --max-cost USD');
+        if (command === 'run' && (!options.passRuleFile || !options.passRuleSha256)) {
+            throw new Error('--provider bedrock needs --pass-rule-file PATH and --pass-rule-sha256 HASH');
+        }
+    } else if (bedrockOnly.length > 0) {
+        throw new Error(`${bedrockOnly.join(', ')}: only with --provider bedrock`);
     }
     return options;
 }
@@ -1060,11 +1542,11 @@ async function main() {
     // Same settings as the server (AGENTIC_REPO_ROOT, PYTHON_BIN, OLLAMA_*).
     require('dotenv').config({ path: path.join(__dirname, '..', '.env'), quiet: true });
     const options = parseArgs(process.argv.slice(2));
-    if (options.command === 'run') return run(options);
+    if (options.command === 'run') return options.provider === 'bedrock' ? runBedrock(options) : run(options);
     if (options.command === 'report') return report(options);
     if (options.command === 'compare') return compare(options);
     if (options.command === 'prompt-sources') return promptSources();
-    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario|rationale] [--only id,id] [--whole-raw-notes N] [--follow-ups shown|linked] [--corrections shown|off] [--behaviors none|name,name] | report BEFORE [AFTER] | compare --label NAME BASE OTHER... | prompt-sources');
+    throw new Error('usage: eval-ask.js run --label NAME [--model NAME] [--think LEVEL] [--seed N] [--temperature T] [--seeded-runs N] [--unseeded-runs N] [--set regression|scenario|rationale] [--only id,id] [--whole-raw-notes N] [--follow-ups shown|linked] [--corrections shown|off] [--behaviors none|name,name] | run --provider bedrock --label NAME [--model PROFILE_ID] --max-cost USD --pass-rule-file PATH --pass-rule-sha256 HASH [--set ...] [--only id,id] | report BEFORE [AFTER] [--across-settings] | compare --label NAME BASE OTHER... [--across-settings] | prompt-sources');
 }
 
 if (require.main === module) {
@@ -1076,4 +1558,5 @@ if (require.main === module) {
 
 module.exports = {
     judgeRun, claimText, renderReport, renderComparison, parseArgs, thinkRequest, withBehaviors, withPromptSources, runRetrieval, entriesToAsk, DEFAULT_SETS, EVAL_HARNESS_VERSION,
+    threeThenFive, askByPassRule, callCost, readPassRule, checkIdentity, bedrockMetadata, runBedrock, checkComparable, BEDROCK_PRICING, PASS_RULE_ID,
 };

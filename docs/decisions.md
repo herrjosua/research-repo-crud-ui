@@ -2198,3 +2198,69 @@ outside the repo in `~/rr-228-measure` on Josh's machine.
 before and after), no default, `EVAL_HARNESS_VERSION`. The runs created
 `ask/eval/prompt-sources/1cb33d4….json` (1,064 lines); no other stored
 file changed.
+
+## 29. A Bedrock provider: Converse, no seed, judged three-then-five
+
+**Date:** 2026-10-23. **Status:** Active. Ticket RR-46.
+
+**Decision:** `LLM_PROVIDER=bedrock` answers with Amazon Bedrock through
+the native bedrock-runtime Converse API (`@aws-sdk/client-bedrock-runtime`,
+loaded only on the first Bedrock request), for three inference profiles in
+us-east-1: `global.anthropic.claude-sonnet-5-5`,
+`global.anthropic.claude-opus-5-5` and `openai.gpt-oss-20b-1:0`. Any other
+`BEDROCK_MODEL_ID` refuses to start. Embeddings stay on Ollama, in one
+index shared by both live pipelines. Credentials come from the SDK's
+default chain (`AWS_PROFILE`); no AWS keys in `.env`. The dev provider
+toggle does not offer Bedrock. Nothing changes for Ollama: its requests,
+result metadata and reports are the same as before.
+
+**Request:** the system message as `system`, the user message as one user
+turn, `inferenceConfig: { maxTokens }` (`BEDROCK_MAX_TOKENS`, default
+4096). **No temperature** to any of the three: Sonnet 5.5 rejects it
+(`ValidationException` "temperature is deprecated for this model"), the
+other two are untested; a per-model flag in `ask/bedrock.js` can turn it on
+after a probe. **No seed**: Converse has none, so `ASK_SEED` doesn't apply
+and a seed in the chat options throws. **Effort** (`BEDROCK_EFFORT`,
+default high) goes to the Claude models only, as
+`additionalModelRequestFields.output_config.effort` (checked by CLI on
+Sonnet 5.5 at low and high).
+
+**Reply:** only text blocks are the answer. A reasoning block is never part
+of it or judged; the harness keeps its length. Sonnet 5.5 at high effort
+reported 209 output tokens for a three-sentence answer with only a text
+block, so thinking can be billed without being returned: cost is always
+`usage.outputTokens`, never the answer's length. Only a `stopReason` of
+`end_turn` or `stop_sequence` is an answer: any other (`max_tokens`,
+`model_context_window_exceeded`, `content_filtered`,
+`guardrail_intervened`, `tool_use`, …), a missing one, or no text block is
+a `BedrockError` carrying the call's usage and attempts, never an answer.
+
+**Errors:** `LlmError` (`ask/llmError.js`) is the base of `OllamaError` and
+the new `BedrockError`; the routes check `instanceof LlmError`, and the 502
+is provider-neutral ("the language model is unavailable"). A Bedrock
+failure is logged as "Bedrock <name> (HTTP <status>)", labelled for the
+failures seen so far, and the SDK message (credentials redacted, 500
+characters) with the request ID; never the error object.
+
+**Evaluation:** `eval-ask.js run --provider bedrock`, still harness
+version 1 (Bedrock sets add optional fields; a set without `provider` is
+ollama). It refuses unless STS says the caller is
+`:user/ux-research-demo`, needs `--max-cost` (a running total at a fixed
+price table, stopping before the next call once the limit is reached), and
+judges each entry by **three-then-five** (3 runs; on 2-1 or 1-2, 2 more and
+the majority of 5; an erroring run is re-run once, then counts as a fail),
+with the description in a file whose SHA-256 must match
+`--pass-rule-sha256` and is recorded in the set. The per-run gold verdict
+is unchanged. A Bedrock set (seed "not supported") is refused against a
+seeded Ollama set unless `--across-settings`, which prints the differing
+settings.
+
+**Why:** a stronger model than gemma2:9b is the open question behind the
+false declines (decision 27, RR-132), and Bedrock gives three to try
+without new hardware. Without a seed one run per entry says little, so the
+pass rule takes a majority. Each call costs money, so the identity pin and
+cost guard come before any call.
+
+**Not measured yet:** no Bedrock result set exists. The first runs are
+Josh's: an STS check, then three entries with `--max-cost 1` to measure
+cost per question.

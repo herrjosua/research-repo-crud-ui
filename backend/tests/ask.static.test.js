@@ -184,7 +184,7 @@ describe('routes/ask.js startup', () => {
         expect(loadAskRoute).not.toThrow();
     });
 
-    it.each(['bedrock', 'openai', 'static-demo'])('refuses to start with LLM_PROVIDER=%j', (value) => {
+    it.each(['azure', 'openai', 'static-demo'])('refuses to start with LLM_PROVIDER=%j', (value) => {
         process.env.LLM_PROVIDER = value;
         expect(loadAskRoute).toThrow(/LLM_PROVIDER=.* is not supported/);
     });
