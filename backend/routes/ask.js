@@ -2,15 +2,16 @@ const express = require('express');
 const requireAuth = require('../middleware/requireAuth');
 const { SAFE_SLUG_RE } = require('../validation');
 const activeProvider = require('../ask/activeProvider');
-const { OllamaError } = require('../ask/ollama');
+const { LlmError } = require('../ask/llmError');
 const { loadRecords } = require('../ask/corpus');
 const { readProjectList, recordProjectTag } = require('../projects');
 
 // ---------------------------------------------------------------------------
-// POST /api/ask — Ask the Repo's RAG endpoint (local Ollama), or with
-// LLM_PROVIDER=static, the public demo's captured answers.
+// POST /api/ask — Ask the Repo's RAG endpoint (local Ollama, or Amazon
+// Bedrock with LLM_PROVIDER=bedrock), or with LLM_PROVIDER=static, the
+// public demo's captured answers.
 //
-// Request body (LLM_PROVIDER=ollama):
+// Request body (LLM_PROVIDER=ollama or bedrock):
 //   {
 //     question: string,          // required, 1–2000 chars after trimming
 //     project?: string | null,   // optional; omitted, null, or "all" = whole repo.
@@ -35,7 +36,7 @@ const { readProjectList, recordProjectTag } = require('../projects');
 //     sources: Source[],  // only the sources the answer cites, in [1], [2], …
 //                         // order; [] when the answer cites nothing.
 //     model: string,      // the generating model, e.g. "gemma2:9b"
-//     checks: {           // live (ollama) only, never static. Flags on the
+//     checks: {           // live (ollama, bedrock) only, never static. Flags on the
 //                         // answer from ask/checks.js; the answer is unchanged.
 //       retried: false,   // always false for now: nothing is regenerated
 //       uncited: string[],            // sentences needing a citation that have none
@@ -86,19 +87,20 @@ const { readProjectList, recordProjectTag } = require('../projects');
 //   (No `page`: markdown records have no pages. SourceCard already omits it.)
 //
 // Errors (all `{ error: string }`): 400 bad input, 401 not logged in,
-// 404 unknown questionId (static), 503 no provider active (LLM_PROVIDER not set), 502 Ollama
-// unreachable or failed, 500 anything else.
+// 404 unknown questionId (static), 503 no provider active (LLM_PROVIDER not set), 502 the
+// language model (Ollama or Bedrock) unreachable or failed, 500 anything else.
 // ---------------------------------------------------------------------------
 
 const MAX_QUESTION_CHARS = 2000;
 
 // GET /api/ask/config's `mode` for each provider.
-const MODES = { ollama: 'live', static: 'static' };
+const MODES = { ollama: 'live', bedrock: 'live', static: 'static' };
 
 // The provider is read once per request from ask/activeProvider.js: it
 // starts as LLM_PROVIDER and, on a dev server only, can be switched without
 // a restart (POST /api/dev/provider, routes/dev.js). Static mode never
-// builds an Ollama client, so it can't reach Ollama.
+// builds an Ollama client, so it can't reach Ollama. Each live provider has
+// its own pipeline (activeProvider.getPipeline).
 
 function validateAsk(body) {
   const { question, project } = body || {};
@@ -204,12 +206,14 @@ router.post('/', async (req, res) => {
   const project = req.body.project && req.body.project !== 'all' ? req.body.project : null;
 
   try {
-    const { answer, sources, model, checks } = await activeProvider.getPipeline().ask(question, project);
+    const { answer, sources, model, checks } = await activeProvider.getPipeline(provider).ask(question, project);
     res.json({ answer, sources, model, checks });
   } catch (err) {
-    if (err instanceof OllamaError) {
+    // Logged as message and detail only, never the error object: a
+    // provider error's message and detail are sanitized (ask/llmError.js).
+    if (err instanceof LlmError) {
       console.error(`[POST /api/ask] ${err.message}: ${err.detail || ''}`);
-      return res.status(502).json({ error: 'the local language model is unavailable' });
+      return res.status(502).json({ error: 'the language model is unavailable' });
     }
     console.error('[POST /api/ask] unexpected error:', err);
     res.status(500).json({ error: 'internal server error' });

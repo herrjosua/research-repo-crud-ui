@@ -95,8 +95,9 @@ guarantees that on the same hardware and Ollama version: another machine or
 Ollama release can answer differently. `ASK_SEED=random` sends no seed, to
 see how answers vary; any other value that isn't an integer refuses to
 start. The evaluation and capture scripts below ignore `ASK_SEED` and set
-their own seed per run. `LLM_PROVIDER=static` serves captured answers instead (next
-section); any other value refuses to start. Leave `LLM_PROVIDER` unset in
+their own seed per run. `LLM_PROVIDER=bedrock` answers with Amazon Bedrock
+instead (next section), and `LLM_PROVIDER=static` serves captured answers
+(below); any other value refuses to start. Leave `LLM_PROVIDER` unset in
 production, or set it to `static` for the public demo; unset, the endpoint
 returns `503`.
 
@@ -104,6 +105,96 @@ To check the setup against your real Ollama, run the live test (see
 [Testing](#testing)). The request and response format is under [Ask the Repo
 (v1.3.6)](#ask-the-repo-v136) below; for how the pieces fit together, see
 [`../docs/architecture.md`](../docs/architecture.md).
+
+#### Ask the Repo on Amazon Bedrock (`LLM_PROVIDER=bedrock`)
+
+`LLM_PROVIDER=bedrock` answers with a model on Amazon Bedrock, through the
+bedrock-runtime Converse API (`ask/bedrock.js`, on
+`@aws-sdk/client-bedrock-runtime`). Retrieval, the prompt and the checks are
+the same as for Ollama. **Embeddings still need Ollama**: the embedding index
+is built with `OLLAMA_BASE_URL` and `OLLAMA_EMBED_MODEL` whatever the
+provider, so a local Ollama with `nomic-embed-text` pulled is still required.
+
+| Variable | Default | |
+|---|---|---|
+| `BEDROCK_MODEL_ID` | none (required) | an inference profile ID from the table below; any other refuses to start |
+| `BEDROCK_REGION` | `us-east-1` | |
+| `BEDROCK_MAX_TOKENS` | `4096` | the reply's token limit; a reply that reaches it (`stopReason` `max_tokens`) is an error, never an answer, as is any `stopReason` but `end_turn` or `stop_sequence`, or none |
+| `BEDROCK_EFFORT` | `high` | `low`, `medium`, `high`, `xhigh` or `max`; sent to the Claude models only |
+| `AWS_PROFILE` | | the AWS credentials, through the SDK's default chain (expected: `ux-demo`). **No AWS keys go in `.env`.** |
+
+| `BEDROCK_MODEL_ID` | Effort sent | Temperature sent |
+|---|---|---|
+| `global.anthropic.claude-sonnet-5-5` | yes | no |
+| `global.anthropic.claude-opus-5-5` | yes | no |
+| `openai.gpt-oss-20b-1:0` | no | no |
+
+- **No seed, temperature not sent.** Converse has no seed, so `ASK_SEED`
+  doesn't apply and the same question can get a different answer each
+  time. Temperature isn't sent to any of the three: Sonnet 5.5 rejects it
+  (`ValidationException` "temperature is deprecated for this model"), and
+  Opus 5.5 and gpt-oss are untested. The model table in `ask/bedrock.js`
+  has a per-model flag for it, so a later probe can turn it on. `num_ctx`
+  is an Ollama option and is ignored; Bedrock refuses an over-long prompt
+  instead of cutting it, so there is no prompt-size warning.
+- **Effort** is sent as `additionalModelRequestFields: {"output_config":
+  {"effort": "<level>"}}`, to the Claude models only.
+- **Hidden thinking.** Only the reply's text blocks are the answer. A
+  reasoning block (gpt-oss returns one) is never part of it and is never
+  judged; the harness records only its length. A Claude model can think
+  without returning it: Sonnet 5.5 at high effort reported 209 output
+  tokens for a three-sentence answer with only a text block. So cost is
+  always counted from `usage.outputTokens`, never from the answer's length.
+- **Errors** are a `BedrockError` (an `LlmError`, like `OllamaError`):
+  `POST /api/ask` answers `502` with the provider-neutral "the language
+  model is unavailable" and logs only "Bedrock <error name> (HTTP
+  <status>)", labelled where known ("model access not enabled
+  (Marketplace)", "Marketplace payment instrument", "bad parameter",
+  "throttled"), and the SDK's message (credentials redacted, 500
+  characters) with the request ID. The SDK error object, the client config
+  and the credentials are never logged. The SDK retries up to 3 attempts.
+- The SDK isn't loaded until the first Bedrock request, so nothing loads it
+  unless `LLM_PROVIDER=bedrock` (or the harness's `--provider bedrock`).
+  Starting the server makes no AWS call: it only checks the settings.
+- The dev provider switch below doesn't offer Bedrock; it only ever comes
+  from `LLM_PROVIDER`.
+
+**Evaluating on Bedrock.** `scripts/eval-ask.js run --provider bedrock`
+runs the gold set on a Bedrock model (`--model` takes a profile ID, default
+`BEDROCK_MODEL_ID`; the other `BEDROCK_*` variables apply as above). Every
+call costs money, so:
+
+- **Identity pin.** Before any call it runs STS `GetCallerIdentity`
+  (`@aws-sdk/client-sts`, a dev dependency) and refuses unless the ARN ends
+  `:user/ux-research-demo`. There is no override.
+- **Cost guard.** `--max-cost USD` is required. Each call's cost is its
+  input and output tokens at the harness's pricing constant
+  (`BEDROCK_PRICING`, USD per 1M tokens in / out, global profile in
+  us-east-1, from the AWS Bedrock pricing page as of 2026-10-23: Sonnet 5.5
+  2 / 10, Opus 5.5 4 / 20, gpt-oss-20b 0.07 / 0.30, standard in-Region
+  tier). It keeps a running total and doesn't start another call once the
+  total reaches the limit, saving what it has and saying so; the call that
+  crosses the limit finishes, so the total can end up to one call over it.
+- **Pass rule.** Each entry is judged by **three-then-five**: 3 runs; 3-0 or
+  0-3 is the verdict; on 2-1 or 1-2, 2 more runs and the majority of 5. A
+  run passes when the usual per-run gold verdict does. A run that fails
+  with a `BedrockError` is re-run once; if that fails too it counts as a
+  fail and is listed separately. The report gives N per entry.
+  `--pass-rule-file PATH --pass-rule-sha256 HASH` are required: the run
+  refuses unless the file's SHA-256 is HASH, and records the hash and the
+  file's text in the set's metadata.
+- `--seed`, `--temperature`, `--seeded-runs`, `--unseeded-runs` and
+  `--think` are refused. Ollama is asked only about the embedding model.
+- A Bedrock set stores `provider: "bedrock"`, the profile ID, region,
+  effort, max tokens, `seed: "not supported"` and `temperature: "not
+  sent"`, so `report` and `compare` refuse it against a seeded Ollama set.
+  `--across-settings` allows it, with a banner listing every setting that
+  differs; each set is then judged by its own pass rule.
+
+```bash
+cd backend
+node scripts/eval-ask.js run --provider bedrock --label sonnet-cost-check --only ID,ID,ID --max-cost 1 --pass-rule-file PATH --pass-rule-sha256 HASH
+```
 
 #### Switching providers without a restart (dev only)
 
@@ -279,7 +370,10 @@ the agentic-repo clone at `AGENTIC_REPO_ROOT` with no uncommitted changes,
 and `PYTHON_BIN` pointing at a Python with python-frontmatter (all read from
 `backend/.env`, as for the server). Jest only checks the gold file's schema
 and the pass/fail rules (`tests/askEval.test.js`), and the per-sentence
-checks they rest on (`tests/askChecks.test.js`).
+checks they rest on (`tests/askChecks.test.js`). For Bedrock models
+(`--provider bedrock`), see "Ask the Repo on Amazon Bedrock" above;
+`tests/askEvalBedrock.test.js` covers its pass rule, cost guard and
+refusals.
 
 ```bash
 cd backend
@@ -725,6 +819,8 @@ backend/
 │   ├── static/           questions.json (curated) and answers.json (captured) for LLM_PROVIDER=static
 │   ├── eval/             The evaluation gold set (gold.json, validated by gold.js) and checked-in results/ reports
 │   ├── ollama.js         Plain-fetch client for Ollama's /api/embed and /api/chat, plus a readiness check (/api/tags)
+│   ├── bedrock.js        Amazon Bedrock Converse chat client for LLM_PROVIDER=bedrock, its model table, BedrockError
+│   ├── llmError.js       LlmError, the base of OllamaError and BedrockError
 │   ├── corpus.js         export_records.py records → passages; kind/date mapping; metadata sections and roster headers
 │   ├── retrieval.js      Cosine similarity, ranking, and the lazy in-memory embedding cache
 │   ├── provenance.js     Which raw sessions a synthesis or doc record was built from, and the (off by default) provenance slot
@@ -754,6 +850,8 @@ backend/
 │   ├── security.test.js       Adversarial security tests (path traversal, SQL injection, oversized bodies, tampered cookies, XSS, security headers/robots.txt/rate limiting, HTTPS redirect)
 │   ├── ask.test.js            POST /api/ask integration tests against a fake Ollama
 │   ├── ask.unit.test.js       Similarity, embedding cache, chunking, sanitizer, citation tests
+│   ├── bedrock.unit.test.js   The Bedrock client with an injected send: request shape, replies, errors, settings, lazy SDK loading
+│   ├── askEvalBedrock.test.js The harness's --provider bedrock: refusals, three-then-five, cost guard, identity pin, reports
 │   ├── ask.disabled.test.js   POST /api/ask with LLM_PROVIDER unset
 │   ├── devTools.test.js       The dev-tools gate and where /api/dev is (never) registered
 │   ├── devProvider.test.js    The dev-only provider switch, POST /api/dev/provider
@@ -834,7 +932,7 @@ Anything else from a non-lead gets a `400`.
 | Method | Path       | Body                                   | Notes |
 |--------|------------|----------------------------------------|-------|
 | GET    | `/api/ask/config` | — | What the Ask tab needs up front: whether asking works here, and the project list. Always `200` for a signed-in user (never `503`); `401` when signed out. |
-| POST   | `/api/ask` | `{ question: string, project?: string }`, or `{ questionId: string }` when static | RAG over every record, answered by a local Ollama; with `LLM_PROVIDER=static`, a captured answer. `503` when no provider is active (`LLM_PROVIDER` unset, and not switched on by the dev toggle); `502` if Ollama is unreachable or fails. |
+| POST   | `/api/ask` | `{ question: string, project?: string }`, or `{ questionId: string }` when static | RAG over every record, answered by a local Ollama, or Bedrock with `LLM_PROVIDER=bedrock`; with `LLM_PROVIDER=static`, a captured answer. `503` when no provider is active (`LLM_PROVIDER` unset, and not switched on by the dev toggle); `502` if the model (Ollama or Bedrock) is unreachable or fails. |
 
 **`GET /api/ask/config`** responds:
 
@@ -1300,7 +1398,8 @@ cookies.txt` / `-b cookies.txt` to persist the cookie across requests.
 - `POST /api/ask` never passes model output through raw: the answer is
   flattened to plain text server-side (HTML tags and `<script>`/`<style>`
   contents removed, markdown unwrapped) before it's returned, and Ollama
-  errors are logged server-side and returned as a generic `502`. Record text
+  and Bedrock errors are logged server-side (message and sanitized detail
+  only, never the error object) and returned as a generic `502`. Record text
   is given to the model as data, with instructions to ignore any
   instructions inside it
 - `topicSlug`/`slug` are validated against `^[a-z0-9-]+$` before ever

@@ -419,7 +419,7 @@ describe('POST /api/ask', () => {
         const res = await agent.post('/api/ask').send({ question: 'anything' });
 
         expect(res.status).toBe(502);
-        expect(res.body).toEqual({ error: 'the local language model is unavailable' });
+        expect(res.body).toEqual({ error: 'the language model is unavailable' });
         expect(errorSpy).toHaveBeenCalledWith(expect.stringMatching(/model runner has unexpectedly stopped/));
         errorSpy.mockRestore();
     });

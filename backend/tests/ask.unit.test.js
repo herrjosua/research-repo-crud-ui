@@ -458,7 +458,7 @@ describe('resolveProvider', () => {
     });
 
     it('refuses an unsupported provider', () => {
-        expect(() => resolveProvider({ LLM_PROVIDER: 'bedrock' })).toThrow(/not supported/);
+        expect(() => resolveProvider({ LLM_PROVIDER: 'openai' })).toThrow(/not supported/);
     });
 });
 

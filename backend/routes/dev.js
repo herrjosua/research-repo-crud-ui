@@ -1,7 +1,7 @@
 const express = require('express');
 const requireAuth = require('../middleware/requireAuth');
 const activeProvider = require('../ask/activeProvider');
-const { OllamaError } = require('../ask/ollama');
+const { LlmError } = require('../ask/llmError');
 
 // ---------------------------------------------------------------------------
 // /api/dev — dev-only tools. app.js mounts this router only when
@@ -9,9 +9,10 @@ const { OllamaError } = require('../ask/ollama');
 // NODE_ENV development or test. Anywhere else these paths don't exist and
 // answer the JSON 404 like any unknown /api path.
 //
-// GET /api/dev/provider → { provider: 'static' | 'ollama' | null }
+// GET /api/dev/provider → { provider: 'static' | 'ollama' | 'bedrock' | null }
 //   The provider Ask the Repo answers with right now. null: off
-//   (LLM_PROVIDER unset and not switched since).
+//   (LLM_PROVIDER unset and not switched since). bedrock only ever comes
+//   from LLM_PROVIDER: the switch below doesn't offer it.
 //
 // POST /api/dev/provider  { provider: 'static' | 'ollama' } → { provider }
 //   Switches Ask the Repo's provider for this server process, without a
@@ -45,7 +46,7 @@ router.post('/provider', async (req, res) => {
         try {
             await activeProvider.getOllama().checkReady();
         } catch (err) {
-            if (!(err instanceof OllamaError)) throw err;
+            if (!(err instanceof LlmError)) throw err;
             console.error(`[POST /api/dev/provider] ${err.message}${err.detail ? `: ${err.detail}` : ''}`);
             return res.status(502).json({ error: err.message });
         }

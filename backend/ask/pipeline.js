@@ -84,9 +84,12 @@ async function chatWithPromptTokens(ollama, messages, options) {
     return { content, promptTokens: stats && typeof stats.promptTokens === 'number' ? stats.promptTokens : null };
 }
 
-// The warning ask() logs for a prompt near or past num_ctx, or null.
+// The warning ask() logs for a prompt near or past num_ctx, or null. ask()
+// passes the client's `contextSize`: undefined (an Ollama client) means
+// CHAT_OPTIONS.num_ctx, and null (ask/bedrock.js, which refuses an over-long
+// prompt instead of cutting it) means no warning.
 function promptSizeWarning(promptTokens, numCtx = CHAT_OPTIONS.num_ctx) {
-    if (promptTokens === null || promptTokens <= PROMPT_WARN_SHARE * numCtx) return null;
+    if (promptTokens === null || numCtx === null || promptTokens <= PROMPT_WARN_SHARE * numCtx) return null;
     return `Ask the Repo: the prompt was ${promptTokens} tokens, over ${Math.round(PROMPT_WARN_SHARE * 100)}% of num_ctx ${numCtx}; `
         + 'Ollama may have cut it or left too little room for the answer.';
 }
@@ -200,15 +203,16 @@ function withCorrections(ranked, selection) {
     return { selection: out, attached: out.filter((p) => !selected.has(idOf(p))).map(idOf) };
 }
 
-// `ollama` is an ask/ollama.js client; `index` an embedding index built on it
+// `ollama` is an ask/ollama.js client, or an ask/bedrock.js one, which has
+// the same chat()/chatDetailed(); `index` an embedding index built on Ollama
 // (ask/retrieval.js). ask() resolves to the response body POST /api/ask
 // sends, plus `raw` (the model's unprocessed reply, or null when the model
 // wasn't called), `ranked` (the passages it was shown, in [n] order) for
 // the capture script's review report, `promptChars` (the prompt's size,
 // system and user messages, for the evaluation harness) and `promptTokens`
 // (Ollama's prompt_eval_count, or null when the client doesn't report it;
-// over PROMPT_WARN_SHARE of num_ctx it's also logged). Ollama failures
-// reject with OllamaError.
+// over PROMPT_WARN_SHARE of num_ctx it's also logged). Model failures
+// reject with an LlmError (ask/llmError.js): OllamaError or BedrockError.
 //
 // select() is what the model is shown: RETRIEVAL applied to the in-scope
 // records, as { passage, score } in [n] order, a record's passages together
@@ -297,7 +301,7 @@ function createAskPipeline({
 
         const messages = buildMessages(question, ranked, promptBehaviors);
         const { content: raw, promptTokens } = await chatWithPromptTokens(ollama, messages, options);
-        const warning = promptSizeWarning(promptTokens);
+        const warning = promptSizeWarning(promptTokens, ollama.contextSize);
         if (warning) console.warn(warning);
         const { text, cited } = renumberCitations(toPlainText(raw), ranked.length);
         const sources = cited.map((i) => toSource(ranked[i], project));
