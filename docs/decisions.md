@@ -1977,3 +1977,128 @@ stored run still rebuilds all its prompts from it.
   as whole notes, so at `wholeRawNotes: 3` it changes no prompt.
 
 **Commit hashes:** the baseline ran at app commit 96b6581, before this branch was rebased onto main (#83, which adds the RR-217 `quotedFigures` change). After the rebase the same commits are e428252 (set added), c31d6a0 (entries reviewed), f2f12ff (results) and this decision. RR-217 changes only a non-failing flag, so the stored answers and gold verdicts are unaffected. The result file's metadata still records 96b6581.
+
+## 27. False declines: no prompt fix at gemma2:9b; waits for RR-132
+
+**Date:** 2026-10-22. **Status:** Active. Ticket RR-224.
+
+**Decision:** nothing changes. The prompt, its defaults (`wholeRawNotes: 3`,
+`corrections: 'off'`, `declineWithEvidence` on) and the RR-207
+`declineThenClaims` check (non-failing) stay as they are. The one candidate
+fix, a `declineScope` prompt behavior, failed its pre-registered keep rule
+and is not kept, not even as an opt-in flag. False declines wait for a
+larger model (RR-132).
+
+**The problem:** an answer opens by saying the sources don't cover the
+question, then cites sources that do. The known cases are
+`audit-onboarding-steps-order` ("The sources do not list the onboarding
+steps in order.", then the five steps in order), `rationale-calendar-send-to-it`
+("The sources do not explain why…", where the reason is in the 2026-02-03
+raw notes shown whole) and `scenario-session-timeout-open` when it declines
+the whole question ("…do not contain information about what is unresolved…").
+Not targets: `scenario-session-timeout-open` runs whose decline names a
+single open item (it repeats the raw notes' Follow-ups, and is right);
+`rationale-setup-invite-timing`, where a cited "not recorded" is the right
+answer (a guard: an answer that gives a reason is a regression);
+`scribe-medication-flag` (the RR-207 runs are no longer stored, and it isn't
+a gold entry); `rationale-medflag-open`.
+
+**What the stored runs show (diagnosis, no run):**
+- **The W3 cost.** On corpus 09d985b with the same app code apart from
+  the `wholeRawNotes` default, regression + scenario runs that open with a
+  decline on an entry other than `audit-burnout-share` went from **0 of 102
+  at W0** (`rebaseline-09d985b`, `-scenarios`) to **12 of 102 at W3**
+  (`rebaseline-09d985b-w3`, `-w3-scenarios`): 6 `audit-onboarding-steps-order`
+  and 6 `scenario-session-timeout-open`, of which 4 name a real open item.
+  This doesn't hold on corpus 4ba145f with the older prompt (whole2 and
+  whole4 opened with a decline less often than the control), so it is two
+  entries, not a general effect.
+- Under the bare decline rule, answers open with a decline about as often
+  as they do under `declineWithEvidence` (12 vs 12 on 4ba145f regression,
+  5 vs 6 on scenario, 6 vs 6 on 09d985b at W0). The rule changes what
+  follows the decline, not how often the model declines.
+- Position isn't the cause: `rationale-setup-invite-timing` has its answer
+  at [1], and the onboarding step list sits at about the same place at W0
+  ([5]) and W3 ([4]). For the calendar question, the wireflow's "why the
+  branch" paragraph is never shown (one passage per non-raw record; the "No
+  skip branch" chunk is chosen), so the reason exists only as facts in the
+  raw notes.
+- 4 of the 6 "why" rationale questions never decline. Each has a shown
+  passage that states the reason outright; the 2 that decline don't.
+
+**What was measured:** gemma2:9b @ ff02c3702f32 (E3: gemma3:27b @
+a418f5838eaf), nomic-embed-text, Ollama 0.40.6, corpus 09d985b, seed 42,
+temperature 0.2, 3 seeded + 3 unseeded runs, default retrieval, all 24
+entries (regression + scenario, and `--set rationale`), app commit f494ef6
+with the `declineScope` behavior added and off by default (results record
+`f494ef6…-dirty`; the default system prompt is byte-identical, SHA-256
+`f37f72dc…41dbe72`). Labels `rr224-{control,e2,e1,e3}` and
+`…-rationale`. False declines (FD) are counted over all 6 runs of each
+known case. Pass is the first seeded run.
+
+| | Control | E2 `declineScope` | E1 bare decline | E3 gemma3:27b |
+|---|---|---|---|---|
+| FD (onboarding / calendar / timeout) | 10 (6 / 3 / 1) | 6 (6 / 0 / 0) | 5 (5 / 0 / 0) | 0 (0 / 0 / 0) |
+| Burnout opens with a decline | 6/6 | 6/6 | 6/6 | 0/6 |
+| Pass: regression / scenario / rationale | 7 / 1 / 0 | 5 / 1 / 0 | 6 / 1 / 0 | 5 / 1 / 0 |
+| Uncited / unsupported figures, all runs | 40 / 69 | 40 / 84 | 18 / 48 | 19 / 14 |
+| Wall time (s), both runs | 592 | 586 | 573 | 2,596 |
+
+- The control's 24 seeded answers are byte-identical to the stored W3
+  results (`rebaseline-09d985b-w3`, `-w3-scenarios`, `rationale-a-w3`).
+- E2 loses `onboarding-invite-worry`, `audit-onboarding-steps-order` and
+  `audit-burnout-share` and gains `scribe-sound-alike-names`. Its decline
+  became the rule's own words, "The sources do not contain what was
+  asked.", so the burnout answer lost "no overall rate" and fails gold.
+- E1 loses `audit-onboarding-steps-order` and `audit-burnout-share` and
+  gains `scribe-sound-alike-names`.
+- E3 loses `onboarding-invite-worry`, `audit-ai-readiness` and
+  `audit-session-lock-draft-loss-count` and gains `audit-session-timeout`.
+
+**Keep rule (E2 only)**, pre-registered: `prereg.md` SHA-256
+`3e71f15b36668d9121fcaa8cecebcf59d424cebcbc7958d696f5dcdba55b7705`, scorer
+`prereg-score.js` SHA-256
+`265a438d43446e8c564070dca2ba52f791ff4abffbe43cd6e49426e6990cac5b`, both
+hashed before the first run.
+The preregistration (`prereg.md`, `prereg-score.js`) and the `declineScope` patch (SHA-256 `fc7faddcb71c7b97a37c0f3990639abc6df99ac5beae0f64d35d98e8b956de1e`) are kept outside the repo in `~/rr-224-measure` on Josh's machine, and the patch applies cleanly to f494ef6.
+1. FD at most half the control's: **failed** (6 vs at most 5).
+2. Burnout 6/6 opening declines: held.
+3. No set's pass count below the control's: **failed** (regression 5 vs 7).
+4. No new uncited or unsupported-figure flags: **failed**
+   (`onboarding-required-steps`, `audit-onboarding-steps-order`,
+   `scenario-documentation-pain-points`, `rationale-medflag-open`).
+5. Manual read: no `rationale-setup-invite-timing` answer gives a reason
+   the sources don't: held (6 of 6 give the cited "not recorded" text, and
+   no reason).
+
+E2's rule, in full (it replaced the `declineWithEvidence` sentence): "Say
+the sources do not contain what was asked only when no source bears on the
+question; then say so plainly in one sentence, then say what they do show
+on the topic, citing each sentence. When a source states that something is
+not recorded, not known or not decided, that is what the sources say:
+report it with its citation, not as a decline. For a why question, the
+reasons the sources record (what a session found, what it recommended) are
+the answer, even when no source says "because"."
+
+**Predictions, scored:**
+- Control: seeded identical (hit); FD 12 ± 2 (hit, 10; calendar 5 ± 1
+  missed, 3); burnout 6/6 (hit); pass 7 / 1 / 0 (hit).
+- E2: FD ≤ 4 (missed, 6: onboarding unchanged at 6); burnout 6/6 (hit);
+  pass 7 / 1 / 0–1 (regression missed, 5); invite timing without a reason
+  in at least 5 of 6 (hit); keep rule met, 40% (not met).
+- E1: FD ≥ 8 (missed, 5); burnout 6/6 and failing gold (hit); regression
+  ≤ 6 and scenario ≤ 1 (hit).
+- E3: FD ≤ 4 (hit, 0); burnout below 6/6 (hit, 0/6); regression ≥ 7
+  (missed, 5); wall time 25–40 min (missed, about 43 min).
+
+**Why the small model waits:** the one prompt change that fit the
+diagnosis removed the calendar and session-timeout false declines and left
+the onboarding one untouched, at the cost of two regression passes and new
+flags. gemma3:27b removed all of them with no prompt change, but it isn't
+a candidate either: it lost a different two regression passes and no
+longer opens burnout with the decline. False declines are a model limit at
+gemma2:9b, and they wait for RR-132.
+
+**Not changed:** no gold entry (gold.json SHA-256 `08aa3816…810ce3`
+before and after), no default, the `declineThenClaims` check,
+`EVAL_HARNESS_VERSION`.
