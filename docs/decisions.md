@@ -2102,3 +2102,99 @@ gemma2:9b, and they wait for RR-132.
 **Not changed:** no gold entry (gold.json SHA-256 `08aa3816…810ce3`
 before and after), no default, the `declineThenClaims` check,
 `EVAL_HARNESS_VERSION`.
+
+## 28. Re-baseline at corpus 1cb33d4 (RR-157 decision records): 6 / 1 / 0
+
+**Date:** 2026-10-23. **Status:** Active. Ticket RR-228.
+
+**Decision:** `rr228-post-rr157` and `rr228-post-rr157-rationale` are the
+baselines at corpus 1cb33d4 (1cb33d40b9aac0af57f7f2eb3b0696cfdc7097ec).
+Nothing else changes: no code, prompt, default or gold entry. Pre-registered
+result: **No meaningful change**.
+
+**What changed in the corpus:** 09d985b → 1cb33d4 adds 8 `decision:`
+records (140 records: 72 raw, 12 finding, 18 component, 1 analytics, 29
+deliverable, 8 decision). The 132 shared records export identically at both
+commits, apart from `path` and the new `decision` key.
+
+**What was measured:** gemma2:9b @ ff02c3702f32, nomic-embed-text @
+0a109f422b47, Ollama 0.40.6, app commit 45ada85 (clean), seed 42,
+temperature 0.2, num_ctx 8192, 3 seeded + 3 unseeded runs, default
+retrieval (`wholeRawNotes: 3`, `corrections: 'off'`, `followUps: false`),
+`declineWithEvidence` on. `AGENTIC_REPO_ROOT` set to a clone at 1cb33d4
+(main, clean at the start and end of both runs). Control: `rr224-control`
+and `rr224-control-rationale` (corpus 09d985b, app f494ef6). `report` and
+`compare` refuse sets at different corpus commits, so the comparison was
+made outside the harness from the stored JSON and the harness's own
+verdicts. Pass is the first seeded run.
+
+| | Control (09d985b) | Post (1cb33d4) |
+|---|---|---|
+| Pass: regression / scenario / rationale | 7 / 1 / 0 | 6 / 1 / 0 |
+| Entries with a decision record shown | — | 12 of 24 |
+| Answers citing a decision record | — | 3 of 24 |
+| Required raw shown | 20 of 24 | 20 of 24 |
+| Required raw cited | 11 of 24 | 10 of 24 |
+| Answers opening with a decline | 5 of 24 | 5 of 24 |
+| Wall time (s), both runs | 592 | 632 |
+
+- Verdict changes: 1. `prior-auth-citations` PASS → FAIL ("2 uncited
+  sentence(s)"); `decision:prior-auth-inline-source-citations` shown at
+  [2], not cited, required raw still cited.
+- Required-raw citation lost: 1, `scribe-sound-alike-names` (FAIL in both;
+  cites `decision:ambient-scribe-ga-release`).
+- Supporting non-raw record pushed out of the prompt: 2,
+  `scribe-sound-alike-names` (`finding:ambient-scribe`) and
+  `audit-session-lock-draft-loss-count`
+  (`deliverable:user-flows/ambient-scribe-session-lock-recovery`, still
+  PASS).
+- Required raw lost from the prompt: 0. Its place moved by one in 4
+  entries: `prior-auth-citations` [5]→[6], `audit-session-timeout`
+  [6]→[7], `audit-adoption-window` [4]→[5],
+  `rationale-session-lock-paused-state` [2]→[3].
+- The 12 entries with no decision record shown have the control's exact
+  passage list and seeded answer.
+
+Decision records shown, by entry, with prompt place and whether cited:
+
+| Entry | Decision record | [n] | Cited |
+|---|---|---|---|
+| prior-auth-citations | prior-auth-inline-source-citations | 2 | no |
+| scribe-sound-alike-names | ambient-scribe-ga-release | 5 | yes |
+| audit-session-timeout | session-lock-paused-draft-preserved-state | 2 | yes |
+| audit-adoption-window | ambient-scribe-ga-release | 2 | no |
+| audit-session-lock-draft-loss-count | session-lock-paused-draft-preserved-state | 3 | no |
+| scenario-scribe-trust | ambient-scribe-ga-release | 5 | no |
+| scenario-nurses-citations | prior-auth-inline-source-citations | 2 | no |
+| scenario-calendar-premise | compass-ai-setup-calendar-step-required | 1 | no |
+| scenario-session-timeout-open | session-lock-paused-draft-preserved-state | 1 | no |
+| rationale-medflag-open | ambient-scribe-ga-release | 6 | no |
+| rationale-calendar-send-to-it | compass-ai-setup-calendar-step-required | 5 | no |
+| rationale-session-lock-paused-state | session-lock-paused-draft-preserved-state | 1 | yes |
+
+**Interpretation rule**, pre-registered: Δ total −1 (regression −1,
+scenario 0, rationale 0); 1 verdict change, 2 supporting records lost, 1
+required-raw citation lost, 0 required raws lost from the prompt, no change
+in entries without a decision shown → rule 5, **No meaningful change**.
+
+**Predictions:** registered before the first run. `prereg.md` SHA-256
+`c7fedf11f06902cca96859fcebe4ee1e8aae18eda908d95baced614092e4c6b3`. Scorer
+`score.js` SHA-256
+`c0427234d5dc14a85b0b67f6c69b667ae42116dfe675e0149a1a89de8d24308b` (last
+edited before the prereg was hashed; hashed after the run). Both are kept
+outside the repo in `~/rr-228-measure` on Josh's machine.
+- P1 pass 6 (5–7) / 1 (0–2) / 0 (0–1): hit, 6 / 1 / 0.
+- P2 decision shown 15 (11–18): hit, 12.
+- P3 required raw lost from the prompt 0: hit, 0.
+- P4 required-raw citations lost 2 (0–4): hit, 1.
+- P5 PASS → FAIL at `prior-auth-citations` and
+  `audit-session-lock-draft-loss-count`, no FAIL → PASS: 1 of the 2 named
+  moved; no FAIL → PASS; no other entry moved.
+- P6 supporting records pushed out 3 (1–5): hit, 2.
+- P7 opening declines 5 → 5 to 8: hit, 5.
+- P8 answers citing a decision 8 (4–13): missed, 3.
+
+**Not changed:** no gold entry (gold.json SHA-256 `08aa3816…810ce3`
+before and after), no default, `EVAL_HARNESS_VERSION`. The runs created
+`ask/eval/prompt-sources/1cb33d4….json` (1,064 lines); no other stored
+file changed.
