@@ -1,0 +1,2561 @@
+{
+  "metadata": {
+    "harnessVersion": 1,
+    "label": "rr46-sonnet-cost-check",
+    "createdAt": "2026-10-23T23:41:03.705Z",
+    "corpusCommit": "1cb33d40b9aac0af57f7f2eb3b0696cfdc7097ec",
+    "appCommit": "973f612f0189d37c17d68f552826094dd64d6075",
+    "provider": "bedrock",
+    "model": "global.anthropic.claude-sonnet-5-5",
+    "region": "us-east-1",
+    "embedModel": "nomic-embed-text",
+    "embedModelDigest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+    "effort": "high",
+    "maxTokens": 4096,
+    "temperature": "not sent",
+    "seed": "not supported",
+    "chatOptions": {
+      "maxTokens": 4096,
+      "effort": "high"
+    },
+    "topK": 6,
+    "retrieval": {
+      "topK": 6,
+      "metadataSections": "excluded",
+      "provenanceSlot": false,
+      "passagesPerRaw": 2,
+      "wholeRawNotes": 3,
+      "followUps": false,
+      "corrections": "off"
+    },
+    "promptBehaviors": {
+      "premiseCheck": false,
+      "openItems": false,
+      "declineWithEvidence": true,
+      "listFormat": false
+    },
+    "runs": {
+      "rule": "three-then-five",
+      "first": 3,
+      "onSplit": 5,
+      "rerunsAfterError": 1
+    },
+    "passRule": {
+      "id": "three-then-five",
+      "sha256": "3c6419c705748bb1708d4fc48ee90eec6d9ca573b6be110a68e3856c0822a02a",
+      "text": "Pass rule \"three-then-five\" (RR-132, Bedrock candidates, no seed available)\nFor each gold entry, run the question 3 times with the same retrieval, prompt and settings.\nA run passes when the harness's per-run gold verdict passes (the strict bar: cite the required raw session). The rubric score is reported separately and does not change the verdict.\nIf all 3 runs pass, or all 3 fail, the entry's verdict is that result.\nIf the runs split 2-1 or 1-2, run 2 more times and take the majority of the 5 runs as the verdict.\nA run that errors (stopReason max_tokens, API error after retries) is re-run once; if it errors again it counts as a fail and is listed separately.\nReport the number of runs per entry. Never re-run a question to get a better result.\nCompare at W3. Report false declines and whether audit-burnout-share still declines in every run. Read rationale-setup-invite-timing by hand."
+    },
+    "pricing": {
+      "inputPerM": 2,
+      "outputPerM": 10,
+      "source": "AWS Bedrock pricing page",
+      "asOf": "2026-10-23"
+    },
+    "wallSecs": 36,
+    "cost": {
+      "limitUsd": 1,
+      "totalUsd": 0.133794,
+      "stoppedAtLimit": false,
+      "notAsked": [],
+      "incomplete": []
+    }
+  },
+  "questions": [
+    {
+      "id": "onboarding-required-steps",
+      "question": "Which onboarding steps are required, and which can be skipped?",
+      "project": "project-onboarding",
+      "ranking": [
+        {
+          "recordId": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+          "kind": "deliverable",
+          "score": 0.718
+        },
+        {
+          "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+          "kind": "raw",
+          "score": 0.714
+        },
+        {
+          "recordId": "deliverable:mindsets/wants-to-know-what-a-step-commits",
+          "kind": "deliverable",
+          "score": 0.692
+        },
+        {
+          "recordId": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion",
+          "kind": "raw",
+          "score": 0.689
+        },
+        {
+          "recordId": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it",
+          "kind": "deliverable",
+          "score": 0.682
+        },
+        {
+          "recordId": "deliverable:journey-maps/practice-administrator-compass-ai-setup",
+          "kind": "deliverable",
+          "score": 0.663
+        },
+        {
+          "recordId": "decision:compass-ai-setup-calendar-step-required",
+          "kind": "decision",
+          "score": 0.658
+        },
+        {
+          "recordId": "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+          "kind": "deliverable",
+          "score": 0.657
+        },
+        {
+          "recordId": "analytics:compass-ai-practice-setup-funnel",
+          "kind": "analytics",
+          "score": 0.656
+        },
+        {
+          "recordId": "deliverable:facilitation-guides/compass-ai-practice-setup-usability-guide",
+          "kind": "deliverable",
+          "score": 0.655
+        },
+        {
+          "recordId": "deliverable:storyboards/compass-ai-setup-calendar-and-invite-hesitations",
+          "kind": "deliverable",
+          "score": 0.652
+        },
+        {
+          "recordId": "deliverable:personas/practice-administrator-compass-ai-setup",
+          "kind": "deliverable",
+          "score": 0.65
+        },
+        {
+          "recordId": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval",
+          "kind": "deliverable",
+          "score": 0.65
+        },
+        {
+          "recordId": "finding:compass-ai-practice-setup",
+          "kind": "finding",
+          "score": 0.649
+        },
+        {
+          "recordId": "deliverable:research-plans/compass-ai-practice-setup-study-q1",
+          "kind": "deliverable",
+          "score": 0.638
+        },
+        {
+          "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+          "kind": "raw",
+          "score": 0.638
+        },
+        {
+          "recordId": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+          "kind": "deliverable",
+          "score": 0.638
+        },
+        {
+          "recordId": "deliverable:mental-models/compass-ai-schedule-access-and-invites",
+          "kind": "deliverable",
+          "score": 0.63
+        }
+      ],
+      "runs": [
+        {
+          "secs": 3.8,
+          "answer": "Every step is required in this build, and none can be skipped. A setup can't skip a step; it can only be left open at it [1][2]. The flow has five steps: Sign in with Meridian SSO, Practice details, Connect calendar, Invite your team, and Review & finish [2].\n\nFor steps 3 and 4 specifically, there is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it [1][3]. The designer, Sam Okafor, said the calendar step is required because the scribe attaches recordings to scheduled encounters [3]. The Send to IT for approval wireflow doesn't change this: it hands the decision to IT rather than skipping the step [4].\n\nRequired steps are where setups stall. In the dashboard review, 7 of 24 setups started were open at Connect calendar and 3 of 24 at Invite your team [2]. In the usability test, 3 of 4 Practice Administrators (P154, P155, P157) wouldn't connect the calendar, saying approving it was IT's decision [3]. An IT Administrator interviewed separately said a Practice Administrator can't start the privacy review request, which IT files [5].\n\nThe sources do not describe which, if any, steps could be optional in a future build. They only state that all five are required in this one.",
+          "usage": {
+            "inputTokens": 5810,
+            "outputTokens": 414,
+            "totalTokens": 6224,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "stopReason": "end_turn",
+          "latencyMs": 3486,
+          "attempts": 1,
+          "cost": 0.01576,
+          "sources": [
+            {
+              "id": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow#2",
+              "recordId": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+              "recordKind": "deliverable",
+              "recordType": "user-flows",
+              "title": "Compass AI Practice Setup — The Five Steps as Built",
+              "section": "Description",
+              "participants": null,
+              "excerpt": "Every step is required. \"Every step is required in this build; a setup can't skip a step, it can only be left open at it\" (2026-01-20 :34-35 ). For steps 3 and 4: \"There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it\" (2026-02-03 :36-37 ).\nWhen a setup counts as started, and as stopped. \"A setup counts as started when someone signs in at step 1. \"Stopped\" means the setup was still open at that step on 2026-01-20\" (2026-01-20 :35-36 ).",
+              "score": 0.718
+            },
+            {
+              "id": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion#notes",
+              "recordId": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion",
+              "recordKind": "raw",
+              "recordType": "analytics",
+              "title": "Dashboard review — Compass AI practice setup completion",
+              "section": null,
+              "participants": "Participants: N/A",
+              "excerpt": "Objective\nManually review the internal usage dashboard for the Compass AI practice setup flow, the flow a practice's administrator uses to set Compass AI up for their practice, to see where setups stop and how long they stay stopped. This is about admin setup of Compass AI, not staff training. The dashboard records setups, not why a practice started one or which Compass AI features it was setting up for, and the corpus doesn't record how practices were chosen to set up or when each planned to go live. This review is not tied to the ambient scribe GA: the GA candidate was still under test on 2026-01-13 ( 2026-01-13-usability-test-ambient-scribe-ga-release-candidate ).\nMethod\nMethod: Manual dashboard review (no moderated session, no participants) — internal usage dashboard for the practice setup flow, covering setups started 2025-12-01 to 2026-01-16 (seven weeks), with step status as of the review date, 2026-01-20\nResearcher: Priya Patel\nFull participant roster: none — this is an analytics review, not a research session; see participants.md in this folder for why\nContext: The flow has five steps: 1 Sign in with Meridian SSO, 2 Practice details, 3 Connect calendar, 4 Invite your team, 5 Review & finish. Every step is required in this build; a setup can't skip a step, it can only be left open at it. A setup counts as started when someone signs in at step 1. \"Stopped\" means the setup was still open at that step on 2026-01-20. The dashboard shows setups by practice; it doesn't show the signed-in person's role, so whether a Practice Administrator or an IT Administrator ran each setup isn't known. The number of practices in the network isn't on the dashboard and isn't recorded in the corpus, so no completion rate against all practices is given here.\nCounts (24 setups started in the window):\nFinished (completed Review & finish): 12 of 24\nStill open on 2026-01-20: 12 of 24, stopped at:\nPractice details: 1 of 24, open 5 days\nConnect calendar: 7 of 24, open 4 to 41 days (median 16 days)\nInvite your team: 3 of 24, open 6, 11 and 19 days\nReview & finish: 1 of 24, open 2 days\nReached Review & finish: 13 of 24 (the 12 finished plus the 1 still open there)\nKey Findings\n[HIGH] (stall at Connect calendar) Connect calendar is where setups stop most: 7 of the 24 setups started (7 of the 12 still open) were open at that step on 2026-01-20, and they had sat there longest, 4 to 41 days (median 16). In the 12 finished setups, Connect calendar was also the step left open longest in 8 of 12.\n[MEDIUM] (stall at Invite your team) Invite your team is the second most common stopping point: 3 of 24 setups started (3 of the 12 still open), open 6, 11 and 19 days.\n[LOW] (other steps) 1 of 24 was open at Practice details (5 days) and 1 of 24 at Review & finish (2 days). No setup was open at Sign in, because a setup only counts as started once someone has signed in.\nRepresentative Quotes\nNone — this session has no participants.\nRecommendations\nRun a moderated usability test of the setup flow with both Practice Administrators and IT Administrators, focused on Connect calendar and Invite your team, to find out why setups stop there.\nAsk the dashboard owners whether the signed-in person's role can be shown per setup, so later reviews can tell Practice Administrator setups from IT Administrator ones.\nFollow-ups / Open Questions\nWhy do setups stop at Connect calendar and Invite your team? A dashboard can't show reasons: it records where a setup is open and for how long, not what the person at that step was thinking or waiting for.\nDo stopped setups eventually finish, or are they abandoned? Re-check these 12 open setups at the next review.",
+              "score": 0.689
+            },
+            {
+              "id": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes",
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "recordKind": "raw",
+              "recordType": "usability-test",
+              "title": "Usability Test — Compass AI Practice Setup Flow",
+              "section": null,
+              "participants": "Participants: 6 — P154 — Practice Administrator (admin-staff) ×1, P155 — Practice Administrator (admin-staff) ×1, P156 — Practice Administrator (admin-staff) ×1, P157 — Practice Administrator (admin-staff) ×1, P158 — IT Administrator (it) ×1, P159 — IT Administrator (it) ×1",
+              "excerpt": "Objective\nThe 2026-01-20 dashboard review found setups of Compass AI for a practice stopping most at Connect calendar (7 of 24 setups started) and then at Invite your team (3 of 24), and said a dashboard can't show why ( 2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:45-46,72 ). This session watched administrators go through the practice setup flow to find out what happens at those two steps. It is about admin setup of Compass AI, not staff training.\nMethod\nMethod: Moderated usability test, remote, think-aloud, 60 min/session, one participant per session\nResearcher: Priya Patel (moderator)\nFull participant roster: see participants.md in this folder\nParticipants: 6 — 4 Practice Administrators (P154-P157) and 2 IT Administrators (P158, P159)\nSteps tested, in order: 1 Sign in with Meridian SSO; 2 Practice details; 3 Connect calendar (read access to the practice's appointment schedule); 4 Invite your team (gives clinicians and staff access to Compass AI and sends them an email); 5 Review & finish.\nBuild: Steps 3 and 4 are required in this build. There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it.\nDesign context: At session setup, the designer, Sam Okafor, stated that the calendar step is required because the scribe attaches recordings to scheduled encounters.\nTest environment: Participants signed in with their own Meridian SSO and were asked to set up as they would for their own practice. The environment was a test one: step 3 connected to a prepared sandbox calendar standing in for the practice's schedule, and step 4 used a prepared test staff list, so no real schedule was read and no real staff were emailed.\nTest accommodation: When a participant stopped at step 3, the moderator told them it was the sandbox calendar and let them continue. Every participant completed step 3 this way or on their own, so completing step 3 in this session is not a result.\nNot covered: The step 4 screen doesn't say when the invite email is sent, and these notes don't record when this build sends it. How Compass AI access is provisioned (through SSO groups or through these invites) wasn't known to the moderator and isn't recorded in the corpus.\nKey Findings\n[HIGH] (calendar: who can approve) 3 of 4 Practice Administrators (P154, P155, P157) stopped at Connect calendar and wouldn't connect it: it gives Compass AI access to patient appointments, and they did not think they could approve that. Each said it was IT's decision. The fourth (P156) asked the moderator whether connecting the schedule was theirs to approve before going on. All 4 continued only on the sandbox calendar (see Test accommodation).\n[MEDIUM] (calendar: what is read) Both IT Administrators (P158, P159) connected the calendar, but only after asking which fields are read (for example, whether visit reasons are included). The screen doesn't list them; the moderator couldn't answer, and both went on without an answer.\n[HIGH] (invite: timing and training) 3 of 4 Practice Administrators (P154, P156, P157) hesitated at Invite your team. They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice. P155 entered the test staff list and went on without comment.\n[MEDIUM] (invite: provisioning) One IT Administrator (P159) asked whether the invites create accounts or rely on the SSO groups staff are already in. The moderator couldn't answer, and the corpus doesn't record how access is provisioned.\n[LOW] (sign in and practice details) No issues at Sign in or Practice details: 6 of 6 participants completed both without help or comment on a problem.\nRepresentative Quotes\n\"That's patient names and visit reasons. That's not my call — that's IT's.\" — Practice Administrator, P154\n\"Is this mine to say yes to? I'd normally send anything like this to IT.\" — Practice Administrator, P156\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — Practice Administrator, P157\n\"Before I connect it I want to know what it pulls. Times and providers, fine. Visit reasons, that's a different conversation.\" — IT Administrator, P158\n\"Does this make them an account, or does it just use the groups they're already in? Because if it's a separate list, I'm the one keeping it in sync.\" — IT Administrator, P159\nRecommendations\nList the fields read from the appointment schedule on the Connect calendar step.\nAdd a \"Send to IT for approval\" path on Connect calendar for an administrator who can't approve the access themselves.\nSay on the Invite your team screen when the invite email is sent.\nLet administrators schedule the invite email for a date, so it can go out once training is booked.\nFollow-ups / Open Questions\nHow is Compass AI access provisioned: through SSO groups, through these invites, or both? Ask the setup flow's engineering team.\nWhen does this build send the invite email: at step 4 or at Review & finish?\nCheck the setup dashboard after any copy change to these steps, to see whether setups still stop at Connect calendar and Invite your team.",
+              "score": 0.714
+            },
+            {
+              "id": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it#5",
+              "recordId": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it",
+              "recordKind": "deliverable",
+              "recordType": "wireflows",
+              "title": "Compass AI Practice Setup — Connect Calendar \"Send to IT for Approval\" Wireflow",
+              "section": "Flow + screens",
+              "participants": null,
+              "excerpt": "No skip branch. The build has no \"Connect later\" and no \"Skip for now\"; the only way past the step is to complete it (2026-02-03 :36-37 ). This wireflow adds neither: Send to IT for approval hands the decision to IT, it doesn't skip the step.",
+              "score": 0.682
+            },
+            {
+              "id": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#notes",
+              "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+              "recordKind": "raw",
+              "recordType": "interview",
+              "title": "Interview — IT Administrator on Schedule Access and Staff Invites",
+              "section": null,
+              "participants": "Participants: 1 — P160 — IT Administrator (it) ×1",
+              "excerpt": "Objective\nIn the 2026-02-03 usability test, 3 of 4 Practice Administrators stopped at Connect calendar because they did not think they could approve Compass AI's access to patient appointments, and both IT Administrators asked which fields are read before connecting ( 2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:51-52 ). This session asked one IT Administrator who approves access requests across practices what has to happen before a new system can read a practice's appointment schedule, and who can start that. It is about admin setup of Compass AI, not staff training (in 2026-02-10-ambient-scribe-medication-flag-concept/session-notes.md:62 , \"onboarding\" means training copy for clinicians).\nMethod\nMethod: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant is an IT Administrator who handles access requests for systems used across Meridian's practices. They had not used the Compass AI practice setup flow. The researcher described steps 3 (Connect calendar) and 4 (Invite your team) as the 2026-02-03 build shows them, and what the step 3 screen does and doesn't say, without sharing what other participants said. The participant did not name the scheduling system that holds the appointment schedule, and these notes don't record which system it is. This is their account of the approval process, not a review of its records.\nKey Findings\n[HIGH] (schedule access: privacy review) In their account, any new system that reads the appointment schedule needs a privacy review request before it is connected, and a Practice Administrator can't start one: requests are filed by IT. A practice that wants the calendar connected has to ask IT to file the request. They didn't know whether one had been filed for Compass AI.\n[MEDIUM] (schedule access: still PHI) They described scheduling as the lowest-risk data on the CMIO's PHI ordering, but still PHI: the schedule carries patient names and, depending on the fields read, visit reasons. They saw this as consistent with the ordering, not a contradiction of it, because the ordering ranks the risk and doesn't remove the review.\nRepresentative Quotes\n\"Lowest risk isn't no risk. It's still patient names on a schedule. It still goes through privacy review, it just shouldn't take long.\" — IT Administrator, P160\n\"A practice admin can't put in that request. They call us, we file it. If the screen just asks them to click connect, it's asking the wrong person.\" — IT Administrator, P160\nRecommendations\nOn Connect calendar, route an administrator who can't approve schedule access to IT, consistent with the \"Send to IT for approval\" path recommended on 2026-02-03 ( 2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:75-76 ).\nBefore more practices set up, confirm with IT whether a privacy review request for Compass AI reading the appointment schedule has been filed, and list the fields it covers.\nFollow-ups / Open Questions\nHas a privacy review request for Compass AI's schedule access been filed, and which fields does it cover?\nHow is Compass AI access provisioned: through SSO groups, through the setup flow's invites, or both? The participant didn't know.",
+              "score": 0.638
+            }
+          ],
+          "promptChars": 16566,
+          "promptTokens": 5810,
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+              "kind": "deliverable",
+              "passage": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow#2"
+            },
+            {
+              "n": 2,
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "kind": "raw",
+              "passage": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:mindsets/wants-to-know-what-a-step-commits",
+              "kind": "deliverable",
+              "passage": "deliverable:mindsets/wants-to-know-what-a-step-commits#1"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion",
+              "kind": "raw",
+              "passage": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion#notes"
+            },
+            {
+              "n": 5,
+              "recordId": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it",
+              "kind": "deliverable",
+              "passage": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it#5"
+            },
+            {
+              "n": 6,
+              "recordId": "deliverable:journey-maps/practice-administrator-compass-ai-setup",
+              "kind": "deliverable",
+              "passage": "deliverable:journey-maps/practice-administrator-compass-ai-setup#5"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+              "kind": "raw",
+              "passage": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#notes"
+            }
+          ]
+        },
+        {
+          "secs": 3.5,
+          "answer": "Every step is required, and none can be skipped. The build's five steps are Sign in with Meridian SSO, Practice details, Connect calendar, Invite your team, and Review & finish [1]. The user-flow document states that \"a setup can't skip a step, it can only be left open at it\" [2]. The dashboard review gives the same context [3].\n\nFor steps 3 and 4 specifically, the test build has no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it [1]. The designer said the calendar step is required because the scribe attaches recordings to scheduled encounters [1].\n\nBecause nothing can be skipped, setups stall instead. On 2026-01-20, 7 of 24 setups started were open at Connect calendar and 3 of 24 at Invite your team [3]. In the usability test, 3 of 4 Practice Administrators would not connect the calendar because they thought IT had to approve it [1]. The proposed \"Send to IT for approval\" path hands the decision to IT and does not skip the step [4].\n\nThe sources do not mention any step that can be skipped. They also do not say how \"onboarding\" differs from setup beyond noting that this material concerns admin setup of Compass AI, not staff training [3].",
+          "usage": {
+            "inputTokens": 5810,
+            "outputTokens": 398,
+            "totalTokens": 6208,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "stopReason": "end_turn",
+          "latencyMs": 3102,
+          "attempts": 1,
+          "cost": 0.0156,
+          "sources": [
+            {
+              "id": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes",
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "recordKind": "raw",
+              "recordType": "usability-test",
+              "title": "Usability Test — Compass AI Practice Setup Flow",
+              "section": null,
+              "participants": "Participants: 6 — P154 — Practice Administrator (admin-staff) ×1, P155 — Practice Administrator (admin-staff) ×1, P156 — Practice Administrator (admin-staff) ×1, P157 — Practice Administrator (admin-staff) ×1, P158 — IT Administrator (it) ×1, P159 — IT Administrator (it) ×1",
+              "excerpt": "Objective\nThe 2026-01-20 dashboard review found setups of Compass AI for a practice stopping most at Connect calendar (7 of 24 setups started) and then at Invite your team (3 of 24), and said a dashboard can't show why ( 2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:45-46,72 ). This session watched administrators go through the practice setup flow to find out what happens at those two steps. It is about admin setup of Compass AI, not staff training.\nMethod\nMethod: Moderated usability test, remote, think-aloud, 60 min/session, one participant per session\nResearcher: Priya Patel (moderator)\nFull participant roster: see participants.md in this folder\nParticipants: 6 — 4 Practice Administrators (P154-P157) and 2 IT Administrators (P158, P159)\nSteps tested, in order: 1 Sign in with Meridian SSO; 2 Practice details; 3 Connect calendar (read access to the practice's appointment schedule); 4 Invite your team (gives clinicians and staff access to Compass AI and sends them an email); 5 Review & finish.\nBuild: Steps 3 and 4 are required in this build. There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it.\nDesign context: At session setup, the designer, Sam Okafor, stated that the calendar step is required because the scribe attaches recordings to scheduled encounters.\nTest environment: Participants signed in with their own Meridian SSO and were asked to set up as they would for their own practice. The environment was a test one: step 3 connected to a prepared sandbox calendar standing in for the practice's schedule, and step 4 used a prepared test staff list, so no real schedule was read and no real staff were emailed.\nTest accommodation: When a participant stopped at step 3, the moderator told them it was the sandbox calendar and let them continue. Every participant completed step 3 this way or on their own, so completing step 3 in this session is not a result.\nNot covered: The step 4 screen doesn't say when the invite email is sent, and these notes don't record when this build sends it. How Compass AI access is provisioned (through SSO groups or through these invites) wasn't known to the moderator and isn't recorded in the corpus.\nKey Findings\n[HIGH] (calendar: who can approve) 3 of 4 Practice Administrators (P154, P155, P157) stopped at Connect calendar and wouldn't connect it: it gives Compass AI access to patient appointments, and they did not think they could approve that. Each said it was IT's decision. The fourth (P156) asked the moderator whether connecting the schedule was theirs to approve before going on. All 4 continued only on the sandbox calendar (see Test accommodation).\n[MEDIUM] (calendar: what is read) Both IT Administrators (P158, P159) connected the calendar, but only after asking which fields are read (for example, whether visit reasons are included). The screen doesn't list them; the moderator couldn't answer, and both went on without an answer.\n[HIGH] (invite: timing and training) 3 of 4 Practice Administrators (P154, P156, P157) hesitated at Invite your team. They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice. P155 entered the test staff list and went on without comment.\n[MEDIUM] (invite: provisioning) One IT Administrator (P159) asked whether the invites create accounts or rely on the SSO groups staff are already in. The moderator couldn't answer, and the corpus doesn't record how access is provisioned.\n[LOW] (sign in and practice details) No issues at Sign in or Practice details: 6 of 6 participants completed both without help or comment on a problem.\nRepresentative Quotes\n\"That's patient names and visit reasons. That's not my call — that's IT's.\" — Practice Administrator, P154\n\"Is this mine to say yes to? I'd normally send anything like this to IT.\" — Practice Administrator, P156\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — Practice Administrator, P157\n\"Before I connect it I want to know what it pulls. Times and providers, fine. Visit reasons, that's a different conversation.\" — IT Administrator, P158\n\"Does this make them an account, or does it just use the groups they're already in? Because if it's a separate list, I'm the one keeping it in sync.\" — IT Administrator, P159\nRecommendations\nList the fields read from the appointment schedule on the Connect calendar step.\nAdd a \"Send to IT for approval\" path on Connect calendar for an administrator who can't approve the access themselves.\nSay on the Invite your team screen when the invite email is sent.\nLet administrators schedule the invite email for a date, so it can go out once training is booked.\nFollow-ups / Open Questions\nHow is Compass AI access provisioned: through SSO groups, through these invites, or both? Ask the setup flow's engineering team.\nWhen does this build send the invite email: at step 4 or at Review & finish?\nCheck the setup dashboard after any copy change to these steps, to see whether setups still stop at Connect calendar and Invite your team.",
+              "score": 0.714
+            },
+            {
+              "id": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow#2",
+              "recordId": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+              "recordKind": "deliverable",
+              "recordType": "user-flows",
+              "title": "Compass AI Practice Setup — The Five Steps as Built",
+              "section": "Description",
+              "participants": null,
+              "excerpt": "Every step is required. \"Every step is required in this build; a setup can't skip a step, it can only be left open at it\" (2026-01-20 :34-35 ). For steps 3 and 4: \"There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it\" (2026-02-03 :36-37 ).\nWhen a setup counts as started, and as stopped. \"A setup counts as started when someone signs in at step 1. \"Stopped\" means the setup was still open at that step on 2026-01-20\" (2026-01-20 :35-36 ).",
+              "score": 0.718
+            },
+            {
+              "id": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion#notes",
+              "recordId": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion",
+              "recordKind": "raw",
+              "recordType": "analytics",
+              "title": "Dashboard review — Compass AI practice setup completion",
+              "section": null,
+              "participants": "Participants: N/A",
+              "excerpt": "Objective\nManually review the internal usage dashboard for the Compass AI practice setup flow, the flow a practice's administrator uses to set Compass AI up for their practice, to see where setups stop and how long they stay stopped. This is about admin setup of Compass AI, not staff training. The dashboard records setups, not why a practice started one or which Compass AI features it was setting up for, and the corpus doesn't record how practices were chosen to set up or when each planned to go live. This review is not tied to the ambient scribe GA: the GA candidate was still under test on 2026-01-13 ( 2026-01-13-usability-test-ambient-scribe-ga-release-candidate ).\nMethod\nMethod: Manual dashboard review (no moderated session, no participants) — internal usage dashboard for the practice setup flow, covering setups started 2025-12-01 to 2026-01-16 (seven weeks), with step status as of the review date, 2026-01-20\nResearcher: Priya Patel\nFull participant roster: none — this is an analytics review, not a research session; see participants.md in this folder for why\nContext: The flow has five steps: 1 Sign in with Meridian SSO, 2 Practice details, 3 Connect calendar, 4 Invite your team, 5 Review & finish. Every step is required in this build; a setup can't skip a step, it can only be left open at it. A setup counts as started when someone signs in at step 1. \"Stopped\" means the setup was still open at that step on 2026-01-20. The dashboard shows setups by practice; it doesn't show the signed-in person's role, so whether a Practice Administrator or an IT Administrator ran each setup isn't known. The number of practices in the network isn't on the dashboard and isn't recorded in the corpus, so no completion rate against all practices is given here.\nCounts (24 setups started in the window):\nFinished (completed Review & finish): 12 of 24\nStill open on 2026-01-20: 12 of 24, stopped at:\nPractice details: 1 of 24, open 5 days\nConnect calendar: 7 of 24, open 4 to 41 days (median 16 days)\nInvite your team: 3 of 24, open 6, 11 and 19 days\nReview & finish: 1 of 24, open 2 days\nReached Review & finish: 13 of 24 (the 12 finished plus the 1 still open there)\nKey Findings\n[HIGH] (stall at Connect calendar) Connect calendar is where setups stop most: 7 of the 24 setups started (7 of the 12 still open) were open at that step on 2026-01-20, and they had sat there longest, 4 to 41 days (median 16). In the 12 finished setups, Connect calendar was also the step left open longest in 8 of 12.\n[MEDIUM] (stall at Invite your team) Invite your team is the second most common stopping point: 3 of 24 setups started (3 of the 12 still open), open 6, 11 and 19 days.\n[LOW] (other steps) 1 of 24 was open at Practice details (5 days) and 1 of 24 at Review & finish (2 days). No setup was open at Sign in, because a setup only counts as started once someone has signed in.\nRepresentative Quotes\nNone — this session has no participants.\nRecommendations\nRun a moderated usability test of the setup flow with both Practice Administrators and IT Administrators, focused on Connect calendar and Invite your team, to find out why setups stop there.\nAsk the dashboard owners whether the signed-in person's role can be shown per setup, so later reviews can tell Practice Administrator setups from IT Administrator ones.\nFollow-ups / Open Questions\nWhy do setups stop at Connect calendar and Invite your team? A dashboard can't show reasons: it records where a setup is open and for how long, not what the person at that step was thinking or waiting for.\nDo stopped setups eventually finish, or are they abandoned? Re-check these 12 open setups at the next review.",
+              "score": 0.689
+            },
+            {
+              "id": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it#5",
+              "recordId": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it",
+              "recordKind": "deliverable",
+              "recordType": "wireflows",
+              "title": "Compass AI Practice Setup — Connect Calendar \"Send to IT for Approval\" Wireflow",
+              "section": "Flow + screens",
+              "participants": null,
+              "excerpt": "No skip branch. The build has no \"Connect later\" and no \"Skip for now\"; the only way past the step is to complete it (2026-02-03 :36-37 ). This wireflow adds neither: Send to IT for approval hands the decision to IT, it doesn't skip the step.",
+              "score": 0.682
+            }
+          ],
+          "promptChars": 16566,
+          "promptTokens": 5810,
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+              "kind": "deliverable",
+              "passage": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow#2"
+            },
+            {
+              "n": 2,
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "kind": "raw",
+              "passage": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:mindsets/wants-to-know-what-a-step-commits",
+              "kind": "deliverable",
+              "passage": "deliverable:mindsets/wants-to-know-what-a-step-commits#1"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion",
+              "kind": "raw",
+              "passage": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion#notes"
+            },
+            {
+              "n": 5,
+              "recordId": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it",
+              "kind": "deliverable",
+              "passage": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it#5"
+            },
+            {
+              "n": 6,
+              "recordId": "deliverable:journey-maps/practice-administrator-compass-ai-setup",
+              "kind": "deliverable",
+              "passage": "deliverable:journey-maps/practice-administrator-compass-ai-setup#5"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+              "kind": "raw",
+              "passage": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#notes"
+            }
+          ]
+        },
+        {
+          "secs": 3.6,
+          "answer": "Within the sources, none of the five steps can be skipped; every step is required in this build. A setup \"can't skip a step, it can only be left open at it\" [1][2].\n\nThe five steps are 1 Sign in with Meridian SSO, 2 Practice details, 3 Connect calendar, 4 Invite your team, and 5 Review & finish [2]. For steps 3 and 4 specifically, there is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it [3][4]. The designer, Sam Okafor, said the calendar step is required because the scribe attaches recordings to scheduled encounters [3].\n\nThe sources do not explicitly describe how steps 1, 2 and 5 are enforced, beyond the statement that every step is required [1]. They also do not say what happens if a step is simply abandoned, other than that the setup stays open there [2].\n\nIn practice, the requirement is where setups stall. On 2026-01-20, 7 of 24 started setups were open at Connect calendar and 3 of 24 at Invite your team [2]. In the usability test, 3 of 4 Practice Administrators would not connect the calendar because they felt IT had to approve it [3]. The \"Send to IT for approval\" path hands the decision to IT and does not skip the step [4].",
+          "usage": {
+            "inputTokens": 5810,
+            "outputTokens": 419,
+            "totalTokens": 6229,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "stopReason": "end_turn",
+          "latencyMs": 3342,
+          "attempts": 1,
+          "cost": 0.01581,
+          "sources": [
+            {
+              "id": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow#2",
+              "recordId": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+              "recordKind": "deliverable",
+              "recordType": "user-flows",
+              "title": "Compass AI Practice Setup — The Five Steps as Built",
+              "section": "Description",
+              "participants": null,
+              "excerpt": "Every step is required. \"Every step is required in this build; a setup can't skip a step, it can only be left open at it\" (2026-01-20 :34-35 ). For steps 3 and 4: \"There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it\" (2026-02-03 :36-37 ).\nWhen a setup counts as started, and as stopped. \"A setup counts as started when someone signs in at step 1. \"Stopped\" means the setup was still open at that step on 2026-01-20\" (2026-01-20 :35-36 ).",
+              "score": 0.718
+            },
+            {
+              "id": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion#notes",
+              "recordId": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion",
+              "recordKind": "raw",
+              "recordType": "analytics",
+              "title": "Dashboard review — Compass AI practice setup completion",
+              "section": null,
+              "participants": "Participants: N/A",
+              "excerpt": "Objective\nManually review the internal usage dashboard for the Compass AI practice setup flow, the flow a practice's administrator uses to set Compass AI up for their practice, to see where setups stop and how long they stay stopped. This is about admin setup of Compass AI, not staff training. The dashboard records setups, not why a practice started one or which Compass AI features it was setting up for, and the corpus doesn't record how practices were chosen to set up or when each planned to go live. This review is not tied to the ambient scribe GA: the GA candidate was still under test on 2026-01-13 ( 2026-01-13-usability-test-ambient-scribe-ga-release-candidate ).\nMethod\nMethod: Manual dashboard review (no moderated session, no participants) — internal usage dashboard for the practice setup flow, covering setups started 2025-12-01 to 2026-01-16 (seven weeks), with step status as of the review date, 2026-01-20\nResearcher: Priya Patel\nFull participant roster: none — this is an analytics review, not a research session; see participants.md in this folder for why\nContext: The flow has five steps: 1 Sign in with Meridian SSO, 2 Practice details, 3 Connect calendar, 4 Invite your team, 5 Review & finish. Every step is required in this build; a setup can't skip a step, it can only be left open at it. A setup counts as started when someone signs in at step 1. \"Stopped\" means the setup was still open at that step on 2026-01-20. The dashboard shows setups by practice; it doesn't show the signed-in person's role, so whether a Practice Administrator or an IT Administrator ran each setup isn't known. The number of practices in the network isn't on the dashboard and isn't recorded in the corpus, so no completion rate against all practices is given here.\nCounts (24 setups started in the window):\nFinished (completed Review & finish): 12 of 24\nStill open on 2026-01-20: 12 of 24, stopped at:\nPractice details: 1 of 24, open 5 days\nConnect calendar: 7 of 24, open 4 to 41 days (median 16 days)\nInvite your team: 3 of 24, open 6, 11 and 19 days\nReview & finish: 1 of 24, open 2 days\nReached Review & finish: 13 of 24 (the 12 finished plus the 1 still open there)\nKey Findings\n[HIGH] (stall at Connect calendar) Connect calendar is where setups stop most: 7 of the 24 setups started (7 of the 12 still open) were open at that step on 2026-01-20, and they had sat there longest, 4 to 41 days (median 16). In the 12 finished setups, Connect calendar was also the step left open longest in 8 of 12.\n[MEDIUM] (stall at Invite your team) Invite your team is the second most common stopping point: 3 of 24 setups started (3 of the 12 still open), open 6, 11 and 19 days.\n[LOW] (other steps) 1 of 24 was open at Practice details (5 days) and 1 of 24 at Review & finish (2 days). No setup was open at Sign in, because a setup only counts as started once someone has signed in.\nRepresentative Quotes\nNone — this session has no participants.\nRecommendations\nRun a moderated usability test of the setup flow with both Practice Administrators and IT Administrators, focused on Connect calendar and Invite your team, to find out why setups stop there.\nAsk the dashboard owners whether the signed-in person's role can be shown per setup, so later reviews can tell Practice Administrator setups from IT Administrator ones.\nFollow-ups / Open Questions\nWhy do setups stop at Connect calendar and Invite your team? A dashboard can't show reasons: it records where a setup is open and for how long, not what the person at that step was thinking or waiting for.\nDo stopped setups eventually finish, or are they abandoned? Re-check these 12 open setups at the next review.",
+              "score": 0.689
+            },
+            {
+              "id": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes",
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "recordKind": "raw",
+              "recordType": "usability-test",
+              "title": "Usability Test — Compass AI Practice Setup Flow",
+              "section": null,
+              "participants": "Participants: 6 — P154 — Practice Administrator (admin-staff) ×1, P155 — Practice Administrator (admin-staff) ×1, P156 — Practice Administrator (admin-staff) ×1, P157 — Practice Administrator (admin-staff) ×1, P158 — IT Administrator (it) ×1, P159 — IT Administrator (it) ×1",
+              "excerpt": "Objective\nThe 2026-01-20 dashboard review found setups of Compass AI for a practice stopping most at Connect calendar (7 of 24 setups started) and then at Invite your team (3 of 24), and said a dashboard can't show why ( 2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:45-46,72 ). This session watched administrators go through the practice setup flow to find out what happens at those two steps. It is about admin setup of Compass AI, not staff training.\nMethod\nMethod: Moderated usability test, remote, think-aloud, 60 min/session, one participant per session\nResearcher: Priya Patel (moderator)\nFull participant roster: see participants.md in this folder\nParticipants: 6 — 4 Practice Administrators (P154-P157) and 2 IT Administrators (P158, P159)\nSteps tested, in order: 1 Sign in with Meridian SSO; 2 Practice details; 3 Connect calendar (read access to the practice's appointment schedule); 4 Invite your team (gives clinicians and staff access to Compass AI and sends them an email); 5 Review & finish.\nBuild: Steps 3 and 4 are required in this build. There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it.\nDesign context: At session setup, the designer, Sam Okafor, stated that the calendar step is required because the scribe attaches recordings to scheduled encounters.\nTest environment: Participants signed in with their own Meridian SSO and were asked to set up as they would for their own practice. The environment was a test one: step 3 connected to a prepared sandbox calendar standing in for the practice's schedule, and step 4 used a prepared test staff list, so no real schedule was read and no real staff were emailed.\nTest accommodation: When a participant stopped at step 3, the moderator told them it was the sandbox calendar and let them continue. Every participant completed step 3 this way or on their own, so completing step 3 in this session is not a result.\nNot covered: The step 4 screen doesn't say when the invite email is sent, and these notes don't record when this build sends it. How Compass AI access is provisioned (through SSO groups or through these invites) wasn't known to the moderator and isn't recorded in the corpus.\nKey Findings\n[HIGH] (calendar: who can approve) 3 of 4 Practice Administrators (P154, P155, P157) stopped at Connect calendar and wouldn't connect it: it gives Compass AI access to patient appointments, and they did not think they could approve that. Each said it was IT's decision. The fourth (P156) asked the moderator whether connecting the schedule was theirs to approve before going on. All 4 continued only on the sandbox calendar (see Test accommodation).\n[MEDIUM] (calendar: what is read) Both IT Administrators (P158, P159) connected the calendar, but only after asking which fields are read (for example, whether visit reasons are included). The screen doesn't list them; the moderator couldn't answer, and both went on without an answer.\n[HIGH] (invite: timing and training) 3 of 4 Practice Administrators (P154, P156, P157) hesitated at Invite your team. They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice. P155 entered the test staff list and went on without comment.\n[MEDIUM] (invite: provisioning) One IT Administrator (P159) asked whether the invites create accounts or rely on the SSO groups staff are already in. The moderator couldn't answer, and the corpus doesn't record how access is provisioned.\n[LOW] (sign in and practice details) No issues at Sign in or Practice details: 6 of 6 participants completed both without help or comment on a problem.\nRepresentative Quotes\n\"That's patient names and visit reasons. That's not my call — that's IT's.\" — Practice Administrator, P154\n\"Is this mine to say yes to? I'd normally send anything like this to IT.\" — Practice Administrator, P156\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — Practice Administrator, P157\n\"Before I connect it I want to know what it pulls. Times and providers, fine. Visit reasons, that's a different conversation.\" — IT Administrator, P158\n\"Does this make them an account, or does it just use the groups they're already in? Because if it's a separate list, I'm the one keeping it in sync.\" — IT Administrator, P159\nRecommendations\nList the fields read from the appointment schedule on the Connect calendar step.\nAdd a \"Send to IT for approval\" path on Connect calendar for an administrator who can't approve the access themselves.\nSay on the Invite your team screen when the invite email is sent.\nLet administrators schedule the invite email for a date, so it can go out once training is booked.\nFollow-ups / Open Questions\nHow is Compass AI access provisioned: through SSO groups, through these invites, or both? Ask the setup flow's engineering team.\nWhen does this build send the invite email: at step 4 or at Review & finish?\nCheck the setup dashboard after any copy change to these steps, to see whether setups still stop at Connect calendar and Invite your team.",
+              "score": 0.714
+            },
+            {
+              "id": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it#5",
+              "recordId": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it",
+              "recordKind": "deliverable",
+              "recordType": "wireflows",
+              "title": "Compass AI Practice Setup — Connect Calendar \"Send to IT for Approval\" Wireflow",
+              "section": "Flow + screens",
+              "participants": null,
+              "excerpt": "No skip branch. The build has no \"Connect later\" and no \"Skip for now\"; the only way past the step is to complete it (2026-02-03 :36-37 ). This wireflow adds neither: Send to IT for approval hands the decision to IT, it doesn't skip the step.",
+              "score": 0.682
+            }
+          ],
+          "promptChars": 16566,
+          "promptTokens": 5810,
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+              "kind": "deliverable",
+              "passage": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow#2"
+            },
+            {
+              "n": 2,
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "kind": "raw",
+              "passage": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:mindsets/wants-to-know-what-a-step-commits",
+              "kind": "deliverable",
+              "passage": "deliverable:mindsets/wants-to-know-what-a-step-commits#1"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion",
+              "kind": "raw",
+              "passage": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion#notes"
+            },
+            {
+              "n": 5,
+              "recordId": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it",
+              "kind": "deliverable",
+              "passage": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it#5"
+            },
+            {
+              "n": 6,
+              "recordId": "deliverable:journey-maps/practice-administrator-compass-ai-setup",
+              "kind": "deliverable",
+              "passage": "deliverable:journey-maps/practice-administrator-compass-ai-setup#5"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+              "kind": "raw",
+              "passage": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#notes"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "audit-burnout-share",
+      "question": "What percentage of clinicians report burnout?",
+      "project": null,
+      "ranking": [
+        {
+          "recordId": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline",
+          "kind": "raw",
+          "score": 0.825
+        },
+        {
+          "recordId": "finding:clinician-experience-documentation-burden",
+          "kind": "finding",
+          "score": 0.759
+        },
+        {
+          "recordId": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load",
+          "kind": "raw",
+          "score": 0.71
+        },
+        {
+          "recordId": "raw:2026-07-02-interview-family-physician-after-hours-charting-since-ga",
+          "kind": "raw",
+          "score": 0.692
+        },
+        {
+          "recordId": "raw:2025-12-02-survey-allstaff-ai-readiness-pulse",
+          "kind": "raw",
+          "score": 0.673
+        },
+        {
+          "recordId": "raw:2026-05-26-interview-returning-nurse-practitioner-training-and-review-habits",
+          "kind": "raw",
+          "score": 0.633
+        },
+        {
+          "recordId": "finding:rollout-and-change-management",
+          "kind": "finding",
+          "score": 0.629
+        },
+        {
+          "recordId": "raw:2025-10-21-interview-training-department-rollout-change-management",
+          "kind": "raw",
+          "score": 0.623
+        },
+        {
+          "recordId": "raw:2025-05-06-usability-test-clinician-dashboard-redesign-v1",
+          "kind": "raw",
+          "score": 0.623
+        },
+        {
+          "recordId": "raw:2026-08-04-interview-care-coordinator-complex-care-alert-volume",
+          "kind": "raw",
+          "score": 0.623
+        },
+        {
+          "recordId": "raw:2026-10-13-interview-telemetry-nurse-start-of-shift-chart-review",
+          "kind": "raw",
+          "score": 0.621
+        },
+        {
+          "recordId": "raw:2026-03-31-interview-him-supervisor-roi-volume-and-part-2",
+          "kind": "raw",
+          "score": 0.621
+        },
+        {
+          "recordId": "raw:2026-04-16-interview-care-coordinator-transitions-medication-changes",
+          "kind": "raw",
+          "score": 0.621
+        },
+        {
+          "recordId": "raw:2026-09-29-interview-care-coordinator-referral-follow-up",
+          "kind": "raw",
+          "score": 0.62
+        },
+        {
+          "recordId": "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption",
+          "kind": "raw",
+          "score": 0.618
+        },
+        {
+          "recordId": "raw:2026-06-23-interview-medical-coder-review-override-habits",
+          "kind": "raw",
+          "score": 0.617
+        },
+        {
+          "recordId": "component:clinician-dashboard",
+          "kind": "component",
+          "score": 0.617
+        },
+        {
+          "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+          "kind": "raw",
+          "score": 0.615
+        },
+        {
+          "recordId": "raw:2026-06-30-interview-rheumatologist-medication-lines-in-scribe-drafts",
+          "kind": "raw",
+          "score": 0.611
+        },
+        {
+          "recordId": "raw:2026-06-16-interview-utilization-review-nurse-case-scope",
+          "kind": "raw",
+          "score": 0.611
+        },
+        {
+          "recordId": "raw:2026-03-10-interview-medical-coder-coding-from-ai-drafted-notes",
+          "kind": "raw",
+          "score": 0.611
+        },
+        {
+          "recordId": "raw:2026-03-03-interview-care-coordinator-chart-review-scribe-notes",
+          "kind": "raw",
+          "score": 0.611
+        },
+        {
+          "recordId": "deliverable:mental-models/care-coordinator-alert-ranking",
+          "kind": "deliverable",
+          "score": 0.61
+        },
+        {
+          "recordId": "finding:care-coordination-triage",
+          "kind": "finding",
+          "score": 0.608
+        },
+        {
+          "recordId": "raw:2026-08-25-interview-primary-care-physician-assistant-coder-and-cdi-queries",
+          "kind": "raw",
+          "score": 0.608
+        },
+        {
+          "recordId": "deliverable:personas/practice-administrator-compass-ai-setup",
+          "kind": "deliverable",
+          "score": 0.607
+        },
+        {
+          "recordId": "raw:2026-09-08-interview-him-specialist-roi-request-turnaround",
+          "kind": "raw",
+          "score": 0.606
+        },
+        {
+          "recordId": "raw:2025-02-11-survey-nursing-attitudes-ai-documentation",
+          "kind": "raw",
+          "score": 0.605
+        },
+        {
+          "recordId": "raw:2026-03-24-interview-family-physician-plan-and-medication-changes-at-sign-off",
+          "kind": "raw",
+          "score": 0.604
+        },
+        {
+          "recordId": "raw:2026-08-20-interview-care-coordinator-new-hire-shadowing",
+          "kind": "raw",
+          "score": 0.604
+        },
+        {
+          "recordId": "raw:2026-09-22-interview-returning-internal-medicine-physician-edits-and-trust-over-time",
+          "kind": "raw",
+          "score": 0.603
+        },
+        {
+          "recordId": "raw:2026-08-18-interview-nurse-manager-unit-champions",
+          "kind": "raw",
+          "score": 0.603
+        },
+        {
+          "recordId": "raw:2025-08-12-interview-cmio-ai-generated-content-governance",
+          "kind": "raw",
+          "score": 0.602
+        },
+        {
+          "recordId": "raw:2025-01-14-stakeholder-interview-ai-strategy-kickoff",
+          "kind": "raw",
+          "score": 0.602
+        },
+        {
+          "recordId": "finding:him-coding-and-billing",
+          "kind": "finding",
+          "score": 0.601
+        },
+        {
+          "recordId": "raw:2026-05-05-interview-care-coordinator-supervisor-queue-oversight",
+          "kind": "raw",
+          "score": 0.6
+        },
+        {
+          "recordId": "raw:2026-09-17-interview-utilization-review-nurse-citation-checking",
+          "kind": "raw",
+          "score": 0.599
+        },
+        {
+          "recordId": "finding:scope-boundaries-and-workflow-fit",
+          "kind": "finding",
+          "score": 0.598
+        },
+        {
+          "recordId": "raw:2026-10-08-interview-internal-medicine-resident-opting-in-to-the-scribe",
+          "kind": "raw",
+          "score": 0.598
+        },
+        {
+          "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+          "kind": "raw",
+          "score": 0.598
+        },
+        {
+          "recordId": "finding:ambient-scribe",
+          "kind": "finding",
+          "score": 0.596
+        },
+        {
+          "recordId": "raw:2026-07-07-interview-care-coordinator-override-reason-capture",
+          "kind": "raw",
+          "score": 0.595
+        },
+        {
+          "recordId": "raw:2025-11-18-accessibility-audit-mobile-clinician-app",
+          "kind": "raw",
+          "score": 0.594
+        },
+        {
+          "recordId": "finding:governance-and-phi",
+          "kind": "finding",
+          "score": 0.594
+        },
+        {
+          "recordId": "raw:2025-07-15-contextual-inquiry-him-release-of-information",
+          "kind": "raw",
+          "score": 0.594
+        },
+        {
+          "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+          "kind": "raw",
+          "score": 0.593
+        },
+        {
+          "recordId": "raw:2026-04-14-interview-ed-intake-nurse-interruptions-and-downtime",
+          "kind": "raw",
+          "score": 0.593
+        },
+        {
+          "recordId": "raw:2026-03-17-interview-clinic-nurse-reading-scribe-drafted-notes",
+          "kind": "raw",
+          "score": 0.591
+        },
+        {
+          "recordId": "raw:2026-10-06-interview-senior-medical-coder-ai-suggestions-concept",
+          "kind": "raw",
+          "score": 0.59
+        },
+        {
+          "recordId": "raw:2026-04-07-interview-care-coordinator-float-pool-system-familiarity",
+          "kind": "raw",
+          "score": 0.589
+        },
+        {
+          "recordId": "raw:2026-07-28-interview-orthopedics-physician-assistant-exam-findings-in-scribe-drafts",
+          "kind": "raw",
+          "score": 0.588
+        },
+        {
+          "recordId": "raw:2026-05-12-interview-cdi-specialist-documentation-gaps",
+          "kind": "raw",
+          "score": 0.588
+        },
+        {
+          "recordId": "raw:2026-06-09-interview-care-coordinator-remote-outreach",
+          "kind": "raw",
+          "score": 0.588
+        },
+        {
+          "recordId": "deliverable:personas/physician-longitudinal-scribe-user",
+          "kind": "deliverable",
+          "score": 0.587
+        },
+        {
+          "recordId": "raw:2026-03-19-interview-primary-care-physician-incidental-content-at-sign-off",
+          "kind": "raw",
+          "score": 0.587
+        },
+        {
+          "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+          "kind": "raw",
+          "score": 0.586
+        },
+        {
+          "recordId": "component:chart-review-summary-panel",
+          "kind": "component",
+          "score": 0.585
+        },
+        {
+          "recordId": "deliverable:wireflows/alert-triage-override-reason-capture",
+          "kind": "deliverable",
+          "score": 0.585
+        },
+        {
+          "recordId": "deliverable:topline-summaries/ambient-scribe-ga-adoption-first-4-weeks",
+          "kind": "deliverable",
+          "score": 0.583
+        },
+        {
+          "recordId": "raw:2026-02-17-session-lock-during-dictation",
+          "kind": "raw",
+          "score": 0.581
+        },
+        {
+          "recordId": "raw:2026-05-19-interview-ed-charge-nurse-shift-oversight",
+          "kind": "raw",
+          "score": 0.58
+        },
+        {
+          "recordId": "deliverable:journey-maps/longitudinal-physician-ambient-scribe",
+          "kind": "deliverable",
+          "score": 0.576
+        },
+        {
+          "recordId": "raw:2026-05-28-interview-icu-nurse-handoff-narrative",
+          "kind": "raw",
+          "score": 0.574
+        },
+        {
+          "recordId": "decision:scope-exclusions-behavioral-health-and-complex-prior-auth",
+          "kind": "decision",
+          "score": 0.574
+        },
+        {
+          "recordId": "raw:2025-06-03-survey-patient-portal-ai-chatbot-trust",
+          "kind": "raw",
+          "score": 0.574
+        },
+        {
+          "recordId": "raw:2026-04-28-interview-nurse-practitioner-session-lock-shared-workstations",
+          "kind": "raw",
+          "score": 0.572
+        },
+        {
+          "recordId": "deliverable:mindsets/wants-to-know-what-a-step-commits",
+          "kind": "deliverable",
+          "score": 0.572
+        },
+        {
+          "recordId": "decision:override-reason-capture-on-alert-ranking",
+          "kind": "decision",
+          "score": 0.571
+        },
+        {
+          "recordId": "raw:2026-09-01-interview-care-coordinator-float-pool-coverage",
+          "kind": "raw",
+          "score": 0.568
+        },
+        {
+          "recordId": "raw:2026-09-15-interview-infusion-nurse-medication-changes-in-scribe-notes",
+          "kind": "raw",
+          "score": 0.567
+        },
+        {
+          "recordId": "deliverable:mental-models/compass-ai-schedule-access-and-invites",
+          "kind": "deliverable",
+          "score": 0.566
+        },
+        {
+          "recordId": "raw:2026-08-11-interview-him-supervisor-coding-team-oversight",
+          "kind": "raw",
+          "score": 0.565
+        },
+        {
+          "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+          "kind": "raw",
+          "score": 0.565
+        },
+        {
+          "recordId": "raw:2025-03-24-interview-privacy-officer-deidentification-requirements",
+          "kind": "raw",
+          "score": 0.564
+        },
+        {
+          "recordId": "deliverable:storyboards/ed-intake-peak-hour-interruption",
+          "kind": "deliverable",
+          "score": 0.564
+        },
+        {
+          "recordId": "deliverable:accessibility-screenings/status-indicator-remediation-screening",
+          "kind": "deliverable",
+          "score": 0.563
+        },
+        {
+          "recordId": "decision:ambient-scribe-ga-release",
+          "kind": "decision",
+          "score": 0.562
+        },
+        {
+          "recordId": "raw:2026-06-02-interview-him-specialist-roi-ai-drafted-notes",
+          "kind": "raw",
+          "score": 0.561
+        },
+        {
+          "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+          "kind": "raw",
+          "score": 0.561
+        },
+        {
+          "recordId": "raw:2025-07-29-usability-test-ai-coding-billing-suggestions",
+          "kind": "raw",
+          "score": 0.559
+        },
+        {
+          "recordId": "raw:2026-07-14-interview-revenue-cycle-analyst-claim-denials",
+          "kind": "raw",
+          "score": 0.558
+        },
+        {
+          "recordId": "decision:patient-chatbot-scheduling-only-scope",
+          "kind": "decision",
+          "score": 0.557
+        },
+        {
+          "recordId": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+          "kind": "deliverable",
+          "score": 0.555
+        },
+        {
+          "recordId": "finding:patient-scheduling-chatbot",
+          "kind": "finding",
+          "score": 0.555
+        },
+        {
+          "recordId": "raw:2025-04-08-usability-test-prior-auth-ai-v1",
+          "kind": "raw",
+          "score": 0.554
+        },
+        {
+          "recordId": "component:encounter-view",
+          "kind": "component",
+          "score": 0.553
+        },
+        {
+          "recordId": "raw:2025-09-23-usability-test-ambient-scribe-v02",
+          "kind": "raw",
+          "score": 0.551
+        },
+        {
+          "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+          "kind": "raw",
+          "score": 0.551
+        },
+        {
+          "recordId": "deliverable:mindsets/skeptical-verifier",
+          "kind": "deliverable",
+          "score": 0.55
+        },
+        {
+          "recordId": "component:sso-mfa-login",
+          "kind": "component",
+          "score": 0.55
+        },
+        {
+          "recordId": "analytics:compass-ai-practice-setup-funnel",
+          "kind": "analytics",
+          "score": 0.55
+        },
+        {
+          "recordId": "raw:2026-04-21-interview-coding-auditor-override-audit-trail",
+          "kind": "raw",
+          "score": 0.55
+        },
+        {
+          "recordId": "deliverable:journey-maps/practice-administrator-compass-ai-setup",
+          "kind": "deliverable",
+          "score": 0.549
+        },
+        {
+          "recordId": "component:alert-triage-queue",
+          "kind": "component",
+          "score": 0.548
+        },
+        {
+          "recordId": "decision:sso-reauthentication-15-minutes-vs-4-hours",
+          "kind": "decision",
+          "score": 0.547
+        },
+        {
+          "recordId": "deliverable:storyboards/compass-ai-setup-calendar-and-invite-hesitations",
+          "kind": "deliverable",
+          "score": 0.546
+        },
+        {
+          "recordId": "finding:accessibility-cross-cutting",
+          "kind": "finding",
+          "score": 0.545
+        },
+        {
+          "recordId": "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate",
+          "kind": "raw",
+          "score": 0.545
+        },
+        {
+          "recordId": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion",
+          "kind": "raw",
+          "score": 0.545
+        },
+        {
+          "recordId": "deliverable:mockups/confidence-highlighted-draft-review",
+          "kind": "deliverable",
+          "score": 0.545
+        },
+        {
+          "recordId": "raw:2025-11-04-usability-test-prior-auth-ai-v2",
+          "kind": "raw",
+          "score": 0.545
+        },
+        {
+          "recordId": "deliverable:wireframes/ambient-scribe-medication-flag",
+          "kind": "deliverable",
+          "score": 0.543
+        },
+        {
+          "recordId": "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+          "kind": "deliverable",
+          "score": 0.543
+        },
+        {
+          "recordId": "finding:compass-ai-practice-setup",
+          "kind": "finding",
+          "score": 0.543
+        },
+        {
+          "recordId": "component:ed-intake-form",
+          "kind": "component",
+          "score": 0.542
+        },
+        {
+          "recordId": "component:care-gap-badge",
+          "kind": "component",
+          "score": 0.542
+        },
+        {
+          "recordId": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+          "kind": "raw",
+          "score": 0.542
+        },
+        {
+          "recordId": "raw:2025-06-17-usability-test-patient-chatbot-prototype",
+          "kind": "raw",
+          "score": 0.54
+        },
+        {
+          "recordId": "finding:ambient-scribe-post-ga-refinements",
+          "kind": "finding",
+          "score": 0.539
+        },
+        {
+          "recordId": "deliverable:research-plans/compass-ai-practice-setup-study-q1",
+          "kind": "deliverable",
+          "score": 0.537
+        },
+        {
+          "recordId": "component:coding-suggestion-panel",
+          "kind": "component",
+          "score": 0.537
+        },
+        {
+          "recordId": "deliverable:heuristic-evaluations/ambient-scribe-encounter-view-pre-ga",
+          "kind": "deliverable",
+          "score": 0.536
+        },
+        {
+          "recordId": "component:patient-chatbot-widget",
+          "kind": "component",
+          "score": 0.535
+        },
+        {
+          "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+          "kind": "raw",
+          "score": 0.534
+        },
+        {
+          "recordId": "component:ambient-scribe-widget",
+          "kind": "component",
+          "score": 0.53
+        },
+        {
+          "recordId": "finding:prior-authorization",
+          "kind": "finding",
+          "score": 0.527
+        },
+        {
+          "recordId": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval",
+          "kind": "deliverable",
+          "score": 0.527
+        },
+        {
+          "recordId": "raw:2025-02-25-usability-test-ambient-scribe-v01",
+          "kind": "raw",
+          "score": 0.527
+        },
+        {
+          "recordId": "deliverable:thumbnails/medication-flag-placement-explorations",
+          "kind": "deliverable",
+          "score": 0.525
+        },
+        {
+          "recordId": "decision:prior-auth-inline-source-citations",
+          "kind": "decision",
+          "score": 0.525
+        },
+        {
+          "recordId": "decision:compass-ai-setup-calendar-step-required",
+          "kind": "decision",
+          "score": 0.525
+        },
+        {
+          "recordId": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it",
+          "kind": "deliverable",
+          "score": 0.519
+        },
+        {
+          "recordId": "component:roi-redaction-tool",
+          "kind": "component",
+          "score": 0.519
+        },
+        {
+          "recordId": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+          "kind": "deliverable",
+          "score": 0.519
+        },
+        {
+          "recordId": "component:prior-auth-drafting-panel",
+          "kind": "component",
+          "score": 0.518
+        },
+        {
+          "recordId": "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+          "kind": "deliverable",
+          "score": 0.518
+        },
+        {
+          "recordId": "deliverable:service-topology/prior-auth-drafting-v2",
+          "kind": "deliverable",
+          "score": 0.517
+        },
+        {
+          "recordId": "raw:2025-03-10-accessibility-audit-legacy-extjs-admin-console",
+          "kind": "raw",
+          "score": 0.517
+        },
+        {
+          "recordId": "deliverable:facilitation-guides/compass-ai-practice-setup-usability-guide",
+          "kind": "deliverable",
+          "score": 0.514
+        },
+        {
+          "recordId": "decision:session-lock-paused-draft-preserved-state",
+          "kind": "decision",
+          "score": 0.51
+        },
+        {
+          "recordId": "deliverable:design-system/v4-1-status-indicator-component",
+          "kind": "deliverable",
+          "score": 0.508
+        },
+        {
+          "recordId": "deliverable:prototypes/ambient-scribe-ga-candidate-clickthrough",
+          "kind": "deliverable",
+          "score": 0.505
+        },
+        {
+          "recordId": "component:scheduling-widget",
+          "kind": "component",
+          "score": 0.504
+        },
+        {
+          "recordId": "raw:2025-07-01-accessibility-audit-new-design-system-components",
+          "kind": "raw",
+          "score": 0.49
+        },
+        {
+          "recordId": "component:design-system-modal",
+          "kind": "component",
+          "score": 0.489
+        },
+        {
+          "recordId": "component:design-system-form-field",
+          "kind": "component",
+          "score": 0.486
+        },
+        {
+          "recordId": "deliverable:style-guide/meridian-token-basics",
+          "kind": "deliverable",
+          "score": 0.485
+        },
+        {
+          "recordId": "component:mobile-app-alert-list",
+          "kind": "component",
+          "score": 0.479
+        },
+        {
+          "recordId": "component:alert-badge",
+          "kind": "component",
+          "score": 0.473
+        },
+        {
+          "recordId": "component:admin-console-grid",
+          "kind": "component",
+          "score": 0.467
+        }
+      ],
+      "runs": [
+        {
+          "secs": 3.4,
+          "answer": "The sources do not give an overall percentage of clinicians reporting burnout. The September 2025 baseline survey included a validated burnout subscale, but its notes report no burnout prevalence figure [1].\n\nWhat they do show is narrower. Among physicians, 52% ranked documentation burden as the #1 self-selected contributor to burnout, ahead of patient volume (31%) and administrative meetings (12%) [1]. That is a share naming a cause, not a share who are burned out. Also, 64% of physician respondents regularly chart after clinic hours, averaging 1.2 hours a day [1].\n\nFor nurses, no figure exists. The nurse interview (P141) described after-shift charting as fatigue, not burnout, and no burnout measure was used [2]. The September figures are physician-only and should not be read as describing nurses [2]. Whether nurse results from the baseline exist is not recorded [2].\n\nOne caveat applies to the survey data: respondents were told it related to a future AI initiative, which may have skewed attitudes, so it should not be treated as a clean comparison with the February nursing survey [3].",
+          "usage": {
+            "inputTokens": 4571,
+            "outputTokens": 359,
+            "totalTokens": 4930,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "stopReason": "end_turn",
+          "latencyMs": 3165,
+          "attempts": 1,
+          "cost": 0.012732,
+          "sources": [
+            {
+              "id": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline#notes",
+              "recordId": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline",
+              "recordKind": "raw",
+              "recordType": "survey",
+              "title": "Survey — Clinician Burnout & Documentation Burden Baseline",
+              "section": null,
+              "participants": "Participants: 287 — Physician, Nurse Practitioner, Physician Assistant, Registered Nurse",
+              "excerpt": "Objective\nEstablish a pre-AI-rollout baseline of self-reported burnout and documentation burden, so future surveys can measure whether Compass AI tools move the needle.\nMethod\nMethod: Anonymous org-wide survey, 15 questions (validated burnout subscale + custom documentation items)\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (documentation as burnout driver) Documentation burden ranked as the #1 self-selected contributor to burnout among physicians specifically (52%), ahead of patient volume (31%) and administrative meetings (12%).\n[MEDIUM] (after-hours charting) 64% of physician respondents report regularly completing documentation after clinic hours ('pajama time'), averaging a self-reported 1.2 hours/day.\n[MEDIUM] (baseline caution) Respondents were told this survey relates to a future AI initiative, which may have primed more favorable-than-baseline attitudes toward documentation-reducing tools — worth noting as a methodological caveat for anyone comparing to the February nursing survey, which didn't mention AI in its framing.\nRepresentative Quotes\n\"I love this job. I do not love finishing my notes at 9pm after my kids are in bed. If AI fixes that, I'm in.\" — Physician, P84 (survey open-ended)\n\"Just don't let 'AI will fix documentation' become the excuse to skip fixing the actual EHR problems underneath it.\" — Nurse Practitioner, P91 (survey open-ended)\nRecommendations\nUse this survey as the official baseline metric for measuring Compass AI's impact on documentation burden and after-hours charting in future re-surveys (e.g., 6 and 12 months post-rollout).\nNote the framing caveat explicitly in any report comparing this dataset to the February nursing survey.\nFollow-ups / Open Questions\nSchedule a repeat of this exact survey instrument 6 months after ambient scribe GA rollout for comparison.",
+              "score": 0.825
+            },
+            {
+              "id": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load#notes",
+              "recordId": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load",
+              "recordKind": "raw",
+              "recordType": "interview",
+              "title": "Interview — Med-Surg Night Nurse on Charting Load",
+              "section": null,
+              "participants": "Participants: 1 — P141 — Registered Nurse (medical-surgical) (nurse) ×1",
+              "excerpt": "Objective\nThe documentation-burden finding quantifies after-hours charting for physicians only: the September 2025 baseline found 64% of physician respondents regularly finishing documentation after clinic hours, at a self-reported 1.2 hours a day (2025-09-09-survey-clinician-burnout-documentation-burden-baseline/session-notes.md:30). Nothing in the corpus describes the same thing for nurses beyond the February 2025 nursing survey's attitudes and one respondent's wish to get \"out of the room 10 minutes faster to chart\" (2025-02-11-survey-nursing-attitudes-ai-documentation/session-notes.md:37). This session asked an inpatient nurse whether their charting runs past the end of their shift, why, and what they expect of AI drafting nursing notes, which doesn't exist.\nMethod\nMethod: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant is a registered nurse on an inpatient medical-surgical unit, working twelve-hour night shifts, about two years in; they finished unit orientation as a new graduate. Their charting is manual. The ambient scribe, GA since January 2026, drafts notes for physicians, NPs and PAs only, and no nurse uses it for their own documentation, so everything they said about AI drafting nursing notes is an expectation, not experience. They did not take part in any earlier session, including the February 2025 nursing survey.\nKey Findings\n[HIGH] (after-shift charting) Their charting regularly continues after the shift ends. They hand off at the end of the night, then stay at a workstation to finish notes they could not complete during the shift. They put it at \"most shifts, thirty to forty-five minutes\"; that is an informal self-estimate, not timed or logged. The notes left over are mostly the narrative parts and the end-of-shift reassessments, because the start of the night is admissions and the early morning is medication passes and labs, and charting is what gets deferred whenever a patient needs something.\n[MEDIUM] (burden beyond physicians) This extends the documentation-burden finding to registered nurses qualitatively: one nurse describes after-shift charting as routine on their unit. It does not supply a nurse figure. The September 2025 figures (52%, 64%, 1.2 hours a day) are physician-only and should not be read as describing nurses; this interview's thirty to forty-five minutes is one nurse's estimate and isn't comparable to them. They linked the after-shift time to how tired they are at the end of a run of nights, but described it as fatigue, not burnout, and no burnout measure was used.\n[LOW] (tenure and skepticism) Asked about years of experience, they offered their own view as a newer nurse: they haven't settled into a way of charting yet, which might make them more open to a draft, but it also means they would check every word, because they don't yet trust themselves to spot what a draft got wrong. This is one newer nurse's view. It does not answer the February 2025 survey's open question on whether skepticism correlates with tenure, which needs the survey cross-tab.\nRepresentative Quotes\n\"Report's done and I'm still at the workstation finishing my notes. Day shift is already running the floor around me.\" — Registered Nurse (medical-surgical), P141\n\"I'm new enough that I don't have a way of charting yet. Maybe that makes me more open to it. It also means I'd read every word, because I don't trust myself to know what it got wrong.\" — Registered Nurse (medical-surgical), P141\nRecommendations\nWhen the documentation-burden finding is next revised, note that after-shift charting is also reported by nurses, qualitatively, and keep the September figures labelled as physician-only.\nIf nurse documentation burden needs a number, measure it directly (the September baseline's registered nurse responses reported separately, if they exist, or time logs), rather than extending the physician figures.\nFollow-ups / Open Questions\nHow much time nurses spend charting after their shift is not measured; \"thirty to forty-five minutes\" is one nurse's estimate, on one unit.\nThe September 2025 baseline's roster lists registered nurses among its respondents, but its notes report the burnout and after-hours figures for physicians only; whether nurse results exist is not recorded.\nWhether skepticism varies with tenure is still open; the February 2025 survey's cross-tab hasn't been run, and one interview can't answer it.\nWhether day-shift nurses on the same unit chart after their shift too is not known.",
+              "score": 0.71
+            },
+            {
+              "id": "finding:clinician-experience-documentation-burden#1",
+              "recordId": "finding:clinician-experience-documentation-burden",
+              "recordKind": "finding",
+              "recordType": "synthesis",
+              "title": "Clinician Experience & Documentation Burden",
+              "section": "Overview",
+              "participants": null,
+              "excerpt": "Documentation burden is real and quantifiable, not just anecdotal. The September baseline found documentation burden is physicians' #1 self-selected burnout driver (52%, ahead of patient volume at 31%), with 64% doing regular after-hours \"pajama time\" charting (avg. 1.2 hrs/day). The session recommends it as the official pre-AI baseline for measuring Compass AI's impact at 6 and 12 months post-rollout. Caveat: the September survey mentioned the AI initiative explicitly in its framing, while the February survey didn't — any comparison between the two datasets needs to account for that framing difference, not treat them as a clean before/after.",
+              "score": 0.759
+            }
+          ],
+          "promptChars": 13612,
+          "promptTokens": 4571,
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline#notes"
+            },
+            {
+              "n": 2,
+              "recordId": "finding:clinician-experience-documentation-burden",
+              "kind": "finding",
+              "passage": "finding:clinician-experience-documentation-burden#1"
+            },
+            {
+              "n": 3,
+              "recordId": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load",
+              "kind": "raw",
+              "passage": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load#notes"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-07-02-interview-family-physician-after-hours-charting-since-ga",
+              "kind": "raw",
+              "passage": "raw:2026-07-02-interview-family-physician-after-hours-charting-since-ga#notes"
+            }
+          ]
+        },
+        {
+          "secs": 4.4,
+          "answer": "The sources do not give a percentage of clinicians who report burnout. The September 2025 baseline survey (287 participants) used a validated burnout subscale, but its recorded findings report no burnout prevalence figure [1].\n\nWhat the survey does report is physician-only. 52% of physicians named documentation burden as the top contributor to burnout, ahead of patient volume (31%) and administrative meetings (12%) [1]. That is a share ranking a cause, not a share who are burned out. The survey also found that 64% of physician respondents regularly finish documentation after clinic hours, averaging a self-reported 1.2 hours a day [1].\n\nFor nurses, no figure exists. The nurse interview notes that the September figures are physician-only and should not be read as describing nurses [2]. That nurse (P141) described end-of-shift fatigue, but no burnout measure was used [2]. The roster lists registered nurses among respondents, but whether nurse results exist is not recorded [2].\n\nThe survey also carries a framing caveat: it mentioned the AI initiative, which may have primed more favorable attitudes, and the February nursing survey did not [1].",
+          "usage": {
+            "inputTokens": 4571,
+            "outputTokens": 545,
+            "totalTokens": 5116,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "stopReason": "end_turn",
+          "latencyMs": 4118,
+          "attempts": 1,
+          "cost": 0.014592,
+          "thinkingChars": 0,
+          "sources": [
+            {
+              "id": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline#notes",
+              "recordId": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline",
+              "recordKind": "raw",
+              "recordType": "survey",
+              "title": "Survey — Clinician Burnout & Documentation Burden Baseline",
+              "section": null,
+              "participants": "Participants: 287 — Physician, Nurse Practitioner, Physician Assistant, Registered Nurse",
+              "excerpt": "Objective\nEstablish a pre-AI-rollout baseline of self-reported burnout and documentation burden, so future surveys can measure whether Compass AI tools move the needle.\nMethod\nMethod: Anonymous org-wide survey, 15 questions (validated burnout subscale + custom documentation items)\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (documentation as burnout driver) Documentation burden ranked as the #1 self-selected contributor to burnout among physicians specifically (52%), ahead of patient volume (31%) and administrative meetings (12%).\n[MEDIUM] (after-hours charting) 64% of physician respondents report regularly completing documentation after clinic hours ('pajama time'), averaging a self-reported 1.2 hours/day.\n[MEDIUM] (baseline caution) Respondents were told this survey relates to a future AI initiative, which may have primed more favorable-than-baseline attitudes toward documentation-reducing tools — worth noting as a methodological caveat for anyone comparing to the February nursing survey, which didn't mention AI in its framing.\nRepresentative Quotes\n\"I love this job. I do not love finishing my notes at 9pm after my kids are in bed. If AI fixes that, I'm in.\" — Physician, P84 (survey open-ended)\n\"Just don't let 'AI will fix documentation' become the excuse to skip fixing the actual EHR problems underneath it.\" — Nurse Practitioner, P91 (survey open-ended)\nRecommendations\nUse this survey as the official baseline metric for measuring Compass AI's impact on documentation burden and after-hours charting in future re-surveys (e.g., 6 and 12 months post-rollout).\nNote the framing caveat explicitly in any report comparing this dataset to the February nursing survey.\nFollow-ups / Open Questions\nSchedule a repeat of this exact survey instrument 6 months after ambient scribe GA rollout for comparison.",
+              "score": 0.825
+            },
+            {
+              "id": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load#notes",
+              "recordId": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load",
+              "recordKind": "raw",
+              "recordType": "interview",
+              "title": "Interview — Med-Surg Night Nurse on Charting Load",
+              "section": null,
+              "participants": "Participants: 1 — P141 — Registered Nurse (medical-surgical) (nurse) ×1",
+              "excerpt": "Objective\nThe documentation-burden finding quantifies after-hours charting for physicians only: the September 2025 baseline found 64% of physician respondents regularly finishing documentation after clinic hours, at a self-reported 1.2 hours a day (2025-09-09-survey-clinician-burnout-documentation-burden-baseline/session-notes.md:30). Nothing in the corpus describes the same thing for nurses beyond the February 2025 nursing survey's attitudes and one respondent's wish to get \"out of the room 10 minutes faster to chart\" (2025-02-11-survey-nursing-attitudes-ai-documentation/session-notes.md:37). This session asked an inpatient nurse whether their charting runs past the end of their shift, why, and what they expect of AI drafting nursing notes, which doesn't exist.\nMethod\nMethod: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant is a registered nurse on an inpatient medical-surgical unit, working twelve-hour night shifts, about two years in; they finished unit orientation as a new graduate. Their charting is manual. The ambient scribe, GA since January 2026, drafts notes for physicians, NPs and PAs only, and no nurse uses it for their own documentation, so everything they said about AI drafting nursing notes is an expectation, not experience. They did not take part in any earlier session, including the February 2025 nursing survey.\nKey Findings\n[HIGH] (after-shift charting) Their charting regularly continues after the shift ends. They hand off at the end of the night, then stay at a workstation to finish notes they could not complete during the shift. They put it at \"most shifts, thirty to forty-five minutes\"; that is an informal self-estimate, not timed or logged. The notes left over are mostly the narrative parts and the end-of-shift reassessments, because the start of the night is admissions and the early morning is medication passes and labs, and charting is what gets deferred whenever a patient needs something.\n[MEDIUM] (burden beyond physicians) This extends the documentation-burden finding to registered nurses qualitatively: one nurse describes after-shift charting as routine on their unit. It does not supply a nurse figure. The September 2025 figures (52%, 64%, 1.2 hours a day) are physician-only and should not be read as describing nurses; this interview's thirty to forty-five minutes is one nurse's estimate and isn't comparable to them. They linked the after-shift time to how tired they are at the end of a run of nights, but described it as fatigue, not burnout, and no burnout measure was used.\n[LOW] (tenure and skepticism) Asked about years of experience, they offered their own view as a newer nurse: they haven't settled into a way of charting yet, which might make them more open to a draft, but it also means they would check every word, because they don't yet trust themselves to spot what a draft got wrong. This is one newer nurse's view. It does not answer the February 2025 survey's open question on whether skepticism correlates with tenure, which needs the survey cross-tab.\nRepresentative Quotes\n\"Report's done and I'm still at the workstation finishing my notes. Day shift is already running the floor around me.\" — Registered Nurse (medical-surgical), P141\n\"I'm new enough that I don't have a way of charting yet. Maybe that makes me more open to it. It also means I'd read every word, because I don't trust myself to know what it got wrong.\" — Registered Nurse (medical-surgical), P141\nRecommendations\nWhen the documentation-burden finding is next revised, note that after-shift charting is also reported by nurses, qualitatively, and keep the September figures labelled as physician-only.\nIf nurse documentation burden needs a number, measure it directly (the September baseline's registered nurse responses reported separately, if they exist, or time logs), rather than extending the physician figures.\nFollow-ups / Open Questions\nHow much time nurses spend charting after their shift is not measured; \"thirty to forty-five minutes\" is one nurse's estimate, on one unit.\nThe September 2025 baseline's roster lists registered nurses among its respondents, but its notes report the burnout and after-hours figures for physicians only; whether nurse results exist is not recorded.\nWhether skepticism varies with tenure is still open; the February 2025 survey's cross-tab hasn't been run, and one interview can't answer it.\nWhether day-shift nurses on the same unit chart after their shift too is not known.",
+              "score": 0.71
+            }
+          ],
+          "promptChars": 13612,
+          "promptTokens": 4571,
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline#notes"
+            },
+            {
+              "n": 2,
+              "recordId": "finding:clinician-experience-documentation-burden",
+              "kind": "finding",
+              "passage": "finding:clinician-experience-documentation-burden#1"
+            },
+            {
+              "n": 3,
+              "recordId": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load",
+              "kind": "raw",
+              "passage": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load#notes"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-07-02-interview-family-physician-after-hours-charting-since-ga",
+              "kind": "raw",
+              "passage": "raw:2026-07-02-interview-family-physician-after-hours-charting-since-ga#notes"
+            }
+          ]
+        },
+        {
+          "secs": 3.1,
+          "answer": "The sources do not give an overall percentage of clinicians who report burnout. The September 2025 baseline survey (287 respondents) used a validated burnout subscale, but its notes report no burnout prevalence figure [1].\n\nWhat they do show is narrower. Among physician respondents, 52% ranked documentation burden as the #1 self-selected contributor to burnout, ahead of patient volume (31%) and administrative meetings (12%) [1]. That is a share naming a cause, not a share reporting burnout. Also, 64% of physician respondents regularly finish documentation after clinic hours, averaging a self-reported 1.2 hours a day [1].\n\nFor nurses, no burnout figure exists. One interviewed nurse described after-shift charting as fatigue rather than burnout, and no burnout measure was used in that session [2]. The September figures are physician-only and should not be read as describing nurses [2]. Whether nurse results exist in the baseline is not recorded [2].\n\nAny comparison with the February nursing survey also needs to account for the framing difference, since the September survey mentioned the AI initiative [3].",
+          "usage": {
+            "inputTokens": 4571,
+            "outputTokens": 360,
+            "totalTokens": 4931,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "stopReason": "end_turn",
+          "latencyMs": 2842,
+          "attempts": 1,
+          "cost": 0.012742,
+          "sources": [
+            {
+              "id": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline#notes",
+              "recordId": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline",
+              "recordKind": "raw",
+              "recordType": "survey",
+              "title": "Survey — Clinician Burnout & Documentation Burden Baseline",
+              "section": null,
+              "participants": "Participants: 287 — Physician, Nurse Practitioner, Physician Assistant, Registered Nurse",
+              "excerpt": "Objective\nEstablish a pre-AI-rollout baseline of self-reported burnout and documentation burden, so future surveys can measure whether Compass AI tools move the needle.\nMethod\nMethod: Anonymous org-wide survey, 15 questions (validated burnout subscale + custom documentation items)\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nKey Findings\n[HIGH] (documentation as burnout driver) Documentation burden ranked as the #1 self-selected contributor to burnout among physicians specifically (52%), ahead of patient volume (31%) and administrative meetings (12%).\n[MEDIUM] (after-hours charting) 64% of physician respondents report regularly completing documentation after clinic hours ('pajama time'), averaging a self-reported 1.2 hours/day.\n[MEDIUM] (baseline caution) Respondents were told this survey relates to a future AI initiative, which may have primed more favorable-than-baseline attitudes toward documentation-reducing tools — worth noting as a methodological caveat for anyone comparing to the February nursing survey, which didn't mention AI in its framing.\nRepresentative Quotes\n\"I love this job. I do not love finishing my notes at 9pm after my kids are in bed. If AI fixes that, I'm in.\" — Physician, P84 (survey open-ended)\n\"Just don't let 'AI will fix documentation' become the excuse to skip fixing the actual EHR problems underneath it.\" — Nurse Practitioner, P91 (survey open-ended)\nRecommendations\nUse this survey as the official baseline metric for measuring Compass AI's impact on documentation burden and after-hours charting in future re-surveys (e.g., 6 and 12 months post-rollout).\nNote the framing caveat explicitly in any report comparing this dataset to the February nursing survey.\nFollow-ups / Open Questions\nSchedule a repeat of this exact survey instrument 6 months after ambient scribe GA rollout for comparison.",
+              "score": 0.825
+            },
+            {
+              "id": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load#notes",
+              "recordId": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load",
+              "recordKind": "raw",
+              "recordType": "interview",
+              "title": "Interview — Med-Surg Night Nurse on Charting Load",
+              "section": null,
+              "participants": "Participants: 1 — P141 — Registered Nurse (medical-surgical) (nurse) ×1",
+              "excerpt": "Objective\nThe documentation-burden finding quantifies after-hours charting for physicians only: the September 2025 baseline found 64% of physician respondents regularly finishing documentation after clinic hours, at a self-reported 1.2 hours a day (2025-09-09-survey-clinician-burnout-documentation-burden-baseline/session-notes.md:30). Nothing in the corpus describes the same thing for nurses beyond the February 2025 nursing survey's attitudes and one respondent's wish to get \"out of the room 10 minutes faster to chart\" (2025-02-11-survey-nursing-attitudes-ai-documentation/session-notes.md:37). This session asked an inpatient nurse whether their charting runs past the end of their shift, why, and what they expect of AI drafting nursing notes, which doesn't exist.\nMethod\nMethod: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant is a registered nurse on an inpatient medical-surgical unit, working twelve-hour night shifts, about two years in; they finished unit orientation as a new graduate. Their charting is manual. The ambient scribe, GA since January 2026, drafts notes for physicians, NPs and PAs only, and no nurse uses it for their own documentation, so everything they said about AI drafting nursing notes is an expectation, not experience. They did not take part in any earlier session, including the February 2025 nursing survey.\nKey Findings\n[HIGH] (after-shift charting) Their charting regularly continues after the shift ends. They hand off at the end of the night, then stay at a workstation to finish notes they could not complete during the shift. They put it at \"most shifts, thirty to forty-five minutes\"; that is an informal self-estimate, not timed or logged. The notes left over are mostly the narrative parts and the end-of-shift reassessments, because the start of the night is admissions and the early morning is medication passes and labs, and charting is what gets deferred whenever a patient needs something.\n[MEDIUM] (burden beyond physicians) This extends the documentation-burden finding to registered nurses qualitatively: one nurse describes after-shift charting as routine on their unit. It does not supply a nurse figure. The September 2025 figures (52%, 64%, 1.2 hours a day) are physician-only and should not be read as describing nurses; this interview's thirty to forty-five minutes is one nurse's estimate and isn't comparable to them. They linked the after-shift time to how tired they are at the end of a run of nights, but described it as fatigue, not burnout, and no burnout measure was used.\n[LOW] (tenure and skepticism) Asked about years of experience, they offered their own view as a newer nurse: they haven't settled into a way of charting yet, which might make them more open to a draft, but it also means they would check every word, because they don't yet trust themselves to spot what a draft got wrong. This is one newer nurse's view. It does not answer the February 2025 survey's open question on whether skepticism correlates with tenure, which needs the survey cross-tab.\nRepresentative Quotes\n\"Report's done and I'm still at the workstation finishing my notes. Day shift is already running the floor around me.\" — Registered Nurse (medical-surgical), P141\n\"I'm new enough that I don't have a way of charting yet. Maybe that makes me more open to it. It also means I'd read every word, because I don't trust myself to know what it got wrong.\" — Registered Nurse (medical-surgical), P141\nRecommendations\nWhen the documentation-burden finding is next revised, note that after-shift charting is also reported by nurses, qualitatively, and keep the September figures labelled as physician-only.\nIf nurse documentation burden needs a number, measure it directly (the September baseline's registered nurse responses reported separately, if they exist, or time logs), rather than extending the physician figures.\nFollow-ups / Open Questions\nHow much time nurses spend charting after their shift is not measured; \"thirty to forty-five minutes\" is one nurse's estimate, on one unit.\nThe September 2025 baseline's roster lists registered nurses among its respondents, but its notes report the burnout and after-hours figures for physicians only; whether nurse results exist is not recorded.\nWhether skepticism varies with tenure is still open; the February 2025 survey's cross-tab hasn't been run, and one interview can't answer it.\nWhether day-shift nurses on the same unit chart after their shift too is not known.",
+              "score": 0.71
+            },
+            {
+              "id": "finding:clinician-experience-documentation-burden#1",
+              "recordId": "finding:clinician-experience-documentation-burden",
+              "recordKind": "finding",
+              "recordType": "synthesis",
+              "title": "Clinician Experience & Documentation Burden",
+              "section": "Overview",
+              "participants": null,
+              "excerpt": "Documentation burden is real and quantifiable, not just anecdotal. The September baseline found documentation burden is physicians' #1 self-selected burnout driver (52%, ahead of patient volume at 31%), with 64% doing regular after-hours \"pajama time\" charting (avg. 1.2 hrs/day). The session recommends it as the official pre-AI baseline for measuring Compass AI's impact at 6 and 12 months post-rollout. Caveat: the September survey mentioned the AI initiative explicitly in its framing, while the February survey didn't — any comparison between the two datasets needs to account for that framing difference, not treat them as a clean before/after.",
+              "score": 0.759
+            }
+          ],
+          "promptChars": 13612,
+          "promptTokens": 4571,
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline",
+              "kind": "raw",
+              "passage": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline#notes"
+            },
+            {
+              "n": 2,
+              "recordId": "finding:clinician-experience-documentation-burden",
+              "kind": "finding",
+              "passage": "finding:clinician-experience-documentation-burden#1"
+            },
+            {
+              "n": 3,
+              "recordId": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load",
+              "kind": "raw",
+              "passage": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load#notes"
+            },
+            {
+              "n": 4,
+              "recordId": "raw:2026-07-02-interview-family-physician-after-hours-charting-since-ga",
+              "kind": "raw",
+              "passage": "raw:2026-07-02-interview-family-physician-after-hours-charting-since-ga#notes"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scenario-calendar-premise",
+      "question": "What evidence supports making the calendar step required in onboarding?",
+      "project": null,
+      "ranking": [
+        {
+          "recordId": "decision:compass-ai-setup-calendar-step-required",
+          "kind": "decision",
+          "score": 0.756
+        },
+        {
+          "recordId": "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+          "kind": "deliverable",
+          "score": 0.749
+        },
+        {
+          "recordId": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+          "kind": "deliverable",
+          "score": 0.739
+        },
+        {
+          "recordId": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval",
+          "kind": "deliverable",
+          "score": 0.738
+        },
+        {
+          "recordId": "deliverable:mindsets/wants-to-know-what-a-step-commits",
+          "kind": "deliverable",
+          "score": 0.733
+        },
+        {
+          "recordId": "deliverable:mental-models/compass-ai-schedule-access-and-invites",
+          "kind": "deliverable",
+          "score": 0.73
+        },
+        {
+          "recordId": "deliverable:facilitation-guides/compass-ai-practice-setup-usability-guide",
+          "kind": "deliverable",
+          "score": 0.723
+        },
+        {
+          "recordId": "deliverable:user-flows/compass-ai-practice-setup-five-step-flow",
+          "kind": "deliverable",
+          "score": 0.722
+        },
+        {
+          "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+          "kind": "raw",
+          "score": 0.72
+        },
+        {
+          "recordId": "deliverable:storyboards/compass-ai-setup-calendar-and-invite-hesitations",
+          "kind": "deliverable",
+          "score": 0.718
+        },
+        {
+          "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+          "kind": "raw",
+          "score": 0.713
+        },
+        {
+          "recordId": "deliverable:journey-maps/practice-administrator-compass-ai-setup",
+          "kind": "deliverable",
+          "score": 0.71
+        },
+        {
+          "recordId": "raw:2025-10-21-interview-training-department-rollout-change-management",
+          "kind": "raw",
+          "score": 0.707
+        },
+        {
+          "recordId": "analytics:compass-ai-practice-setup-funnel",
+          "kind": "analytics",
+          "score": 0.703
+        },
+        {
+          "recordId": "raw:2026-01-20-dashboard-review-compass-ai-practice-setup-completion",
+          "kind": "raw",
+          "score": 0.7
+        },
+        {
+          "recordId": "deliverable:research-plans/compass-ai-practice-setup-study-q1",
+          "kind": "deliverable",
+          "score": 0.699
+        },
+        {
+          "recordId": "finding:compass-ai-practice-setup",
+          "kind": "finding",
+          "score": 0.699
+        },
+        {
+          "recordId": "raw:2026-01-27-dashboard-review-ambient-scribe-ga-adoption",
+          "kind": "raw",
+          "score": 0.696
+        },
+        {
+          "recordId": "decision:ambient-scribe-ga-release",
+          "kind": "decision",
+          "score": 0.694
+        },
+        {
+          "recordId": "deliverable:personas/practice-administrator-compass-ai-setup",
+          "kind": "deliverable",
+          "score": 0.692
+        },
+        {
+          "recordId": "deliverable:wireflows/compass-ai-connect-calendar-send-to-it",
+          "kind": "deliverable",
+          "score": 0.691
+        },
+        {
+          "recordId": "raw:2025-12-16-stakeholder-interview-executive-steering-committee-retro",
+          "kind": "raw",
+          "score": 0.688
+        },
+        {
+          "recordId": "raw:2025-01-14-stakeholder-interview-ai-strategy-kickoff",
+          "kind": "raw",
+          "score": 0.687
+        },
+        {
+          "recordId": "deliverable:topline-summaries/ambient-scribe-ga-adoption-first-4-weeks",
+          "kind": "deliverable",
+          "score": 0.683
+        },
+        {
+          "recordId": "raw:2026-03-24-interview-family-physician-plan-and-medication-changes-at-sign-off",
+          "kind": "raw",
+          "score": 0.682
+        },
+        {
+          "recordId": "finding:clinician-experience-documentation-burden",
+          "kind": "finding",
+          "score": 0.682
+        },
+        {
+          "recordId": "finding:rollout-and-change-management",
+          "kind": "finding",
+          "score": 0.682
+        },
+        {
+          "recordId": "deliverable:journey-maps/longitudinal-physician-ambient-scribe",
+          "kind": "deliverable",
+          "score": 0.681
+        },
+        {
+          "recordId": "deliverable:personas/physician-longitudinal-scribe-user",
+          "kind": "deliverable",
+          "score": 0.681
+        },
+        {
+          "recordId": "finding:him-coding-and-billing",
+          "kind": "finding",
+          "score": 0.679
+        },
+        {
+          "recordId": "raw:2025-12-02-survey-allstaff-ai-readiness-pulse",
+          "kind": "raw",
+          "score": 0.679
+        },
+        {
+          "recordId": "raw:2026-07-21-interview-med-surg-night-nurse-charting-load",
+          "kind": "raw",
+          "score": 0.676
+        },
+        {
+          "recordId": "raw:2025-04-08-usability-test-prior-auth-ai-v1",
+          "kind": "raw",
+          "score": 0.675
+        },
+        {
+          "recordId": "component:scheduling-widget",
+          "kind": "component",
+          "score": 0.674
+        },
+        {
+          "recordId": "finding:ambient-scribe",
+          "kind": "finding",
+          "score": 0.673
+        },
+        {
+          "recordId": "raw:2025-05-20-interview-it-security-sso-mfa-modernization",
+          "kind": "raw",
+          "score": 0.673
+        },
+        {
+          "recordId": "raw:2026-04-07-interview-care-coordinator-float-pool-system-familiarity",
+          "kind": "raw",
+          "score": 0.673
+        },
+        {
+          "recordId": "raw:2026-10-08-interview-internal-medicine-resident-opting-in-to-the-scribe",
+          "kind": "raw",
+          "score": 0.67
+        },
+        {
+          "recordId": "finding:scope-boundaries-and-workflow-fit",
+          "kind": "finding",
+          "score": 0.67
+        },
+        {
+          "recordId": "raw:2026-05-19-interview-ed-charge-nurse-shift-oversight",
+          "kind": "raw",
+          "score": 0.669
+        },
+        {
+          "recordId": "raw:2026-10-13-interview-telemetry-nurse-start-of-shift-chart-review",
+          "kind": "raw",
+          "score": 0.669
+        },
+        {
+          "recordId": "raw:2026-04-16-interview-care-coordinator-transitions-medication-changes",
+          "kind": "raw",
+          "score": 0.667
+        },
+        {
+          "recordId": "raw:2026-09-22-interview-returning-internal-medicine-physician-edits-and-trust-over-time",
+          "kind": "raw",
+          "score": 0.667
+        },
+        {
+          "recordId": "raw:2026-01-13-usability-test-ambient-scribe-ga-release-candidate",
+          "kind": "raw",
+          "score": 0.667
+        },
+        {
+          "recordId": "raw:2026-04-14-interview-ed-intake-nurse-interruptions-and-downtime",
+          "kind": "raw",
+          "score": 0.666
+        },
+        {
+          "recordId": "deliverable:wireframes/ambient-scribe-medication-flag",
+          "kind": "deliverable",
+          "score": 0.665
+        },
+        {
+          "recordId": "deliverable:mockups/confidence-highlighted-draft-review",
+          "kind": "deliverable",
+          "score": 0.664
+        },
+        {
+          "recordId": "raw:2026-06-23-interview-medical-coder-review-override-habits",
+          "kind": "raw",
+          "score": 0.664
+        },
+        {
+          "recordId": "raw:2026-06-09-interview-care-coordinator-remote-outreach",
+          "kind": "raw",
+          "score": 0.663
+        },
+        {
+          "recordId": "deliverable:prototypes/ambient-scribe-ga-candidate-clickthrough",
+          "kind": "deliverable",
+          "score": 0.662
+        },
+        {
+          "recordId": "raw:2026-03-03-interview-care-coordinator-chart-review-scribe-notes",
+          "kind": "raw",
+          "score": 0.661
+        },
+        {
+          "recordId": "raw:2026-05-26-interview-returning-nurse-practitioner-training-and-review-habits",
+          "kind": "raw",
+          "score": 0.661
+        },
+        {
+          "recordId": "raw:2026-07-02-interview-family-physician-after-hours-charting-since-ga",
+          "kind": "raw",
+          "score": 0.661
+        },
+        {
+          "recordId": "finding:care-coordination-triage",
+          "kind": "finding",
+          "score": 0.659
+        },
+        {
+          "recordId": "raw:2026-02-10-ambient-scribe-medication-flag-concept",
+          "kind": "raw",
+          "score": 0.657
+        },
+        {
+          "recordId": "deliverable:storyboards/ed-intake-peak-hour-interruption",
+          "kind": "deliverable",
+          "score": 0.657
+        },
+        {
+          "recordId": "deliverable:mental-models/care-coordinator-alert-ranking",
+          "kind": "deliverable",
+          "score": 0.656
+        },
+        {
+          "recordId": "deliverable:heuristic-evaluations/ambient-scribe-encounter-view-pre-ga",
+          "kind": "deliverable",
+          "score": 0.656
+        },
+        {
+          "recordId": "finding:ambient-scribe-post-ga-refinements",
+          "kind": "finding",
+          "score": 0.655
+        },
+        {
+          "recordId": "raw:2026-08-11-interview-him-supervisor-coding-team-oversight",
+          "kind": "raw",
+          "score": 0.655
+        },
+        {
+          "recordId": "raw:2026-06-02-interview-him-specialist-roi-ai-drafted-notes",
+          "kind": "raw",
+          "score": 0.654
+        },
+        {
+          "recordId": "raw:2026-03-19-interview-primary-care-physician-incidental-content-at-sign-off",
+          "kind": "raw",
+          "score": 0.654
+        },
+        {
+          "recordId": "finding:prior-authorization",
+          "kind": "finding",
+          "score": 0.653
+        },
+        {
+          "recordId": "raw:2025-09-09-survey-clinician-burnout-documentation-burden-baseline",
+          "kind": "raw",
+          "score": 0.652
+        },
+        {
+          "recordId": "raw:2025-05-06-usability-test-clinician-dashboard-redesign-v1",
+          "kind": "raw",
+          "score": 0.652
+        },
+        {
+          "recordId": "raw:2026-08-20-interview-care-coordinator-new-hire-shadowing",
+          "kind": "raw",
+          "score": 0.65
+        },
+        {
+          "recordId": "component:ed-intake-form",
+          "kind": "component",
+          "score": 0.65
+        },
+        {
+          "recordId": "raw:2026-09-01-interview-care-coordinator-float-pool-coverage",
+          "kind": "raw",
+          "score": 0.65
+        },
+        {
+          "recordId": "raw:2025-02-11-survey-nursing-attitudes-ai-documentation",
+          "kind": "raw",
+          "score": 0.649
+        },
+        {
+          "recordId": "component:chart-review-summary-panel",
+          "kind": "component",
+          "score": 0.649
+        },
+        {
+          "recordId": "raw:2026-08-18-interview-nurse-manager-unit-champions",
+          "kind": "raw",
+          "score": 0.649
+        },
+        {
+          "recordId": "raw:2026-07-14-interview-revenue-cycle-analyst-claim-denials",
+          "kind": "raw",
+          "score": 0.648
+        },
+        {
+          "recordId": "raw:2026-03-17-interview-clinic-nurse-reading-scribe-drafted-notes",
+          "kind": "raw",
+          "score": 0.648
+        },
+        {
+          "recordId": "raw:2026-04-21-interview-coding-auditor-override-audit-trail",
+          "kind": "raw",
+          "score": 0.648
+        },
+        {
+          "recordId": "decision:sso-reauthentication-15-minutes-vs-4-hours",
+          "kind": "decision",
+          "score": 0.648
+        },
+        {
+          "recordId": "raw:2026-09-17-interview-utilization-review-nurse-citation-checking",
+          "kind": "raw",
+          "score": 0.648
+        },
+        {
+          "recordId": "raw:2025-04-22-contextual-inquiry-ed-intake-shadowing",
+          "kind": "raw",
+          "score": 0.648
+        },
+        {
+          "recordId": "finding:governance-and-phi",
+          "kind": "finding",
+          "score": 0.647
+        },
+        {
+          "recordId": "raw:2026-06-16-interview-utilization-review-nurse-case-scope",
+          "kind": "raw",
+          "score": 0.646
+        },
+        {
+          "recordId": "raw:2026-05-28-interview-icu-nurse-handoff-narrative",
+          "kind": "raw",
+          "score": 0.645
+        },
+        {
+          "recordId": "raw:2026-09-15-interview-infusion-nurse-medication-changes-in-scribe-notes",
+          "kind": "raw",
+          "score": 0.645
+        },
+        {
+          "recordId": "raw:2025-09-23-usability-test-ambient-scribe-v02",
+          "kind": "raw",
+          "score": 0.645
+        },
+        {
+          "recordId": "deliverable:thumbnails/medication-flag-placement-explorations",
+          "kind": "deliverable",
+          "score": 0.645
+        },
+        {
+          "recordId": "raw:2026-10-06-interview-senior-medical-coder-ai-suggestions-concept",
+          "kind": "raw",
+          "score": 0.644
+        },
+        {
+          "recordId": "deliverable:style-guide/meridian-token-basics",
+          "kind": "deliverable",
+          "score": 0.644
+        },
+        {
+          "recordId": "raw:2026-09-29-interview-care-coordinator-referral-follow-up",
+          "kind": "raw",
+          "score": 0.644
+        },
+        {
+          "recordId": "decision:prior-auth-inline-source-citations",
+          "kind": "decision",
+          "score": 0.644
+        },
+        {
+          "recordId": "deliverable:user-flows/ambient-scribe-session-lock-recovery",
+          "kind": "deliverable",
+          "score": 0.644
+        },
+        {
+          "recordId": "component:ambient-scribe-widget",
+          "kind": "component",
+          "score": 0.644
+        },
+        {
+          "recordId": "raw:2026-07-07-interview-care-coordinator-override-reason-capture",
+          "kind": "raw",
+          "score": 0.642
+        },
+        {
+          "recordId": "component:roi-redaction-tool",
+          "kind": "component",
+          "score": 0.642
+        },
+        {
+          "recordId": "raw:2025-11-04-usability-test-prior-auth-ai-v2",
+          "kind": "raw",
+          "score": 0.642
+        },
+        {
+          "recordId": "raw:2025-03-24-interview-privacy-officer-deidentification-requirements",
+          "kind": "raw",
+          "score": 0.642
+        },
+        {
+          "recordId": "raw:2026-07-28-interview-orthopedics-physician-assistant-exam-findings-in-scribe-drafts",
+          "kind": "raw",
+          "score": 0.642
+        },
+        {
+          "recordId": "raw:2025-06-17-usability-test-patient-chatbot-prototype",
+          "kind": "raw",
+          "score": 0.642
+        },
+        {
+          "recordId": "raw:2025-08-12-interview-cmio-ai-generated-content-governance",
+          "kind": "raw",
+          "score": 0.641
+        },
+        {
+          "recordId": "raw:2026-09-08-interview-him-specialist-roi-request-turnaround",
+          "kind": "raw",
+          "score": 0.641
+        },
+        {
+          "recordId": "raw:2026-03-10-interview-medical-coder-coding-from-ai-drafted-notes",
+          "kind": "raw",
+          "score": 0.641
+        },
+        {
+          "recordId": "raw:2025-01-29-contextual-inquiry-chart-review-baseline",
+          "kind": "raw",
+          "score": 0.641
+        },
+        {
+          "recordId": "finding:patient-scheduling-chatbot",
+          "kind": "finding",
+          "score": 0.639
+        },
+        {
+          "recordId": "decision:scope-exclusions-behavioral-health-and-complex-prior-auth",
+          "kind": "decision",
+          "score": 0.639
+        },
+        {
+          "recordId": "raw:2026-06-30-interview-rheumatologist-medication-lines-in-scribe-drafts",
+          "kind": "raw",
+          "score": 0.639
+        },
+        {
+          "recordId": "raw:2026-03-31-interview-him-supervisor-roi-volume-and-part-2",
+          "kind": "raw",
+          "score": 0.638
+        },
+        {
+          "recordId": "component:alert-triage-queue",
+          "kind": "component",
+          "score": 0.637
+        },
+        {
+          "recordId": "raw:2026-02-17-session-lock-during-dictation",
+          "kind": "raw",
+          "score": 0.637
+        },
+        {
+          "recordId": "deliverable:service-topology/prior-auth-drafting-v2",
+          "kind": "deliverable",
+          "score": 0.636
+        },
+        {
+          "recordId": "component:coding-suggestion-panel",
+          "kind": "component",
+          "score": 0.636
+        },
+        {
+          "recordId": "raw:2025-02-25-usability-test-ambient-scribe-v01",
+          "kind": "raw",
+          "score": 0.636
+        },
+        {
+          "recordId": "raw:2026-08-25-interview-primary-care-physician-assistant-coder-and-cdi-queries",
+          "kind": "raw",
+          "score": 0.635
+        },
+        {
+          "recordId": "raw:2026-08-04-interview-care-coordinator-complex-care-alert-volume",
+          "kind": "raw",
+          "score": 0.635
+        },
+        {
+          "recordId": "raw:2026-05-05-interview-care-coordinator-supervisor-queue-oversight",
+          "kind": "raw",
+          "score": 0.634
+        },
+        {
+          "recordId": "raw:2026-04-28-interview-nurse-practitioner-session-lock-shared-workstations",
+          "kind": "raw",
+          "score": 0.631
+        },
+        {
+          "recordId": "decision:override-reason-capture-on-alert-ranking",
+          "kind": "decision",
+          "score": 0.629
+        },
+        {
+          "recordId": "component:prior-auth-drafting-panel",
+          "kind": "component",
+          "score": 0.628
+        },
+        {
+          "recordId": "component:encounter-view",
+          "kind": "component",
+          "score": 0.628
+        },
+        {
+          "recordId": "finding:accessibility-cross-cutting",
+          "kind": "finding",
+          "score": 0.628
+        },
+        {
+          "recordId": "deliverable:mindsets/skeptical-verifier",
+          "kind": "deliverable",
+          "score": 0.628
+        },
+        {
+          "recordId": "deliverable:design-system/v4-1-status-indicator-component",
+          "kind": "deliverable",
+          "score": 0.627
+        },
+        {
+          "recordId": "raw:2025-08-26-usability-test-alert-triage-ai-care-coordination",
+          "kind": "raw",
+          "score": 0.627
+        },
+        {
+          "recordId": "deliverable:wireflows/alert-triage-override-reason-capture",
+          "kind": "deliverable",
+          "score": 0.625
+        },
+        {
+          "recordId": "raw:2025-10-07-contextual-inquiry-behavioral-health-sensitive-notes",
+          "kind": "raw",
+          "score": 0.625
+        },
+        {
+          "recordId": "decision:patient-chatbot-scheduling-only-scope",
+          "kind": "decision",
+          "score": 0.625
+        },
+        {
+          "recordId": "raw:2025-03-10-accessibility-audit-legacy-extjs-admin-console",
+          "kind": "raw",
+          "score": 0.624
+        },
+        {
+          "recordId": "raw:2025-07-01-accessibility-audit-new-design-system-components",
+          "kind": "raw",
+          "score": 0.621
+        },
+        {
+          "recordId": "raw:2025-11-18-accessibility-audit-mobile-clinician-app",
+          "kind": "raw",
+          "score": 0.621
+        },
+        {
+          "recordId": "raw:2025-07-15-contextual-inquiry-him-release-of-information",
+          "kind": "raw",
+          "score": 0.619
+        },
+        {
+          "recordId": "deliverable:accessibility-screenings/status-indicator-remediation-screening",
+          "kind": "deliverable",
+          "score": 0.618
+        },
+        {
+          "recordId": "raw:2026-05-12-interview-cdi-specialist-documentation-gaps",
+          "kind": "raw",
+          "score": 0.617
+        },
+        {
+          "recordId": "raw:2025-07-29-usability-test-ai-coding-billing-suggestions",
+          "kind": "raw",
+          "score": 0.612
+        },
+        {
+          "recordId": "decision:session-lock-paused-draft-preserved-state",
+          "kind": "decision",
+          "score": 0.611
+        },
+        {
+          "recordId": "component:clinician-dashboard",
+          "kind": "component",
+          "score": 0.611
+        },
+        {
+          "recordId": "component:sso-mfa-login",
+          "kind": "component",
+          "score": 0.608
+        },
+        {
+          "recordId": "component:patient-chatbot-widget",
+          "kind": "component",
+          "score": 0.599
+        },
+        {
+          "recordId": "component:mobile-app-alert-list",
+          "kind": "component",
+          "score": 0.586
+        },
+        {
+          "recordId": "component:design-system-form-field",
+          "kind": "component",
+          "score": 0.584
+        },
+        {
+          "recordId": "raw:2025-06-03-survey-patient-portal-ai-chatbot-trust",
+          "kind": "raw",
+          "score": 0.584
+        },
+        {
+          "recordId": "component:admin-console-grid",
+          "kind": "component",
+          "score": 0.577
+        },
+        {
+          "recordId": "component:design-system-modal",
+          "kind": "component",
+          "score": 0.567
+        },
+        {
+          "recordId": "component:care-gap-badge",
+          "kind": "component",
+          "score": 0.556
+        },
+        {
+          "recordId": "component:alert-badge",
+          "kind": "component",
+          "score": 0.539
+        }
+      ],
+      "runs": [
+        {
+          "secs": 3.7,
+          "answer": "The only evidence on record is the designer's own statement, and no session tested it.\n\nAt session setup, the designer (Sam Okafor) stated that the calendar step is required because the scribe attaches recordings to scheduled encounters [1]. Several documents repeat this as the only rationale on record and say plainly that no session tested it [2][3]. The topline and readout also label it the designer's stated rationale, not a finding [4][5].\n\nThe usability test cannot supply support either. In that build, steps 3 and 4 were required, with no \"Connect later\" or \"Skip for now\" [1]. The moderator let anyone who stopped at Connect calendar continue on a sandbox calendar, so completing step 3 is not a result [1]. All 4 Practice Administrators went on only that way [5].\n\nWhat the sessions do show points to costs of the requirement, not support for it:\n- 3 of 4 Practice Administrators (P154, P155, P157) stopped at Connect calendar and would not connect it, saying approval was IT's decision [1].\n- Both IT Administrators asked which fields are read before connecting [1].\n- The IT Administrator interviewed said a Practice Administrator can't start the privacy review request; IT files it [6].\n\nSo the sources contain no tested evidence for making the step required, only the untested rationale.",
+          "usage": {
+            "inputTokens": 5593,
+            "outputTokens": 420,
+            "totalTokens": 6013,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "stopReason": "end_turn",
+          "latencyMs": 3432,
+          "attempts": 1,
+          "cost": 0.015386,
+          "sources": [
+            {
+              "id": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes",
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "recordKind": "raw",
+              "recordType": "usability-test",
+              "title": "Usability Test — Compass AI Practice Setup Flow",
+              "section": null,
+              "participants": "Participants: 6 — P154 — Practice Administrator (admin-staff) ×1, P155 — Practice Administrator (admin-staff) ×1, P156 — Practice Administrator (admin-staff) ×1, P157 — Practice Administrator (admin-staff) ×1, P158 — IT Administrator (it) ×1, P159 — IT Administrator (it) ×1",
+              "excerpt": "Objective\nThe 2026-01-20 dashboard review found setups of Compass AI for a practice stopping most at Connect calendar (7 of 24 setups started) and then at Invite your team (3 of 24), and said a dashboard can't show why ( 2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:45-46,72 ). This session watched administrators go through the practice setup flow to find out what happens at those two steps. It is about admin setup of Compass AI, not staff training.\nMethod\nMethod: Moderated usability test, remote, think-aloud, 60 min/session, one participant per session\nResearcher: Priya Patel (moderator)\nFull participant roster: see participants.md in this folder\nParticipants: 6 — 4 Practice Administrators (P154-P157) and 2 IT Administrators (P158, P159)\nSteps tested, in order: 1 Sign in with Meridian SSO; 2 Practice details; 3 Connect calendar (read access to the practice's appointment schedule); 4 Invite your team (gives clinicians and staff access to Compass AI and sends them an email); 5 Review & finish.\nBuild: Steps 3 and 4 are required in this build. There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it.\nDesign context: At session setup, the designer, Sam Okafor, stated that the calendar step is required because the scribe attaches recordings to scheduled encounters.\nTest environment: Participants signed in with their own Meridian SSO and were asked to set up as they would for their own practice. The environment was a test one: step 3 connected to a prepared sandbox calendar standing in for the practice's schedule, and step 4 used a prepared test staff list, so no real schedule was read and no real staff were emailed.\nTest accommodation: When a participant stopped at step 3, the moderator told them it was the sandbox calendar and let them continue. Every participant completed step 3 this way or on their own, so completing step 3 in this session is not a result.\nNot covered: The step 4 screen doesn't say when the invite email is sent, and these notes don't record when this build sends it. How Compass AI access is provisioned (through SSO groups or through these invites) wasn't known to the moderator and isn't recorded in the corpus.\nKey Findings\n[HIGH] (calendar: who can approve) 3 of 4 Practice Administrators (P154, P155, P157) stopped at Connect calendar and wouldn't connect it: it gives Compass AI access to patient appointments, and they did not think they could approve that. Each said it was IT's decision. The fourth (P156) asked the moderator whether connecting the schedule was theirs to approve before going on. All 4 continued only on the sandbox calendar (see Test accommodation).\n[MEDIUM] (calendar: what is read) Both IT Administrators (P158, P159) connected the calendar, but only after asking which fields are read (for example, whether visit reasons are included). The screen doesn't list them; the moderator couldn't answer, and both went on without an answer.\n[HIGH] (invite: timing and training) 3 of 4 Practice Administrators (P154, P156, P157) hesitated at Invite your team. They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice. P155 entered the test staff list and went on without comment.\n[MEDIUM] (invite: provisioning) One IT Administrator (P159) asked whether the invites create accounts or rely on the SSO groups staff are already in. The moderator couldn't answer, and the corpus doesn't record how access is provisioned.\n[LOW] (sign in and practice details) No issues at Sign in or Practice details: 6 of 6 participants completed both without help or comment on a problem.\nRepresentative Quotes\n\"That's patient names and visit reasons. That's not my call — that's IT's.\" — Practice Administrator, P154\n\"Is this mine to say yes to? I'd normally send anything like this to IT.\" — Practice Administrator, P156\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — Practice Administrator, P157\n\"Before I connect it I want to know what it pulls. Times and providers, fine. Visit reasons, that's a different conversation.\" — IT Administrator, P158\n\"Does this make them an account, or does it just use the groups they're already in? Because if it's a separate list, I'm the one keeping it in sync.\" — IT Administrator, P159\nRecommendations\nList the fields read from the appointment schedule on the Connect calendar step.\nAdd a \"Send to IT for approval\" path on Connect calendar for an administrator who can't approve the access themselves.\nSay on the Invite your team screen when the invite email is sent.\nLet administrators schedule the invite email for a date, so it can go out once training is booked.\nFollow-ups / Open Questions\nHow is Compass AI access provisioned: through SSO groups, through these invites, or both? Ask the setup flow's engineering team.\nWhen does this build send the invite email: at step 4 or at Review & finish?\nCheck the setup dashboard after any copy change to these steps, to see whether setups still stop at Connect calendar and Invite your team.",
+              "score": 0.713
+            },
+            {
+              "id": "decision:compass-ai-setup-calendar-step-required#6",
+              "recordId": "decision:compass-ai-setup-calendar-step-required",
+              "recordKind": "decision",
+              "recordType": "decision",
+              "title": "Connect calendar is a required step in Compass AI practice setup",
+              "section": "Rationale",
+              "participants": null,
+              "excerpt": "Evidence basis: Mixed. The cost figures below are Observed in the cited raw session lines. The rationale is the designer's statement at session setup, which no session tested.\nAt session setup, the designer stated that the calendar step is required because the scribe attaches recordings to scheduled encounters ( research/raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:38 ). That is the only rationale on record, and no session tested it ( research/findings/compass-ai-practice-setup.md:42-44,96-97 ).\nWhat the step costs, as recorded:",
+              "score": 0.756
+            },
+            {
+              "id": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval#10",
+              "recordId": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval",
+              "recordKind": "deliverable",
+              "recordType": "wireframes",
+              "title": "Compass AI Practice Setup — Connect Calendar with Fields Read and IT Approval",
+              "section": "Details",
+              "participants": null,
+              "excerpt": "Not covered:\nWho should see which path. The notes don't record how the screen would tell an administrator who can approve from one who can't; this wireframe shows both paths to everyone.\nWhether the step stays required. The only rationale on record is the designer's statement at session setup that \"the calendar step is required because the scribe attaches recordings to scheduled encounters\" (2026-02-03 :38 ), which no session tested (finding :42-44 ).",
+              "score": 0.738
+            },
+            {
+              "id": "deliverable:topline-summaries/compass-ai-practice-setup-topline#7",
+              "recordId": "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+              "recordKind": "deliverable",
+              "recordType": "topline-summaries",
+              "title": "Compass AI Practice Setup — Study Topline",
+              "section": "Caveats",
+              "participants": null,
+              "excerpt": "Completing Connect calendar in the test is not a result: the moderator let anyone who stopped continue on a sandbox calendar (2026-02-03 :43-45 ).\nThe calendar step is required because, in the designer's statement at session setup, the scribe attaches recordings to scheduled encounters ( :38 ). That is the designer's stated rationale; no session tested it (finding :42-44 ).",
+              "score": 0.749
+            },
+            {
+              "id": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout#12",
+              "recordId": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+              "recordKind": "deliverable",
+              "recordType": "research-readouts",
+              "title": "Compass AI Practice Setup — Q1 Study Readout",
+              "section": "What it does and doesn't show",
+              "participants": null,
+              "excerpt": "Completing step 3 in the test is not a result. When a participant stopped at Connect calendar, the moderator told them it was the sandbox calendar and let them continue (2026-02-03 :43-45 ); all 4 Practice Administrators went on only that way ( :51 ).\nWhy the calendar step is required is untested. At session setup, the designer stated that it is required because the scribe attaches recordings to scheduled encounters ( :38 ). That is the designer's stated rationale; no session tested it (finding :42-44 ).",
+              "score": 0.739
+            },
+            {
+              "id": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#notes",
+              "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+              "recordKind": "raw",
+              "recordType": "interview",
+              "title": "Interview — IT Administrator on Schedule Access and Staff Invites",
+              "section": null,
+              "participants": "Participants: 1 — P160 — IT Administrator (it) ×1",
+              "excerpt": "Objective\nIn the 2026-02-03 usability test, 3 of 4 Practice Administrators stopped at Connect calendar because they did not think they could approve Compass AI's access to patient appointments, and both IT Administrators asked which fields are read before connecting ( 2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:51-52 ). This session asked one IT Administrator who approves access requests across practices what has to happen before a new system can read a practice's appointment schedule, and who can start that. It is about admin setup of Compass AI, not staff training (in 2026-02-10-ambient-scribe-medication-flag-concept/session-notes.md:62 , \"onboarding\" means training copy for clinicians).\nMethod\nMethod: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant is an IT Administrator who handles access requests for systems used across Meridian's practices. They had not used the Compass AI practice setup flow. The researcher described steps 3 (Connect calendar) and 4 (Invite your team) as the 2026-02-03 build shows them, and what the step 3 screen does and doesn't say, without sharing what other participants said. The participant did not name the scheduling system that holds the appointment schedule, and these notes don't record which system it is. This is their account of the approval process, not a review of its records.\nKey Findings\n[HIGH] (schedule access: privacy review) In their account, any new system that reads the appointment schedule needs a privacy review request before it is connected, and a Practice Administrator can't start one: requests are filed by IT. A practice that wants the calendar connected has to ask IT to file the request. They didn't know whether one had been filed for Compass AI.\n[MEDIUM] (schedule access: still PHI) They described scheduling as the lowest-risk data on the CMIO's PHI ordering, but still PHI: the schedule carries patient names and, depending on the fields read, visit reasons. They saw this as consistent with the ordering, not a contradiction of it, because the ordering ranks the risk and doesn't remove the review.\nRepresentative Quotes\n\"Lowest risk isn't no risk. It's still patient names on a schedule. It still goes through privacy review, it just shouldn't take long.\" — IT Administrator, P160\n\"A practice admin can't put in that request. They call us, we file it. If the screen just asks them to click connect, it's asking the wrong person.\" — IT Administrator, P160\nRecommendations\nOn Connect calendar, route an administrator who can't approve schedule access to IT, consistent with the \"Send to IT for approval\" path recommended on 2026-02-03 ( 2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:75-76 ).\nBefore more practices set up, confirm with IT whether a privacy review request for Compass AI reading the appointment schedule has been filed, and list the fields it covers.\nFollow-ups / Open Questions\nHas a privacy review request for Compass AI's schedule access been filed, and which fields does it cover?\nHow is Compass AI access provisioned: through SSO groups, through the setup flow's invites, or both? The participant didn't know.",
+              "score": 0.72
+            }
+          ],
+          "promptChars": 16218,
+          "promptTokens": 5593,
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "decision:compass-ai-setup-calendar-step-required",
+              "kind": "decision",
+              "passage": "decision:compass-ai-setup-calendar-step-required#6"
+            },
+            {
+              "n": 2,
+              "recordId": "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+              "kind": "deliverable",
+              "passage": "deliverable:topline-summaries/compass-ai-practice-setup-topline#7"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+              "kind": "deliverable",
+              "passage": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout#12"
+            },
+            {
+              "n": 4,
+              "recordId": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval",
+              "kind": "deliverable",
+              "passage": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval#10"
+            },
+            {
+              "n": 5,
+              "recordId": "deliverable:mindsets/wants-to-know-what-a-step-commits",
+              "kind": "deliverable",
+              "passage": "deliverable:mindsets/wants-to-know-what-a-step-commits#6"
+            },
+            {
+              "n": 6,
+              "recordId": "deliverable:mental-models/compass-ai-schedule-access-and-invites",
+              "kind": "deliverable",
+              "passage": "deliverable:mental-models/compass-ai-schedule-access-and-invites#2"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+              "kind": "raw",
+              "passage": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#notes"
+            },
+            {
+              "n": 8,
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "kind": "raw",
+              "passage": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes"
+            },
+            {
+              "n": 9,
+              "recordId": "raw:2025-10-21-interview-training-department-rollout-change-management",
+              "kind": "raw",
+              "passage": "raw:2025-10-21-interview-training-department-rollout-change-management#notes"
+            }
+          ]
+        },
+        {
+          "secs": 5.6,
+          "answer": "The only rationale on record is the designer's statement at session setup that the calendar step is required because the scribe attaches recordings to scheduled encounters [1][2]. No session tested that rationale [3][4]. So the sources hold no evidence that making the step required is right.\n\nWhat the sessions do show points the other way, or is neutral:\n\n- In the usability test, steps 3 and 4 were required in the build, with no \"Connect later\" or \"Skip for now\" [1].\n- 3 of 4 Practice Administrators (P154, P155, P157) stopped at Connect calendar and wouldn't connect it, because they did not think they could approve access to patient appointments [1]. P154 said \"That's not my call — that's IT's.\" [1]\n- All 4 Practice Administrators continued only because the moderator let them use the sandbox calendar, so completing step 3 is not a result [4].\n- Both IT Administrators connected the calendar only after asking which fields are read, and the screen doesn't list them [1].\n- A separate IT Administrator (P160) said a Practice Administrator can't file the privacy review request that schedule access needs, because IT files it [5].\n\nThe recorded recommendations address the cost of the step, not whether it should stay required: list the fields read and add a \"Send to IT for approval\" path [1]. The wireframe notes that whether the step stays required is not covered [6].",
+          "usage": {
+            "inputTokens": 5593,
+            "outputTokens": 438,
+            "totalTokens": 6031,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "stopReason": "end_turn",
+          "latencyMs": 3264,
+          "attempts": 1,
+          "cost": 0.015566,
+          "sources": [
+            {
+              "id": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes",
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "recordKind": "raw",
+              "recordType": "usability-test",
+              "title": "Usability Test — Compass AI Practice Setup Flow",
+              "section": null,
+              "participants": "Participants: 6 — P154 — Practice Administrator (admin-staff) ×1, P155 — Practice Administrator (admin-staff) ×1, P156 — Practice Administrator (admin-staff) ×1, P157 — Practice Administrator (admin-staff) ×1, P158 — IT Administrator (it) ×1, P159 — IT Administrator (it) ×1",
+              "excerpt": "Objective\nThe 2026-01-20 dashboard review found setups of Compass AI for a practice stopping most at Connect calendar (7 of 24 setups started) and then at Invite your team (3 of 24), and said a dashboard can't show why ( 2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:45-46,72 ). This session watched administrators go through the practice setup flow to find out what happens at those two steps. It is about admin setup of Compass AI, not staff training.\nMethod\nMethod: Moderated usability test, remote, think-aloud, 60 min/session, one participant per session\nResearcher: Priya Patel (moderator)\nFull participant roster: see participants.md in this folder\nParticipants: 6 — 4 Practice Administrators (P154-P157) and 2 IT Administrators (P158, P159)\nSteps tested, in order: 1 Sign in with Meridian SSO; 2 Practice details; 3 Connect calendar (read access to the practice's appointment schedule); 4 Invite your team (gives clinicians and staff access to Compass AI and sends them an email); 5 Review & finish.\nBuild: Steps 3 and 4 are required in this build. There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it.\nDesign context: At session setup, the designer, Sam Okafor, stated that the calendar step is required because the scribe attaches recordings to scheduled encounters.\nTest environment: Participants signed in with their own Meridian SSO and were asked to set up as they would for their own practice. The environment was a test one: step 3 connected to a prepared sandbox calendar standing in for the practice's schedule, and step 4 used a prepared test staff list, so no real schedule was read and no real staff were emailed.\nTest accommodation: When a participant stopped at step 3, the moderator told them it was the sandbox calendar and let them continue. Every participant completed step 3 this way or on their own, so completing step 3 in this session is not a result.\nNot covered: The step 4 screen doesn't say when the invite email is sent, and these notes don't record when this build sends it. How Compass AI access is provisioned (through SSO groups or through these invites) wasn't known to the moderator and isn't recorded in the corpus.\nKey Findings\n[HIGH] (calendar: who can approve) 3 of 4 Practice Administrators (P154, P155, P157) stopped at Connect calendar and wouldn't connect it: it gives Compass AI access to patient appointments, and they did not think they could approve that. Each said it was IT's decision. The fourth (P156) asked the moderator whether connecting the schedule was theirs to approve before going on. All 4 continued only on the sandbox calendar (see Test accommodation).\n[MEDIUM] (calendar: what is read) Both IT Administrators (P158, P159) connected the calendar, but only after asking which fields are read (for example, whether visit reasons are included). The screen doesn't list them; the moderator couldn't answer, and both went on without an answer.\n[HIGH] (invite: timing and training) 3 of 4 Practice Administrators (P154, P156, P157) hesitated at Invite your team. They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice. P155 entered the test staff list and went on without comment.\n[MEDIUM] (invite: provisioning) One IT Administrator (P159) asked whether the invites create accounts or rely on the SSO groups staff are already in. The moderator couldn't answer, and the corpus doesn't record how access is provisioned.\n[LOW] (sign in and practice details) No issues at Sign in or Practice details: 6 of 6 participants completed both without help or comment on a problem.\nRepresentative Quotes\n\"That's patient names and visit reasons. That's not my call — that's IT's.\" — Practice Administrator, P154\n\"Is this mine to say yes to? I'd normally send anything like this to IT.\" — Practice Administrator, P156\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — Practice Administrator, P157\n\"Before I connect it I want to know what it pulls. Times and providers, fine. Visit reasons, that's a different conversation.\" — IT Administrator, P158\n\"Does this make them an account, or does it just use the groups they're already in? Because if it's a separate list, I'm the one keeping it in sync.\" — IT Administrator, P159\nRecommendations\nList the fields read from the appointment schedule on the Connect calendar step.\nAdd a \"Send to IT for approval\" path on Connect calendar for an administrator who can't approve the access themselves.\nSay on the Invite your team screen when the invite email is sent.\nLet administrators schedule the invite email for a date, so it can go out once training is booked.\nFollow-ups / Open Questions\nHow is Compass AI access provisioned: through SSO groups, through these invites, or both? Ask the setup flow's engineering team.\nWhen does this build send the invite email: at step 4 or at Review & finish?\nCheck the setup dashboard after any copy change to these steps, to see whether setups still stop at Connect calendar and Invite your team.",
+              "score": 0.713
+            },
+            {
+              "id": "decision:compass-ai-setup-calendar-step-required#6",
+              "recordId": "decision:compass-ai-setup-calendar-step-required",
+              "recordKind": "decision",
+              "recordType": "decision",
+              "title": "Connect calendar is a required step in Compass AI practice setup",
+              "section": "Rationale",
+              "participants": null,
+              "excerpt": "Evidence basis: Mixed. The cost figures below are Observed in the cited raw session lines. The rationale is the designer's statement at session setup, which no session tested.\nAt session setup, the designer stated that the calendar step is required because the scribe attaches recordings to scheduled encounters ( research/raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:38 ). That is the only rationale on record, and no session tested it ( research/findings/compass-ai-practice-setup.md:42-44,96-97 ).\nWhat the step costs, as recorded:",
+              "score": 0.756
+            },
+            {
+              "id": "deliverable:topline-summaries/compass-ai-practice-setup-topline#7",
+              "recordId": "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+              "recordKind": "deliverable",
+              "recordType": "topline-summaries",
+              "title": "Compass AI Practice Setup — Study Topline",
+              "section": "Caveats",
+              "participants": null,
+              "excerpt": "Completing Connect calendar in the test is not a result: the moderator let anyone who stopped continue on a sandbox calendar (2026-02-03 :43-45 ).\nThe calendar step is required because, in the designer's statement at session setup, the scribe attaches recordings to scheduled encounters ( :38 ). That is the designer's stated rationale; no session tested it (finding :42-44 ).",
+              "score": 0.749
+            },
+            {
+              "id": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout#12",
+              "recordId": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+              "recordKind": "deliverable",
+              "recordType": "research-readouts",
+              "title": "Compass AI Practice Setup — Q1 Study Readout",
+              "section": "What it does and doesn't show",
+              "participants": null,
+              "excerpt": "Completing step 3 in the test is not a result. When a participant stopped at Connect calendar, the moderator told them it was the sandbox calendar and let them continue (2026-02-03 :43-45 ); all 4 Practice Administrators went on only that way ( :51 ).\nWhy the calendar step is required is untested. At session setup, the designer stated that it is required because the scribe attaches recordings to scheduled encounters ( :38 ). That is the designer's stated rationale; no session tested it (finding :42-44 ).",
+              "score": 0.739
+            },
+            {
+              "id": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#notes",
+              "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+              "recordKind": "raw",
+              "recordType": "interview",
+              "title": "Interview — IT Administrator on Schedule Access and Staff Invites",
+              "section": null,
+              "participants": "Participants: 1 — P160 — IT Administrator (it) ×1",
+              "excerpt": "Objective\nIn the 2026-02-03 usability test, 3 of 4 Practice Administrators stopped at Connect calendar because they did not think they could approve Compass AI's access to patient appointments, and both IT Administrators asked which fields are read before connecting ( 2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:51-52 ). This session asked one IT Administrator who approves access requests across practices what has to happen before a new system can read a practice's appointment schedule, and who can start that. It is about admin setup of Compass AI, not staff training (in 2026-02-10-ambient-scribe-medication-flag-concept/session-notes.md:62 , \"onboarding\" means training copy for clinicians).\nMethod\nMethod: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant is an IT Administrator who handles access requests for systems used across Meridian's practices. They had not used the Compass AI practice setup flow. The researcher described steps 3 (Connect calendar) and 4 (Invite your team) as the 2026-02-03 build shows them, and what the step 3 screen does and doesn't say, without sharing what other participants said. The participant did not name the scheduling system that holds the appointment schedule, and these notes don't record which system it is. This is their account of the approval process, not a review of its records.\nKey Findings\n[HIGH] (schedule access: privacy review) In their account, any new system that reads the appointment schedule needs a privacy review request before it is connected, and a Practice Administrator can't start one: requests are filed by IT. A practice that wants the calendar connected has to ask IT to file the request. They didn't know whether one had been filed for Compass AI.\n[MEDIUM] (schedule access: still PHI) They described scheduling as the lowest-risk data on the CMIO's PHI ordering, but still PHI: the schedule carries patient names and, depending on the fields read, visit reasons. They saw this as consistent with the ordering, not a contradiction of it, because the ordering ranks the risk and doesn't remove the review.\nRepresentative Quotes\n\"Lowest risk isn't no risk. It's still patient names on a schedule. It still goes through privacy review, it just shouldn't take long.\" — IT Administrator, P160\n\"A practice admin can't put in that request. They call us, we file it. If the screen just asks them to click connect, it's asking the wrong person.\" — IT Administrator, P160\nRecommendations\nOn Connect calendar, route an administrator who can't approve schedule access to IT, consistent with the \"Send to IT for approval\" path recommended on 2026-02-03 ( 2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:75-76 ).\nBefore more practices set up, confirm with IT whether a privacy review request for Compass AI reading the appointment schedule has been filed, and list the fields it covers.\nFollow-ups / Open Questions\nHas a privacy review request for Compass AI's schedule access been filed, and which fields does it cover?\nHow is Compass AI access provisioned: through SSO groups, through the setup flow's invites, or both? The participant didn't know.",
+              "score": 0.72
+            },
+            {
+              "id": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval#10",
+              "recordId": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval",
+              "recordKind": "deliverable",
+              "recordType": "wireframes",
+              "title": "Compass AI Practice Setup — Connect Calendar with Fields Read and IT Approval",
+              "section": "Details",
+              "participants": null,
+              "excerpt": "Not covered:\nWho should see which path. The notes don't record how the screen would tell an administrator who can approve from one who can't; this wireframe shows both paths to everyone.\nWhether the step stays required. The only rationale on record is the designer's statement at session setup that \"the calendar step is required because the scribe attaches recordings to scheduled encounters\" (2026-02-03 :38 ), which no session tested (finding :42-44 ).",
+              "score": 0.738
+            }
+          ],
+          "promptChars": 16218,
+          "promptTokens": 5593,
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "decision:compass-ai-setup-calendar-step-required",
+              "kind": "decision",
+              "passage": "decision:compass-ai-setup-calendar-step-required#6"
+            },
+            {
+              "n": 2,
+              "recordId": "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+              "kind": "deliverable",
+              "passage": "deliverable:topline-summaries/compass-ai-practice-setup-topline#7"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+              "kind": "deliverable",
+              "passage": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout#12"
+            },
+            {
+              "n": 4,
+              "recordId": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval",
+              "kind": "deliverable",
+              "passage": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval#10"
+            },
+            {
+              "n": 5,
+              "recordId": "deliverable:mindsets/wants-to-know-what-a-step-commits",
+              "kind": "deliverable",
+              "passage": "deliverable:mindsets/wants-to-know-what-a-step-commits#6"
+            },
+            {
+              "n": 6,
+              "recordId": "deliverable:mental-models/compass-ai-schedule-access-and-invites",
+              "kind": "deliverable",
+              "passage": "deliverable:mental-models/compass-ai-schedule-access-and-invites#2"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+              "kind": "raw",
+              "passage": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#notes"
+            },
+            {
+              "n": 8,
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "kind": "raw",
+              "passage": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes"
+            },
+            {
+              "n": 9,
+              "recordId": "raw:2025-10-21-interview-training-department-rollout-change-management",
+              "kind": "raw",
+              "passage": "raw:2025-10-21-interview-training-department-rollout-change-management#notes"
+            }
+          ]
+        },
+        {
+          "secs": 3.6,
+          "answer": "The only rationale on record is the designer's statement at session setup that the calendar step is required because the scribe attaches recordings to scheduled encounters [1][2]. No session tested that claim [3][4]. The decision record itself describes the evidence as mixed: the rationale is the designer's statement, and only the cost figures are observed [2].\n\nThe sources therefore contain no evidence that supports making the step required. What they show is the cost of the requirement in the usability test. In that build, Steps 3 and 4 were required, with no \"Connect later\" or \"Skip for now\" [1].\n\n- 3 of 4 Practice Administrators (P154, P155, P157) stopped at Connect calendar and would not connect it, saying approval was IT's decision. P156 asked whether it was theirs to approve [1].\n- All 4 Practice Administrators went on only because the moderator let them use the sandbox calendar, so completing the step is not a result [4].\n- Both IT Administrators connected the calendar only after asking which fields are read, and the moderator could not answer [1].\n\nA separate interview with an IT Administrator (P160) adds that a new system reading the schedule needs a privacy review request filed by IT, which a Practice Administrator cannot start. That participant did not know whether one had been filed for Compass AI [5].\n\nThe wireframe record also lists whether the step stays required as not covered [6].",
+          "usage": {
+            "inputTokens": 5593,
+            "outputTokens": 442,
+            "totalTokens": 6035,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "stopReason": "end_turn",
+          "latencyMs": 3231,
+          "attempts": 1,
+          "cost": 0.015606,
+          "sources": [
+            {
+              "id": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes",
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "recordKind": "raw",
+              "recordType": "usability-test",
+              "title": "Usability Test — Compass AI Practice Setup Flow",
+              "section": null,
+              "participants": "Participants: 6 — P154 — Practice Administrator (admin-staff) ×1, P155 — Practice Administrator (admin-staff) ×1, P156 — Practice Administrator (admin-staff) ×1, P157 — Practice Administrator (admin-staff) ×1, P158 — IT Administrator (it) ×1, P159 — IT Administrator (it) ×1",
+              "excerpt": "Objective\nThe 2026-01-20 dashboard review found setups of Compass AI for a practice stopping most at Connect calendar (7 of 24 setups started) and then at Invite your team (3 of 24), and said a dashboard can't show why ( 2026-01-20-dashboard-review-compass-ai-practice-setup-completion/session-notes.md:45-46,72 ). This session watched administrators go through the practice setup flow to find out what happens at those two steps. It is about admin setup of Compass AI, not staff training.\nMethod\nMethod: Moderated usability test, remote, think-aloud, 60 min/session, one participant per session\nResearcher: Priya Patel (moderator)\nFull participant roster: see participants.md in this folder\nParticipants: 6 — 4 Practice Administrators (P154-P157) and 2 IT Administrators (P158, P159)\nSteps tested, in order: 1 Sign in with Meridian SSO; 2 Practice details; 3 Connect calendar (read access to the practice's appointment schedule); 4 Invite your team (gives clinicians and staff access to Compass AI and sends them an email); 5 Review & finish.\nBuild: Steps 3 and 4 are required in this build. There is no \"Connect later\" and no \"Skip for now\"; the only way past each step is to complete it.\nDesign context: At session setup, the designer, Sam Okafor, stated that the calendar step is required because the scribe attaches recordings to scheduled encounters.\nTest environment: Participants signed in with their own Meridian SSO and were asked to set up as they would for their own practice. The environment was a test one: step 3 connected to a prepared sandbox calendar standing in for the practice's schedule, and step 4 used a prepared test staff list, so no real schedule was read and no real staff were emailed.\nTest accommodation: When a participant stopped at step 3, the moderator told them it was the sandbox calendar and let them continue. Every participant completed step 3 this way or on their own, so completing step 3 in this session is not a result.\nNot covered: The step 4 screen doesn't say when the invite email is sent, and these notes don't record when this build sends it. How Compass AI access is provisioned (through SSO groups or through these invites) wasn't known to the moderator and isn't recorded in the corpus.\nKey Findings\n[HIGH] (calendar: who can approve) 3 of 4 Practice Administrators (P154, P155, P157) stopped at Connect calendar and wouldn't connect it: it gives Compass AI access to patient appointments, and they did not think they could approve that. Each said it was IT's decision. The fourth (P156) asked the moderator whether connecting the schedule was theirs to approve before going on. All 4 continued only on the sandbox calendar (see Test accommodation).\n[MEDIUM] (calendar: what is read) Both IT Administrators (P158, P159) connected the calendar, but only after asking which fields are read (for example, whether visit reasons are included). The screen doesn't list them; the moderator couldn't answer, and both went on without an answer.\n[HIGH] (invite: timing and training) 3 of 4 Practice Administrators (P154, P156, P157) hesitated at Invite your team. They weren't sure whether the email goes out when they finish the step or at Review & finish, and they didn't want staff emailed before champion training is booked for the practice. P155 entered the test staff list and went on without comment.\n[MEDIUM] (invite: provisioning) One IT Administrator (P159) asked whether the invites create accounts or rely on the SSO groups staff are already in. The moderator couldn't answer, and the corpus doesn't record how access is provisioned.\n[LOW] (sign in and practice details) No issues at Sign in or Practice details: 6 of 6 participants completed both without help or comment on a problem.\nRepresentative Quotes\n\"That's patient names and visit reasons. That's not my call — that's IT's.\" — Practice Administrator, P154\n\"Is this mine to say yes to? I'd normally send anything like this to IT.\" — Practice Administrator, P156\n\"If forty people get an email before anyone's booked training, my phone rings all afternoon.\" — Practice Administrator, P157\n\"Before I connect it I want to know what it pulls. Times and providers, fine. Visit reasons, that's a different conversation.\" — IT Administrator, P158\n\"Does this make them an account, or does it just use the groups they're already in? Because if it's a separate list, I'm the one keeping it in sync.\" — IT Administrator, P159\nRecommendations\nList the fields read from the appointment schedule on the Connect calendar step.\nAdd a \"Send to IT for approval\" path on Connect calendar for an administrator who can't approve the access themselves.\nSay on the Invite your team screen when the invite email is sent.\nLet administrators schedule the invite email for a date, so it can go out once training is booked.\nFollow-ups / Open Questions\nHow is Compass AI access provisioned: through SSO groups, through these invites, or both? Ask the setup flow's engineering team.\nWhen does this build send the invite email: at step 4 or at Review & finish?\nCheck the setup dashboard after any copy change to these steps, to see whether setups still stop at Connect calendar and Invite your team.",
+              "score": 0.713
+            },
+            {
+              "id": "decision:compass-ai-setup-calendar-step-required#6",
+              "recordId": "decision:compass-ai-setup-calendar-step-required",
+              "recordKind": "decision",
+              "recordType": "decision",
+              "title": "Connect calendar is a required step in Compass AI practice setup",
+              "section": "Rationale",
+              "participants": null,
+              "excerpt": "Evidence basis: Mixed. The cost figures below are Observed in the cited raw session lines. The rationale is the designer's statement at session setup, which no session tested.\nAt session setup, the designer stated that the calendar step is required because the scribe attaches recordings to scheduled encounters ( research/raw/2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:38 ). That is the only rationale on record, and no session tested it ( research/findings/compass-ai-practice-setup.md:42-44,96-97 ).\nWhat the step costs, as recorded:",
+              "score": 0.756
+            },
+            {
+              "id": "deliverable:topline-summaries/compass-ai-practice-setup-topline#7",
+              "recordId": "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+              "recordKind": "deliverable",
+              "recordType": "topline-summaries",
+              "title": "Compass AI Practice Setup — Study Topline",
+              "section": "Caveats",
+              "participants": null,
+              "excerpt": "Completing Connect calendar in the test is not a result: the moderator let anyone who stopped continue on a sandbox calendar (2026-02-03 :43-45 ).\nThe calendar step is required because, in the designer's statement at session setup, the scribe attaches recordings to scheduled encounters ( :38 ). That is the designer's stated rationale; no session tested it (finding :42-44 ).",
+              "score": 0.749
+            },
+            {
+              "id": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout#12",
+              "recordId": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+              "recordKind": "deliverable",
+              "recordType": "research-readouts",
+              "title": "Compass AI Practice Setup — Q1 Study Readout",
+              "section": "What it does and doesn't show",
+              "participants": null,
+              "excerpt": "Completing step 3 in the test is not a result. When a participant stopped at Connect calendar, the moderator told them it was the sandbox calendar and let them continue (2026-02-03 :43-45 ); all 4 Practice Administrators went on only that way ( :51 ).\nWhy the calendar step is required is untested. At session setup, the designer stated that it is required because the scribe attaches recordings to scheduled encounters ( :38 ). That is the designer's stated rationale; no session tested it (finding :42-44 ).",
+              "score": 0.739
+            },
+            {
+              "id": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#notes",
+              "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+              "recordKind": "raw",
+              "recordType": "interview",
+              "title": "Interview — IT Administrator on Schedule Access and Staff Invites",
+              "section": null,
+              "participants": "Participants: 1 — P160 — IT Administrator (it) ×1",
+              "excerpt": "Objective\nIn the 2026-02-03 usability test, 3 of 4 Practice Administrators stopped at Connect calendar because they did not think they could approve Compass AI's access to patient appointments, and both IT Administrators asked which fields are read before connecting ( 2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:51-52 ). This session asked one IT Administrator who approves access requests across practices what has to happen before a new system can read a practice's appointment schedule, and who can start that. It is about admin setup of Compass AI, not staff training (in 2026-02-10-ambient-scribe-medication-flag-concept/session-notes.md:62 , \"onboarding\" means training copy for clinicians).\nMethod\nMethod: 1:1 interview, 45 min\nResearcher: Priya Patel\nFull participant roster: see participants.md in this folder\nContext: The participant is an IT Administrator who handles access requests for systems used across Meridian's practices. They had not used the Compass AI practice setup flow. The researcher described steps 3 (Connect calendar) and 4 (Invite your team) as the 2026-02-03 build shows them, and what the step 3 screen does and doesn't say, without sharing what other participants said. The participant did not name the scheduling system that holds the appointment schedule, and these notes don't record which system it is. This is their account of the approval process, not a review of its records.\nKey Findings\n[HIGH] (schedule access: privacy review) In their account, any new system that reads the appointment schedule needs a privacy review request before it is connected, and a Practice Administrator can't start one: requests are filed by IT. A practice that wants the calendar connected has to ask IT to file the request. They didn't know whether one had been filed for Compass AI.\n[MEDIUM] (schedule access: still PHI) They described scheduling as the lowest-risk data on the CMIO's PHI ordering, but still PHI: the schedule carries patient names and, depending on the fields read, visit reasons. They saw this as consistent with the ordering, not a contradiction of it, because the ordering ranks the risk and doesn't remove the review.\nRepresentative Quotes\n\"Lowest risk isn't no risk. It's still patient names on a schedule. It still goes through privacy review, it just shouldn't take long.\" — IT Administrator, P160\n\"A practice admin can't put in that request. They call us, we file it. If the screen just asks them to click connect, it's asking the wrong person.\" — IT Administrator, P160\nRecommendations\nOn Connect calendar, route an administrator who can't approve schedule access to IT, consistent with the \"Send to IT for approval\" path recommended on 2026-02-03 ( 2026-02-03-usability-test-compass-ai-practice-setup-flow/session-notes.md:75-76 ).\nBefore more practices set up, confirm with IT whether a privacy review request for Compass AI reading the appointment schedule has been filed, and list the fields it covers.\nFollow-ups / Open Questions\nHas a privacy review request for Compass AI's schedule access been filed, and which fields does it cover?\nHow is Compass AI access provisioned: through SSO groups, through the setup flow's invites, or both? The participant didn't know.",
+              "score": 0.72
+            },
+            {
+              "id": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval#10",
+              "recordId": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval",
+              "recordKind": "deliverable",
+              "recordType": "wireframes",
+              "title": "Compass AI Practice Setup — Connect Calendar with Fields Read and IT Approval",
+              "section": "Details",
+              "participants": null,
+              "excerpt": "Not covered:\nWho should see which path. The notes don't record how the screen would tell an administrator who can approve from one who can't; this wireframe shows both paths to everyone.\nWhether the step stays required. The only rationale on record is the designer's statement at session setup that \"the calendar step is required because the scribe attaches recordings to scheduled encounters\" (2026-02-03 :38 ), which no session tested (finding :42-44 ).",
+              "score": 0.738
+            }
+          ],
+          "promptChars": 16218,
+          "promptTokens": 5593,
+          "shown": [
+            {
+              "n": 1,
+              "recordId": "decision:compass-ai-setup-calendar-step-required",
+              "kind": "decision",
+              "passage": "decision:compass-ai-setup-calendar-step-required#6"
+            },
+            {
+              "n": 2,
+              "recordId": "deliverable:topline-summaries/compass-ai-practice-setup-topline",
+              "kind": "deliverable",
+              "passage": "deliverable:topline-summaries/compass-ai-practice-setup-topline#7"
+            },
+            {
+              "n": 3,
+              "recordId": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout",
+              "kind": "deliverable",
+              "passage": "deliverable:research-readouts/compass-ai-practice-setup-q1-readout#12"
+            },
+            {
+              "n": 4,
+              "recordId": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval",
+              "kind": "deliverable",
+              "passage": "deliverable:wireframes/compass-ai-connect-calendar-fields-and-it-approval#10"
+            },
+            {
+              "n": 5,
+              "recordId": "deliverable:mindsets/wants-to-know-what-a-step-commits",
+              "kind": "deliverable",
+              "passage": "deliverable:mindsets/wants-to-know-what-a-step-commits#6"
+            },
+            {
+              "n": 6,
+              "recordId": "deliverable:mental-models/compass-ai-schedule-access-and-invites",
+              "kind": "deliverable",
+              "passage": "deliverable:mental-models/compass-ai-schedule-access-and-invites#2"
+            },
+            {
+              "n": 7,
+              "recordId": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites",
+              "kind": "raw",
+              "passage": "raw:2026-02-24-interview-it-administrator-schedule-access-and-staff-invites#notes"
+            },
+            {
+              "n": 8,
+              "recordId": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow",
+              "kind": "raw",
+              "passage": "raw:2026-02-03-usability-test-compass-ai-practice-setup-flow#notes"
+            },
+            {
+              "n": 9,
+              "recordId": "raw:2025-10-21-interview-training-department-rollout-change-management",
+              "kind": "raw",
+              "passage": "raw:2025-10-21-interview-training-department-rollout-change-management#notes"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
