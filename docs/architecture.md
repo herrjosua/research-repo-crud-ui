@@ -191,5 +191,9 @@ sequenceDiagram
   session's Follow-ups section in the prompt, and retrieval rarely shows
   it.
 - No rate limiting or quotas on `/api/ask`.
+- **Low priority:** decide how to restrict the ux-research origin to Cloudflare.
+  A direct request to the origin skips Cloudflare, and the Apache fix used
+  on the other sites does not apply to a Node app. Accepted as is for now
+  (2026-11-25); see [Known gaps in the deploy runbook](./deploy.md#known-gaps).
 - The public demo can only answer its captured questions; typed questions
   need the project running locally.
