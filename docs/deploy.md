@@ -373,6 +373,60 @@ overrides.
 
 The log isn't rotated. It grows by a few hundred lines per deploy.
 
+## Known gaps
+
+### The origin isn't restricted to Cloudflare (decided 2026-11-25)
+
+**The gap.** Public traffic reaches the app through Cloudflare (a proxied
+DNS record for `ux-research.joshuabock.com`), but the origin on the shared
+webhost still answers requests that skip Cloudflare: a direct request to the
+origin's IP address returns 200. Traffic that bypasses Cloudflare also
+bypasses whatever Cloudflare enforces in front of the app.
+
+**Why the usual fix doesn't apply.** On the other sites on this host, an
+Apache `.htaccess` block that allows only Cloudflare's published ranges
+(<https://www.cloudflare.com/ips-v4> and
+<https://www.cloudflare.com/ips-v6>) works: a direct request gets 403 and
+the site still loads through Cloudflare. This app is a Node process
+(`backend/server.js`), and requests to a Node app don't pass through
+Apache's `.htaccess` rules, so the same block has no effect here.
+
+**Decision (2026-11-25, owner: Josh).** Accepted as is for now. This is a
+research prototype. The gap is recorded here and not fixed.
+
+**Leftover to delete.** The app's folder on the host still has an old
+`.htaccess` with a `Require ip` block. It does nothing for this app, and it
+shouldn't stay, because it suggests the site is protected when it isn't.
+It isn't in this repo; delete it on the host.
+
+**Options if it needs fixing later:**
+
+1. **Check in the app, with a secret header.** The server refuses any
+   request that doesn't carry a header that Cloudflare adds (a Cloudflare
+   Transform Rule can add a request header). The header's value belongs in a
+   password manager and an environment variable (`backend/.env`), never in
+   the repo or a note.
+2. **Check the connecting address in the app** against Cloudflare's
+   published ranges. [`backend/proxyTrust.js`](../backend/proxyTrust.js)
+   already carries that list for the rate limiters. This needs care behind
+   the host's own proxy: first verify which address the app actually sees as
+   the connection's peer.
+3. **Ask the host to firewall the origin** to Cloudflare's ranges.
+4. **Put the app behind its own login.**
+
+**Things to weigh when choosing:**
+
+- The hop from Cloudflare to the origin is plain HTTP on this setup (the
+  origin has no SSL), so a secret header in option 1 would travel
+  unencrypted on that hop. It still stops casual direct requests, but it
+  isn't a strong secret against someone who can watch that path.
+- On this host the address Apache reports as the client is the real
+  visitor's, not the proxy's, so a plain `Require ip` rule locks everyone
+  out. For a static or PHP site the form that works is
+  `Require expr "%{CONN_REMOTE_ADDR} -ipmatch '<cidr>'"`, with the CIDR in
+  single quotes. This only matters for sites Apache serves, not for this
+  Node app.
+
 ## Testing the script
 
 The `deploy-script` job in
